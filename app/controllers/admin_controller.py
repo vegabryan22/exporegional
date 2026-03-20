@@ -43,7 +43,8 @@ from app.services.mail_service import send_email, smtp_is_configured
 
 try:
     from reportlab.lib import colors
-    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.pagesizes import landscape, letter
+    from reportlab.lib.utils import ImageReader
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfgen import canvas
 
@@ -80,6 +81,7 @@ ADMIN_MENU_ITEMS = [
     ("rubrics", "admin.rubrics_page", "Rúbricas"),
     ("projects", "admin.projects_page", "Proyectos"),
     ("evaluations", "admin.evaluations_page", "Evaluaciones"),
+    ("documents", "admin.documents_page", "Actas y certificados"),
     ("smtp", "admin.smtp_page", "SMTP"),
     ("institution", "admin.institution_page", "Institución"),
     ("maintenance", "admin.maintenance_page", "Mantenimiento"),
@@ -104,15 +106,43 @@ ADMIN_MENU_ICONS = {
     "rubrics": "chart",
     "projects": "box",
     "evaluations": "chart",
+    "documents": "doc",
     "smtp": "send",
     "institution": "box",
     "maintenance": "settings",
     "logs": "doc",
 }
 
+# Override mojibake labels with clean UTF-8 text.
+ADMIN_MENU_ITEMS = [
+    ("overview", "admin.overview", "Resumen"),
+    ("assignments", "admin.assignments_page", "Asignaciones"),
+    ("judges", "admin.judges_page", "Usuarios"),
+    ("permissions", "admin.permissions_page", "Permisos"),
+    ("campaigns", "admin.campaigns_page", "Campañas"),
+    ("categories", "admin.categories_page", "Categorías"),
+    ("academic", "admin.academic_page", "Académico"),
+    ("rubrics", "admin.rubrics_page", "Rúbricas"),
+    ("projects", "admin.projects_page", "Proyectos"),
+    ("evaluations", "admin.evaluations_page", "Evaluaciones"),
+    ("documents", "admin.documents_page", "Actas y certificados"),
+    ("smtp", "admin.smtp_page", "SMTP"),
+    ("institution", "admin.institution_page", "Institución"),
+    ("maintenance", "admin.maintenance_page", "Mantenimiento"),
+    ("logs", "admin.logs_page", "Bitácora"),
+]
+
+ADMIN_MENU_GROUPS = [
+    ("General", ["overview"]),
+    ("Documentos", ["documents"]),
+    ("Operación", ["assignments", "projects", "evaluations"]),
+    ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
+    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "logs"]),
+]
+
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
-    "logistica": {"overview", "assignments", "projects"},
-    "datos": {"overview", "evaluations"},
+    "logistica": {"overview", "assignments", "projects", "documents"},
+    "datos": {"overview", "evaluations", "documents"},
     "diseno": {"overview", "campaigns", "categories", "academic", "rubrics", "institution"},
     "qa": {"overview", "logs", "maintenance"},
 }
@@ -350,7 +380,7 @@ def _redirect_next():
     return redirect(url_for("admin.overview"))
 
 
-def _build_overview_metrics(projects, assignments):
+def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_per_page=5):
     active_projects = [project for project in projects if project.is_active]
     active_project_ids = {project.id for project in active_projects}
     active_assignments = [assignment for assignment in assignments if assignment.project_id in active_project_ids]
@@ -397,6 +427,18 @@ def _build_overview_metrics(projects, assignments):
                 }
             )
 
+    pending_logistics_rows = sorted(
+        projects_pending_logistics,
+        key=lambda item: item["project"].created_at,
+        reverse=True,
+    )
+    pending_logistics_total = len(pending_logistics_rows)
+    logistics_per_page = max(1, logistics_per_page)
+    pending_logistics_pages = max(1, (pending_logistics_total + logistics_per_page - 1) // logistics_per_page)
+    logistics_page = min(max(1, logistics_page), pending_logistics_pages)
+    logistics_start = 0
+    logistics_end = min(logistics_per_page, pending_logistics_total)
+
     return {
         "active_projects": len(active_projects),
         "active_assignments": len(active_assignments),
@@ -415,11 +457,18 @@ def _build_overview_metrics(projects, assignments):
             key=lambda item: (item["expected"] - item["completed"], item["project"].created_at),
             reverse=True,
         )[:5],
-        "pending_logistics_projects": sorted(
-            projects_pending_logistics,
-            key=lambda item: item["project"].created_at,
-            reverse=True,
-        )[:5],
+        "pending_logistics_total": pending_logistics_total,
+        "pending_logistics_displayed": logistics_end,
+        "pending_logistics_projects": pending_logistics_rows,
+        "pending_logistics_page": logistics_page,
+        "pending_logistics_pages": pending_logistics_pages,
+        "pending_logistics_has_prev": logistics_page > 1,
+        "pending_logistics_has_next": logistics_page < pending_logistics_pages,
+        "pending_logistics_prev_page": logistics_page - 1,
+        "pending_logistics_next_page": logistics_page + 1,
+        "pending_logistics_start": 1 if pending_logistics_total else 0,
+        "pending_logistics_end": logistics_end,
+        "pending_logistics_per_page": logistics_per_page,
     }
 
 
@@ -539,6 +588,7 @@ def _build_all_projects_acta_context():
             joinedload(Project.evaluations).joinedload(Evaluation.judge),
             joinedload(Project.evaluations).joinedload(Evaluation.scores).joinedload(EvaluationScore.criterion),
         )
+        .filter(Project.is_active.is_(True))
         .order_by(Project.title.asc())
         .all()
     )
@@ -554,6 +604,255 @@ def _build_all_projects_acta_context():
         "projects_count": len(project_actas),
         "total_evaluations": total_evaluations,
         "global_average": global_average,
+    }
+
+
+def _build_judge_acta_context(judge_id: int):
+    judge = (
+        Judge.query.options(
+            joinedload(Judge.evaluations).joinedload(Evaluation.project).joinedload(Project.members),
+            joinedload(Judge.evaluations).joinedload(Evaluation.project).joinedload(Project.workshop_ref),
+            joinedload(Judge.evaluations).joinedload(Evaluation.project).joinedload(Project.specialty_ref),
+            joinedload(Judge.evaluations).joinedload(Evaluation.scores).joinedload(EvaluationScore.criterion),
+        )
+        .filter(Judge.id == judge_id)
+        .first()
+    )
+    if not judge:
+        return None
+
+    evaluation_types = EvaluationType.query.order_by(EvaluationType.sort_order.asc(), EvaluationType.name.asc()).all()
+    evaluation_types_by_code = {item.code: item for item in evaluation_types}
+    active_evaluations = [
+        evaluation
+        for evaluation in judge.evaluations
+        if evaluation.project and evaluation.project.is_active
+    ]
+    active_evaluations.sort(
+        key=lambda item: (
+            (item.project.title if item.project else "").lower(),
+            (evaluation_types_by_code.get(item.evaluation_type).name if evaluation_types_by_code.get(item.evaluation_type) else item.evaluation_type).lower(),
+            item.id,
+        )
+    )
+
+    project_map = {}
+    evaluation_rows = []
+
+    for evaluation in active_evaluations:
+        project = evaluation.project
+        evaluation_type = evaluation_types_by_code.get(evaluation.evaluation_type)
+        criteria_rows = sorted(
+            [
+                {
+                    "section_name": (score.criterion.section_name if score.criterion else "") or "",
+                    "criterion_name": score.criterion.name if score.criterion else "Criterio",
+                    "score": score.score,
+                    "max_score": score.criterion.max_score if score.criterion else None,
+                    "observation": score.observation or "",
+                    "sort_order": score.criterion.sort_order if score.criterion else 0,
+                }
+                for score in evaluation.scores
+            ],
+            key=lambda row: (row["sort_order"], row["criterion_name"].lower()),
+        )
+        row = {
+            "id": evaluation.id,
+            "project_id": project.id,
+            "project_title": project.title,
+            "project_team": project.team_name,
+            "evaluation_type_code": evaluation.evaluation_type,
+            "evaluation_type_name": evaluation_type.name if evaluation_type else evaluation.evaluation_type,
+            "created_at": evaluation.created_at,
+            "total_score": evaluation.total_score,
+            "max_score": evaluation.max_score,
+            "percentage": evaluation.percentage,
+            "comments": (evaluation.comments or "").strip(),
+            "recommendations": (evaluation.recommendations or "").strip(),
+            "criteria_rows": criteria_rows,
+        }
+        evaluation_rows.append(row)
+
+        project_entry = project_map.setdefault(
+            project.id,
+            {
+                "project": project,
+                "evaluation_rows": [],
+            },
+        )
+        project_entry["evaluation_rows"].append(row)
+
+    evaluated_projects = []
+    for project_entry in project_map.values():
+        project_entry["evaluation_count"] = len(project_entry["evaluation_rows"])
+        evaluated_projects.append(project_entry)
+
+    evaluated_projects.sort(key=lambda item: item["project"].title.lower())
+    category_sections = [
+        {
+            "key": "steam",
+            "title": "Categoría Desafío STEAM",
+            "projects": [item for item in evaluated_projects if (item["project"].category or "").strip().lower() == "steam"],
+        },
+        {
+            "key": "emprendimiento",
+            "title": "Categoría Emprendimiento e innovación",
+            "projects": [item for item in evaluated_projects if (item["project"].category or "").strip().lower() == "emprendimiento"],
+        },
+    ]
+    return {
+        "judge": judge,
+        "evaluated_projects": evaluated_projects,
+        "category_sections": category_sections,
+        "evaluations": evaluation_rows,
+        "projects_count": len(evaluated_projects),
+        "evaluations_count": len(evaluation_rows),
+        "generated_at": datetime.now(),
+    }
+
+
+def _institution_name():
+    return SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+
+
+def _month_name_es(month_number: int) -> str:
+    months = [
+        "enero",
+        "febrero",
+        "marzo",
+        "abril",
+        "mayo",
+        "junio",
+        "julio",
+        "agosto",
+        "septiembre",
+        "octubre",
+        "noviembre",
+        "diciembre",
+    ]
+    if 1 <= month_number <= 12:
+        return months[month_number - 1]
+    return ""
+
+
+def _long_date_es(value: datetime) -> str:
+    return f"{value.day} de {_month_name_es(value.month)} de {value.year}"
+
+
+def _build_participation_certificate_context(project_id: int | None = None):
+    query = Project.query.options(joinedload(Project.members)).filter(Project.is_active.is_(True))
+    if project_id is not None:
+        query = query.filter(Project.id == project_id)
+    projects = query.order_by(Project.title.asc()).all()
+
+    recipients = []
+    for project in projects:
+        members = sorted(project.members, key=lambda item: (item.student_number, (item.full_name or "").lower(), item.id))
+        for member in members:
+            recipients.append(
+                {
+                    "project": project,
+                    "member": member,
+                    "category_label": (project.category or "N/D").replace("_", " ").title(),
+                    "grade_label": member.section_name or project.grade_level or "",
+                    "focus_label": member.specialty or project.specialty or "",
+                }
+            )
+
+    title = "Certificados de participacion" if project_id is None else f"Certificados del proyecto: {projects[0].title}" if projects else "Certificados"
+    return {
+        "generated_at": datetime.now(),
+        "institution_name": _institution_name(),
+        "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
+        "projects": projects,
+        "recipients": recipients,
+        "projects_count": len(projects),
+        "certificates_count": len(recipients),
+        "title": title,
+        "single_project": projects[0] if len(projects) == 1 else None,
+    }
+
+
+def _draw_certificate_watermark(pdf, width, height, relative_logo_path: str):
+    logo_path = (relative_logo_path or "").strip()
+    if not logo_path:
+        return
+    if logo_path.startswith("http://") or logo_path.startswith("https://"):
+        return
+
+    absolute_path = os.path.join(current_app.static_folder, logo_path.replace("/", os.sep))
+    if not os.path.exists(absolute_path):
+        return
+
+    try:
+        image = ImageReader(absolute_path)
+        image_width, image_height = image.getSize()
+    except Exception:
+        return
+
+    if not image_width or not image_height:
+        return
+
+    scale = min((width * 0.42) / image_width, (height * 0.52) / image_height)
+    draw_width = image_width * scale
+    draw_height = image_height * scale
+    draw_x = (width - draw_width) / 2
+    draw_y = (height - draw_height) / 2 - 18
+
+    pdf.saveState()
+    try:
+        if hasattr(pdf, "setFillAlpha"):
+            pdf.setFillAlpha(0.08)
+    except Exception:
+        pass
+    pdf.drawImage(image, draw_x, draw_y, width=draw_width, height=draw_height, mask="auto", preserveAspectRatio=True)
+    pdf.restoreState()
+
+
+def _build_documents_context():
+    judges = (
+        Judge.query.options(joinedload(Judge.evaluations).joinedload(Evaluation.project))
+        .filter(Judge.is_active_user.is_(True))
+        .order_by(Judge.full_name.asc())
+        .all()
+    )
+    judge_rows = []
+    for judge in judges:
+        active_evaluations = [evaluation for evaluation in judge.evaluations if evaluation.project and evaluation.project.is_active]
+        if not active_evaluations:
+            continue
+        active_project_ids = sorted({evaluation.project_id for evaluation in active_evaluations})
+        percentages = [evaluation.percentage for evaluation in active_evaluations if evaluation.percentage is not None]
+        judge_rows.append(
+            {
+                "judge": judge,
+                "projects_count": len(active_project_ids),
+                "evaluations_count": len(active_evaluations),
+                "average_percentage": round(sum(percentages) / len(percentages), 2) if percentages else None,
+            }
+        )
+
+    active_projects = (
+        Project.query.options(joinedload(Project.members))
+        .filter(Project.is_active.is_(True))
+        .order_by(Project.title.asc())
+        .all()
+    )
+    project_certificate_rows = [
+        {
+            "project": project,
+            "members_count": len(project.members),
+            "category_label": (project.category or "N/D").replace("_", " ").title(),
+        }
+        for project in active_projects
+    ]
+
+    return {
+        "judge_rows": judge_rows,
+        "project_certificate_rows": project_certificate_rows,
+        "judge_reports_count": len(judge_rows),
+        "active_projects_count": len(active_projects),
+        "certificates_count": sum(item["members_count"] for item in project_certificate_rows),
     }
 
 
@@ -753,6 +1052,172 @@ def _render_all_projects_acta_pdf(context):
             )
             y = _pdf_draw_wrapped_line_set(pdf, line, 42, y, width - 84, "Helvetica", 9, 11)
         y -= 4
+
+    pdf.save()
+    buffer.seek(0)
+    return buffer
+
+
+def _render_judge_acta_pdf(context):
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    judge = context["judge"]
+    generated_at = context["generated_at"]
+    institution_name = _institution_name()
+    act_number = f"{judge.id}-{generated_at.year}"
+
+    def draw_act_header(page_title: str):
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawCentredString(width / 2, height - 54, _pdf_normalize_text(page_title))
+        pdf.setFont("Helvetica", 11)
+        pdf.drawCentredString(width / 2, height - 72, _pdf_normalize_text(institution_name))
+        return height - 104
+
+    y = draw_act_header(f"Acta N° {act_number}")
+    opening_text = (
+        f"Al ser las {generated_at.strftime('%I:%M %p').lower()}, del día {_long_date_es(generated_at)}, "
+        f"se hace constar que la persona juez {judge.full_name}, integrante del Comité de Juzgamiento del centro "
+        f"educativo {institution_name}, registró evaluación en los siguientes proyectos activos de la etapa "
+        f"institucional de la ExpoTÉCNICA, celebrada el {_long_date_es(generated_at)}."
+    )
+    y = _pdf_draw_wrapped_line_set(pdf, opening_text, 46, y, width - 92, "Helvetica", 10, 15)
+    y -= 8
+
+    for section in context["category_sections"]:
+        projects = section["projects"]
+        if not projects:
+            continue
+
+        if y < 170:
+            pdf.showPage()
+            y = draw_act_header(f"Acta N° {act_number} - Continuación")
+
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(46, y, _pdf_normalize_text(section["title"]))
+        y -= 18
+
+        for project_data in projects:
+            project = project_data["project"]
+            if y < 170:
+                pdf.showPage()
+                y = draw_act_header(f"Acta N° {act_number} - Continuación")
+                pdf.setFont("Helvetica-Bold", 11)
+                pdf.drawString(46, y, _pdf_normalize_text(section["title"]))
+                y -= 18
+
+            pdf.setFont("Helvetica", 10)
+            y = _pdf_draw_wrapped_line_set(pdf, f"Nombre del proyecto: {project.title}", 52, y, width - 104, "Helvetica", 10, 14)
+            y -= 8
+
+    signature_y = 96
+    pdf.setStrokeColor(colors.black)
+    pdf.line(70, signature_y, 250, signature_y)
+    pdf.line(width - 250, signature_y, width - 70, signature_y)
+    pdf.setFont("Helvetica", 10)
+    pdf.setFillColor(colors.black)
+    pdf.drawCentredString(160, signature_y - 14, "Director(a) del centro educativo")
+    pdf.drawCentredString(width - 160, signature_y - 14, "Presidente Comité de Juzgamiento")
+
+    pdf.save()
+    buffer.seek(0)
+    return buffer
+
+
+def _render_participation_certificates_pdf(context):
+    buffer = BytesIO()
+    page_size = landscape(letter)
+    pdf = canvas.Canvas(buffer, pagesize=page_size)
+    width, height = page_size
+    institution_name = context["institution_name"]
+    generated_at = context["generated_at"]
+    expo_logo_path = context.get("expo_logo_path", "")
+
+    for index, recipient in enumerate(context["recipients"]):
+        if index:
+            pdf.showPage()
+
+        project = recipient["project"]
+        member = recipient["member"]
+        _draw_certificate_watermark(pdf, width, height, expo_logo_path)
+        pdf.setFillColor(colors.HexColor("#0f3c73"))
+        pdf.setFont("Helvetica-Bold", 15)
+        pdf.drawCentredString(width / 2, height - 48, "Ministerio de Educación Pública")
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawCentredString(width / 2, height - 76, _pdf_normalize_text(institution_name))
+        pdf.setFont("Helvetica", 15)
+        pdf.drawCentredString(width / 2, height - 118, "Otorga el presente certificado a:")
+        pdf.setFont("Helvetica-Bold", 24)
+        pdf.drawCentredString(width / 2, height - 160, _pdf_normalize_text(member.full_name))
+        pdf.setFont("Helvetica", 16)
+        pdf.drawCentredString(width / 2, height - 205, "Por su participación en la:")
+        pdf.setFont("Helvetica-Bold", 18)
+        pdf.drawCentredString(width / 2, height - 238, "Etapa institucional de ExpoTÉCNICA")
+
+        y = height - 284
+        y = _pdf_draw_wrapped_line_set(
+            pdf,
+            (
+                f"Realizada el {_long_date_es(generated_at)} en el {institution_name}. "
+                f"Participó como integrante del proyecto {project.title}, equipo {project.team_name}."
+            ),
+            70,
+            y,
+            width - 140,
+            "Helvetica",
+            13,
+            18,
+        )
+        y -= 10
+        y = _pdf_draw_wrapped_line_set(
+            pdf,
+            f"Categoría: {recipient['category_label']}",
+            70,
+            y,
+            width - 140,
+            "Helvetica-Bold",
+            12,
+            16,
+        )
+        if recipient["grade_label"] or recipient["focus_label"]:
+            extra_parts = []
+            if recipient["grade_label"]:
+                extra_parts.append(f"Seccion: {recipient['grade_label']}")
+            if recipient["focus_label"]:
+                extra_parts.append(f"Enfasis: {recipient['focus_label']}")
+            y -= 6
+            y = _pdf_draw_wrapped_line_set(
+                pdf,
+                " | ".join(extra_parts),
+                70,
+                y,
+                width - 140,
+                "Helvetica",
+                11,
+                15,
+            )
+
+        y -= 22
+        y = _pdf_draw_wrapped_line_set(
+            pdf,
+            f"Dado a los {generated_at.day} días del mes de {_month_name_es(generated_at.month)} de {generated_at.year}.",
+            70,
+            y,
+            width - 140,
+            "Helvetica",
+            12,
+            16,
+        )
+
+        signature_y = 128
+        pdf.setStrokeColor(colors.black)
+        pdf.line(84, signature_y, 252, signature_y)
+        pdf.line(width - 252, signature_y, width - 84, signature_y)
+        pdf.setFont("Helvetica", 10)
+        pdf.setFillColor(colors.black)
+        pdf.drawCentredString(168, signature_y - 14, "Director(a) del centro educativo")
+        pdf.drawCentredString(width - 168, signature_y - 14, "Coordinador Institucional ExpoTÉCNICA")
 
     pdf.save()
     buffer.seek(0)
@@ -1182,7 +1647,7 @@ def _handle_action(action: str):
             db.session.flush()
             db.session.add(Assignment(judge_id=judge.id, project_id=project.id))
             log_event(
-                "admin.user.quick_create_assignment_judge",
+                "admin.user.create_and_assign",
                 "judge",
                 entity_id=judge.id,
                 detail=(
@@ -1315,7 +1780,7 @@ def _handle_action(action: str):
             judge.set_password(temp_password)
             judge.must_change_password = True
             log_event(
-                "admin.user.reset_password",
+                "admin.user.password.reset",
                 "judge",
                 entity_id=judge.id,
                 detail=f"Contrasena reiniciada para usuario: {judge.full_name} <{judge.email}>",
@@ -1339,7 +1804,7 @@ def _handle_action(action: str):
             judge.set_password(new_password)
             judge.must_change_password = False
             log_event(
-                "admin.user.set_password",
+                "admin.user.password.set",
                 "judge",
                 entity_id=judge.id,
                 detail=f"Contrasena asignada manualmente a usuario: {judge.full_name} <{judge.email}>",
@@ -1357,7 +1822,7 @@ def _handle_action(action: str):
         else:
             judge.is_active_user = not judge.is_active_user
             log_event(
-                "admin.user.toggle_active",
+                "admin.user.active.toggle",
                 "judge",
                 entity_id=judge.id,
                 detail=f"Estado activo de usuario {judge.full_name} <{judge.email}> => {judge.is_active_user}",
@@ -1378,7 +1843,7 @@ def _handle_action(action: str):
             judge.role = Judge.ROLE_JUDGE if judge.has_admin_access else Judge.ROLE_ADMIN
             judge.is_admin = judge.role in Judge.ADMIN_ROLES
             log_event(
-                "admin.user.toggle_admin",
+                "admin.user.role.toggle",
                 "judge",
                 entity_id=judge.id,
                 detail=f"Rol de usuario {judge.full_name} <{judge.email}> => {judge.role}",
@@ -1442,7 +1907,7 @@ def _handle_action(action: str):
                 project.logistics_photos_ok = _str_to_bool(request.form.get("logistics_photos_ok"))
                 project.logistics_notes = request.form.get("logistics_notes", "").strip()
                 log_event(
-                    "admin.project.logistics_update",
+                    "admin.project.logistics.update",
                     "project",
                     entity_id=project.id,
                     detail=(
@@ -1469,7 +1934,7 @@ def _handle_action(action: str):
                 project.project_logo_path = new_path
                 project.logistics_logo_ok = True
                 log_event(
-                    "admin.project.logo_upload",
+                    "admin.project.logo.upload",
                     "project",
                     entity_id=project.id,
                     detail=f"Logo actualizado para proyecto #{project.id} '{project.title}'",
@@ -1720,6 +2185,15 @@ def _handle_action(action: str):
                     is_active=True,
                 )
             )
+            log_event(
+                "admin.category.create",
+                "category",
+                detail=(
+                    f"Categoria creada: code={code} nombre='{name}' "
+                    f"rubrica1={exposition_eval_type.code if exposition_eval_type else 'N/D'} "
+                    f"rubrica2={documentation_eval_type.code if documentation_eval_type else 'N/D'}"
+                ),
+            )
             db.session.commit()
             flash("Categoria creada.", "success")
 
@@ -1756,6 +2230,17 @@ def _handle_action(action: str):
                 category.is_active = is_active
                 category.rubric_1_evaluation_type_id = exposition_eval_type.id if exposition_eval_type else None
                 category.rubric_2_evaluation_type_id = documentation_eval_type.id if documentation_eval_type else None
+                log_event(
+                    "admin.category.update",
+                    "category",
+                    entity_id=category.id,
+                    detail=(
+                        f"Categoria actualizada: code={category.code} nombre='{category.name}' "
+                        f"activa={category.is_active} "
+                        f"rubrica1={exposition_eval_type.code if exposition_eval_type else 'N/D'} "
+                        f"rubrica2={documentation_eval_type.code if documentation_eval_type else 'N/D'}"
+                    ),
+                )
                 db.session.commit()
                 flash("Categoria actualizada.", "success")
 
@@ -1767,6 +2252,12 @@ def _handle_action(action: str):
         elif Project.query.filter_by(category=category.code).count() > 0:
             flash("No puedes eliminar una categoria con proyectos asociados.", "error")
         else:
+            log_event(
+                "admin.category.delete",
+                "category",
+                entity_id=category.id,
+                detail=f"Categoria eliminada: code={category.code} nombre='{category.name}'",
+            )
             db.session.delete(category)
             db.session.commit()
             flash("Categoria eliminada.", "success")
@@ -1781,6 +2272,11 @@ def _handle_action(action: str):
             flash("Ese codigo de nivel ya existe.", "error")
         else:
             db.session.add(Level(code=code, name=name, sort_order=sort_order, is_active=True))
+            log_event(
+                "admin.level.create",
+                "level",
+                detail=f"Nivel creado: code={code} nombre='{name}' orden={sort_order}",
+            )
             db.session.commit()
             flash("Nivel creado.", "success")
 
@@ -1804,6 +2300,12 @@ def _handle_action(action: str):
                 level.name = name
                 level.sort_order = sort_order
                 level.is_active = is_active
+                log_event(
+                    "admin.level.update",
+                    "level",
+                    entity_id=level.id,
+                    detail=f"Nivel actualizado: code={level.code} nombre='{level.name}' activo={level.is_active}",
+                )
                 db.session.commit()
                 flash("Nivel actualizado.", "success")
 
@@ -1820,6 +2322,11 @@ def _handle_action(action: str):
                 flash("La seccion ya existe en ese nivel.", "error")
             else:
                 db.session.add(Section(level_id=level.id, name=name, sort_order=sort_order, is_active=True))
+                log_event(
+                    "admin.section.create",
+                    "section",
+                    detail=f"Seccion creada: nivel={level.name} nombre='{name}' orden={sort_order}",
+                )
                 db.session.commit()
                 flash("Seccion creada.", "success")
 
@@ -1841,6 +2348,12 @@ def _handle_action(action: str):
                 section.name = name
                 section.sort_order = sort_order
                 section.is_active = is_active
+                log_event(
+                    "admin.section.update",
+                    "section",
+                    entity_id=section.id,
+                    detail=f"Seccion actualizada: nivel={level.name} nombre='{section.name}' activo={section.is_active}",
+                )
                 db.session.commit()
                 flash("Seccion actualizada.", "success")
 
@@ -1852,6 +2365,12 @@ def _handle_action(action: str):
         elif Project.query.filter_by(section_id=section.id).count() > 0:
             flash("No puedes eliminar una seccion con proyectos asociados.", "error")
         else:
+            log_event(
+                "admin.section.delete",
+                "section",
+                entity_id=section.id,
+                detail=f"Seccion eliminada: nombre='{section.name}'",
+            )
             db.session.delete(section)
             db.session.commit()
             flash("Seccion eliminada.", "success")
@@ -1865,6 +2384,11 @@ def _handle_action(action: str):
             flash("La especialidad ya existe.", "error")
         else:
             db.session.add(Specialty(name=name, sort_order=sort_order, is_active=True))
+            log_event(
+                "admin.specialty.create",
+                "specialty",
+                detail=f"Especialidad creada: nombre='{name}' orden={sort_order}",
+            )
             db.session.commit()
             flash("Especialidad creada.", "success")
 
@@ -1880,6 +2404,12 @@ def _handle_action(action: str):
             if not specialty.name:
                 flash("Nombre de especialidad obligatorio.", "error")
             else:
+                log_event(
+                    "admin.specialty.update",
+                    "specialty",
+                    entity_id=specialty.id,
+                    detail=f"Especialidad actualizada: nombre='{specialty.name}' activa={specialty.is_active}",
+                )
                 db.session.commit()
                 flash("Especialidad actualizada.", "success")
 
@@ -1891,6 +2421,12 @@ def _handle_action(action: str):
         elif Project.query.filter_by(specialty_id=specialty.id).count() > 0:
             flash("No puedes eliminar una especialidad con proyectos asociados.", "error")
         else:
+            log_event(
+                "admin.specialty.delete",
+                "specialty",
+                entity_id=specialty.id,
+                detail=f"Especialidad eliminada: nombre='{specialty.name}'",
+            )
             db.session.delete(specialty)
             db.session.commit()
             flash("Especialidad eliminada.", "success")
@@ -1904,6 +2440,11 @@ def _handle_action(action: str):
             flash("El taller ya existe.", "error")
         else:
             db.session.add(Workshop(name=name, sort_order=sort_order, is_active=True))
+            log_event(
+                "admin.workshop.create",
+                "workshop",
+                detail=f"Taller creado: nombre='{name}' orden={sort_order}",
+            )
             db.session.commit()
             flash("Taller creado.", "success")
 
@@ -1919,6 +2460,12 @@ def _handle_action(action: str):
             if not workshop.name:
                 flash("Nombre de taller obligatorio.", "error")
             else:
+                log_event(
+                    "admin.workshop.update",
+                    "workshop",
+                    entity_id=workshop.id,
+                    detail=f"Taller actualizado: nombre='{workshop.name}' activo={workshop.is_active}",
+                )
                 db.session.commit()
                 flash("Taller actualizado.", "success")
 
@@ -1930,6 +2477,12 @@ def _handle_action(action: str):
         elif Project.query.filter_by(workshop_id=workshop.id).count() > 0:
             flash("No puedes eliminar un taller con proyectos asociados.", "error")
         else:
+            log_event(
+                "admin.workshop.delete",
+                "workshop",
+                entity_id=workshop.id,
+                detail=f"Taller eliminado: nombre='{workshop.name}'",
+            )
             db.session.delete(workshop)
             db.session.commit()
             flash("Taller eliminado.", "success")
@@ -1953,6 +2506,11 @@ def _handle_action(action: str):
                     sort_order=sort_order,
                     is_active=True,
                 )
+            )
+            log_event(
+                "admin.evaluation_type.create",
+                "evaluation_type",
+                detail=f"Tipo de evaluacion creado: code={code} nombre='{name}' orden={sort_order}",
             )
             db.session.commit()
             flash("Tipo de evaluacion creado.", "success")
@@ -1980,6 +2538,12 @@ def _handle_action(action: str):
                 eval_type.description = description or name
                 eval_type.sort_order = sort_order
                 eval_type.is_active = is_active
+                log_event(
+                    "admin.evaluation_type.update",
+                    "evaluation_type",
+                    entity_id=eval_type.id,
+                    detail=f"Tipo de evaluacion actualizado: code={eval_type.code} nombre='{eval_type.name}' activo={eval_type.is_active}",
+                )
                 db.session.commit()
                 flash("Tipo de evaluacion actualizado.", "success")
 
@@ -1991,6 +2555,12 @@ def _handle_action(action: str):
         elif RubricCriterion.query.filter_by(evaluation_type_id=eval_type.id).count() > 0:
             flash("Elimina primero las rubricas asociadas.", "error")
         else:
+            log_event(
+                "admin.evaluation_type.delete",
+                "evaluation_type",
+                entity_id=eval_type.id,
+                detail=f"Tipo de evaluacion eliminado: code={eval_type.code} nombre='{eval_type.name}'",
+            )
             db.session.delete(eval_type)
             db.session.commit()
             flash("Tipo de evaluacion eliminado.", "success")
@@ -2022,6 +2592,14 @@ def _handle_action(action: str):
                         is_active=True,
                     )
                 )
+                log_event(
+                    "admin.rubric.create",
+                    "rubric",
+                    detail=(
+                        f"Rubrica creada: tipo={eval_type.code} seccion='{section_name or 'General'}' "
+                        f"nombre='{name}' rango={min_score}-{max_score}"
+                    ),
+                )
                 db.session.commit()
                 flash("Rubrica creada.", "success")
 
@@ -2041,6 +2619,16 @@ def _handle_action(action: str):
             if not rubric.name or rubric.min_score > rubric.max_score:
                 flash("Datos invalidos para rubrica.", "error")
             else:
+                log_event(
+                    "admin.rubric.update",
+                    "rubric",
+                    entity_id=rubric.id,
+                    detail=(
+                        f"Rubrica actualizada: nombre='{rubric.name}' "
+                        f"seccion='{rubric.section_name or 'General'}' "
+                        f"rango={rubric.min_score}-{rubric.max_score} activa={rubric.is_active}"
+                    ),
+                )
                 db.session.commit()
                 flash("Rubrica actualizada.", "success")
 
@@ -2050,6 +2638,12 @@ def _handle_action(action: str):
         if not rubric:
             flash("Rubrica no encontrada.", "error")
         else:
+            log_event(
+                "admin.rubric.delete",
+                "rubric",
+                entity_id=rubric.id,
+                detail=f"Rubrica eliminada: nombre='{rubric.name}' seccion='{rubric.section_name or 'General'}'",
+            )
             db.session.delete(rubric)
             db.session.commit()
             flash("Rubrica eliminada.", "success")
@@ -2098,7 +2692,7 @@ def _handle_action(action: str):
                 log_event("admin.smtp.test", "smtp", detail=f"Prueba enviada a {target_email}")
                 flash("Correo de prueba enviado.", "success")
             else:
-                log_event("admin.smtp.test_failed", "smtp", detail=f"Error al enviar a {target_email}: {error}")
+                log_event("admin.smtp.test.fail", "smtp", detail=f"Error al enviar a {target_email}: {error}")
                 flash(f"No se pudo enviar correo de prueba: {error}", "error")
 
     elif action == "save_institution":
@@ -2185,7 +2779,7 @@ def _handle_action(action: str):
         flash("Permisos actualizados correctamente.", "success")
 
 
-def _base_context(active_page: str):
+def _base_context(active_page: str, **kwargs):
     allowed_modules = _allowed_modules_for_current_user()
     admin_menu_items = [
         {"key": key, "endpoint": endpoint, "label": label}
@@ -2276,7 +2870,11 @@ def _base_context(active_page: str):
         ),
         "maintenance_image_path": SystemSetting.get_value("maintenance_image_path", ""),
     }
-    overview_metrics = _build_overview_metrics(projects, assignments)
+    overview_metrics = _build_overview_metrics(
+        projects,
+        assignments,
+        logistics_page=kwargs.get("logistics_page", 1),
+    )
 
     return {
         "active_page": active_page,
@@ -2313,8 +2911,8 @@ def _base_context(active_page: str):
     }
 
 
-def _render(page_template: str, active_page: str):
-    return render_template(page_template, **_base_context(active_page))
+def _render(page_template: str, active_page: str, **kwargs):
+    return render_template(page_template, **_base_context(active_page, **kwargs))
 
 
 @admin_required
@@ -2329,7 +2927,8 @@ def perform_action():
 
 @admin_module_required("overview")
 def overview():
-    return _render("admin/overview.html", "overview")
+    logistics_page = request.args.get("logistics_page", default=1, type=int) or 1
+    return _render("admin/overview.html", "overview", logistics_page=logistics_page)
 
 
 @admin_module_required("assignments")
@@ -2372,6 +2971,13 @@ def evaluations_page():
     context = _base_context("evaluations")
     context.update(build_admin_evaluation_overview())
     return render_template("admin/evaluations.html", **context)
+
+
+@admin_module_required("documents")
+def documents_page():
+    context = _base_context("documents")
+    context.update(_build_documents_context())
+    return render_template("admin/documents.html", **context)
 
 
 @admin_module_required("evaluations")
@@ -2460,6 +3066,136 @@ def evaluation_report_all_download():
         mimetype="application/pdf",
         as_attachment=True,
         download_name="acta_general_expotecnica.pdf",
+    )
+
+
+@admin_module_required("documents")
+def evaluation_report_judge_preview(judge_id: int):
+    report_context = _build_judge_acta_context(judge_id)
+    if not report_context:
+        abort(404)
+    context = _base_context("documents")
+    context.update(report_context)
+    return render_template("admin/evaluations_report_judge.html", **context)
+
+
+@admin_module_required("documents")
+def evaluation_report_judge_pdf(judge_id: int):
+    report_context = _build_judge_acta_context(judge_id)
+    if not report_context:
+        abort(404)
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.evaluation_report_judge_preview", judge_id=judge_id))
+    pdf_bytes = _render_judge_acta_pdf(report_context)
+    safe_name = _normalize_code(report_context["judge"].full_name) or f"juez_{judge_id}"
+    return send_file(
+        pdf_bytes,
+        mimetype="application/pdf",
+        as_attachment=False,
+        download_name=f"acta_juez_{safe_name}.pdf",
+    )
+
+
+@admin_module_required("documents")
+def evaluation_report_judge_download(judge_id: int):
+    report_context = _build_judge_acta_context(judge_id)
+    if not report_context:
+        abort(404)
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.evaluation_report_judge_preview", judge_id=judge_id))
+    pdf_bytes = _render_judge_acta_pdf(report_context)
+    safe_name = _normalize_code(report_context["judge"].full_name) or f"juez_{judge_id}"
+    return send_file(
+        pdf_bytes,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"acta_juez_{safe_name}.pdf",
+    )
+
+
+@admin_module_required("documents")
+def participation_certificates_preview():
+    certificate_context = _build_participation_certificate_context()
+    context = _base_context("documents")
+    context.update(certificate_context)
+    return render_template("admin/certificates_participation.html", **context)
+
+
+@admin_module_required("documents")
+def participation_certificates_pdf():
+    certificate_context = _build_participation_certificate_context()
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.participation_certificates_preview"))
+    pdf_bytes = _render_participation_certificates_pdf(certificate_context)
+    return send_file(
+        pdf_bytes,
+        mimetype="application/pdf",
+        as_attachment=False,
+        download_name="certificados_participacion_proyectos_activos.pdf",
+    )
+
+
+@admin_module_required("documents")
+def participation_certificates_download():
+    certificate_context = _build_participation_certificate_context()
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.participation_certificates_preview"))
+    pdf_bytes = _render_participation_certificates_pdf(certificate_context)
+    return send_file(
+        pdf_bytes,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="certificados_participacion_proyectos_activos.pdf",
+    )
+
+
+@admin_module_required("documents")
+def project_certificates_preview(project_id: int):
+    certificate_context = _build_participation_certificate_context(project_id)
+    if not certificate_context["projects"]:
+        abort(404)
+    context = _base_context("documents")
+    context.update(certificate_context)
+    return render_template("admin/certificates_participation.html", **context)
+
+
+@admin_module_required("documents")
+def project_certificates_pdf(project_id: int):
+    certificate_context = _build_participation_certificate_context(project_id)
+    if not certificate_context["projects"]:
+        abort(404)
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.project_certificates_preview", project_id=project_id))
+    pdf_bytes = _render_participation_certificates_pdf(certificate_context)
+    safe_name = _normalize_code(certificate_context["single_project"].title) or f"proyecto_{project_id}"
+    return send_file(
+        pdf_bytes,
+        mimetype="application/pdf",
+        as_attachment=False,
+        download_name=f"certificados_{safe_name}.pdf",
+    )
+
+
+@admin_module_required("documents")
+def project_certificates_download(project_id: int):
+    certificate_context = _build_participation_certificate_context(project_id)
+    if not certificate_context["projects"]:
+        abort(404)
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.project_certificates_preview", project_id=project_id))
+    pdf_bytes = _render_participation_certificates_pdf(certificate_context)
+    safe_name = _normalize_code(certificate_context["single_project"].title) or f"proyecto_{project_id}"
+    return send_file(
+        pdf_bytes,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"certificados_{safe_name}.pdf",
     )
 
 

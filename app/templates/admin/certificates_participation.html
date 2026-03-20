@@ -1,0 +1,58 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section maintenance-page">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Certificados</p>
+            <h3>{{ title }}</h3>
+            <p>Se incluyen unicamente integrantes de proyectos activos.</p>
+        </div>
+        <div class="report-banner-actions">
+            <a href="{{ url_for('admin.documents_page') }}" class="table-link-btn ghost">Volver</a>
+            {% if single_project %}
+                <a href="{{ url_for('admin.project_certificates_pdf', project_id=single_project.id) }}" class="table-link-btn">Ver PDF</a>
+                <a href="{{ url_for('admin.project_certificates_download', project_id=single_project.id) }}" class="table-link-btn secondary">Descargar PDF</a>
+            {% else %}
+                <a href="{{ url_for('admin.participation_certificates_pdf') }}" class="table-link-btn">Ver PDF</a>
+                <a href="{{ url_for('admin.participation_certificates_download') }}" class="table-link-btn secondary">Descargar PDF</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="admin-stats evaluation-stats">
+        <article><strong>{{ projects_count }}</strong><span>Proyectos</span></article>
+        <article><strong>{{ certificates_count }}</strong><span>Certificados</span></article>
+        <article><strong>{{ institution_name }}</strong><span>Institucion</span></article>
+        <article><strong>{{ generated_at.strftime("%Y-%m-%d %H:%M") }}</strong><span>Generado</span></article>
+    </div>
+</section>
+
+<section class="card admin-section maintenance-page">
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Integrante</th>
+                    <th>Proyecto</th>
+                    <th>Equipo</th>
+                    <th>Categoría</th>
+                    <th>Sección</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in recipients %}
+                <tr>
+                    <td>{{ row.member.full_name }}</td>
+                    <td>{{ row.project.title }}</td>
+                    <td>{{ row.project.team_name }}</td>
+                    <td class="table-cell-center"><span class="tag category-badge">{{ row.category_label }}</span></td>
+                    <td>{{ row.grade_label or "N/D" }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5">No hay integrantes disponibles para certificar.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -28,12 +28,12 @@ def login():
 
         judge = Judge.query.filter_by(email=email).first()
         if not judge or not judge.check_password(password):
-            log_event("auth.login_failed", "auth", detail=f"Intento fallido para correo: {email}")
+            log_event("auth.login.failed", "auth", detail=f"Intento fallido para correo: {email}")
             db.session.commit()
             flash("Credenciales invalidas.", "error")
             return render_template("auth/login.html")
         if not judge.is_active_user:
-            log_event("auth.login_blocked", "auth", entity_id=judge.id, detail="Intento de acceso con usuario inactivo")
+            log_event("auth.login.blocked", "auth", entity_id=judge.id, detail="Intento de acceso con usuario inactivo")
             db.session.commit()
             flash("Tu usuario esta inactivo.", "error")
             return render_template("auth/login.html", next_url=_safe_next_url())
@@ -71,7 +71,7 @@ def change_password():
         else:
             current_user.set_password(new_password)
             current_user.must_change_password = False
-            log_event("auth.change_password", "auth", entity_id=current_user.id, detail="Cambio manual de contrasena")
+            log_event("auth.password.change", "auth", entity_id=current_user.id, detail="Cambio manual de contrasena")
             db.session.commit()
             flash("Contrasena actualizada.", "success")
             if current_user.has_admin_access:

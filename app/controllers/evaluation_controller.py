@@ -9,6 +9,7 @@ from app.models.category import Category
 from app.models.evaluation import Evaluation
 from app.models.evaluation_score import EvaluationScore
 from app.models.project import Project
+from app.services.audit_service import log_event
 from app.services.evaluation_service import get_project_available_evaluation_types, get_project_evaluations_summary
 from app.services.parameter_service import get_active_evaluation_types, get_active_rubrics_map
 
@@ -149,6 +150,15 @@ def evaluate(project_id: int):
         for item in scores:
             item.evaluation_id = evaluation.id
             db.session.add(item)
+        log_event(
+            "judge.evaluation.create",
+            "evaluation",
+            entity_id=evaluation.id,
+            detail=(
+                f"Evaluacion registrada: proyecto=#{project.id} '{project.title}', "
+                f"juez={current_user.full_name}, tipo={eval_type}, porcentaje={percentage}"
+            ),
+        )
         db.session.commit()
         flash("Evaluacion registrada correctamente.", "success")
         return redirect(url_for("judge.dashboard"))

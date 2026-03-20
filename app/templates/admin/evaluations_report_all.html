@@ -33,13 +33,13 @@
     <div class="project-tracking-list">
         {% for item in project_actas %}
             <details class="project-tracking-card">
-                <summary class="project-tracking-summary">
+                <summary class="project-tracking-summary project-tracking-summary-compact">
                     <div class="project-tracking-main">
                         <strong>{{ item.project.title }}</strong>
                         <span>{{ item.project.team_name }}</span>
                     </div>
-                    <div class="project-tracking-metrics">
-                        <div class="tracking-metric">
+                    <div class="project-tracking-metrics project-tracking-metrics-compact">
+                        <div class="tracking-metric tracking-metric-category">
                             <small>Categoría</small>
                             <strong>{{ item.category.name if item.category else item.project.category }}</strong>
                         </div>
@@ -51,7 +51,7 @@
                             <small>Evaluaciones</small>
                             <strong>{{ item.evaluations_count }}</strong>
                         </div>
-                        <div class="tracking-metric">
+                        <div class="tracking-metric tracking-metric-final">
                             <small>Promedio</small>
                             <strong>{{ item.average_percentage if item.average_percentage is not none else "N/D" }}</strong>
                         </div>

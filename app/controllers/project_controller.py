@@ -18,6 +18,7 @@ from app.models.section import Section
 from app.models.specialty import Specialty
 from app.models.system_setting import SystemSetting
 from app.models.workshop import Workshop
+from app.services.audit_service import log_event
 from app.services.parameter_service import get_active_evaluation_types
 
 ALLOWED_DOC_EXTENSIONS = {"pdf", "doc", "docx", "ppt", "pptx", "zip", "rar"}
@@ -449,6 +450,15 @@ def register_project():
             student = next(item for item in students if item["student_number"] == number)
             db.session.add(ProjectMember(project_id=project.id, **student))
 
+        log_event(
+            "public.project.create",
+            "project",
+            entity_id=project.id,
+            detail=(
+                f"Proyecto inscrito: #{project.id} '{project.title}' "
+                f"categoria={project.category} equipo='{project.team_name}' estudiantes={len(required_students)}"
+            ),
+        )
         db.session.commit()
         _clear_registration_draft()
         flash("Proyecto inscrito correctamente con formato ExpoTEC-1.", "success")

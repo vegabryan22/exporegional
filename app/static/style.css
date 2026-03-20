@@ -572,6 +572,18 @@ nav a:hover,
     align-items: end;
 }
 
+.tracking-filter-row {
+    grid-template-columns: minmax(320px, 1fr) auto;
+}
+
+.tracking-filter-bar {
+    margin-bottom: 0.35rem;
+}
+
+.tracking-pager {
+    margin-top: 0.9rem;
+}
+
 .projects-filter-field {
     display: grid;
     gap: 0.28rem;
@@ -932,6 +944,70 @@ th {
 
 .table-wrap table {
     border: 0;
+}
+
+.projects-maintenance-table {
+    width: 100%;
+    min-width: 1180px;
+    table-layout: fixed;
+}
+
+.projects-maintenance-table td {
+    vertical-align: middle;
+}
+
+.projects-maintenance-table th:nth-child(1),
+.projects-maintenance-table td:nth-child(1) {
+    width: 35%;
+}
+
+.projects-maintenance-table th:nth-child(2),
+.projects-maintenance-table td:nth-child(2) {
+    width: 13%;
+}
+
+.projects-maintenance-table th:nth-child(3),
+.projects-maintenance-table td:nth-child(3) {
+    width: 9%;
+}
+
+.projects-maintenance-table th:nth-child(4),
+.projects-maintenance-table td:nth-child(4) {
+    width: 13%;
+}
+
+.projects-maintenance-table th:nth-child(5),
+.projects-maintenance-table td:nth-child(5) {
+    width: 12%;
+}
+
+.projects-maintenance-table th:nth-child(6),
+.projects-maintenance-table td:nth-child(6) {
+    width: 96px;
+}
+
+.projects-maintenance-table th:nth-child(7),
+.projects-maintenance-table td:nth-child(7) {
+    width: 116px;
+}
+
+.project-title-cell {
+    font-size: 0.98rem;
+    line-height: 1.45;
+    color: #314f73;
+    word-break: break-word;
+}
+
+.projects-maintenance-table .actions-cell {
+    display: grid;
+    grid-template-columns: repeat(2, 42px);
+    justify-content: center;
+    gap: 0.35rem;
+    min-width: 96px;
+}
+
+.projects-maintenance-table .actions-cell .inline-form {
+    margin: 0;
 }
 
 .table-wrap thead th {
@@ -1853,6 +1929,15 @@ dialog.maintenance-dialog::backdrop {
     font-size: 0.86rem;
 }
 
+.table-pager {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.85rem;
+}
+
 .project-tracking-list {
     display: grid;
     gap: 0.8rem;
@@ -1878,6 +1963,10 @@ dialog.maintenance-dialog::backdrop {
 
 .project-tracking-summary::-webkit-details-marker {
     display: none;
+}
+
+.project-tracking-summary-compact {
+    grid-template-columns: minmax(240px, 1fr) minmax(0, 1.85fr);
 }
 
 .project-tracking-main {
@@ -1908,6 +1997,11 @@ dialog.maintenance-dialog::backdrop {
     gap: 0.55rem;
 }
 
+.project-tracking-metrics-compact {
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    align-items: stretch;
+}
+
 .tracking-metric {
     display: grid;
     gap: 0.15rem;
@@ -1924,7 +2018,8 @@ dialog.maintenance-dialog::backdrop {
     text-transform: uppercase;
     letter-spacing: 0.04em;
     font-weight: 800;
-    white-space: nowrap;
+    white-space: normal;
+    line-height: 1.15;
 }
 
 .tracking-metric strong {
@@ -2853,6 +2948,10 @@ dialog.maintenance-dialog::backdrop {
 
     .project-tracking-metrics {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .project-tracking-metrics-compact {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .project-tracking-detail {

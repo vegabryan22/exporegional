@@ -1,7 +1,9 @@
 import json
+import time
 
 from flask import Flask
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import OperationalError
 
 from config import Config
 from app.extensions import db, login_manager
@@ -37,13 +39,29 @@ def create_app():
     with app.app_context():
         from app import models  # noqa: F401
 
-        db.create_all()
-        ensure_schema_updates()
-        bootstrap_defaults(db)
+        _initialize_database()
 
     register_cli(app)
     register_context_processors(app)
     return app
+
+
+def _is_retryable_schema_error(error: OperationalError) -> bool:
+    message = str(error).lower()
+    return "concurrent ddl" in message or "deadlock found" in message or "definition is being modified" in message
+
+
+def _initialize_database(max_attempts: int = 5, retry_delay_seconds: float = 1.5):
+    for attempt in range(1, max_attempts + 1):
+        try:
+            db.create_all()
+            ensure_schema_updates()
+            bootstrap_defaults(db)
+            return
+        except OperationalError as error:
+            if not _is_retryable_schema_error(error) or attempt == max_attempts:
+                raise
+            time.sleep(retry_delay_seconds)
 
 
 def register_cli(app):
@@ -317,14 +335,6 @@ def ensure_schema_updates():
             connection.execute(text("UPDATE projects SET logistics_status = 'incompleto' WHERE logistics_status = 'retirado'"))
             connection.execute(text("UPDATE projects SET logistics_status = 'pendiente_revision' WHERE logistics_status = 'inscrito'"))
             connection.execute(text("UPDATE projects SET logistics_status = 'pendiente_revision' WHERE logistics_status = 'revision_logistica'"))
-            connection.execute(
-                text(
-                    """
-                    ALTER TABLE projects
-                    MODIFY COLUMN logistics_status VARCHAR(40) NOT NULL DEFAULT 'pendiente_revision'
-                    """
-                )
-            )
 
         evaluation_columns = {column["name"] for column in inspector.get_columns("evaluations")}
         evaluation_type_columns = {column["name"] for column in inspector.get_columns("evaluation_types")}

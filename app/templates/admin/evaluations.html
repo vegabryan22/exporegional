@@ -5,10 +5,11 @@
         <div>
             <p class="maintenance-kicker">Seguimiento</p>
             <h3>Estado de evaluaciones</h3>
-            <p>Monitorea avance, puntajes acumulados y lÃ­deres por categoría.</p>
+            <p>Monitorea avance, puntajes acumulados y líderes por categoría.</p>
         </div>
         <div class="report-banner-actions">
             <span class="tag ok">{{ summary_cards.projects }} proyectos</span>
+            <a href="{{ url_for('admin.documents_page') }}" class="table-link-btn ghost">Actas y certificados</a>
             <a href="{{ url_for('admin.evaluation_report_all_preview') }}" class="table-link-btn">Ver acta general</a>
             <a href="{{ url_for('admin.evaluation_report_all_download') }}" class="table-link-btn secondary">Descargar PDF</a>
         </div>
@@ -27,7 +28,7 @@
         <div>
             <p class="maintenance-kicker">Ganadores</p>
             <h3>Resultado por categoría</h3>
-            <p>Se ordena por nota final calculada con RÃºbrica 1 + RÃºbrica 2.</p>
+            <p>Se ordena por nota final calculada con Rúbrica 1 + Rúbrica 2.</p>
         </div>
     </div>
 
@@ -55,9 +56,9 @@
 <section class="card admin-section maintenance-page">
     <div class="maintenance-banner">
         <div>
-            <p class="maintenance-kicker">InglÃ©s</p>
-            <h3>Ranking de exposiciÃ³n en inglÃ©s</h3>
-            <p>Este ranking es independiente y sirve para reconocimiento especial.</p>
+            <p class="maintenance-kicker">Inglés</p>
+            <h3>Top 5 de exposición en inglés</h3>
+            <p>Este ranking es independiente y muestra los 5 mejores puntajes para reconocimiento especial.</p>
         </div>
     </div>
 
@@ -69,12 +70,12 @@
                     <th>Proyecto</th>
                     <th>Categoría</th>
                     <th>Equipo</th>
-                    <th>Puntaje inglÃ©s</th>
+                    <th>Puntaje inglés</th>
                     <th>Avance</th>
                 </tr>
             </thead>
             <tbody>
-            {% for row in english_ranking %}
+            {% for row in english_ranking[:5] %}
                 <tr>
                     <td class="table-cell-center">{{ loop.index }}</td>
                     <td class="table-cell-center">{{ row.project.title }}</td>
@@ -103,13 +104,29 @@
         <div>
             <p class="maintenance-kicker">Detalle</p>
             <h3>Seguimiento por proyecto</h3>
-            <p>Revisa estado de avance y promedios por rÃºbrica durante el proceso.</p>
+            <p>Revisa estado de avance y promedios por rúbrica durante el proceso.</p>
         </div>
     </div>
 
-    <div class="project-tracking-list">
+    <div class="projects-filter-bar tracking-filter-bar">
+        <div class="projects-filter-row tracking-filter-row">
+            <label class="projects-filter-field projects-filter-search">
+                <span>Buscar</span>
+                <input type="text" id="tracking-filter-text" placeholder="Proyecto, equipo o categoría">
+            </label>
+            <button type="button" class="ghost-btn projects-filter-clear" id="tracking-filter-clear">Limpiar</button>
+        </div>
+        <p id="tracking-filter-count" class="filter-count projects-filter-count"></p>
+    </div>
+
+    <div class="project-tracking-list" id="project-tracking-list">
         {% for row in project_rows %}
-        <details class="project-tracking-card">
+        <details
+            class="project-tracking-card tracking-project-card"
+            data-project-title="{{ row.project.title|lower }}"
+            data-project-team="{{ row.project.team_name|lower }}"
+            data-project-category="{{ (row.category.name if row.category else row.project.category)|lower }}"
+        >
             <summary class="project-tracking-summary">
                 <div class="project-tracking-main">
                     <strong>{{ row.project.title }}</strong>
@@ -160,7 +177,7 @@
                         </span>
                     </div>
                     <div class="tracking-metric">
-                        <small>InglÃ©s</small>
+                        <small>Inglés</small>
                         <strong>{{ "%.2f"|format(row.english_score) if row.english_score is not none else 'N/D' }}</strong>
                     </div>
                     <div class="tracking-metric tracking-metric-final">
@@ -177,7 +194,7 @@
                     <a href="{{ url_for('admin.evaluation_report_project_pdf', project_id=row.project.id) }}" class="table-link-btn ghost">Ver PDF</a>
                 </div>
                 <section class="tracking-block">
-                    <h4>Estado por rÃºbrica</h4>
+                    <h4>Estado por rúbrica</h4>
                     <div class="project-rubric-status">
                         {% for progress in row.progress_by_type %}
                             <div class="rubric-progress-item">
@@ -186,7 +203,7 @@
                                 <em>{{ "%.2f"|format(progress.average_score) if progress.average_score is not none else 'N/D' }}</em>
                             </div>
                         {% else %}
-                            <span class="muted-empty">Sin rÃºbricas asignadas</span>
+                            <span class="muted-empty">Sin rúbricas asignadas</span>
                         {% endfor %}
                     </div>
                 </section>
@@ -219,7 +236,109 @@
             <p class="muted-empty">No hay proyectos registrados.</p>
         {% endfor %}
     </div>
+    {% if project_rows %}
+    <div class="table-pager tracking-pager">
+        <span class="table-subtext" id="tracking-page-status">Página 1 de 1</span>
+        <div class="page-head-actions">
+            <button type="button" class="table-link-btn ghost" id="tracking-prev">Anterior</button>
+            <button type="button" class="table-link-btn" id="tracking-next">Siguiente</button>
+        </div>
+    </div>
+    {% endif %}
 </section>
+<script>
+    (function () {
+        var searchInput = document.getElementById('tracking-filter-text');
+        var clearBtn = document.getElementById('tracking-filter-clear');
+        var countLabel = document.getElementById('tracking-filter-count');
+        var pageStatus = document.getElementById('tracking-page-status');
+        var prevBtn = document.getElementById('tracking-prev');
+        var nextBtn = document.getElementById('tracking-next');
+        var cards = Array.prototype.slice.call(document.querySelectorAll('.tracking-project-card'));
+        var perPage = 10;
+        var currentPage = 1;
+        var filteredCards = cards.slice();
+
+        if (!cards.length) {
+            return;
+        }
+
+        function applyFilters() {
+            var text = (searchInput && searchInput.value ? searchInput.value : '').trim().toLowerCase();
+            filteredCards = cards.filter(function (card) {
+                if (!text) {
+                    return true;
+                }
+                var haystack = [
+                    card.getAttribute('data-project-title') || '',
+                    card.getAttribute('data-project-team') || '',
+                    card.getAttribute('data-project-category') || ''
+                ].join(' ');
+                return haystack.indexOf(text) !== -1;
+            });
+            currentPage = 1;
+            renderPage();
+        }
+
+        function renderPage() {
+            var total = filteredCards.length;
+            var totalPages = Math.max(1, Math.ceil(total / perPage));
+            currentPage = Math.min(Math.max(1, currentPage), totalPages);
+            var start = (currentPage - 1) * perPage;
+            var end = start + perPage;
+
+            cards.forEach(function (card) {
+                card.style.display = 'none';
+                if (card.open) {
+                    card.open = false;
+                }
+            });
+
+            filteredCards.slice(start, end).forEach(function (card) {
+                card.style.display = '';
+            });
+
+            if (countLabel) {
+                countLabel.textContent = total + ' de ' + cards.length + ' proyectos visibles';
+            }
+            if (pageStatus) {
+                pageStatus.textContent = 'Página ' + currentPage + ' de ' + totalPages;
+            }
+            if (prevBtn) {
+                prevBtn.disabled = currentPage === 1;
+            }
+            if (nextBtn) {
+                nextBtn.disabled = currentPage === totalPages;
+            }
+        }
+
+        if (searchInput) {
+            searchInput.addEventListener('input', applyFilters);
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+                applyFilters();
+            });
+        }
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function () {
+                currentPage -= 1;
+                renderPage();
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function () {
+                currentPage += 1;
+                renderPage();
+            });
+        }
+
+        applyFilters();
+    })();
+</script>
 {% endblock %}
 
 

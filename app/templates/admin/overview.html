@@ -17,24 +17,24 @@
         <a href="{{ url_for('admin.projects_page') }}">Revisar proyectos</a>
         <a href="{{ url_for('admin.evaluations_page') }}">Ver evaluaciones</a>
         <a href="{{ url_for('admin.institution_page') }}">Logo e identidad</a>
-        <a href="{{ url_for('admin.campaigns_page') }}">CampaÃ±as</a>
+        <a href="{{ url_for('admin.campaigns_page') }}">Campañas</a>
     </div>
 
     <div class="admin-overview-grid">
         <section class="admin-overview-block">
-            <h4>Operacion critica</h4>
+            <h4>Operación crítica</h4>
             <div class="admin-stats admin-stats-3">
                 <article><strong>{{ overview_metrics.projects_without_judges }}</strong><span>Proyectos sin jueces</span></article>
                 <article><strong>{{ overview_metrics.projects_pending_evaluations }}</strong><span>Con evaluación pendiente</span></article>
-                <article><strong>{{ overview_metrics.projects_pending_review }}</strong><span>Pendientes de revision</span></article>
+                <article><strong>{{ overview_metrics.projects_pending_review }}</strong><span>Pendientes de revisión</span></article>
             </div>
         </section>
 
         <section class="admin-overview-block">
-            <h4>Control logistico</h4>
+            <h4>Control logístico</h4>
             <div class="admin-stats admin-stats-4">
                 <article><strong>{{ overview_metrics.members_without_photo }}</strong><span>Estudiantes sin foto</span></article>
-                <article><strong>{{ overview_metrics.projects_without_logo }}</strong><span>Proyectos sin logo</span></article>
+                <article><strong>{{ overview_metrics.projects_without_logo }}</strong><span>Proyectos sin logo real</span></article>
                 <article><strong>{{ overview_metrics.projects_without_document }}</strong><span>Proyectos sin documento</span></article>
                 <article><strong>{{ overview_metrics.projects_incomplete_logistics }}</strong><span>Logística incompleta</span></article>
             </div>
@@ -46,7 +46,7 @@
             <div class="page-head">
                 <div>
                     <h4>Proyectos urgentes</h4>
-                    <p class="table-subtext">Proyectos activos que todavia no tienen ningun juez asignado.</p>
+                    <p class="table-subtext">Proyectos activos que todavía no tienen ningún juez asignado.</p>
                 </div>
             </div>
             <div class="table-wrap">
@@ -109,7 +109,7 @@
         <div class="page-head">
             <div>
                 <h4>Pendientes de logística</h4>
-                <p class="table-subtext">Proyectos activos con revision pendiente, logo, documento o fotos incompletas.</p>
+                <p class="table-subtext" id="pending-logistics-subtext">Proyectos activos con alguna pendiente logística. Mostrando {{ overview_metrics.pending_logistics_start }}-{{ overview_metrics.pending_logistics_end }} de {{ overview_metrics.pending_logistics_total }}.</p>
             </div>
         </div>
         <div class="table-wrap">
@@ -120,13 +120,13 @@
                         <th>Logo</th>
                         <th>Documento</th>
                         <th>Fotos</th>
-                        <th>Revision</th>
+                        <th>Revisión</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="pending-logistics-body" data-page="1" data-per-page="{{ overview_metrics.pending_logistics_per_page }}">
                     {% for row in overview_metrics.pending_logistics_projects %}
                         {% set project = row.project %}
-                        <tr>
+                        <tr class="pending-logistics-row" data-row-index="{{ loop.index }}">
                             <td>{{ project.title }}</td>
                             <td class="table-cell-center"><span class="tag {{ 'ok' if project.has_real_logo else 'off' }}">{{ 'OK' if project.has_real_logo else 'Falta' }}</span></td>
                             <td class="table-cell-center"><span class="tag {{ 'ok' if project.project_document_path else 'off' }}">{{ 'OK' if project.project_document_path else 'Falta' }}</span></td>
@@ -134,13 +134,78 @@
                             <td class="table-cell-center"><span class="tag {{ 'ok' if project.logistics_status == 'completo' else 'off' }}">{{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}</span></td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="5">No hay pendientes logisticos registrados.</td></tr>
+                        <tr><td colspan="5">No hay pendientes logísticos registrados.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
+        {% if overview_metrics.pending_logistics_pages > 1 %}
+        <div class="table-pager">
+            <span class="table-subtext" id="pending-logistics-status">Página {{ overview_metrics.pending_logistics_page }} de {{ overview_metrics.pending_logistics_pages }}</span>
+            <div class="page-head-actions">
+                <button type="button" class="table-link-btn ghost" id="pending-logistics-prev">Anterior</button>
+                <button type="button" class="table-link-btn" id="pending-logistics-next">Siguiente</button>
+            </div>
+        </div>
+        {% endif %}
     </section>
 </section>
+<script>
+    (function () {
+        var tbody = document.getElementById('pending-logistics-body');
+        if (!tbody) {
+            return;
+        }
+
+        var rows = Array.prototype.slice.call(document.querySelectorAll('.pending-logistics-row'));
+        var perPage = parseInt(tbody.getAttribute('data-per-page') || '5', 10);
+        var total = rows.length;
+        var totalPages = Math.max(1, Math.ceil(total / perPage));
+        var currentPage = 1;
+        var statusLabel = document.getElementById('pending-logistics-status');
+        var subtext = document.getElementById('pending-logistics-subtext');
+        var prevBtn = document.getElementById('pending-logistics-prev');
+        var nextBtn = document.getElementById('pending-logistics-next');
+
+        function renderPage(page) {
+            currentPage = Math.min(Math.max(1, page), totalPages);
+            var start = (currentPage - 1) * perPage;
+            var end = Math.min(start + perPage, total);
+
+            rows.forEach(function (row, index) {
+                row.style.display = index >= start && index < end ? '' : 'none';
+            });
+
+            if (statusLabel) {
+                statusLabel.textContent = 'Página ' + currentPage + ' de ' + totalPages;
+            }
+            if (subtext) {
+                var startLabel = total ? (start + 1) : 0;
+                var endLabel = total ? end : 0;
+                subtext.textContent = 'Proyectos activos con alguna pendiente logística. Mostrando ' + startLabel + '-' + endLabel + ' de ' + total + '.';
+            }
+            if (prevBtn) {
+                prevBtn.disabled = currentPage === 1;
+            }
+            if (nextBtn) {
+                nextBtn.disabled = currentPage === totalPages;
+            }
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function () {
+                renderPage(currentPage - 1);
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function () {
+                renderPage(currentPage + 1);
+            });
+        }
+
+        renderPage(1);
+    })();
+</script>
 {% endblock %}
 
 

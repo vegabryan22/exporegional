@@ -1,0 +1,53 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section maintenance-page">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">EXPOTECNICA</p>
+            <h3>Acta de evaluación por juez</h3>
+            <p>Es un resumen con los proyectos activos que este juez sí calificó.</p>
+        </div>
+        <div class="report-banner-actions">
+            <a href="{{ url_for('admin.documents_page') }}" class="table-link-btn ghost">Volver</a>
+            <a href="{{ url_for('admin.evaluation_report_judge_pdf', judge_id=judge.id) }}" class="table-link-btn">Ver PDF</a>
+            <a href="{{ url_for('admin.evaluation_report_judge_download', judge_id=judge.id) }}" class="table-link-btn secondary">Descargar PDF</a>
+        </div>
+    </div>
+
+    <div class="admin-stats evaluation-stats">
+        <article><strong>{{ judge.full_name }}</strong><span>Juez</span></article>
+        <article><strong>{{ projects_count }}</strong><span>Proyectos calificados</span></article>
+        <article><strong>{{ evaluations_count }}</strong><span>Rúbricas registradas</span></article>
+    </div>
+</section>
+
+<section class="card admin-section maintenance-page">
+    <div class="project-tracking-list">
+        {% for section in category_sections %}
+            {% if section.projects %}
+                <article class="project-tracking-card">
+                    <div class="project-tracking-detail">
+                        <h4>{{ section.title }}</h4>
+                        <div class="project-evaluation-records">
+                            {% for item in section.projects %}
+                                <div class="evaluation-record-item evaluation-record-item-column">
+                                    <div>
+                                        <strong>{{ item.project.title }}</strong>
+                                        <span>{{ item.project.team_name }}</span>
+                                    </div>
+                                    <div class="project-report-actions">
+                                        <a href="{{ url_for('admin.evaluation_report_project_preview', project_id=item.project.id) }}" class="table-link-btn">Ver acta del proyecto</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </article>
+            {% endif %}
+        {% endfor %}
+        {% if not evaluated_projects %}
+            <p class="muted-empty">Este juez no tiene evaluaciones en proyectos activos.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

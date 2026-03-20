@@ -68,6 +68,8 @@ Actívalos una vez por clon:
 git config core.hooksPath .githooks
 ```
 
+Nota para Windows: estos hooks usan `sh`, `grep` y utilidades tipo POSIX. Funcionan bien con Git for Windows usando Git Bash. Si tu entorno no tiene ese soporte, ejecuta manualmente `python -m pip install -r requirements.txt` cuando cambie `requirements.txt`.
+
 ## 7) Comandos útiles
 
 Crear juez:

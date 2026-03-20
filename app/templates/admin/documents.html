@@ -1,0 +1,110 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section maintenance-page">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Documentos</p>
+            <h3>Actas y certificados</h3>
+            <p>Genera actas por juez segun proyectos realmente evaluados y certificados de participacion para integrantes activos.</p>
+        </div>
+        <div class="report-banner-actions">
+            <a href="{{ url_for('admin.participation_certificates_preview') }}" class="table-link-btn">Ver certificados activos</a>
+            <a href="{{ url_for('admin.participation_certificates_download') }}" class="table-link-btn secondary">Descargar todos</a>
+        </div>
+    </div>
+
+    <div class="admin-stats evaluation-stats">
+        <article><strong>{{ judge_reports_count }}</strong><span>Actas por juez</span></article>
+        <article><strong>{{ active_projects_count }}</strong><span>Proyectos activos</span></article>
+        <article><strong>{{ certificates_count }}</strong><span>Certificados disponibles</span></article>
+    </div>
+</section>
+
+<section class="card admin-section maintenance-page">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Actas</p>
+            <h3>Actas por juez</h3>
+            <p>Solo se muestran proyectos activos que el juez si califico.</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Juez</th>
+                    <th>Correo</th>
+                    <th>Proyectos evaluados</th>
+                    <th>Evaluaciones</th>
+                    <th>Promedio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in judge_rows %}
+                <tr>
+                    <td>{{ item.judge.full_name }}</td>
+                    <td>{{ item.judge.email }}</td>
+                    <td class="table-cell-center">{{ item.projects_count }}</td>
+                    <td class="table-cell-center">{{ item.evaluations_count }}</td>
+                    <td class="table-cell-center">{{ item.average_percentage if item.average_percentage is not none else "N/D" }}</td>
+                    <td class="table-cell-center">
+                        <div class="project-report-actions">
+                            <a href="{{ url_for('admin.evaluation_report_judge_preview', judge_id=item.judge.id) }}" class="table-link-btn">Ver acta</a>
+                            <a href="{{ url_for('admin.evaluation_report_judge_pdf', judge_id=item.judge.id) }}" class="table-link-btn ghost">Ver PDF</a>
+                            <a href="{{ url_for('admin.evaluation_report_judge_download', judge_id=item.judge.id) }}" class="table-link-btn secondary">Descargar</a>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6">No hay jueces con evaluaciones en proyectos activos.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card admin-section maintenance-page">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Certificados</p>
+            <h3>Participacion por proyecto</h3>
+            <p>Se generan para todos los integrantes de proyectos activos.</p>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Proyecto</th>
+                    <th>Categoria</th>
+                    <th>Equipo</th>
+                    <th>Integrantes</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for item in project_certificate_rows %}
+                <tr>
+                    <td>{{ item.project.title }}</td>
+                    <td class="table-cell-center"><span class="tag category-badge">{{ item.category_label }}</span></td>
+                    <td>{{ item.project.team_name }}</td>
+                    <td class="table-cell-center">{{ item.members_count }}</td>
+                    <td class="table-cell-center">
+                        <div class="project-report-actions">
+                            <a href="{{ url_for('admin.project_certificates_preview', project_id=item.project.id) }}" class="table-link-btn">Ver certificados</a>
+                            <a href="{{ url_for('admin.project_certificates_pdf', project_id=item.project.id) }}" class="table-link-btn ghost">Ver PDF</a>
+                            <a href="{{ url_for('admin.project_certificates_download', project_id=item.project.id) }}" class="table-link-btn secondary">Descargar</a>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="5">No hay integrantes activos para certificar.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

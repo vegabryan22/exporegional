@@ -100,3 +100,6 @@ flask --app run.py assign-project
 - Versión actual: `VERSION`
 - Historial: `CHANGELOG.md`
 - Evidencia por sprint: `docs/sprints/`
+
+## Despliegue en otra maquina
+- Guia completa: `docs/GUIA_OTRA_MAQUINA.md`

@@ -1,0 +1,105 @@
+﻿{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Mantenimiento de Candidatos</h2>
+    <style>
+        .candidate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .candidate-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,.05);
+            overflow: hidden;
+        }
+        .candidate-thumb {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background: #f3f4f6;
+        }
+        .candidate-body {
+            padding: 12px;
+        }
+        .candidate-name {
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            min-height: 2.1rem;
+        }
+    </style>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}" role="alert">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h5 class="mb-1">Gestion de candidatos</h5>
+                <small class="text-muted">Usa modal para agregar o editar candidatos.</small>
+            </div>
+            <button type="button" class="btn btn-primary" id="btnOpenCreateCandidateModal">Agregar candidato</button>
+        </div>
+    </div>
+
+    <div class="card p-3">
+        <h5 class="mb-3">Candidatos existentes</h5>
+        <div class="candidate-grid">
+            {% for candidato in candidatos %}
+            <div class="candidate-item">
+                <img class="candidate-thumb" src="{{ url_for('static', filename='uploads/' + candidato['imagen']) }}" alt="{{ candidato['nombre'] }}">
+                <div class="candidate-body">
+                    <div class="candidate-name">{{ candidato['nombre'] }}</div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-info btn-sm actualizar-btn" data-id="{{ candidato['id'] }}" data-nombre="{{ candidato['nombre'] }}">Editar</button>
+                        <form action="{{ url_for('eliminar_candidato', id=candidato['id']) }}" method="post" onsubmit="return confirm('Deseas eliminar este candidato?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="candidateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="candidateModalTitle">Agregar candidato</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="candidatoForm" method="post" enctype="multipart/form-data" action="{{ url_for('candidatos') }}">
+                <div class="modal-body">
+                    <input type="hidden" id="candidato_id" name="candidato_id" value="">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre</label>
+                            <input type="text" id="nombre" name="nombre" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="imagen" class="form-label">Imagen (opcional)</label>
+                            <input type="file" id="imagen" name="imagen" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                    <small class="text-muted">Para editar solo nombre, deja imagen vacia.</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button id="btn-guardar" type="submit" class="btn btn-primary">Guardar candidato</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="/votaciones_backend/static/js/mantenimiento_candidatos.js?v=20260525b"></script>
+{% endblock %}

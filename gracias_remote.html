@@ -1,0 +1,20 @@
+﻿{% extends "layout_front.html" %}
+{% block content %}
+<div class="vote-card mx-auto text-center" style="max-width: 620px;">
+    <h2 class="mb-2">Voto registrado correctamente</h2>
+    <p class="text-muted mb-3">Gracias por participar. Tu voto fue guardado de forma secreta.</p>
+    <p class="mb-0">Seras redirigido al inicio en <span id="counter">5</span> segundos.</p>
+</div>
+<script>
+let t = 5;
+const c = document.getElementById('counter');
+const i = setInterval(() => {
+  t -= 1;
+  c.textContent = t;
+  if (t <= 0) {
+    clearInterval(i);
+    window.location.href = "{{ url_for('votar') }}";
+  }
+}, 1000);
+</script>
+{% endblock %}

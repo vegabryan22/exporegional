@@ -1,0 +1,15 @@
+﻿{% extends "layout_front.html" %}
+{% block content %}
+<div class="vote-card mx-auto" style="max-width: 560px;">
+    <h2 class="mb-2">Paso 1: Identificacion</h2>
+    <p class="text-muted mb-3">Ingresa tu cedula para validar tu registro en el padron.</p>
+
+    <form action="{{ url_for('votar') }}" method="post" autocomplete="off">
+        <div class="mb-3">
+            <label for="cedula" class="form-label">Cedula</label>
+            <input type="text" id="cedula" name="cedula" class="form-control form-control-lg" inputmode="numeric" placeholder="Ejemplo: 123456789" required>
+        </div>
+        <button type="submit" class="btn btn-brand btn-lg w-100">Validar y continuar</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+﻿{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-3">Mantenimiento de Estudiantes</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h5 class="mb-1">Gestion de estudiantes</h5>
+                <small class="text-muted">Usa modal para agregar o editar registros.</small>
+            </div>
+            <button type="button" class="btn btn-primary" id="btnOpenCreateModal">Agregar estudiante</button>
+        </div>
+    </div>
+
+    <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Buscar por nombre, cedula o nivel..." class="form-control" style="max-width: 420px;">
+            <span id="rowsCounter" class="badge bg-light text-dark">0 registros</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-custom table-hover align-middle" id="studentsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido 1</th>
+                        <th>Apellido 2</th>
+                        <th>Nivel</th>
+                        <th>Cedula</th>
+                        <th style="width: 120px;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for estudiante in estudiantes %}
+                    <tr id="row-{{ estudiante.id }}">
+                        <td>{{ estudiante.nombre }}</td>
+                        <td>{{ estudiante.apellido1 }}</td>
+                        <td>{{ estudiante.apellido2 }}</td>
+                        <td><span class="badge bg-secondary">{{ estudiante.nivel }}</span></td>
+                        <td><code>{{ estudiante.cedula }}</code></td>
+                        <td>
+                            <button
+                                class="btn btn-info btn-sm btn-edit-student"
+                                data-id="{{ estudiante.id }}"
+                                data-nombre="{{ estudiante.nombre }}"
+                                data-apellido1="{{ estudiante.apellido1 }}"
+                                data-apellido2="{{ estudiante.apellido2 }}"
+                                data-nivel="{{ estudiante.nivel }}"
+                                data-cedula="{{ estudiante.cedula }}">
+                                Editar
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+            <small class="text-muted">Paginacion local de la tabla</small>
+            <div class="btn-group" role="group">
+                <button type="button" id="prevPageBtn" class="btn btn-outline-secondary btn-sm">Anterior</button>
+                <span id="pageInfo" class="btn btn-light btn-sm disabled">Pagina 1</span>
+                <button type="button" id="nextPageBtn" class="btn btn-outline-secondary btn-sm">Siguiente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="studentModalTitle">Editar estudiante</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="{{ url_for('estudiantes') }}" method="post">
+                <div class="modal-body">
+                    <input type="hidden" id="modal_id_estudiante" name="id_estudiante" value="">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="modal_cedula" class="form-label">Cedula</label>
+                            <input id="modal_cedula" name="cedula" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modal_nombre" class="form-label">Nombre</label>
+                            <input id="modal_nombre" name="nombre" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modal_apellido1" class="form-label">Primer apellido</label>
+                            <input id="modal_apellido1" name="apellido1" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modal_apellido2" class="form-label">Segundo apellido</label>
+                            <input id="modal_apellido2" name="apellido2" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="modal_nivel" class="form-label">Nivel</label>
+                            <input id="modal_nivel" name="nivel" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="studentModalSaveBtn">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="/votaciones_backend/static/js/mantenimiento_estudiantes.js?v=20260525c"></script>
+{% endblock %}

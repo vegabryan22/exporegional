@@ -1,0 +1,31 @@
+﻿{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Cargar padron de estudiantes</h2>
+    <div class="card p-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <p class="mb-2"><strong>Formato permitido:</strong> .xlsx, .xls, .csv</p>
+        <p class="mb-3"><strong>Columnas requeridas:</strong> Nombre, Apellido1, Apellido2, Cedula, Nivel</p>
+        <div class="mb-3 d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('plantilla_estudiantes_xlsx') }}">Descargar plantilla Excel</a>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('plantilla_estudiantes_csv') }}">Descargar plantilla CSV</a>
+        </div>
+        <div class="alert alert-info py-2">
+            <strong>Ejemplo:</strong> AARON, SOTO, NAVARRO, 120420584, 10-5
+        </div>
+        <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <input class="form-control" type="file" name="file" accept=".xlsx,.xls,.csv" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Subir y procesar</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

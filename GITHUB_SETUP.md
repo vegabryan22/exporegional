@@ -7,7 +7,7 @@ Descarga e instala Git para Windows:
 Verifica:
 ```powershell
 git --version
-```
+```![alt text](image.png)
 
 ## 2) Inicializa el repositorio local
 Desde la carpeta del proyecto:

@@ -1,0 +1,23 @@
+﻿{% extends "layout_front.html" %}
+{% block content %}
+<div class="vote-card">
+    <h2 class="mb-2">Paso 3: Elige tu candidato</h2>
+    <p class="text-muted mb-3">Tu voto es secreto. Selecciona una opcion y confirma.</p>
+
+    <form action="{{ url_for('procesar_voto') }}" method="post" onsubmit="return confirm('Confirmas tu voto? Esta accion no se puede deshacer.');">
+        <div class="candidate-grid mb-3">
+            {% for candidato in candidatos %}
+            <label class="candidate-option">
+                <input type="radio" name="candidato_id" value="{{ candidato.id }}" required>
+                <div class="candidate-card">
+                    <span class="candidate-selected">Seleccionado</span>
+                    <img src="/votaciones_backend/static/uploads/{{ candidato['imagen'] }}" alt="{{ candidato.nombre }}">
+                    <h5>{{ candidato.nombre }}</h5>
+                </div>
+            </label>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-ok btn-lg w-100">Emitir voto</button>
+    </form>
+</div>
+{% endblock %}

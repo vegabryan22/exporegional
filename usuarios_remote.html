@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Usuarios del sistema</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card p-3 mb-3">
+        <h5>Crear usuario</h5>
+        <form method="post" action="{{ url_for('usuarios') }}" class="row g-2">
+            <div class="col-md-3"><input class="form-control" name="username" placeholder="Usuario" required></div>
+            <div class="col-md-3"><input class="form-control" type="password" name="password" placeholder="Contrasena" required></div>
+            <div class="col-md-3">
+                <select class="form-select" name="role">
+                    <option value="admin">admin</option>
+                    <option value="viewer">viewer</option>
+                    <option value="terminal_admin">terminal_admin</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="active">
+                    <option value="1">Activo</option>
+                    <option value="0">Inactivo</option>
+                </select>
+            </div>
+            <div class="col-md-1"><button class="btn btn-primary w-100">Crear</button></div>
+        </form>
+    </div>
+
+    <div class="card p-3">
+        <h5>Listado</h5>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.username }}</td>
+                    <td>{{ u.role }}</td>
+                    <td>{{ 'Activo' if u.active else 'Inactivo' }}</td>
+                    <td>
+                        <form method="post" action="{{ url_for('actualizar_usuario', user_id=u.id) }}" class="d-inline-flex gap-1">
+                            <select class="form-select form-select-sm" name="role">
+                                <option value="admin" {% if u.role=='admin' %}selected{% endif %}>admin</option>
+                                <option value="viewer" {% if u.role=='viewer' %}selected{% endif %}>viewer</option>
+                                <option value="terminal_admin" {% if u.role=='terminal_admin' %}selected{% endif %}>terminal_admin</option>
+                            </select>
+                            <select class="form-select form-select-sm" name="active">
+                                <option value="1" {% if u.active %}selected{% endif %}>Activo</option>
+                                <option value="0" {% if not u.active %}selected{% endif %}>Inactivo</option>
+                            </select>
+                            <button class="btn btn-outline-primary btn-sm" type="submit">Guardar</button>
+                        </form>
+                        <form method="post" action="{{ url_for('cambiar_password_usuario', user_id=u.id) }}" class="d-inline-flex gap-1 ms-2">
+                            <input class="form-control form-control-sm" name="new_password" placeholder="Nueva clave" required>
+                            <button class="btn btn-outline-warning btn-sm" type="submit">Cambiar clave</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

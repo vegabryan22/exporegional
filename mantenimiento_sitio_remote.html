@@ -1,0 +1,96 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Mantenimiento del sitio</h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card p-3 mb-3">
+        <h4>Terminales de votacion</h4>
+        <p class="text-muted">Registra terminales autorizadas. Solo terminales activas con token valido pueden votar.</p>
+        <form method="POST" action="/votaciones/mantenimiento/terminales/crear" class="row g-2 mb-3">
+            <div class="col-md-3">
+                <input name="codigo" class="form-control" placeholder="Codigo (ej: LAB-A-01)" required>
+            </div>
+            <div class="col-md-3">
+                <input name="nombre" class="form-control" placeholder="Nombre terminal" required>
+            </div>
+            <div class="col-md-4">
+                <input name="ubicacion" class="form-control" placeholder="Ubicacion">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Agregar terminal</button>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Codigo</th>
+                        <th>Nombre</th>
+                        <th>Ubicacion</th>
+                        <th>Estado</th>
+                        <th>Ultima conexion</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in terminales %}
+                    <tr>
+                        <td><code>{{ t.codigo }}</code></td>
+                        <td>{{ t.nombre }}</td>
+                        <td>{{ t.ubicacion or '-' }}</td>
+                        <td>
+                            {% if t.estado == 'en_linea' %}
+                            <span class="badge bg-success">En linea</span>
+                            {% elif t.estado == 'inactiva' %}
+                            <span class="badge bg-secondary">Inactiva</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Fuera de linea</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ t.last_seen or '-' }}</td>
+                        <td>
+                            <form method="POST" action="/votaciones/mantenimiento/terminales/actualizar/{{ t.id }}" class="d-inline-flex gap-1">
+                                <input type="hidden" name="nombre" value="{{ t.nombre }}">
+                                <input type="hidden" name="ubicacion" value="{{ t.ubicacion or '' }}">
+                                <input type="hidden" name="activa" value="{{ 0 if t.activa else 1 }}">
+                                <button class="btn btn-sm btn-outline-secondary" type="submit">{{ 'Desactivar' if t.activa else 'Activar' }}</button>
+                            </form>
+                            <form method="POST" action="/votaciones/mantenimiento/terminales/rotar-token/{{ t.id }}" class="d-inline" onsubmit="return confirm('Se generara un nuevo token. Continuar?');">
+                                <button class="btn btn-sm btn-outline-primary" type="submit">Rotar token</button>
+                            </form>
+                            <form method="POST" action="/votaciones/mantenimiento/terminales/eliminar/{{ t.id }}" class="d-inline" onsubmit="return confirm('Eliminar terminal?');">
+                                <button class="btn btn-sm btn-outline-danger" type="submit">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-muted">No hay terminales registradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card p-3">
+        <h4>Mantenimiento anual</h4>
+        <p class="text-danger mb-2">
+            Este proceso respalda y luego limpia estudiantes y votos para cargar el padron del nuevo ano.
+        </p>
+        <form method="POST" action="/votaciones/mantenimiento/reset-padron" onsubmit="return confirm('Se limpiara el padron y votos actuales. Deseas continuar?');">
+            <div class="mb-2" style="max-width: 360px;">
+                <label for="confirmation" class="form-label">Escribe LIMPIAR para confirmar:</label>
+                <input id="confirmation" name="confirmation" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-danger">Limpiar padron anual</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -22,16 +22,29 @@
         <div class="project-sidebar-list">
             {% for category_code, category_label in category_map.items() %}
                 {% if projects_by_category.get(category_code) %}
-                    <h3>{{ category_label }}</h3>
+                    {% set category_state = namespace(has_first=false) %}
                     {% for project in projects_by_category[category_code] %}
-                        <button
-                            type="button"
-                            class="project-link {% if ns.first_id == project.id|string %}active{% endif %}"
-                            data-project-target="{{ project.id }}"
-                        >
-                            {{ project.title }}
-                        </button>
+                        {% if ns.first_id == project.id|string %}
+                            {% set category_state.has_first = true %}
+                        {% endif %}
                     {% endfor %}
+                    <details class="project-category-menu" {% if category_state.has_first %}open{% endif %}>
+                        <summary>
+                            <span>{{ category_label }}</span>
+                            <small>{{ projects_by_category[category_code]|length }} proyecto(s)</small>
+                        </summary>
+                        <div class="project-category-list">
+                            {% for project in projects_by_category[category_code] %}
+                                <button
+                                    type="button"
+                                    class="project-link {% if ns.first_id == project.id|string %}active{% endif %}"
+                                    data-project-target="{{ project.id }}"
+                                >
+                                    {{ project.title }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    </details>
                 {% endif %}
             {% endfor %}
         </div>
@@ -127,6 +140,26 @@
 (function () {
     var links = document.querySelectorAll('[data-project-target]');
     var panels = document.querySelectorAll('[data-project-panel]');
+    var projectMenus = document.querySelectorAll('.project-category-menu');
+
+    function syncProjectMenus() {
+        var isMobile = window.matchMedia('(max-width: 820px)').matches;
+        if (!isMobile) {
+            projectMenus.forEach(function (details) {
+                details.open = true;
+            });
+            return;
+        }
+
+        var hasOpen = false;
+        projectMenus.forEach(function (details) {
+            if (details.open && !hasOpen) {
+                hasOpen = true;
+            } else if (details.open) {
+                details.open = false;
+            }
+        });
+    }
 
     function activate(projectId) {
         links.forEach(function (link) {
@@ -140,8 +173,32 @@
     links.forEach(function (link) {
         link.addEventListener('click', function () {
             activate(link.getAttribute('data-project-target'));
+            if (window.matchMedia('(max-width: 820px)').matches) {
+                var parentDetails = link.closest('details');
+                document.querySelectorAll('.project-category-menu[open]').forEach(function (details) {
+                    if (details !== parentDetails) {
+                        details.open = false;
+                    }
+                });
+            }
         });
     });
+
+    projectMenus.forEach(function (details) {
+        details.addEventListener('toggle', function () {
+            if (!details.open || !window.matchMedia('(max-width: 820px)').matches) {
+                return;
+            }
+            projectMenus.forEach(function (otherDetails) {
+                if (otherDetails !== details) {
+                    otherDetails.open = false;
+                }
+            });
+        });
+    });
+
+    window.addEventListener('resize', syncProjectMenus);
+    syncProjectMenus();
 })();
 </script>
 {% endblock %}

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ExpoTécnica CTPRGV</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260529-objectives-creative">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260529-fixed-header-frame">
 </head>
 <body>
     <header class="header">
@@ -45,7 +45,7 @@
                         <a href="{{ url_for('judge.dashboard') }}">Panel juez</a>
                     {% endif %}
                     <a href="{{ url_for('auth.change_password') }}">Cambiar contraseña</a>
-                    <form action="{{ url_for('auth.logout') }}" method="post" class="inline-form">
+                    <form action="{{ url_for('auth.logout') }}" method="post" class="inline-form" data-logout-form>
                         <button type="submit" class="btn-link">Cerrar sesión</button>
                     </form>
                 {% else %}
@@ -75,6 +75,16 @@
         </div>
     </footer>
 
+    <dialog class="logout-dialog" data-logout-dialog>
+        <div class="logout-dialog-card">
+            <p>¿Estas seguro de salir?</p>
+            <div class="logout-dialog-actions">
+                <button type="button" class="ghost-btn" data-logout-cancel>Cancelar</button>
+                <button type="button" class="danger-btn" data-logout-accept>Aceptar</button>
+            </div>
+        </div>
+    </dialog>
+
     <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
         <symbol id="ico-edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L18.81 8.94l-3.75-3.75L3 17.25zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 2-1.66z"/></symbol>
         <symbol id="ico-delete" viewBox="0 0 24 24"><path d="M6 7h12l-1 14H7L6 7zm3-3h6l1 2H8l1-2z"/></symbol>
@@ -99,10 +109,51 @@
     (function () {
         var navToggle = document.querySelector('[data-nav-toggle]');
         var siteNav = document.getElementById('site-nav');
+        var pageHeader = document.querySelector('.header');
+
+        function syncHeaderHeight() {
+            if (!pageHeader) return;
+            document.documentElement.style.setProperty('--fixed-header-height', pageHeader.offsetHeight + 'px');
+        }
+
         if (navToggle && siteNav) {
             navToggle.addEventListener('click', function () {
                 var isOpen = siteNav.classList.toggle('is-open');
                 navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                syncHeaderHeight();
+            });
+        }
+
+        window.addEventListener('resize', syncHeaderHeight);
+        window.addEventListener('load', syncHeaderHeight);
+        syncHeaderHeight();
+
+        var logoutForm = document.querySelector('[data-logout-form]');
+        var logoutDialog = document.querySelector('[data-logout-dialog]');
+        var logoutCancel = document.querySelector('[data-logout-cancel]');
+        var logoutAccept = document.querySelector('[data-logout-accept]');
+        var logoutConfirmed = false;
+
+        if (logoutForm && logoutDialog && logoutCancel && logoutAccept) {
+            logoutForm.addEventListener('submit', function (event) {
+                if (logoutConfirmed) return;
+                event.preventDefault();
+                if (typeof logoutDialog.showModal === 'function') {
+                    logoutDialog.showModal();
+                } else if (window.confirm('¿Estas seguro de salir?')) {
+                    logoutConfirmed = true;
+                    logoutForm.submit();
+                }
+            });
+
+            logoutCancel.addEventListener('click', function () {
+                logoutDialog.close();
+            });
+
+            logoutAccept.addEventListener('click', function () {
+                logoutConfirmed = true;
+                logoutDialog.close();
+                logoutForm.submit();
             });
         }
 
@@ -142,6 +193,24 @@
 
         function svgIcon(iconName) {
             return '<svg class="btn-svg" aria-hidden="true" focusable="false"><use href="#ico-' + iconName + '"></use></svg>';
+        }
+
+        function annotateResponsiveTables() {
+            var tables = document.querySelectorAll('.table-wrap table');
+            tables.forEach(function (table) {
+                var headers = Array.prototype.map.call(table.querySelectorAll('thead th'), function (th) {
+                    return (th.textContent || '').trim();
+                });
+                if (!headers.length) return;
+
+                table.querySelectorAll('tbody tr').forEach(function (row) {
+                    Array.prototype.forEach.call(row.children, function (cell, index) {
+                        if (!cell.hasAttribute('data-label') && headers[index]) {
+                            cell.setAttribute('data-label', headers[index]);
+                        }
+                    });
+                });
+            });
         }
 
         function applyTableIcons() {
@@ -194,6 +263,7 @@
             });
         }
 
+        annotateResponsiveTables();
         applyTableIcons();
         applyFormIcons();
         applyStandaloneIcons();

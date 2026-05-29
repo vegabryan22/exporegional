@@ -1,5 +1,5 @@
 -- Backup generado automaticamente por scripts/backup_db.py
--- Fecha: 2026-05-26 14:44:00
+-- Fecha: 2026-05-29 12:31:21
 SET FOREIGN_KEY_CHECKS=0;
 
 DROP TABLE IF EXISTS `assignments`;
@@ -13344,7 +13344,7 @@ CREATE TABLE `judges` (
   `role` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'judge',
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 INSERT INTO `judges` (`id`, `full_name`, `email`, `password_hash`, `is_active_user`, `is_admin`, `department`, `job_title`, `phone`, `must_change_password`, `last_login_at`, `role`) VALUES (1, 'Juez Demo', 'juez1@expotecnica.local', 'scrypt:32768:8:1$YYKLVXpZoWhTm0KQ$ca1aaa14838038751172da74442aab466a5c2dddb974cac08c8e3e6fe1e56e4a79a7f7fb86e71a24600c5ba0b3715e9e0512767b5ce80256b0c2f7477cbd9c32', 1, 0, NULL, NULL, NULL, 0, '2026-03-20 16:29:51', 'judge');
 INSERT INTO `judges` (`id`, `full_name`, `email`, `password_hash`, `is_active_user`, `is_admin`, `department`, `job_title`, `phone`, `must_change_password`, `last_login_at`, `role`) VALUES (2, 'Administrador', 'admin@expotecnica.local', 'scrypt:32768:8:1$i64p34kJolniU051$1a2d2161cef21477db03521670d1511eac338c037634550f68b71e7c7aaaed6a247b4a8642fc980b6cad9417cb7ee8b1c2571755c974614503bbb46bb348dff1', 1, 1, NULL, NULL, NULL, 0, '2026-03-20 16:33:20', 'superadmin');
 INSERT INTO `judges` (`id`, `full_name`, `email`, `password_hash`, `is_active_user`, `is_admin`, `department`, `job_title`, `phone`, `must_change_password`, `last_login_at`, `role`) VALUES (11, 'Juez 2', 'juez2@expotecnica.local', 'scrypt:32768:8:1$YJn5dnRuphIYh7ds$a34d6f534a36318d8458494ea2988dc643d1f943290bffea4ec14539885035fa7524e28031e2e9fa03ab7533e85aa186bd3dfd2706ad12d5b9557c14ee0b7862', 1, 0, NULL, NULL, NULL, 0, '2026-03-17 17:15:11', 'judge');
@@ -13371,6 +13371,7 @@ INSERT INTO `judges` (`id`, `full_name`, `email`, `password_hash`, `is_active_us
 INSERT INTO `judges` (`id`, `full_name`, `email`, `password_hash`, `is_active_user`, `is_admin`, `department`, `job_title`, `phone`, `must_change_password`, `last_login_at`, `role`) VALUES (32, 'Irene Zamora', 'juez.demo.23@expotecnica.local', 'scrypt:32768:8:1$5dqhYB0tjh7e5cMK$b071f095e9dab7aa92ffafa3621a0a8c6dd7af2ea1b0401f0e6f7a1f4a62a8a20f367e99d72972cf1621823a12a9eeaedb7825b40b996cfcb866852abb1563dd', 1, 0, '', 'Juez invitado', '70000023', 0, NULL, 'judge');
 INSERT INTO `judges` (`id`, `full_name`, `email`, `password_hash`, `is_active_user`, `is_admin`, `department`, `job_title`, `phone`, `must_change_password`, `last_login_at`, `role`) VALUES (33, 'Oscar Alfaro', 'juez.demo.24@expotecnica.local', 'scrypt:32768:8:1$kl3c58w0UFVvx6S0$ae0cd1d6e7b8f2fb9feec4b48615b460334c2fe96d90603a7bcab1cc1934dda0d68ad8bc1da0946506ab13dcad4b4c40c6b34a07a9ed9833b602c64da11ab7a3', 1, 0, '', 'Juez invitado', '70000024', 0, NULL, 'judge');
 INSERT INTO `judges` (`id`, `full_name`, `email`, `password_hash`, `is_active_user`, `is_admin`, `department`, `job_title`, `phone`, `must_change_password`, `last_login_at`, `role`) VALUES (34, 'andrey', 'vegabryan@gmail.com', 'scrypt:32768:8:1$mCYz21npQS0vfTDX$bbcc2b3586668e9425a797bfb18c862f31e8e8e77d7945042e497be7040cc3454fe5a9349e3128b128d0402e7ea87dff16e0937044b1c2e381a07a31a630e888', 1, 0, '', '', '', 0, NULL, 'judge');
+INSERT INTO `judges` (`id`, `full_name`, `email`, `password_hash`, `is_active_user`, `is_admin`, `department`, `job_title`, `phone`, `must_change_password`, `last_login_at`, `role`) VALUES (35, 'sebasadmind', 'sebasnavarro792@gmail.com', 'scrypt:32768:8:1$sBL0Sn3lOhxnd4tw$bb2be7a3db95553a70290d5247caee98ad2df6c3e26c4eefbd2bc60759db1fcf7f4c2afad1ec5b22a3e3b9befebc69a2b1b15443c143bd2797041c439fc9f5cf', 1, 1, NULL, 'Administrador', NULL, 0, '2026-05-29 18:03:41', 'superadmin');
 
 DROP TABLE IF EXISTS `levels`;
 CREATE TABLE `levels` (
@@ -13941,7 +13942,7 @@ CREATE TABLE `system_audit_logs` (
   KEY `ix_system_audit_logs_created_at` (`created_at`),
   KEY `ix_system_audit_logs_entity_id` (`entity_id`),
   KEY `ix_system_audit_logs_action` (`action`)
-) ENGINE=InnoDB AUTO_INCREMENT=374 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=375 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 INSERT INTO `system_audit_logs` (`id`, `actor_name`, `actor_email`, `actor_role`, `action`, `entity`, `entity_id`, `detail`, `ip_address`, `user_agent`, `created_at`) VALUES (2, 'Administrador', 'admin@expotecnica.local', 'admin', 'admin.smtp.save', 'smtp', NULL, 'Configuracion SMTP actualizada', '127.0.0.1', NULL, '2026-03-11 20:37:14');
 INSERT INTO `system_audit_logs` (`id`, `actor_name`, `actor_email`, `actor_role`, `action`, `entity`, `entity_id`, `detail`, `ip_address`, `user_agent`, `created_at`) VALUES (3, 'Administrador', 'admin@expotecnica.local', 'admin', 'admin.project.logo_upload', 'project', 2, 'Logo actualizado', '127.0.0.1', NULL, '2026-03-11 20:38:08');
 INSERT INTO `system_audit_logs` (`id`, `actor_name`, `actor_email`, `actor_role`, `action`, `entity`, `entity_id`, `detail`, `ip_address`, `user_agent`, `created_at`) VALUES (4, 'Administrador', 'admin@expotecnica.local', 'admin', 'admin.project.logo_upload', 'project', 5, 'Logo actualizado para proyecto #5 \'InnovaMind\'', '127.0.0.1', NULL, '2026-03-11 20:41:16');
@@ -14312,6 +14313,7 @@ INSERT INTO `system_audit_logs` (`id`, `actor_name`, `actor_email`, `actor_role`
 INSERT INTO `system_audit_logs` (`id`, `actor_name`, `actor_email`, `actor_role`, `action`, `entity`, `entity_id`, `detail`, `ip_address`, `user_agent`, `created_at`) VALUES (371, 'Administrador', 'admin@expotecnica.local', 'admin', 'admin.project.logistics.update', 'project', 77, 'Proyecto #77 \'Emprendimiento Demo 30 - Tienda Movil de Tecnologia Basica\' => activo=True, status=pendiente_revision, doc=False, logo=True, fotos=False', '127.0.0.1', NULL, '2026-03-20 16:35:23');
 INSERT INTO `system_audit_logs` (`id`, `actor_name`, `actor_email`, `actor_role`, `action`, `entity`, `entity_id`, `detail`, `ip_address`, `user_agent`, `created_at`) VALUES (372, 'Administrador', 'admin@expotecnica.local', 'admin', 'admin.user.create_and_assign', 'judge', 34, 'Juez rapido creado: andrey <vegabryan@gmail.com> para proyecto=#48 \'Emprendimiento Demo 01 - EcoEmpaque Escolar\'', '127.0.0.1', NULL, '2026-03-20 16:51:44');
 INSERT INTO `system_audit_logs` (`id`, `actor_name`, `actor_email`, `actor_role`, `action`, `entity`, `entity_id`, `detail`, `ip_address`, `user_agent`, `created_at`) VALUES (373, 'Administrador', 'admin@expotecnica.local', 'admin', 'admin.assignment.create', 'assignment', NULL, 'Asignacion creada: juez=andrey <vegabryan@gmail.com> => proyecto=#48 \'Emprendimiento Demo 01 - EcoEmpaque Escolar\'', '127.0.0.1', NULL, '2026-03-20 16:51:44');
+INSERT INTO `system_audit_logs` (`id`, `actor_name`, `actor_email`, `actor_role`, `action`, `entity`, `entity_id`, `detail`, `ip_address`, `user_agent`, `created_at`) VALUES (374, 'sebasadmind', 'sebasnavarro792@gmail.com', 'admin', 'auth.login', 'auth', 35, 'Inicio de sesion correcto', '192.168.60.86', NULL, '2026-05-29 18:03:41');
 
 DROP TABLE IF EXISTS `system_settings`;
 CREATE TABLE `system_settings` (

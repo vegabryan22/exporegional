@@ -6,7 +6,7 @@ Este documento define el modelo de pruebas funcionales sugerido para QA.
 
 Su objetivo es asegurar:
 
-- cobertura de todos los modulos visibles del sistema
+- cobertura de todos los módulos visibles del sistema
 - claridad de que probar
 - pasos sugeridos
 - resultado esperado por caso
@@ -15,23 +15,23 @@ Su objetivo es asegurar:
 
 Este modelo cubre:
 
-- area publica
-- autenticacion
+- área pública
+- autenticación
 - panel de jueces
 - panel administrativo
 - reglas de permisos
-- catalogos
+- catálogos
 - archivos
-- logistica
+- logística
 - evaluaciones
 - mantenimiento
-- auditoria
+- auditoría
 
 ## 3. Tipos de prueba sugeridos
 
 ### 3.1 Smoke test
 
-Para validar que el sistema esta operativo despues de un cambio.
+Para validar que el sistema está operativo después de un cambio.
 
 ### 3.2 Regresion funcional
 
@@ -55,24 +55,24 @@ Preparar al menos:
 
 - 1 superadmin
 - 1 administrador por departamento:
-  - logistica
+  - logística
   - datos
-  - diseno
-  - qa
+  - diseño
+  - QA
 - 3 jueces activos
 - 1 juez inactivo
-- 1 campana activa
-- 1 campana inactiva
-- categorias:
-  - steam
-  - emprendimiento
-- tipos de evaluacion:
-  - exposicion steam
-  - documentacion steam
-  - exposicion modelo de negocios
-  - documento modelo de negocios
-  - documento plan de negocios
-  - ingles
+- 1 campaña activa
+- 1 campaña inactiva
+- categorías:
+  - STEAM
+  - Emprendimiento
+- tipos de evaluación:
+  - Exposición STEAM
+  - Documentación STEAM
+  - Exposición Modelo de Negocios
+  - Documento Modelo de Negocios
+  - Documento Plan de Negocios
+  - Inglés
 - 1 proyecto activo completo
 - 1 proyecto activo sin jueces
 - 1 proyecto activo sin logo real
@@ -82,11 +82,11 @@ Preparar al menos:
 
 ## 5. Criterios de salida sugeridos
 
-Una liberacion funcional deberia salir a produccion solo si:
+Una liberación funcional debería salir a producción solo si:
 
-- no hay fallos criticos en login, inscripcion, evaluacion o permisos
-- no hay errores de acceso indebido entre modulos
-- las notas finales y avances coinciden con calculo esperado
+- no hay fallos críticos en login, inscripción, evaluación o permisos
+- no hay errores de acceso indebido entre módulos
+- las notas finales y avances coinciden con cálculo esperado
 - placeholders visuales no se cuentan como evidencias reales
 
 ## 6. Matriz de pruebas
@@ -175,7 +175,7 @@ Pasos:
 Resultado esperado:
 
 - proyecto A muestra acceso al documento
-- proyecto B muestra estado sin documentacion
+- proyecto B muestra estado sin documentación
 
 ## 6.2 Inscripcion de proyectos
 
@@ -626,7 +626,7 @@ Resultado esperado:
 
 ## 6.10 Categorias
 
-### ADM-CAT-01 Crear categoria con exposicion y documentacion
+### ADM-CAT-01 Crear categoría con exposición y documentación
 
 Resultado esperado:
 
@@ -648,7 +648,7 @@ Resultado esperado:
 
 Pasos:
 
-1. Colocar una rubrica documental en exposicion o viceversa
+1. Colocar una rúbrica documental en exposición o viceversa
 
 Resultado esperado:
 
@@ -769,7 +769,7 @@ Resultado esperado:
 
 - proyectos inactivos no alteran ranking ni resumen
 
-### ADM-EVA-03 Identificacion correcta de Exposicion y Documentacion
+### ADM-EVA-03 Identificación correcta de Exposición y Documentación
 
 Resultado esperado:
 
@@ -780,7 +780,7 @@ Resultado esperado:
 Precondiciones:
 
 - 3 jueces asignados
-- 1 evaluacion registrada en Exposicion
+- 1 evaluación registrada en Exposición
 
 Resultado esperado:
 
@@ -791,7 +791,7 @@ Resultado esperado:
 
 Resultado esperado:
 
-- la nota final equivale a la suma de aportes de exposicion y documentacion
+- la nota final equivale a la suma de aportes de exposición y documentación
 
 ### ADM-EVA-06 Eliminar evaluacion
 
@@ -876,7 +876,7 @@ Resultado esperado:
 
 - queda registro con suficiente detalle
 
-## 7. Paquete minimo de smoke test por build
+## 7. Paquete mínimo de smoke test por build
 
 Ejecutar al menos:
 

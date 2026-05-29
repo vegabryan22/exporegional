@@ -11,7 +11,7 @@
             <a href="#asignaciones">Asignaciones</a>
             <a href="#jueces">Jueces</a>
             <a href="#categorías">Categorías</a>
-            <a href="#rÃºbricas">RÃºbricas</a>
+            <a href="#rúbricas">Rúbricas</a>
             <a href="#proyectos">Proyectos</a>
             <a href="#smtp">SMTP</a>
         </nav>
@@ -220,9 +220,9 @@
             {% endfor %}
         </section>
 
-        <section id="rÃºbricas" class="card admin-section">
+        <section id="rúbricas" class="card admin-section">
             <div class="section-head">
-                <h3>Tipos de evaluación y rÃºbricas</h3>
+                <h3>Tipos de evaluación y rúbricas</h3>
                 <p>Configura la estructura de evaluación y sus puntajes.</p>
             </div>
             <form method="post" class="form-grid inline-grid-4">
@@ -330,7 +330,7 @@
         <section id="proyectos" class="card admin-section">
             <div class="section-head">
                 <h3>Mantenimiento de proyectos</h3>
-                <p>Edita informaciÃ³n general y categoría asignada.</p>
+                <p>Edita información general y categoría asignada.</p>
             </div>
             {% for project in projects %}
                 <div class="inline-card">
@@ -374,7 +374,7 @@
 
         <section id="smtp" class="card admin-section">
             <div class="section-head">
-                <h3>ConfiguraciÃ³n SMTP</h3>
+                <h3>Configuración SMTP</h3>
                 <p>Estado actual: <strong>{{ 'Configurado' if smtp_configured else 'No configurado' }}</strong></p>
             </div>
             <form method="post" class="form-grid inline-grid-4">

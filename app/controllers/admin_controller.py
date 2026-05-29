@@ -2007,7 +2007,7 @@ def _handle_action(action: str):
             elif academic_error:
                 flash(academic_error, "error")
             elif len(project.members) >= 3:
-                flash("Cada proyecto permite un maximo de 3 integrantes.", "error")
+                flash("Cada proyecto permite un máximo de 3 integrantes.", "error")
             else:
                 used_numbers = {member.student_number for member in project.members}
                 number = request.form.get("member_student_number", type=int)

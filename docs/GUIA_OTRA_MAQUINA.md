@@ -1,6 +1,6 @@
-# Guia de despliegue en otra maquina (desde Git)
+# Guía de despliegue en otra máquina (desde Git)
 
-Esta guia sirve para clonar/actualizar el proyecto en otra maquina y dejarlo funcionando con:
+Esta guía sirve para clonar/actualizar el proyecto en otra máquina y dejarlo funcionando con:
 - codigo mas reciente
 - base de datos con data de ejemplo
 - archivos de uploads de desarrollo
@@ -54,13 +54,13 @@ SELECT COUNT(*) AS projects FROM projects;
 SELECT COUNT(*) AS judges FROM judges;
 ```
 
-Valores esperados para este backup:
+Valores esperados para este respaldo:
 - `projects = 68`
 - `judges = 26`
 
 ## 6) Verificar uploads versionados
 
-Estos archivos deben existir despues del pull:
+Estos archivos deben existir después del pull:
 - `app/static/uploads/institution/*`
 - `app/static/uploads/maintenance/*`
 - `app/static/uploads/members/*`
@@ -83,4 +83,4 @@ python run.py
 
 ## Nota
 
-Si `mysql` no esta en PATH, abre MySQL Command Line Client o MySQL Workbench y ejecuta los scripts SQL desde ahi.
+Si `mysql` no está en PATH, abre MySQL Command Line Client o MySQL Workbench y ejecuta los scripts SQL desde ahí.

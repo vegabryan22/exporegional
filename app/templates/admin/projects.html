@@ -178,7 +178,7 @@
                 <label><input type="checkbox" name="logistics_logo_ok" value="1" {% if project.logistics_logo_ok %}checked{% endif %}> Logo validado</label>
                 <label><input type="checkbox" name="logistics_photos_ok" value="1" {% if project.logistics_photos_ok %}checked{% endif %}> Fotos completas</label>
             </div>
-            <label>Observaciones de logÃ­stica
+            <label>Observaciones de logística
                 <textarea name="logistics_notes" rows="4">{{ project.logistics_notes or '' }}</textarea>
             </label>
             <div class="actions-row"><button type="submit">Guardar control logistico</button></div>
@@ -217,7 +217,7 @@
                     <tr>
                         <th>#</th>
                         <th>Nombre</th>
-                        <th>SecciÃ³n</th>
+                        <th>Sección</th>
                         <th>Especialidad/Taller</th>
                         <th>Genero</th>
                         <th>Foto</th>
@@ -258,7 +258,7 @@
         </div>
 
         <div class="section-block">
-            <h4>BitÃ¡cora de cambios de integrantes</h4>
+            <h4>Bitácora de cambios de integrantes</h4>
             <div class="table-wrap">
                 <table>
                     <thead><tr><th>Fecha</th><th>Accion</th><th>Detalle</th></tr></thead>
@@ -310,7 +310,7 @@
                 </label>
             </div>
             <div class="grid-3">
-                <label>SecciÃ³n
+                <label>Sección
                     <select name="member_section_id" required>
                         <option value="">Seleccione...</option>
                         {% for section in sections %}
@@ -338,7 +338,7 @@
                 </label>
             </div>
             <div class="grid-2">
-                <label>TelÃ©fono<input type="text" name="member_phone"></label>
+                <label>Teléfono<input type="text" name="member_phone"></label>
                 <label>Correo<input type="email" name="member_email"></label>
             </div>
             <label>Foto del integrante
@@ -379,7 +379,7 @@
                 </label>
             </div>
             <div class="grid-3">
-                <label>SecciÃ³n
+                <label>Sección
                     <select name="member_section_id" required>
                         <option value="">Seleccione...</option>
                         {% for section in sections %}
@@ -407,7 +407,7 @@
                 </label>
             </div>
             <div class="grid-2">
-                <label>TelÃ©fono<input type="text" name="member_phone" value="{{ member.phone or '' }}"></label>
+                <label>Teléfono<input type="text" name="member_phone" value="{{ member.phone or '' }}"></label>
                 <label>Correo<input type="email" name="member_email" value="{{ member.email or '' }}"></label>
             </div>
             <label>Foto del integrante

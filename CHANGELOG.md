@@ -2,40 +2,40 @@
 
 ## [0.8.0] - 2026-03-20
 ### Added
-- Actas de evaluacion en PDF por proyecto y consolidado general, con vista previa HTML y opcion de descarga/visualizacion directa.
-- Nuevas rutas admin para reportes de actas y botones de acceso rapido desde el modulo de evaluaciones.
-- Menu hamburguesa en movil para navegacion superior.
+- Actas de evaluación en PDF por proyecto y consolidado general, con vista previa HTML y opción de descarga/visualización directa.
+- Nuevas rutas admin para reportes de actas y botones de acceso rápido desde el módulo de evaluaciones.
+- Menú hamburguesa en móvil para navegación superior.
 
 ### Changed
-- UI del panel de juez: acciones de evaluacion mas claras, botones compactos y mejor adaptacion responsive en movil.
-- Textos visibles en vistas normalizados con acentos y caracteres en espanol.
-- Selector de estado de campana simplificado (activa/inactiva) para evitar confusiones del checkbox.
+- UI del panel de juez: acciones de evaluación más claras, botones compactos y mejor adaptación responsive en móvil.
+- Textos visibles en vistas normalizados con acentos y caracteres en español.
+- Selector de estado de campaña simplificado (activa/inactiva) para evitar confusiones del checkbox.
 
 ### Fixed
-- Alineacion del boton `Cerrar sesion` en la barra superior.
-- Correcciones de codificacion y labels mal renderizados en mantenimiento academico y menu lateral admin.
-- Consistencia de etiquetas cortas de tipos de evaluacion para evitar textos largos en celdas.
+- Alineación del botón `Cerrar sesión` en la barra superior.
+- Correcciones de codificación y labels mal renderizados en mantenimiento académico y menú lateral admin.
+- Consistencia de etiquetas cortas de tipos de evaluación para evitar textos largos en celdas.
 
 ## [0.7.0] - 2026-03-17
 ### Added
 - Logo propio de ExpoTecnica separado del logo institucional y reutilizado en home, formulario y login.
-- Placeholders visuales para estudiantes sin foto y logo generico para proyectos sin logo real.
-- Centro de operaciones en el panel admin con indicadores de logistica, jueces y evaluaciones pendientes.
-- Documentacion funcional para QA: arquitectura de modulos y modelo de pruebas con resultados esperados.
+- Placeholders visuales para estudiantes sin foto y logo genérico para proyectos sin logo real.
+- Centro de operaciones en el panel admin con indicadores de logística, jueces y evaluaciones pendientes.
+- Documentación funcional para QA: arquitectura de módulos y modelo de pruebas con resultados esperados.
 
 ### Changed
-- Reorganizacion operativa del modulo de asignaciones con mantenimiento rapido por proyecto y modales de gestion.
-- Panel de permisos por departamento rediseñado a tarjetas con interruptores por modulo.
-- Mantenimientos de rubricas, proyectos, campañas, evaluaciones y usuarios con mejoras de lectura y consistencia visual.
-- Branding y paleta del sitio alineados a ExpoTecnica, incluyendo login y cabeceras publicas.
-- Tipos de evaluacion con nombre corto y descripcion larga para usar textos entendibles en UI.
+- Reorganización operativa del módulo de asignaciones con mantenimiento rápido por proyecto y modales de gestión.
+- Panel de permisos por departamento rediseñado a tarjetas con interruptores por módulo.
+- Mantenimientos de rúbricas, proyectos, campañas, evaluaciones y usuarios con mejoras de lectura y consistencia visual.
+- Branding y paleta del sitio alineados a ExpoTecnica, incluyendo login y cabeceras públicas.
+- Tipos de evaluación con nombre corto y descripción larga para usar textos entendibles en UI.
 
 ### Fixed
-- Validacion de categorias para obligar una rubrica de Exposicion y una de Documentacion.
-- Identificacion correcta de rubricas de Exposicion y Documentacion en calculo y dashboard de evaluaciones.
-- Reglas de usuarios: jueces sin departamento y un solo usuario generico por departamento.
+- Validación de categorías para obligar una rúbrica de Exposición y una de Documentación.
+- Identificación correcta de rúbricas de Exposición y Documentación en cálculo y dashboard de evaluaciones.
+- Reglas de usuarios: jueces sin departamento y un solo usuario genérico por departamento.
 - Contadores y reportes restringidos a proyectos activos cuando corresponde.
-- Tipos de evaluacion eliminados manualmente ya no se recrean automaticamente.
+- Tipos de evaluación eliminados manualmente ya no se recrean automáticamente.
 
 ## [0.6.0] - 2026-03-11
 ### Added
@@ -55,46 +55,46 @@
 
 ## [0.5.0] - 2026-03-11
 ### Added
-- Mantenimiento academico normalizado con tablas de `niveles`, `secciones`, `especialidades` y `talleres`.
-- Carga de documentacion de proyecto en inscripcion y mantenimiento logistico de fotos de integrantes.
+- Mantenimiento académico normalizado con tablas de `niveles`, `secciones`, `especialidades` y `talleres`.
+- Carga de documentación de proyecto en inscripción y mantenimiento logístico de fotos de integrantes.
 - CRUD de integrantes en panel admin: agregar, editar, eliminar y actualizar foto.
-- Vista publica de proyectos e inscripcion alineadas al flujo ExpoTEC-1 con validaciones STEAM y Emprendimiento.
+- Vista pública de proyectos e inscripción alineadas al flujo ExpoTEC-1 con validaciones STEAM y Emprendimiento.
 
 ### Changed
 - Rediseño global del panel admin a formato tabla con acciones por modal para todos los mantenimientos.
-- Rubricas mejoradas con listado principal por `ID` y gestion por modal de tipo de evaluacion.
-- Parametrizacion ampliada para evitar datos quemados en codigo en modulos administrativos.
+- Rúbricas mejoradas con listado principal por `ID` y gestión por modal de tipo de evaluación.
+- Parametrización ampliada para evitar datos quemados en código en módulos administrativos.
 
 ### Fixed
-- Correcciones de experiencia de edicion en mantenimientos para reducir saturacion visual.
-- Ajustes de consistencia entre backend y vistas de administracion y proyectos.
+- Correcciones de experiencia de edición en mantenimientos para reducir saturación visual.
+- Ajustes de consistencia entre backend y vistas de administración y proyectos.
 
 ## [0.4.0] - 2026-03-11
 ### Added
-- Panel de administracion modular con menu lateral y rutas separadas por modulo.
-- Parametrizacion completa de categorias, tipos de evaluacion, rubricas y configuracion SMTP.
-- Servicio SMTP con prueba de envio y notificaciones automaticas para credenciales y asignaciones.
+- Panel de administración modular con menú lateral y rutas separadas por módulo.
+- Parametrización completa de categorías, tipos de evaluación, rúbricas y configuración SMTP.
+- Servicio SMTP con prueba de envío y notificaciones automáticas para credenciales y asignaciones.
 - Formulario ExpoTEC-1 en 6 secciones con validaciones condicionales para 1 a 3 estudiantes.
 - Campos extendidos para estudiantes, tutor y requerimientos del proyecto.
 - Soporte de versionado del sprint mediante archivos `VERSION` y notas en `docs/sprints/`.
 
 ### Changed
 - Rediseño visual institucional del sitio: header, cards, botones, dashboard y footer.
-- Home publica organizada por categorias con informacion ampliada de proyectos.
-- Modelo de evaluacion desacoplado de valores quemados y conectado a parametros de BD.
+- Home pública organizada por categorías con información ampliada de proyectos.
+- Modelo de evaluación desacoplado de valores quemados y conectado a parámetros de BD.
 
 ### Fixed
-- Limpieza de referencias de mantenimiento y normalizacion de rutas de panel admin.
-- Correcciones de render en formulario de inscripcion con datos multivalor.
+- Limpieza de referencias de mantenimiento y normalización de rutas de panel admin.
+- Correcciones de render en formulario de inscripción con datos multivalor.
 
 ## [0.3.0] - 2026-03-11
 ### Added
-- Respaldo automatico de base de datos en cada commit usando hook `pre-commit`.
-- Script de exportacion SQL versionado en `scripts/backup_db.py`.
+- Respaldo automático de base de datos en cada commit usando hook `pre-commit`.
+- Script de exportación SQL versionado en `scripts/backup_db.py`.
 - Respaldo de referencia en `sql/backups/expotecnica_latest.sql`.
 
 ### Changed
-- Documentacion del flujo de respaldo en README.
+- Documentación del flujo de respaldo en README.
 
 ## [0.2.0] - 2026-03-11
 ### Added

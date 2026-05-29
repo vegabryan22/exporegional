@@ -410,7 +410,7 @@ def seed():
     print(f"Proyectos demo STEAM: {len([p for p in projects if p.category == 'steam'])}")
     print(f"Proyectos demo Emprendimiento: {len([p for p in projects if p.category == 'emprendimiento'])}")
     print(f"Asignaciones nuevas creadas: {assignment_count}")
-    print(f"Minimo de proyectos por juez en la muestra: {min(judge_load.values()) if judge_load else 0}")
+    print(f"Mínimo de proyectos por juez en la muestra: {min(judge_load.values()) if judge_load else 0}")
     print(f"Contrasena para jueces demo nuevos: {JUDGE_PASSWORD}")
 
 

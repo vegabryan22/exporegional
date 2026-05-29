@@ -42,7 +42,7 @@
             <div>
                 <span class="banner-kicker">Etapa</span>
                 <h1>Institucional</h1>
-                <p>Muestra oficial de proyectos de especialidades tÃ©cnicas.</p>
+                <p>Muestra oficial de proyectos de especialidades técnicas.</p>
             </div>
             {% if institution.expo_logo_path %}
                 <div class="banner-badge banner-badge-image">
@@ -81,15 +81,15 @@
                             <p class="project-main-meta">
                                 Categoría: {{ category_label }}<br>
                                 Equipo: {{ project.team_name }}<br>
-                                SecciÃ³n: {{ project.section.name if project.section else (project.members[0].section_name if project.members else 'N/D') }}
+                                Sección: {{ project.section.name if project.section else (project.members[0].section_name if project.members else 'N/D') }}
                             </p>
                             <p class="project-main-description">{{ project.description }}</p>
                             <div class="project-main-actions">
                                 <a href="mailto:{{ project.representative_email }}" class="project-action">Contacto del proyecto</a>
                                 {% if project.project_document_path %}
-                                    <a href="{{ url_for('static', filename=project.project_document_path) }}" class="project-action" target="_blank">Documentacion</a>
+                                    <a href="{{ url_for('static', filename=project.project_document_path) }}" class="project-action" target="_blank">Documentación</a>
                                 {% else %}
-                                    <span class="project-action disabled">Sin documentacion</span>
+                                    <span class="project-action disabled">Sin documentación</span>
                                 {% endif %}
                                 <a href="{{ url_for('public.evaluate_project_entry', project_id=project.id) }}" class="project-action">Evaluar proyecto escrito</a>
                             </div>
@@ -111,7 +111,7 @@
                                 <article class="integrant-card">
                                     <img src="{{ photo_src }}" alt="{% if member.photo_url %}Foto de {{ member.full_name }}{% else %}Sin foto de {{ member.full_name }}{% endif %}" class="integrant-photo">
                                     <h4>{{ member.full_name }}</h4>
-                                    <p>{% if member.section_name %}SecciÃ³n: {{ member.section_name }}{% else %}SecciÃ³n no registrada{% endif %}</p>
+                                    <p>{% if member.section_name %}Sección: {{ member.section_name }}{% else %}Sección no registrada{% endif %}</p>
                                     <p>{{ member.specialty or 'Especialidad no registrada' }}</p>
                                 </article>
                             {% endfor %}

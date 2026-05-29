@@ -4,7 +4,7 @@
 
 Este documento describe la arquitectura funcional real del sistema ExpoTecnica de forma entendible para QA.
 
-No esta pensado como documento de desarrollo profundo. Esta pensado para que el equipo de QA pueda responder rapido:
+No está pensado como documento de desarrollo profundo. Está pensado para que el equipo de QA pueda responder rápido:
 
 - que modulos existen
 - quien usa cada modulo
@@ -13,25 +13,25 @@ No esta pensado como documento de desarrollo profundo. Esta pensado para que el 
 - de que otros modulos depende
 - donde estan los puntos mas sensibles para pruebas
 
-## 2. Vision general
+## 2. Visión general
 
-ExpoTecnica es una aplicacion web monolitica construida con Flask y SQLAlchemy.
+ExpoTecnica es una aplicación web monolítica construida con Flask y SQLAlchemy.
 
-El sistema se divide en 4 grandes areas:
+El sistema se divide en 4 grandes áreas:
 
-1. Area publica
+1. Área pública
    - Home
    - Listado de proyectos
-   - Inscripcion de proyectos
-2. Area de autenticacion
+   - Inscripción de proyectos
+2. Área de autenticación
    - Login
-   - Cambio de contrasena
+   - Cambio de contraseña
    - Logout
-3. Area de jueces
+3. Área de jueces
    - Panel de proyectos asignados
    - Registro de evaluaciones
-4. Area administrativa
-   - Configuracion, operacion, catalogos, evaluaciones, mantenimiento y auditoria
+4. Área administrativa
+   - Configuración, operación, catálogos, evaluaciones, mantenimiento y auditoría
 
 ## 3. Capas del sistema
 
@@ -46,7 +46,7 @@ Definen la URL y delegan el trabajo a controladores.
 
 ### 3.2 Controladores
 
-Resuelven la logica de negocio principal.
+Resuelven la lógica de negocio principal.
 
 - `app/controllers/project_controller.py`
 - `app/controllers/auth_controller.py`
@@ -55,9 +55,9 @@ Resuelven la logica de negocio principal.
 
 ### 3.3 Modelos
 
-Representan la informacion persistente.
+Representan la información persistente.
 
-Modelos mas importantes:
+Modelos más importantes:
 
 - `Judge`
 - `Project`
@@ -78,7 +78,7 @@ Modelos mas importantes:
 
 ### 3.4 Servicios
 
-Encapsulan logica transversal.
+Encapsulan lógica transversal.
 
 - `app/services/evaluation_service.py`
 - `app/services/parameter_service.py`
@@ -102,7 +102,7 @@ Puede:
 
 - ver home
 - ver proyectos activos
-- abrir inscripcion si hay campana activa
+- abrir inscripción si hay campaña activa
 
 No puede:
 
@@ -114,8 +114,8 @@ No puede:
 
 Puede:
 
-- iniciar sesion
-- cambiar contrasena
+- iniciar sesión
+- cambiar contraseña
 - ver proyectos asignados
 - evaluar solo proyectos asignados
 
@@ -127,25 +127,25 @@ No puede:
 
 ### 4.3 Administrador por departamento
 
-Puede entrar al panel admin, pero los modulos visibles dependen de:
+Puede entrar al panel admin, pero los módulos visibles dependen de:
 
 - departamento
 - matriz de permisos por departamento
 
 Departamentos actuales:
 
-- Logistica
+- Logística
 - Datos
-- Diseno
+- Diseño
 - QA
 
 ### 4.4 Superadministrador
 
-Tiene acceso total a todos los modulos, incluyendo permisos.
+Tiene acceso total a todos los módulos, incluyendo permisos.
 
-## 5. Modulos funcionales
+## 5. Módulos funcionales
 
-## 5.1 Home publico
+## 5.1 Home público
 
 Ruta:
 
@@ -163,7 +163,7 @@ Objetivo:
 
 - presentar la ExpoTecnica
 - mostrar identidad visual del colegio y de la expo
-- mostrar logos o imagenes de proyectos activos
+- mostrar logos o imágenes de proyectos activos
 
 Entidades consultadas:
 
@@ -182,7 +182,7 @@ Puntos criticos para QA:
 - proyectos inactivos no deben aparecer
 - carrusel no debe romperse si faltan logos reales
 
-## 5.2 Listado publico de proyectos
+## 5.2 Listado público de proyectos
 
 Ruta:
 
@@ -253,13 +253,13 @@ Entidades:
 
 Dependencias:
 
-- requiere campana activa
-- usa borrador en sesion
+- requiere campaña activa
+- usa borrador en sesión
 - valida documento permitido
 
-Puntos criticos:
+Puntos críticos:
 
-- si no hay campana activa no debe permitir inscribir
+- si no hay campaña activa no debe permitir inscribir
 - debe guardar solo estudiantes requeridos
 - debe conservar borrador al corregir errores
 - debe promover documento temporal a documento final
@@ -296,8 +296,8 @@ Puntos criticos:
 
 - credenciales invalidas
 - usuario inactivo
-- cambio obligatorio de contrasena
-- redireccion por `next`
+- cambio obligatorio de contraseña
+- redirección por `next`
 
 ## 5.5 Panel de juez
 
@@ -527,16 +527,16 @@ Vista:
 Objetivo:
 
 - administrar categorias visibles
-- relacionar categoria con evaluacion de Exposicion y Documentacion
+- relacionar categoría con evaluación de Exposición y Documentación
 
 Entidad:
 
 - `Category`
 
-Puntos criticos:
+Puntos críticos:
 
-- cada categoria debe tener una rubrica de exposicion y una de documentacion
-- no se debe mezclar con ingles
+- cada categoría debe tener una rúbrica de exposición y una de documentación
+- no se debe mezclar con inglés
 
 ## 5.13 Modulo Academico
 

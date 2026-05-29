@@ -19,8 +19,8 @@
                 <tr>
                     <th>Codigo</th>
                     <th>Nombre</th>
-                    <th>Exposicion</th>
-                    <th>Documentacion</th>
+                    <th>Exposición</th>
+                    <th>Documentación</th>
                     <th>Orden</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -37,7 +37,7 @@
                     <td><span class="tag {{ 'ok' if category.is_active else 'off' }}">{{ 'Activo' if category.is_active else 'Inactivo' }}</span></td>
                     <td class="actions-cell">
                         <button type="button" class="outline-btn" data-dialog-open="edit-category-{{ category.id }}">Editar</button>
-                        <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Esta accion eliminara la categoría. Continuar?')">
+                        <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Esta acción eliminará la categoría. Continuar?')">
                             <input type="hidden" name="next" value="{{ next_url }}">
                             <input type="hidden" name="action" value="delete_category">
                             <input type="hidden" name="category_id" value="{{ category.id }}">
@@ -68,7 +68,7 @@
                 <label>Orden<input type="number" name="category_sort_order" value="0" required></label>
             </div>
             <div class="grid-2">
-                <label>Exposicion
+                <label>Exposición
                     <select name="category_rubric_1_evaluation_type_id">
                         <option value="">Seleccione...</option>
                         {% for eval_type in exposition_evaluation_types %}
@@ -76,7 +76,7 @@
                         {% endfor %}
                     </select>
                 </label>
-                <label>Documentacion
+                <label>Documentación
                     <select name="category_rubric_2_evaluation_type_id">
                         <option value="">Seleccione...</option>
                         {% for eval_type in documentation_evaluation_types %}
@@ -110,7 +110,7 @@
                 <label>Orden<input type="number" name="category_sort_order" value="{{ category.sort_order }}" required></label>
             </div>
             <div class="grid-2">
-                <label>Exposicion
+                <label>Exposición
                     <select name="category_rubric_1_evaluation_type_id">
                         <option value="">Seleccione...</option>
                         {% for eval_type in exposition_evaluation_types %}
@@ -118,7 +118,7 @@
                         {% endfor %}
                     </select>
                 </label>
-                <label>Documentacion
+                <label>Documentación
                     <select name="category_rubric_2_evaluation_type_id">
                         <option value="">Seleccione...</option>
                         {% for eval_type in documentation_evaluation_types %}

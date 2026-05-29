@@ -1,0 +1,123 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section">
+    <div class="section-head">
+        <h3>Mantenimiento Git</h3>
+        <p>Gestiona sincronización de versiones con control operativo y trazabilidad.</p>
+    </div>
+
+    <div class="inline-card">
+        <h4>Configuración remota</h4>
+        <form method="post" action="{{ action_url }}" class="form-grid inline-grid-3">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="save_gitops_remote">
+            <label>Remote URL (origin)
+                <input type="text" name="gitops_remote_url" value="{{ gitops_remote.remote_url }}" placeholder="https://github.com/owner/repo.git o git@github.com:owner/repo.git" required>
+            </label>
+            <label>Usuario HTTPS
+                <input type="text" name="gitops_username" value="{{ gitops_remote.username or 'x-access-token' }}" placeholder="x-access-token">
+            </label>
+            <label>Token privado (opcional)
+                <input type="password" name="gitops_private_token" placeholder="{% if gitops_remote.has_token %}Token ya configurado{% else %}Pega PAT aquí{% endif %}">
+            </label>
+            <label>
+                <input type="checkbox" name="gitops_persist_token" value="1">
+                Guardar token en configuración del sistema
+            </label>
+            <button type="submit">Guardar remoto</button>
+        </form>
+        <form method="post" action="{{ action_url }}" class="inline-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="gitops_test_remote">
+            <button type="submit">Probar conexión remota</button>
+        </form>
+    </div>
+
+    <div class="admin-overview-grid">
+        <article class="mini-stat">
+            <span>Repositorio</span>
+            <strong>{{ gitops_status.repo_path }}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>Rama / Commit</span>
+            <strong>{{ gitops_status.branch }} · {{ gitops_status.head }}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>Sincronización</span>
+            <strong>Ahead {{ gitops_status.ahead }} · Behind {{ gitops_status.behind }}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>Cambios locales</span>
+            <strong>{{ gitops_status.dirty_count }} archivo(s)</strong>
+        </article>
+    </div>
+
+    <div class="inline-card">
+        <form method="post" action="{{ action_url }}" class="inline-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="gitops_refresh">
+            <button type="submit">Actualizar estado</button>
+        </form>
+        <form method="post" action="{{ action_url }}" class="inline-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="gitops_fetch">
+            <button type="submit">Fetch --all --prune</button>
+        </form>
+        <form method="post" action="{{ action_url }}" class="inline-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="gitops_pull_ff">
+            <button type="submit">Pull seguro (ff-only)</button>
+        </form>
+    </div>
+
+    <div class="inline-card">
+        <h4>Última ejecución</h4>
+        <p>
+            <strong>Acción:</strong> {{ gitops_last.action or 'N/D' }}<br>
+            <strong>Estado:</strong> {{ gitops_last.status or 'N/D' }}<br>
+            <strong>Fecha:</strong> {{ gitops_last.ran_at or 'N/D' }}
+        </p>
+        <label>Salida técnica</label>
+        <textarea rows="12" readonly>{{ gitops_last.output or 'Sin resultados aún.' }}</textarea>
+    </div>
+
+    <div class="inline-card">
+        <h4>Commits recientes</h4>
+        {% if gitops_status.last_commits %}
+            <ul>
+                {% for line in gitops_status.last_commits %}
+                    <li><code>{{ line }}</code></li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Sin datos.</p>
+        {% endif %}
+    </div>
+
+    <div class="inline-card">
+        <h4>Bitácora Git (panel)</h4>
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Acción</th>
+                    <th>Usuario</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in gitops_logs %}
+                <tr>
+                    <td>{{ row.created_at.strftime('%Y-%m-%d %H:%M:%S') if row.created_at else 'N/D' }}</td>
+                    <td>{{ row.action }}</td>
+                    <td>{{ row.actor_name or row.actor_email or 'N/D' }}</td>
+                    <td>{{ row.detail or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4">Sin registros de operaciones Git.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -3,8 +3,11 @@ import re
 import secrets
 import uuid
 import json
+import subprocess
+import base64
 from io import BytesIO
 from datetime import datetime
+from pathlib import Path
 
 from functools import wraps
 
@@ -85,6 +88,7 @@ ADMIN_MENU_ITEMS = [
     ("smtp", "admin.smtp_page", "SMTP"),
     ("institution", "admin.institution_page", "Institución"),
     ("maintenance", "admin.maintenance_page", "Mantenimiento"),
+    ("gitops", "admin.gitops_page", "Mantenimiento Git"),
     ("logs", "admin.logs_page", "Bitácora"),
 ]
 
@@ -92,7 +96,7 @@ ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Operación", ["assignments", "projects", "evaluations"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
-    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "logs"]),
+    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "gitops", "logs"]),
 ]
 
 ADMIN_MENU_ICONS = {
@@ -110,6 +114,7 @@ ADMIN_MENU_ICONS = {
     "smtp": "send",
     "institution": "box",
     "maintenance": "settings",
+    "gitops": "settings",
     "logs": "doc",
 }
 
@@ -129,6 +134,7 @@ ADMIN_MENU_ITEMS = [
     ("smtp", "admin.smtp_page", "SMTP"),
     ("institution", "admin.institution_page", "Institución"),
     ("maintenance", "admin.maintenance_page", "Mantenimiento"),
+    ("gitops", "admin.gitops_page", "Mantenimiento Git"),
     ("logs", "admin.logs_page", "Bitácora"),
 ]
 
@@ -137,14 +143,14 @@ ADMIN_MENU_GROUPS = [
     ("Documentos", ["documents"]),
     ("Operación", ["assignments", "projects", "evaluations"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
-    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "logs"]),
+    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "gitops", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
     "logistica": {"overview", "assignments", "projects", "documents"},
     "datos": {"overview", "evaluations", "documents"},
     "diseno": {"overview", "campaigns", "categories", "academic", "rubrics", "institution"},
-    "qa": {"overview", "logs", "maintenance"},
+    "qa": {"overview", "logs", "maintenance", "gitops"},
 }
 PERMISSIONS_SETTING_KEY = "permissions_department_modules"
 PERMISSION_MANAGEABLE_MODULES = [
@@ -201,6 +207,11 @@ ACTION_MODULE_MAP = {
     "test_smtp": "smtp",
     "save_institution": "institution",
     "save_maintenance_settings": "maintenance",
+    "gitops_fetch": "gitops",
+    "gitops_pull_ff": "gitops",
+    "gitops_refresh": "gitops",
+    "save_gitops_remote": "gitops",
+    "gitops_test_remote": "gitops",
     "save_permissions_matrix": "permissions",
 }
 
@@ -378,6 +389,87 @@ def _redirect_next():
     if next_url and next_url.startswith("/admin/"):
         return redirect(next_url)
     return redirect(url_for("admin.overview"))
+
+
+def _git_repo_path() -> Path:
+    return Path(current_app.root_path).resolve().parent
+
+
+def _run_git_command(args: list[str], timeout: int = 120) -> dict:
+    repo_path = _git_repo_path()
+    if not (repo_path / ".git").exists():
+        return {"ok": False, "code": -1, "out": "", "err": f"No es un repositorio git: {repo_path}"}
+    try:
+        proc = subprocess.run(
+            args,
+            cwd=str(repo_path),
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            shell=False,
+        )
+        return {"ok": proc.returncode == 0, "code": proc.returncode, "out": (proc.stdout or "").strip(), "err": (proc.stderr or "").strip()}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "code": -2, "out": "", "err": f"Timeout ejecutando: {' '.join(args)}"}
+    except Exception as ex:
+        return {"ok": False, "code": -3, "out": "", "err": str(ex)}
+
+
+def _git_remote_auth_args() -> list[str]:
+    remote_url = (SystemSetting.get_value("gitops_remote_url", "") or "").strip()
+    token = (SystemSetting.get_value("gitops_private_token", "") or "").strip()
+    username = (SystemSetting.get_value("gitops_username", "x-access-token") or "x-access-token").strip()
+    args = []
+    if remote_url:
+        args.extend(["-c", f"remote.origin.url={remote_url}"])
+    if token:
+        raw = f"{username}:{token}".encode("utf-8")
+        b64 = base64.b64encode(raw).decode("ascii")
+        args.extend(["-c", f"http.extraHeader=Authorization: Basic {b64}"])
+    return args
+
+
+def _run_git_remote_command(base_args: list[str], timeout: int = 120) -> dict:
+    args = ["git"] + _git_remote_auth_args() + base_args[1:]
+    return _run_git_command(args, timeout=timeout)
+
+
+def _git_status_snapshot() -> dict:
+    branch = _run_git_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], timeout=20)
+    head = _run_git_command(["git", "rev-parse", "--short", "HEAD"], timeout=20)
+    remote = _run_git_command(["git", "config", "--get", "remote.origin.url"], timeout=20)
+    status = _run_git_command(["git", "status", "--porcelain"], timeout=20)
+    last = _run_git_command(["git", "log", "--oneline", "-5"], timeout=20)
+    ahead = 0
+    behind = 0
+    upstream = _run_git_command(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], timeout=20)
+    if upstream["ok"]:
+        counts = _run_git_command(["git", "rev-list", "--left-right", "--count", "@{u}...HEAD"], timeout=20)
+        if counts["ok"] and counts["out"]:
+            parts = counts["out"].split()
+            if len(parts) == 2:
+                behind = int(parts[0])
+                ahead = int(parts[1])
+    return {
+        "repo_path": str(_git_repo_path()),
+        "branch": branch["out"] if branch["ok"] else "N/D",
+        "head": head["out"] if head["ok"] else "N/D",
+        "remote": remote["out"] if remote["ok"] else "N/D",
+        "dirty_count": len([line for line in (status["out"] or "").splitlines() if line.strip()]),
+        "ahead": ahead,
+        "behind": behind,
+        "last_commits": [line for line in (last["out"] or "").splitlines() if line.strip()],
+    }
+
+
+def _save_gitops_result(action: str, result: dict):
+    stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    output = result.get("out") or result.get("err") or "(sin salida)"
+    output = output[:8000]
+    SystemSetting.set_value("gitops_last_action", action)
+    SystemSetting.set_value("gitops_last_status", "ok" if result.get("ok") else "error")
+    SystemSetting.set_value("gitops_last_output", output)
+    SystemSetting.set_value("gitops_last_ran_at", stamp)
 
 
 def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_per_page=5):
@@ -2760,6 +2852,79 @@ def _handle_action(action: str):
         db.session.commit()
         flash("Configuracion de mantenimiento actualizada.", "success")
 
+    elif action == "gitops_refresh":
+        result = {"ok": True, "out": "Estado actualizado.", "err": "", "code": 0}
+        _save_gitops_result("refresh", result)
+        log_event("admin.git.refresh", "system", detail="Refresco de estado Git solicitado")
+        db.session.commit()
+        flash("Estado Git actualizado.", "success")
+
+    elif action == "gitops_fetch":
+        result = _run_git_remote_command(["git", "fetch", "--all", "--prune"], timeout=180)
+        _save_gitops_result("fetch", result)
+        if result["ok"]:
+            log_event("admin.git.fetch", "system", detail="Fetch ejecutado correctamente")
+            flash("Fetch completado correctamente.", "success")
+        else:
+            log_event("admin.git.fetch.fail", "system", detail=result.get("err") or "Error en fetch")
+            flash(f"Fetch falló: {result.get('err') or 'sin detalle'}", "error")
+        db.session.commit()
+
+    elif action == "gitops_pull_ff":
+        branch_result = _run_git_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], timeout=20)
+        branch = branch_result["out"] if branch_result["ok"] and branch_result["out"] else "main"
+        fetch_result = _run_git_remote_command(["git", "fetch", "--all", "--prune"], timeout=180)
+        if fetch_result["ok"]:
+            result = _run_git_remote_command(["git", "pull", "--ff-only", "origin", branch], timeout=300)
+        else:
+            result = fetch_result
+        _save_gitops_result("pull_ff", result)
+        if result["ok"]:
+            log_event("admin.git.pull", "system", detail=f"Pull ff-only aplicado en rama {branch}")
+            flash("Pull ff-only completado correctamente.", "success")
+        else:
+            log_event("admin.git.pull.fail", "system", detail=result.get("err") or "Error en pull")
+            flash(f"Pull falló: {result.get('err') or 'sin detalle'}", "error")
+        db.session.commit()
+
+    elif action == "save_gitops_remote":
+        remote_url = (request.form.get("gitops_remote_url", "") or "").strip()
+        username = (request.form.get("gitops_username", "") or "").strip() or "x-access-token"
+        token = (request.form.get("gitops_private_token", "") or "").strip()
+        persist_token = _str_to_bool(request.form.get("gitops_persist_token"))
+
+        if not remote_url.startswith("https://") and not remote_url.startswith("git@"):
+            flash("La URL remota debe iniciar con https:// o git@.", "error")
+            return
+
+        SystemSetting.set_value("gitops_remote_url", remote_url)
+        SystemSetting.set_value("gitops_username", username)
+        if persist_token and token:
+            SystemSetting.set_value("gitops_private_token", token)
+        elif not persist_token:
+            SystemSetting.set_value("gitops_private_token", "")
+
+        set_url_result = _run_git_command(["git", "remote", "set-url", "origin", remote_url], timeout=40)
+        _save_gitops_result("save_remote", set_url_result)
+        if set_url_result["ok"]:
+            log_event("admin.git.remote.save", "system", detail=f"Remote origin configurado: {remote_url}")
+            flash("Configuración remota guardada.", "success")
+        else:
+            log_event("admin.git.remote.save.fail", "system", detail=set_url_result.get("err") or "Error set-url")
+            flash(f"No se pudo configurar origin: {set_url_result.get('err') or 'sin detalle'}", "error")
+        db.session.commit()
+
+    elif action == "gitops_test_remote":
+        result = _run_git_remote_command(["git", "ls-remote", "--heads", "origin"], timeout=60)
+        _save_gitops_result("test_remote", result)
+        if result["ok"]:
+            log_event("admin.git.remote.test", "system", detail="Conexión remota verificada correctamente")
+            flash("Conexión con repositorio remoto verificada.", "success")
+        else:
+            log_event("admin.git.remote.test.fail", "system", detail=result.get("err") or "Error ls-remote")
+            flash(f"Error de conexión remota: {result.get('err') or 'sin detalle'}", "error")
+        db.session.commit()
+
     elif action == "save_permissions_matrix":
         if not current_user.is_superadmin:
             flash("Solo superadministrador puede modificar permisos.", "error")
@@ -2870,6 +3035,24 @@ def _base_context(active_page: str, **kwargs):
         ),
         "maintenance_image_path": SystemSetting.get_value("maintenance_image_path", ""),
     }
+    gitops_status = _git_status_snapshot()
+    gitops_last = {
+        "action": SystemSetting.get_value("gitops_last_action", ""),
+        "status": SystemSetting.get_value("gitops_last_status", ""),
+        "output": SystemSetting.get_value("gitops_last_output", ""),
+        "ran_at": SystemSetting.get_value("gitops_last_ran_at", ""),
+    }
+    gitops_remote = {
+        "remote_url": SystemSetting.get_value("gitops_remote_url", "") or (gitops_status.get("remote") or ""),
+        "username": SystemSetting.get_value("gitops_username", "x-access-token"),
+        "has_token": bool(SystemSetting.get_value("gitops_private_token", "")),
+    }
+    gitops_logs = (
+        SystemAuditLog.query.filter(SystemAuditLog.action.ilike("admin.git%"))
+        .order_by(SystemAuditLog.created_at.desc())
+        .limit(40)
+        .all()
+    )
     overview_metrics = _build_overview_metrics(
         projects,
         assignments,
@@ -2902,6 +3085,10 @@ def _base_context(active_page: str, **kwargs):
         "smtp_configured": smtp_is_configured(),
         "institution_settings": institution_settings,
         "maintenance_settings": maintenance_settings,
+        "gitops_status": gitops_status,
+        "gitops_last": gitops_last,
+        "gitops_remote": gitops_remote,
+        "gitops_logs": gitops_logs,
         "overview_metrics": overview_metrics,
         "logistics_statuses": LOGISTICS_STATUSES,
         "logistics_status_map": {code: label for code, label in LOGISTICS_STATUSES},
@@ -3254,3 +3441,8 @@ def institution_page():
 @admin_module_required("maintenance")
 def maintenance_page():
     return _render("admin/maintenance.html", "maintenance")
+
+
+@admin_module_required("gitops")
+def gitops_page():
+    return _render("admin/gitops.html", "gitops")

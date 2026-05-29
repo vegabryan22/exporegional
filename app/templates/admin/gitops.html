@@ -1,12 +1,12 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section">
+<section class="card admin-section gitops-page">
     <div class="section-head">
         <h3>Mantenimiento Git</h3>
         <p>Gestiona sincronización de versiones con control operativo y trazabilidad.</p>
     </div>
 
-    <div class="inline-card">
+    <div class="inline-card gitops-card">
         <h4>Configuración remota</h4>
         <form method="post" action="{{ action_url }}" class="form-grid inline-grid-3">
             <input type="hidden" name="next" value="{{ next_url }}">
@@ -24,12 +24,12 @@
                 <input type="checkbox" name="gitops_persist_token" value="1">
                 Guardar token en configuración del sistema
             </label>
-            <button type="submit">Guardar remoto</button>
+            <button type="submit" class="gitops-btn gitops-btn-primary">Guardar remoto</button>
         </form>
         <form method="post" action="{{ action_url }}" class="inline-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="gitops_test_remote">
-            <button type="submit">Probar conexión remota</button>
+            <button type="submit" class="gitops-btn gitops-btn-info">Probar conexión remota</button>
         </form>
     </div>
 
@@ -52,25 +52,41 @@
         </article>
     </div>
 
-    <div class="inline-card">
+    <div class="inline-card gitops-card gitops-actions">
         <form method="post" action="{{ action_url }}" class="inline-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="gitops_refresh">
-            <button type="submit">Actualizar estado</button>
+            <button type="submit" class="gitops-btn gitops-btn-neutral">Actualizar estado</button>
         </form>
         <form method="post" action="{{ action_url }}" class="inline-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="gitops_fetch">
-            <button type="submit">Fetch --all --prune</button>
+            <button type="submit" class="gitops-btn gitops-btn-warn">Descargar cambios (fetch)</button>
         </form>
         <form method="post" action="{{ action_url }}" class="inline-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="gitops_pull_ff">
-            <button type="submit">Pull seguro (ff-only)</button>
+            <button type="submit" class="gitops-btn gitops-btn-success">Aplicar cambios (pull ff-only)</button>
         </form>
     </div>
 
-    <div class="inline-card">
+    <div class="inline-card gitops-card">
+        <h4>Archivos locales con cambios</h4>
+        {% if gitops_status.changed_files %}
+            <div class="gitops-file-list">
+                {% for item in gitops_status.changed_files %}
+                    <div class="gitops-file-row">
+                        <span class="gitops-badge gitops-badge-{{ item.label|lower }}">{{ item.label }}</span>
+                        <code>{{ item.path }}</code>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Sin cambios locales.</p>
+        {% endif %}
+    </div>
+
+    <div class="inline-card gitops-card">
         <h4>Última ejecución</h4>
         <p>
             <strong>Acción:</strong> {{ gitops_last.action or 'N/D' }}<br>
@@ -81,7 +97,7 @@
         <textarea rows="12" readonly>{{ gitops_last.output or 'Sin resultados aún.' }}</textarea>
     </div>
 
-    <div class="inline-card">
+    <div class="inline-card gitops-card">
         <h4>Commits recientes</h4>
         {% if gitops_status.last_commits %}
             <ul>
@@ -94,7 +110,7 @@
         {% endif %}
     </div>
 
-    <div class="inline-card">
+    <div class="inline-card gitops-card">
         <h4>Bitácora Git (panel)</h4>
         <table>
             <thead>

@@ -450,12 +450,32 @@ def _git_status_snapshot() -> dict:
             if len(parts) == 2:
                 behind = int(parts[0])
                 ahead = int(parts[1])
+    changed_files = []
+    for raw_line in (status["out"] or "").splitlines():
+        line = raw_line.rstrip()
+        if not line.strip():
+            continue
+        code = line[:2]
+        path = line[3:].strip() if len(line) > 3 else ""
+        if code == "??":
+            label = "Nuevo"
+        elif "D" in code:
+            label = "Eliminado"
+        elif "M" in code:
+            label = "Modificado"
+        elif "R" in code:
+            label = "Renombrado"
+        else:
+            label = "Cambio"
+        changed_files.append({"code": code.strip(), "label": label, "path": path})
+
     return {
         "repo_path": str(_git_repo_path()),
         "branch": branch["out"] if branch["ok"] else "N/D",
         "head": head["out"] if head["ok"] else "N/D",
         "remote": remote["out"] if remote["ok"] else "N/D",
-        "dirty_count": len([line for line in (status["out"] or "").splitlines() if line.strip()]),
+        "dirty_count": len(changed_files),
+        "changed_files": changed_files,
         "ahead": ahead,
         "behind": behind,
         "last_commits": [line for line in (last["out"] or "").splitlines() if line.strip()],

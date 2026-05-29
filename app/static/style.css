@@ -2840,7 +2840,7 @@ dialog.maintenance-dialog::backdrop {
 
 .showcase-layout {
     display: grid;
-    grid-template-columns: 290px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.9rem;
 }
 
@@ -2849,10 +2849,16 @@ dialog.maintenance-dialog::backdrop {
     border: 1px solid #ced9e8;
     border-radius: 10px;
     padding: 0.8rem;
-    max-height: calc(100vh - 140px);
-    overflow: auto;
-    position: sticky;
-    top: 0.9rem;
+    max-height: none;
+    overflow: visible;
+    position: static;
+}
+
+.project-sidebar-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 0.75rem;
+    align-items: start;
 }
 
 .project-sidebar-head h2 {
@@ -2870,7 +2876,11 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .project-category-menu {
-    margin: 0.65rem 0 0;
+    margin: 0;
+    background: #f8fbff;
+    border: 1px solid #d7e2ef;
+    border-radius: 10px;
+    padding: 0.65rem;
 }
 
 .project-category-menu summary {
@@ -3022,6 +3032,63 @@ dialog.maintenance-dialog::backdrop {
 .project-main-actions {
     margin-top: 0.7rem;
 }
+
+/* GitOps admin module */
+.gitops-page .gitops-card {
+    border-left: 4px solid #2f6fa9;
+}
+
+.gitops-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.gitops-btn {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 0.55rem 0.9rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.gitops-btn-primary { background: linear-gradient(180deg, #1f7ac9 0%, #1664a8 100%); }
+.gitops-btn-info { background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%); }
+.gitops-btn-neutral { background: linear-gradient(180deg, #6b7280 0%, #4b5563 100%); }
+.gitops-btn-warn { background: linear-gradient(180deg, #e7a42f 0%, #c9820f 100%); color: #142033; }
+.gitops-btn-success { background: linear-gradient(180deg, #2d9a68 0%, #1f7d53 100%); }
+
+.gitops-file-list {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.gitops-file-row {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: center;
+    border: 1px solid #d8e4f2;
+    border-radius: 8px;
+    background: #f8fbff;
+    padding: 0.45rem 0.6rem;
+}
+
+.gitops-badge {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.25rem 0.55rem;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.gitops-badge-modificado { background: #fff2cc; color: #8a5a00; }
+.gitops-badge-nuevo { background: #dff6e9; color: #145d35; }
+.gitops-badge-eliminado { background: #ffe1e5; color: #8c1d2d; }
+.gitops-badge-renombrado { background: #e1e9ff; color: #2047a6; }
+.gitops-badge-cambio { background: #e9edf2; color: #3e4b5b; }
 
 .project-action {
     display: inline-block;

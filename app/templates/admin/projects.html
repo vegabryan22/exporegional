@@ -110,6 +110,8 @@
                         <button type="button" class="outline-btn" data-dialog-open="edit-project-{{ project.id }}">Editar</button>
                         <button type="button" class="secondary-btn" data-dialog-open="logistics-project-{{ project.id }}">Logística</button>
                         <button type="button" class="secondary-btn" data-dialog-open="members-project-{{ project.id }}">Integrantes</button>
+                        <a href="{{ url_for('public.project_documents', project_id=project.id) }}" target="_blank" class="table-link-btn">Documentos</a>
+                        <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" class="table-link-btn secondary">Paquete PDF</a>
                         <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar proyecto completo?')">
                             <input type="hidden" name="next" value="{{ next_url }}">
                             <input type="hidden" name="action" value="delete_project">

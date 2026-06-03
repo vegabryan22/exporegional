@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="project-documents-shell">
+    <div class="project-documents-head">
+        <p class="maintenance-kicker">Documentos de inscripción</p>
+        <h2>{{ project.title }}</h2>
+        <p>Descarga el paquete oficial, imprímelo y entrégalo firmado a la organización de ExpoTécnica.</p>
+    </div>
+
+    <div class="project-documents-grid">
+        <article class="project-documents-card">
+            <h3>Paquete imprimible</h3>
+            <p>Incluye el formulario ExpoTEC-1 del proyecto y un consentimiento informado ExpoTEC-2 por cada estudiante participante.</p>
+            <a class="project-action" href="{{ url_for('public.project_documents_packet', project_id=project.id) }}">Descargar paquete PDF</a>
+        </article>
+
+        <article class="project-documents-card">
+            <h3>Entrega física</h3>
+            <ul>
+                <li>Imprimir todas las páginas del paquete.</li>
+                <li>Firmar el formulario de inscripción del proyecto.</li>
+                <li>Solicitar firma del padre, madre o encargado legal de cada estudiante.</li>
+                <li>Entregar el paquete firmado a la organización de ExpoTécnica.</li>
+            </ul>
+        </article>
+    </div>
+
+    <section class="project-documents-card">
+        <h3>Estudiantes incluidos</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nombre</th>
+                        <th>Identificación</th>
+                        <th>Sección</th>
+                        <th>Especialidad/Taller</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in project.members|sort(attribute='student_number') %}
+                    <tr>
+                        <td>{{ member.student_number }}</td>
+                        <td>{{ member.full_name }}</td>
+                        <td>{{ member.identity_number or 'N/D' }}</td>
+                        <td>{{ member.section_name or 'N/D' }}</td>
+                        <td>{{ member.specialty or 'N/D' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5">No hay estudiantes registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+{% endblock %}

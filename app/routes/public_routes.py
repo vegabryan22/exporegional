@@ -28,6 +28,20 @@ public_bp.add_url_rule(
 )
 
 public_bp.add_url_rule(
+    "/proyecto/<int:project_id>/documentos",
+    endpoint="project_documents",
+    view_func=project_controller.project_documents,
+    methods=["GET"],
+)
+
+public_bp.add_url_rule(
+    "/proyecto/<int:project_id>/documentos/paquete",
+    endpoint="project_documents_packet",
+    view_func=project_controller.project_documents_packet,
+    methods=["GET"],
+)
+
+public_bp.add_url_rule(
     "/jueces/registro",
     endpoint="judge_registration",
     view_func=admin_controller.public_judge_registration,

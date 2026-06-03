@@ -1,8 +1,9 @@
 import os
 import uuid
+from io import BytesIO
 from datetime import date, datetime
 
-from flask import current_app, flash, redirect, render_template, request, session, url_for
+from flask import current_app, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
@@ -20,6 +21,14 @@ from app.models.system_setting import SystemSetting
 from app.models.workshop import Workshop
 from app.services.audit_service import log_event
 from app.services.parameter_service import get_active_evaluation_types
+
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.pdfgen import canvas
+
+    REPORTLAB_AVAILABLE = True
+except Exception:
+    REPORTLAB_AVAILABLE = False
 
 ALLOWED_DOC_EXTENSIONS = {"pdf", "doc", "docx", "ppt", "pptx", "zip", "rar"}
 REGISTRATION_DRAFT_SESSION_KEY = "project_registration_draft"
@@ -138,6 +147,171 @@ def _store_registration_draft(form_data, temp_document_path=""):
         "temp_document_path": temp_document_path or "",
     }
     session.modified = True
+
+
+def _pdf_text(value) -> str:
+    text = "" if value is None else str(value)
+    return text.encode("latin-1", "replace").decode("latin-1")
+
+
+def _pdf_lines(text, width_chars=95):
+    words = _pdf_text(text).split()
+    lines = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if len(candidate) <= width_chars:
+            current = candidate
+        else:
+            if current:
+                lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines or [""]
+
+
+def _draw_wrapped(pdf, text, x, y, width_chars=95, leading=12, font="Helvetica", size=9):
+    pdf.setFont(font, size)
+    for line in _pdf_lines(text, width_chars=width_chars):
+        pdf.drawString(x, y, line)
+        y -= leading
+    return y
+
+
+def _draw_document_header(pdf, title, subtitle="Curso lectivo 2026"):
+    width, height = letter
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(42, height - 46, "ExpoTEC")
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawCentredString(width / 2, height - 50, _pdf_text(title))
+    pdf.setFont("Helvetica", 10)
+    pdf.drawCentredString(width / 2, height - 66, _pdf_text(subtitle))
+    pdf.line(42, height - 78, width - 42, height - 78)
+    return height - 104
+
+
+def _draw_field(pdf, label, value, x, y, line_width=230):
+    pdf.setFont("Helvetica-Bold", 8)
+    pdf.drawString(x, y, _pdf_text(label))
+    pdf.setFont("Helvetica", 9)
+    pdf.drawString(x, y - 13, _pdf_text(value or ""))
+    pdf.line(x, y - 16, x + line_width, y - 16)
+    return y - 30
+
+
+def _project_category_label(project):
+    category = Category.query.filter_by(code=project.category).first()
+    return category.name if category else project.category
+
+
+def _render_project_documents_packet(project: Project):
+    buffer = BytesIO()
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+    width, height = letter
+    today = date.today().strftime("%Y-%m-%d")
+
+    y = _draw_document_header(pdf, "ExpoTEC-1 - Inscripcion del Proyecto")
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(42, y, "Etapa:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(88, y, "Institucional")
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(330, y, "Fecha de impresion:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(430, y, today)
+    y -= 28
+
+    fields = [
+        ("Nombre del centro educativo", project.institution_name or "CTP Roberto Gamboa Valverde"),
+        ("Nombre del proyecto", project.title),
+        ("Categoria", _project_category_label(project)),
+        ("Seccion", project.section.name if project.section else project.grade_level),
+        ("Especialidad / Taller", project.specialty or ""),
+        ("Docente tutor(a)", project.advisor_name or ""),
+        ("Cedula docente", project.advisor_identity or ""),
+        ("Correo docente", project.advisor_email or ""),
+        ("Requerimientos", project.requirements_summary or ""),
+        ("Detalle requerimientos", project.required_resources or project.requirements_other or ""),
+    ]
+    for index in range(0, len(fields), 2):
+        left = fields[index]
+        right = fields[index + 1] if index + 1 < len(fields) else ("", "")
+        _draw_field(pdf, left[0], left[1], 42, y, 245)
+        _draw_field(pdf, right[0], right[1], 320, y, 230)
+        y -= 36
+
+    y -= 4
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(42, y, "Estudiantes participantes")
+    y -= 18
+    pdf.setFont("Helvetica-Bold", 8)
+    for x, label in [(42, "#"), (70, "Nombre"), (260, "Identificacion"), (365, "Seccion"), (445, "Ingles")]:
+        pdf.drawString(x, y, label)
+    y -= 8
+    pdf.line(42, y, width - 42, y)
+    y -= 15
+    pdf.setFont("Helvetica", 8)
+    for member in sorted(project.members, key=lambda item: item.student_number):
+        pdf.drawString(42, y, str(member.student_number))
+        pdf.drawString(70, y, _pdf_text(member.full_name)[:34])
+        pdf.drawString(260, y, _pdf_text(member.identity_number or ""))
+        pdf.drawString(365, y, _pdf_text(member.section_name or ""))
+        pdf.drawString(445, y, "Si" if member.participates_in_english else "No")
+        y -= 16
+
+    y -= 18
+    _draw_field(pdf, "Firma docente tutor(a)", "", 42, y, 240)
+    _draw_field(pdf, "Firma coordinacion ExpoTecnica", "", 320, y, 230)
+    pdf.showPage()
+
+    for member in sorted(project.members, key=lambda item: item.student_number):
+        y = _draw_document_header(pdf, "ExpoTEC-2 - Consentimiento Informado")
+        intro = (
+            "El suscrito, en mi condicion de padre, madre o encargado legal, doy mi consentimiento para que "
+            "la persona estudiante participe en la ExpoTECNICA Institucional, actividad avalada por el "
+            "Ministerio de Educacion Publica y orientada a estimular la resolucion de problemas, la innovacion, "
+            "la ingenieria y el autoaprendizaje."
+        )
+        y = _draw_wrapped(pdf, intro, 42, y, width_chars=105, leading=13, size=9)
+        y -= 10
+
+        _draw_field(pdf, "Nombre del estudiante", member.full_name, 42, y, 300)
+        _draw_field(pdf, "Numero de identidad", member.identity_number or "", 375, y, 170)
+        y -= 42
+        _draw_field(pdf, "Proyecto", project.title, 42, y, 300)
+        _draw_field(pdf, "Seccion", member.section_name or "", 375, y, 170)
+        y -= 48
+
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(42, y, "Dejo constancia que:")
+        y -= 18
+        checks = [
+            "Recibi informacion sencilla y comprensible respecto a los beneficios y actividades de esta actividad.",
+            "Se me ha explicado este documento.",
+            "Autorizo la participacion de la persona estudiante en la ExpoTECNICA.",
+            "Libero de responsabilidad a las personas funcionarias cuando las imagenes no sean utilizadas para fines comerciales.",
+        ]
+        pdf.setFont("Helvetica", 9)
+        for item in checks:
+            pdf.rect(48, y - 2, 8, 8)
+            y = _draw_wrapped(pdf, item, 64, y, width_chars=92, leading=12, size=9)
+            y -= 6
+
+        y -= 16
+        _draw_field(pdf, "Nombre padre, madre o encargado legal", "", 42, y, 300)
+        _draw_field(pdf, "Cedula", "", 375, y, 170)
+        y -= 46
+        _draw_field(pdf, "Firma", "", 42, y, 250)
+        _draw_field(pdf, "Fecha", "", 375, y, 170)
+        y -= 42
+        pdf.setFont("Helvetica", 8)
+        pdf.drawString(42, y, _pdf_text("Documento generado por el sistema ExpoTecnica. Debe imprimirse, firmarse y entregarse a la organizacion."))
+        pdf.showPage()
+
+    pdf.save()
+    buffer.seek(0)
+    return buffer
 
 
 def _clear_registration_draft():
@@ -462,9 +636,47 @@ def register_project():
         db.session.commit()
         _clear_registration_draft()
         flash("Proyecto inscrito correctamente con formato ExpoTEC-1.", "success")
-        return redirect(url_for("public.register_project"))
+        return redirect(url_for("public.project_documents", project_id=project.id))
 
     return render_template("public/register_project.html", **_draft_context())
+
+
+def project_documents(project_id: int):
+    project = (
+        Project.query.options(
+            joinedload(Project.members),
+            joinedload(Project.section),
+            joinedload(Project.specialty_ref),
+            joinedload(Project.workshop_ref),
+        )
+        .filter(Project.id == project_id)
+        .first_or_404()
+    )
+    return render_template("public/project_documents.html", project=project)
+
+
+def project_documents_packet(project_id: int):
+    project = (
+        Project.query.options(
+            joinedload(Project.members),
+            joinedload(Project.section),
+            joinedload(Project.specialty_ref),
+            joinedload(Project.workshop_ref),
+        )
+        .filter(Project.id == project_id)
+        .first_or_404()
+    )
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("public.project_documents", project_id=project.id))
+    pdf_bytes = _render_project_documents_packet(project)
+    safe_title = "".join(char for char in project.title.lower().replace(" ", "_") if char.isalnum() or char in {"_", "-"})
+    return send_file(
+        pdf_bytes,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"expotec_documentos_{project.id}_{safe_title or 'proyecto'}.pdf",
+    )
 
 
 def evaluate_project_entry(project_id: int):

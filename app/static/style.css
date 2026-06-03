@@ -510,6 +510,66 @@ nav a:hover,
     color: #17416d;
 }
 
+.cleanup-section {
+    border-color: #f0c7cd;
+    background: linear-gradient(180deg, #fffafa 0%, #ffffff 100%);
+}
+
+.cleanup-banner {
+    border-color: #efc4cc;
+    background: linear-gradient(135deg, #fff2f4 0%, #ffffff 72%);
+}
+
+.cleanup-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.cleanup-warning-panel {
+    border-color: #efc4cc;
+    background: #fff7f8;
+}
+
+.cleanup-safe-panel {
+    border-color: #cfe5be;
+    background: #f8fff4;
+}
+
+.cleanup-list {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: grid;
+    gap: 0.28rem;
+    color: #35506d;
+}
+
+.cleanup-list strong {
+    color: #9e3444;
+}
+
+.ok-list strong,
+.cleanup-safe-panel li::marker {
+    color: #518314;
+}
+
+.cleanup-note {
+    margin: 0;
+    padding: 0.65rem;
+    border-radius: 10px;
+    background: #fff;
+    color: #7c3744;
+    border: 1px dashed #e8aab5;
+    font-weight: 700;
+}
+
+.cleanup-form {
+    border: 1px solid #efc4cc;
+    border-radius: 12px;
+    padding: 0.9rem;
+    background: #ffffff;
+}
+
 .switch-card {
     position: relative;
     display: grid;
@@ -5035,6 +5095,7 @@ button {
     .home-intro-hero,
     .project-main,
     .maintenance-grid,
+    .cleanup-grid,
     .institution-grid,
     .admin-overview-grid,
     .permissions-grid,

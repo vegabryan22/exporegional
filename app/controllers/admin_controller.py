@@ -6,6 +6,7 @@ import json
 import subprocess
 import base64
 import hmac
+import shutil
 from io import BytesIO
 from datetime import datetime
 from pathlib import Path
@@ -210,6 +211,7 @@ ACTION_MODULE_MAP = {
     "test_smtp": "smtp",
     "save_institution": "institution",
     "save_maintenance_settings": "maintenance",
+    "cleanup_expotecnica": "maintenance",
     "gitops_fetch": "gitops",
     "gitops_pull_ff": "gitops",
     "gitops_pull_apply": "gitops",
@@ -1561,6 +1563,55 @@ def _save_maintenance_image(photo_file):
     absolute_path = os.path.join(absolute_dir, unique_name)
     photo_file.save(absolute_path)
     return f"{relative_dir}/{unique_name}".replace("\\", "/")
+
+
+def _cleanup_expotecnica_counts():
+    return {
+        "projects": Project.query.count(),
+        "members": ProjectMember.query.count(),
+        "member_changes": ProjectMemberChange.query.count(),
+        "assignments": Assignment.query.count(),
+        "evaluations": Evaluation.query.count(),
+        "evaluation_scores": EvaluationScore.query.count(),
+    }
+
+
+def _clear_static_upload_dir(relative_dir: str) -> int:
+    static_root = Path(current_app.static_folder).resolve()
+    uploads_root = (static_root / "uploads").resolve()
+    target = (static_root / relative_dir).resolve()
+    if uploads_root not in target.parents and target != uploads_root:
+        raise ValueError(f"Ruta de limpieza no permitida: {relative_dir}")
+
+    target.mkdir(parents=True, exist_ok=True)
+    deleted = 0
+    for item in target.iterdir():
+        if item.is_dir():
+            shutil.rmtree(item)
+        else:
+            item.unlink()
+        deleted += 1
+    return deleted
+
+
+def _run_expotecnica_cleanup():
+    before = _cleanup_expotecnica_counts()
+    deleted_files = 0
+    for relative_dir in [
+        "uploads/projects/documents",
+        "uploads/projects/temp_documents",
+        "uploads/projects/logos",
+        "uploads/members",
+    ]:
+        deleted_files += _clear_static_upload_dir(relative_dir)
+
+    EvaluationScore.query.delete(synchronize_session=False)
+    Evaluation.query.delete(synchronize_session=False)
+    Assignment.query.delete(synchronize_session=False)
+    ProjectMemberChange.query.delete(synchronize_session=False)
+    ProjectMember.query.delete(synchronize_session=False)
+    Project.query.delete(synchronize_session=False)
+    return before, deleted_files
 
 
 def _send_judge_credentials_email(judge: Judge, plain_password: str):
@@ -3253,6 +3304,34 @@ def _handle_action(action: str):
         db.session.commit()
         flash("Configuracion de mantenimiento actualizada.", "success")
 
+    elif action == "cleanup_expotecnica":
+        confirmation = (request.form.get("cleanup_confirmation", "") or "").strip().upper()
+        if confirmation != "LIMPIAR EXPOTECNICA":
+            flash("Para limpiar ExpoTecnica debes escribir exactamente: LIMPIAR EXPOTECNICA.", "error")
+            return
+
+        before, deleted_files = _run_expotecnica_cleanup()
+        SystemSetting.set_value("maintenance_enabled", "1")
+        log_event(
+            "admin.maintenance.cleanup_expotecnica",
+            "system",
+            detail=(
+                "Limpieza anual ExpoTecnica ejecutada: "
+                f"projects={before['projects']}, members={before['members']}, "
+                f"assignments={before['assignments']}, evaluations={before['evaluations']}, "
+                f"evaluation_scores={before['evaluation_scores']}, member_changes={before['member_changes']}, "
+                f"archivos={deleted_files}"
+            ),
+        )
+        db.session.commit()
+        flash(
+            "ExpoTecnica limpiada. Se eliminaron "
+            f"{before['projects']} proyectos, {before['members']} integrantes, "
+            f"{before['assignments']} asignaciones, {before['evaluations']} evaluaciones "
+            f"y {deleted_files} archivo(s). El sitio quedo en mantenimiento.",
+            "success",
+        )
+
     elif action == "gitops_refresh":
         result = {"ok": True, "out": "Estado actualizado.", "err": "", "code": 0}
         _save_gitops_result("refresh", result)
@@ -3505,6 +3584,7 @@ def _base_context(active_page: str, **kwargs):
         ),
         "maintenance_image_path": SystemSetting.get_value("maintenance_image_path", ""),
     }
+    cleanup_stats = _cleanup_expotecnica_counts()
     gitops_status = _git_status_snapshot()
     gitops_service = _gitops_service_status()
     gitops_last = {
@@ -3565,6 +3645,7 @@ def _base_context(active_page: str, **kwargs):
         "smtp_configured": smtp_is_configured(),
         "institution_settings": institution_settings,
         "maintenance_settings": maintenance_settings,
+        "cleanup_stats": cleanup_stats,
         "gitops_status": gitops_status,
         "gitops_service": gitops_service,
         "gitops_last": gitops_last,

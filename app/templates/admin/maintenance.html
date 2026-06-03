@@ -56,4 +56,53 @@
         </div>
     </form>
 </section>
+
+<section class="card admin-section maintenance-page cleanup-section">
+    <div class="maintenance-banner cleanup-banner">
+        <div>
+            <p class="maintenance-kicker">Cierre anual</p>
+            <h3>Limpiar ExpoTécnica</h3>
+            <p>Prepara el sistema para una nueva edición eliminando los datos operativos del año actual.</p>
+        </div>
+        <span class="tag off">Acción irreversible</span>
+    </div>
+
+    <div class="cleanup-grid">
+        <article class="maintenance-panel cleanup-warning-panel">
+            <h4>Se eliminará</h4>
+            <ul class="cleanup-list">
+                <li><strong>{{ cleanup_stats.projects }}</strong> proyecto(s)</li>
+                <li><strong>{{ cleanup_stats.members }}</strong> integrante(s)</li>
+                <li><strong>{{ cleanup_stats.assignments }}</strong> asignación(es)</li>
+                <li><strong>{{ cleanup_stats.evaluations }}</strong> evaluación(es)</li>
+                <li><strong>{{ cleanup_stats.evaluation_scores }}</strong> puntaje(s) de rúbrica</li>
+                <li><strong>{{ cleanup_stats.member_changes }}</strong> movimiento(s) de integrantes</li>
+            </ul>
+            <p class="cleanup-note">También se limpiarán documentos de proyectos, logos de proyectos, temporales e imágenes de integrantes.</p>
+        </article>
+
+        <article class="maintenance-panel cleanup-safe-panel">
+            <h4>Se conservará</h4>
+            <ul class="cleanup-list ok-list">
+                <li>Usuarios y jueces registrados</li>
+                <li>Campañas, categorías, especialidades y secciones</li>
+                <li>Rúbricas y tipos de evaluación</li>
+                <li>Datos institucionales, permisos, SMTP y GitOps</li>
+                <li>Bitácora del sistema</li>
+            </ul>
+        </article>
+    </div>
+
+    <form method="post" action="{{ action_url }}" class="compact-form cleanup-form" onsubmit="return confirm('Esta acción limpiará los datos operativos de ExpoTécnica. ¿Deseas continuar?')">
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <input type="hidden" name="action" value="cleanup_expotecnica">
+        <label>Confirmación requerida
+            <input type="text" name="cleanup_confirmation" placeholder="Escribe: LIMPIAR EXPOTECNICA" autocomplete="off" required>
+            <small>Debe escribirse exactamente: <strong>LIMPIAR EXPOTECNICA</strong></small>
+        </label>
+        <div class="actions-row maintenance-actions">
+            <button type="submit" class="danger-btn">Limpiar ExpoTécnica</button>
+        </div>
+    </form>
+</section>
 {% endblock %}

@@ -176,10 +176,28 @@
                     </select>
                 </label>
             </div>
-            <div class="grid-3">
-                <label><input type="checkbox" name="logistics_document_ok" value="1" {% if project.logistics_document_ok %}checked{% endif %}> Proyecto escrito completo</label>
-                <label><input type="checkbox" name="logistics_logo_ok" value="1" {% if project.logistics_logo_ok %}checked{% endif %}> Logo validado</label>
-                <label><input type="checkbox" name="logistics_photos_ok" value="1" {% if project.logistics_photos_ok %}checked{% endif %}> Fotos completas</label>
+            <div class="logistics-check-section">
+                <div class="logistics-check-head">
+                    <span>Revision digital</span>
+                    <small>Archivos e imagenes necesarios para que el proyecto quede listo.</small>
+                </div>
+                <div class="logistics-check-grid">
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="logistics_document_ok" value="1" {% if project.logistics_document_ok %}checked{% endif %}>
+                        <span class="check-card-title">Proyecto escrito completo</span>
+                        <span class="check-card-help">Documento digital revisado y aceptado.</span>
+                    </label>
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="logistics_logo_ok" value="1" {% if project.logistics_logo_ok %}checked{% endif %}>
+                        <span class="check-card-title">Logo validado</span>
+                        <span class="check-card-help">Imagen cargada y apta para el sistema.</span>
+                    </label>
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="logistics_photos_ok" value="1" {% if project.logistics_photos_ok %}checked{% endif %}>
+                        <span class="check-card-title">Fotos completas</span>
+                        <span class="check-card-help">Fotografias de integrantes verificadas.</span>
+                    </label>
+                </div>
             </div>
             <div class="logistics-review-card">
                 <div>
@@ -188,10 +206,28 @@
                 </div>
                 <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" target="_blank" class="table-link-btn secondary" data-no-iconify>Imprimir paquete PDF</a>
             </div>
-            <div class="grid-3">
-                <label><input type="checkbox" name="logistics_registration_form_signed_ok" value="1" {% if project.logistics_registration_form_signed_ok %}checked{% endif %}> Formulario de inscripcion fisico firmado</label>
-                <label><input type="checkbox" name="logistics_student_consents_signed_ok" value="1" {% if project.logistics_student_consents_signed_ok %}checked{% endif %}> Consentimientos fisicos firmados</label>
-                <label><input type="checkbox" name="logistics_requirements_reviewed_ok" value="1" {% if project.logistics_requirements_reviewed_ok %}checked{% endif %}> Requisitos e insumos revisados</label>
+            <div class="logistics-check-section logistics-check-section-physical">
+                <div class="logistics-check-head">
+                    <span>Revision fisica</span>
+                    <small>Control de documentos entregados en papel y requisitos solicitados.</small>
+                </div>
+                <div class="logistics-check-grid">
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="logistics_registration_form_signed_ok" value="1" {% if project.logistics_registration_form_signed_ok %}checked{% endif %}>
+                        <span class="check-card-title">Formulario firmado</span>
+                        <span class="check-card-help">Inscripcion fisica recibida con firmas.</span>
+                    </label>
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="logistics_student_consents_signed_ok" value="1" {% if project.logistics_student_consents_signed_ok %}checked{% endif %}>
+                        <span class="check-card-title">Consentimientos firmados</span>
+                        <span class="check-card-help">Autorizaciones fisicas de estudiantes completas.</span>
+                    </label>
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="logistics_requirements_reviewed_ok" value="1" {% if project.logistics_requirements_reviewed_ok %}checked{% endif %}>
+                        <span class="check-card-title">Requisitos revisados</span>
+                        <span class="check-card-help">Insumos solicitados verificados por logistica.</span>
+                    </label>
+                </div>
             </div>
             <div class="logistics-requirements-summary">
                 <strong>Requerimientos solicitados:</strong>

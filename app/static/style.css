@@ -1169,6 +1169,109 @@ th {
     white-space: nowrap;
 }
 
+.logistics-check-section {
+    display: grid;
+    gap: 0.7rem;
+    padding: 0.8rem;
+    border: 1px solid #dbe8f5;
+    border-radius: 14px;
+    background: #fbfdff;
+}
+
+.logistics-check-section-physical {
+    background: #fffdf8;
+    border-color: #eadfc0;
+}
+
+.logistics-check-head {
+    display: grid;
+    gap: 0.12rem;
+}
+
+.logistics-check-head span {
+    color: var(--primary);
+    font-size: 0.95rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.logistics-check-head small {
+    color: #5e7691;
+    font-weight: 600;
+}
+
+.logistics-check-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+}
+
+.logistics-check-card {
+    position: relative;
+    display: grid;
+    align-content: start;
+    gap: 0.32rem;
+    min-height: 116px;
+    padding: 0.85rem 0.85rem 0.85rem 3.1rem;
+    border: 1px solid #cbdced;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 10px 22px rgba(30, 66, 105, 0.06);
+    cursor: pointer;
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.logistics-check-card:hover {
+    border-color: var(--primary-2);
+    box-shadow: 0 14px 30px rgba(31, 143, 181, 0.12);
+    transform: translateY(-1px);
+}
+
+.logistics-check-card input {
+    position: absolute;
+    top: 0.9rem;
+    left: 0.9rem;
+    width: 1.45rem;
+    height: 1.45rem;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.logistics-check-card:has(input:checked) {
+    border-color: #66a82f;
+    background: linear-gradient(135deg, #f4ffe9 0%, #ffffff 82%);
+    box-shadow: 0 14px 30px rgba(102, 168, 47, 0.13);
+}
+
+.check-card-title {
+    color: #153a63;
+    font-weight: 900;
+    line-height: 1.25;
+}
+
+.check-card-help {
+    color: #667f99;
+    font-size: 0.9rem;
+    line-height: 1.35;
+}
+
+@media (max-width: 980px) {
+    .logistics-check-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .logistics-check-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .logistics-check-card {
+        min-height: auto;
+    }
+}
+
 .logistics-review-card,
 .logistics-requirements-summary {
     border: 1px solid #d7e6f5;

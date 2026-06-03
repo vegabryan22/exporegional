@@ -342,7 +342,47 @@ def ensure_schema_updates():
             connection.execute(text("UPDATE projects SET logistics_status = 'pendiente_revision' WHERE logistics_status = 'inscrito'"))
             connection.execute(text("UPDATE projects SET logistics_status = 'pendiente_revision' WHERE logistics_status = 'revision_logistica'"))
 
-        evaluation_columns = {column["name"] for column in inspector.get_columns("evaluations")}
+        evaluation_columns_info = inspector.get_columns("evaluations")
+        evaluation_columns = {column["name"] for column in evaluation_columns_info}
+        evaluation_columns_by_name = {column["name"]: column for column in evaluation_columns_info}
+        evaluation_fks = inspector.get_foreign_keys("evaluations")
+        for fk_column, referred_table, constraint_name in [
+            ("judge_id", "judges", "fk_evaluations_judge_set_null"),
+            ("project_id", "projects", "fk_evaluations_project_set_null"),
+        ]:
+            fk = next(
+                (
+                    item
+                    for item in evaluation_fks
+                    if item.get("referred_table") == referred_table
+                    and item.get("constrained_columns") == [fk_column]
+                ),
+                None,
+            )
+            fk_ondelete = str((fk or {}).get("options", {}).get("ondelete") or "").upper()
+            fk_column_info = evaluation_columns_by_name.get(fk_column, {})
+            needs_nullable = fk_column_info.get("nullable") is False
+            needs_set_null_fk = fk and fk_ondelete != "SET NULL"
+
+            if fk and (needs_nullable or needs_set_null_fk):
+                connection.execute(text(f"ALTER TABLE evaluations DROP FOREIGN KEY {fk['name']}"))
+                fk = None
+
+            if needs_nullable:
+                connection.execute(text(f"ALTER TABLE evaluations MODIFY COLUMN {fk_column} INT NULL"))
+
+            if fk is None:
+                connection.execute(
+                    text(
+                        f"""
+                        ALTER TABLE evaluations
+                        ADD CONSTRAINT {constraint_name}
+                        FOREIGN KEY ({fk_column}) REFERENCES {referred_table} (id)
+                        ON DELETE SET NULL
+                        """
+                    )
+                )
+
         evaluation_type_columns = {column["name"] for column in inspector.get_columns("evaluation_types")}
         if "scale_labels" not in evaluation_type_columns:
             connection.execute(text("ALTER TABLE evaluation_types ADD COLUMN scale_labels TEXT NULL"))

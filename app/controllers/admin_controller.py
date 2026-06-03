@@ -1566,11 +1566,16 @@ def _save_maintenance_image(photo_file):
 
 
 def _cleanup_expotecnica_counts():
+    users_to_delete = Judge.query.filter(
+        Judge.is_admin.is_(False),
+        Judge.role.notin_(list(Judge.ADMIN_ROLES)),
+    ).count()
     return {
         "projects": Project.query.count(),
         "members": ProjectMember.query.count(),
         "member_changes": ProjectMemberChange.query.count(),
         "assignments": Assignment.query.count(),
+        "users": users_to_delete,
         "evaluations": Evaluation.query.count(),
         "evaluation_scores": EvaluationScore.query.count(),
     }
@@ -1605,9 +1610,18 @@ def _run_expotecnica_cleanup():
     ]:
         deleted_files += _clear_static_upload_dir(relative_dir)
 
-    EvaluationScore.query.delete(synchronize_session=False)
-    Evaluation.query.delete(synchronize_session=False)
+    Evaluation.query.update(
+        {
+            Evaluation.judge_id: None,
+            Evaluation.project_id: None,
+        },
+        synchronize_session=False,
+    )
     Assignment.query.delete(synchronize_session=False)
+    Judge.query.filter(
+        Judge.is_admin.is_(False),
+        Judge.role.notin_(list(Judge.ADMIN_ROLES)),
+    ).delete(synchronize_session=False)
     ProjectMemberChange.query.delete(synchronize_session=False)
     ProjectMember.query.delete(synchronize_session=False)
     Project.query.delete(synchronize_session=False)
@@ -3318,8 +3332,10 @@ def _handle_action(action: str):
             detail=(
                 "Limpieza anual ExpoTecnica ejecutada: "
                 f"projects={before['projects']}, members={before['members']}, "
-                f"assignments={before['assignments']}, evaluations={before['evaluations']}, "
-                f"evaluation_scores={before['evaluation_scores']}, member_changes={before['member_changes']}, "
+                f"assignments={before['assignments']}, users={before['users']}, "
+                f"evaluations_preserved={before['evaluations']}, "
+                f"evaluation_scores_preserved={before['evaluation_scores']}, "
+                f"member_changes={before['member_changes']}, "
                 f"archivos={deleted_files}"
             ),
         )
@@ -3327,8 +3343,9 @@ def _handle_action(action: str):
         flash(
             "ExpoTecnica limpiada. Se eliminaron "
             f"{before['projects']} proyectos, {before['members']} integrantes, "
-            f"{before['assignments']} asignaciones, {before['evaluations']} evaluaciones "
-            f"y {deleted_files} archivo(s). El sitio quedo en mantenimiento.",
+            f"{before['assignments']} asignaciones, {before['users']} usuarios no admin "
+            f"y {deleted_files} archivo(s). Evaluaciones y rubricas se conservaron. "
+            "El sitio quedo en mantenimiento.",
             "success",
         )
 

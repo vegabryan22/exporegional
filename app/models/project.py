@@ -47,7 +47,7 @@ class Project(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     assignments = db.relationship("Assignment", back_populates="project", cascade="all, delete-orphan")
-    evaluations = db.relationship("Evaluation", back_populates="project", cascade="all, delete-orphan")
+    evaluations = db.relationship("Evaluation", back_populates="project")
     members = db.relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
     member_changes = db.relationship("ProjectMemberChange", back_populates="project", cascade="all, delete-orphan")
     section = db.relationship("Section")

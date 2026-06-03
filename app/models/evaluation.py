@@ -10,8 +10,8 @@ class Evaluation(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    judge_id = db.Column(db.Integer, db.ForeignKey("judges.id"), nullable=False)
-    project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False)
+    judge_id = db.Column(db.Integer, db.ForeignKey("judges.id", ondelete="SET NULL"), nullable=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
     evaluation_type = db.Column(db.String(60), nullable=False, index=True)
     criteria_1 = db.Column(db.Integer, nullable=True)
     criteria_2 = db.Column(db.Integer, nullable=True)

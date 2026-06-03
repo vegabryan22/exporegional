@@ -74,8 +74,7 @@
                 <li><strong>{{ cleanup_stats.projects }}</strong> proyecto(s)</li>
                 <li><strong>{{ cleanup_stats.members }}</strong> integrante(s)</li>
                 <li><strong>{{ cleanup_stats.assignments }}</strong> asignación(es)</li>
-                <li><strong>{{ cleanup_stats.evaluations }}</strong> evaluación(es)</li>
-                <li><strong>{{ cleanup_stats.evaluation_scores }}</strong> puntaje(s) de rúbrica</li>
+                <li><strong>{{ cleanup_stats.users }}</strong> usuario(s) no administrador / juez(es)</li>
                 <li><strong>{{ cleanup_stats.member_changes }}</strong> movimiento(s) de integrantes</li>
             </ul>
             <p class="cleanup-note">También se limpiarán documentos de proyectos, logos de proyectos, temporales e imágenes de integrantes.</p>
@@ -84,8 +83,10 @@
         <article class="maintenance-panel cleanup-safe-panel">
             <h4>Se conservará</h4>
             <ul class="cleanup-list ok-list">
-                <li>Usuarios y jueces registrados</li>
+                <li>Usuario(s) administrador(es)</li>
                 <li>Campañas, categorías, especialidades y secciones</li>
+                <li><strong>{{ cleanup_stats.evaluations }}</strong> evaluación(es) histórica(s)</li>
+                <li><strong>{{ cleanup_stats.evaluation_scores }}</strong> puntaje(s) de rúbrica</li>
                 <li>Rúbricas y tipos de evaluación</li>
                 <li>Datos institucionales, permisos, SMTP y GitOps</li>
                 <li>Bitácora del sistema</li>

@@ -29,7 +29,7 @@ class Judge(UserMixin, db.Model):
     last_login_at = db.Column(db.DateTime, nullable=True)
 
     assignments = db.relationship("Assignment", back_populates="judge", cascade="all, delete-orphan")
-    evaluations = db.relationship("Evaluation", back_populates="judge", cascade="all, delete-orphan")
+    evaluations = db.relationship("Evaluation", back_populates="judge")
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)

@@ -24,6 +24,7 @@ from app.services.parameter_service import get_active_evaluation_types
 
 try:
     from reportlab.lib.pagesizes import letter
+    from reportlab.lib.utils import ImageReader
     from reportlab.pdfgen import canvas
 
     REPORTLAB_AVAILABLE = True
@@ -179,16 +180,59 @@ def _draw_wrapped(pdf, text, x, y, width_chars=95, leading=12, font="Helvetica",
     return y
 
 
+def _static_pdf_image_path(relative_path: str) -> str:
+    if not relative_path or relative_path.startswith("http://") or relative_path.startswith("https://"):
+        return ""
+    absolute_path = os.path.join(current_app.static_folder, relative_path.replace("/", os.sep))
+    return absolute_path if os.path.exists(absolute_path) else ""
+
+
+def _draw_pdf_logo(pdf, relative_path: str, x: float, y: float, max_width: float = 64, max_height: float = 52):
+    absolute_path = _static_pdf_image_path(relative_path)
+    if not absolute_path:
+        return False
+    try:
+        image = ImageReader(absolute_path)
+        image_width, image_height = image.getSize()
+        scale = min(max_width / image_width, max_height / image_height)
+        draw_width = image_width * scale
+        draw_height = image_height * scale
+        pdf.drawImage(
+            image,
+            x + (max_width - draw_width) / 2,
+            y + (max_height - draw_height) / 2,
+            width=draw_width,
+            height=draw_height,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
+        return True
+    except Exception:
+        return False
+
+
 def _draw_document_header(pdf, title, subtitle="Curso lectivo 2026"):
     width, height = letter
-    pdf.setFont("Helvetica-Bold", 11)
-    pdf.drawString(42, height - 46, "ExpoTEC")
+    school_logo = SystemSetting.get_value("school_logo_path", "")
+    expo_logo = SystemSetting.get_value("expo_logo_path", "")
+    school_name = SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+
+    logo_y = height - 72
+    if not _draw_pdf_logo(pdf, school_logo, 42, logo_y, max_width=62, max_height=54):
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(42, height - 50, "CTP")
+    if not _draw_pdf_logo(pdf, expo_logo, width - 104, logo_y, max_width=62, max_height=54):
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawRightString(width - 42, height - 50, "ExpoTEC")
+
     pdf.setFont("Helvetica-Bold", 16)
     pdf.drawCentredString(width / 2, height - 50, _pdf_text(title))
     pdf.setFont("Helvetica", 10)
     pdf.drawCentredString(width / 2, height - 66, _pdf_text(subtitle))
-    pdf.line(42, height - 78, width - 42, height - 78)
-    return height - 104
+    pdf.setFont("Helvetica-Bold", 9)
+    pdf.drawCentredString(width / 2, height - 80, _pdf_text(school_name))
+    pdf.line(42, height - 92, width - 42, height - 92)
+    return height - 118
 
 
 def _draw_field(pdf, label, value, x, y, line_width=230):

@@ -1117,12 +1117,22 @@ th {
     display: grid;
     grid-template-columns: repeat(2, 42px);
     justify-content: center;
+    align-items: center;
     gap: 0.35rem;
     min-width: 96px;
 }
 
+.projects-maintenance-table .actions-cell > *,
 .projects-maintenance-table .actions-cell .inline-form {
     margin: 0;
+    min-width: 0;
+    max-width: 42px;
+}
+
+.projects-maintenance-table .actions-cell .btn-icon-only {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
 }
 
 .table-wrap thead th {

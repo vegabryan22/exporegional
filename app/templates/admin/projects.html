@@ -220,7 +220,7 @@
                         <th>#</th>
                         <th>Nombre</th>
                         <th>Sección</th>
-                        <th>Especialidad/Taller</th>
+                        <th>Especialidad tecnica</th>
                         <th>Genero</th>
                         <th>Foto</th>
                         <th>Acciones</th>
@@ -316,25 +316,19 @@
                     <select name="member_section_id" required>
                         <option value="">Seleccione...</option>
                         {% for section in sections %}
+                            {% if section.level and section.level.code in ['10', '11', '12'] %}
                             <option value="{{ section.id }}" data-level-code="{{ section.level.code if section.level else '' }}" {% if project.section and section.id == project.section.id %}selected{% endif %}>
                                 {{ section.name }} (Nivel {{ section.level.code if section.level else 'N/D' }})
                             </option>
+                            {% endif %}
                         {% endfor %}
                     </select>
                 </label>
-                <label class="member-specialty-wrap">Especialidad
-                    <select name="member_specialty_id">
+                <label class="member-specialty-wrap">Especialidad tecnica
+                    <select name="member_specialty_id" required>
                         <option value="">Seleccione...</option>
                         {% for specialty in specialties %}
                             <option value="{{ specialty.id }}" {% if project.specialty_ref and project.specialty_ref.name == specialty.name %}selected{% endif %}>{{ specialty.name }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label class="member-workshop-wrap">Taller
-                    <select name="member_workshop_id">
-                        <option value="">Seleccione...</option>
-                        {% for workshop in workshops %}
-                            <option value="{{ workshop.id }}" {% if project.workshop_ref and project.workshop_ref.name == workshop.name %}selected{% endif %}>{{ workshop.name }}</option>
                         {% endfor %}
                     </select>
                 </label>
@@ -385,25 +379,19 @@
                     <select name="member_section_id" required>
                         <option value="">Seleccione...</option>
                         {% for section in sections %}
+                            {% if section.level and section.level.code in ['10', '11', '12'] %}
                             <option value="{{ section.id }}" data-level-code="{{ section.level.code if section.level else '' }}" {% if member.section_name == section.name %}selected{% endif %}>
                                 {{ section.name }} (Nivel {{ section.level.code if section.level else 'N/D' }})
                             </option>
+                            {% endif %}
                         {% endfor %}
                     </select>
                 </label>
-                <label class="member-specialty-wrap">Especialidad
-                    <select name="member_specialty_id">
+                <label class="member-specialty-wrap">Especialidad tecnica
+                    <select name="member_specialty_id" required>
                         <option value="">Seleccione...</option>
                         {% for specialty in specialties %}
                             <option value="{{ specialty.id }}" {% if member.specialty == specialty.name %}selected{% endif %}>{{ specialty.name }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label class="member-workshop-wrap">Taller
-                    <select name="member_workshop_id">
-                        <option value="">Seleccione...</option>
-                        {% for workshop in workshops %}
-                            <option value="{{ workshop.id }}" {% if member.specialty == workshop.name %}selected{% endif %}>{{ workshop.name }}</option>
                         {% endfor %}
                     </select>
                 </label>
@@ -433,28 +421,20 @@
         function syncAcademicFields(form) {
             var sectionSelect = form.querySelector('select[name="member_section_id"]');
             var specialtyWrap = form.querySelector('.member-specialty-wrap');
-            var workshopWrap = form.querySelector('.member-workshop-wrap');
             var specialtySelect = form.querySelector('select[name="member_specialty_id"]');
-            var workshopSelect = form.querySelector('select[name="member_workshop_id"]');
-            if (!sectionSelect || !specialtyWrap || !workshopWrap || !specialtySelect || !workshopSelect) {
+            if (!sectionSelect || !specialtyWrap || !specialtySelect) {
                 return;
             }
 
             var selected = sectionSelect.options[sectionSelect.selectedIndex];
             var levelCode = selected ? (selected.getAttribute('data-level-code') || '') : '';
-            var isWorkshop = levelCode === '7' || levelCode === '8' || levelCode === '9';
             var isSpecialty = levelCode === '10' || levelCode === '11' || levelCode === '12';
 
             specialtyWrap.style.display = isSpecialty ? 'grid' : 'none';
-            workshopWrap.style.display = isWorkshop ? 'grid' : 'none';
             specialtySelect.required = isSpecialty;
-            workshopSelect.required = isWorkshop;
 
             if (!isSpecialty) {
                 specialtySelect.value = '';
-            }
-            if (!isWorkshop) {
-                workshopSelect.value = '';
             }
         }
 

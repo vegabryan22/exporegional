@@ -53,19 +53,11 @@
                         {% endfor %}
                     </select>
                 </label>
-                <label id="specialty-wrapper">Especialidad *
-                    <select name="specialty_id" id="specialty-id">
+                <label id="specialty-wrapper">Especialidad tecnica *
+                    <select name="specialty_id" id="specialty-id" required>
                         <option value="">Seleccione...</option>
                         {% for specialty in specialties %}
                             <option value="{{ specialty.id }}" {% if form_data.get('specialty_id') == specialty.id|string %}selected{% endif %}>{{ specialty.name }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label id="workshop-wrapper">Taller *
-                    <select name="workshop_id" id="workshop-id">
-                        <option value="">Seleccione...</option>
-                        {% for workshop in workshops %}
-                            <option value="{{ workshop.id }}" {% if form_data.get('workshop_id') == workshop.id|string %}selected{% endif %}>{{ workshop.name }}</option>
                         {% endfor %}
                     </select>
                 </label>
@@ -268,9 +260,7 @@
     var reqOtrosWrapper = document.getElementById('req-otros-wrapper');
     var category = document.getElementById('category');
     var specialtyWrapper = document.getElementById('specialty-wrapper');
-    var workshopWrapper = document.getElementById('workshop-wrapper');
     var specialtySelect = document.getElementById('specialty-id');
-    var workshopSelect = document.getElementById('workshop-id');
 
     function toggleStudentSections() {
         var showStudent2 = student1More.value === 'si';
@@ -289,20 +279,13 @@
 
     function toggleFocusFields() {
         var mode = category.value;
-        var isSteam = mode === 'steam';
-        var isEmpr = mode === 'emprendimiento';
+        var requiresSpecialty = mode === 'steam' || mode === 'emprendimiento';
 
-        specialtyWrapper.style.display = isEmpr ? 'grid' : 'none';
-        workshopWrapper.style.display = isSteam ? 'grid' : 'none';
+        specialtyWrapper.style.display = requiresSpecialty ? 'grid' : 'none';
+        specialtySelect.required = requiresSpecialty;
 
-        specialtySelect.required = isEmpr;
-        workshopSelect.required = isSteam;
-
-        if (!isEmpr) {
+        if (!requiresSpecialty) {
             specialtySelect.value = '';
-        }
-        if (!isSteam) {
-            workshopSelect.value = '';
         }
     }
 

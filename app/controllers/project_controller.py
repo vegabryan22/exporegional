@@ -18,7 +18,6 @@ from app.models.assignment import Assignment
 from app.models.section import Section
 from app.models.specialty import Specialty
 from app.models.system_setting import SystemSetting
-from app.models.workshop import Workshop
 from app.services.audit_service import log_event
 from app.services.parameter_service import get_active_evaluation_types
 
@@ -271,7 +270,7 @@ def _render_project_documents_packet(project: Project):
         ("Nombre del proyecto", project.title),
         ("Categoria", _project_category_label(project)),
         ("Seccion", project.section.name if project.section else project.grade_level),
-        ("Especialidad / Taller", project.specialty or ""),
+        ("Especialidad tecnica", project.specialty or ""),
         ("Docente tutor(a)", project.advisor_name or ""),
         ("Cedula docente", project.advisor_identity or ""),
         ("Correo docente", project.advisor_email or ""),
@@ -443,12 +442,11 @@ def _current_form_context(form_data):
     sections = (
         Section.query.join(Level, Level.id == Section.level_id)
         .filter(Section.is_active.is_(True), Level.is_active.is_(True))
+        .filter(Level.code.in_(["10", "11", "12"]))
         .order_by(Level.sort_order.asc(), Section.sort_order.asc(), Section.name.asc())
         .all()
     )
     specialties = Specialty.query.filter_by(is_active=True).order_by(Specialty.sort_order.asc()).all()
-    workshops = Workshop.query.filter_by(is_active=True).order_by(Workshop.sort_order.asc()).all()
-
     req_values = form_data.getlist("requirements") if hasattr(form_data, "getlist") else _draft_form_list(form_data, "requirements")
 
     active_campaign = (
@@ -468,7 +466,6 @@ def _current_form_context(form_data):
         "levels": levels,
         "sections": sections,
         "specialties": specialties,
-        "workshops": workshops,
         "requirements_options": REQUIREMENTS_OPTIONS,
         "active_campaign": active_campaign,
     }
@@ -558,7 +555,6 @@ def register_project():
         category = (_draft_form_value(form_data, "category") or "").strip()
         section_id = request.form.get("section_id", type=int)
         specialty_id = request.form.get("specialty_id", type=int)
-        workshop_id = request.form.get("workshop_id", type=int)
 
         requirements = [item.strip().lower() for item in request.form.getlist("requirements") if item.strip()]
         requirements_other = (_draft_form_value(form_data, "requirements_other") or "").strip()
@@ -566,10 +562,9 @@ def register_project():
 
         section = Section.query.get(section_id) if section_id else None
         specialty = Specialty.query.get(specialty_id) if specialty_id else None
-        workshop = Workshop.query.get(workshop_id) if workshop_id else None
         level_code = section.level.code if section and section.level else ""
 
-        focus_name = specialty.name if specialty else (workshop.name if workshop else "")
+        focus_name = specialty.name if specialty else ""
         section_name = section.name if section else ""
         students = [_build_student(form_data, i, section_name, focus_name) for i in [1, 2, 3]]
 
@@ -585,7 +580,7 @@ def register_project():
             specialty=focus_name,
             section_id=section_id,
             specialty_id=specialty_id,
-            workshop_id=workshop_id,
+            workshop_id=None,
             campaign_id=active_campaign.id,
             advisor_name=(_draft_form_value(form_data, "advisor_name") or "").strip(),
             advisor_identity=(_draft_form_value(form_data, "advisor_identity") or "").strip(),
@@ -613,24 +608,14 @@ def register_project():
             flash("Debes seleccionar una seccion valida.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
-        if category == "emprendimiento":
-            if level_code not in {"10", "11", "12"}:
-                flash("Emprendimiento solo permite niveles 10, 11 y 12.", "error")
-                return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-            if not specialty:
-                flash("Para Emprendimiento debes indicar la especialidad.", "error")
-                return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-            project.workshop_id = None
-        elif category == "steam":
-            if level_code not in {"7", "8", "9"}:
-                flash("STEAM solo permite talleres exploratorios de 7, 8 y 9.", "error")
-                return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-            if not workshop:
-                flash("Para STEAM debes indicar el taller.", "error")
-                return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-            project.specialty_id = None
-        else:
+        if category not in {"emprendimiento", "steam"}:
             flash("Categoria invalida para este formulario.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if level_code not in {"10", "11", "12"}:
+            flash("La ExpoTecnica institucional solo permite secciones de especialidad tecnica (niveles 10, 11 y 12).", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if not specialty:
+            flash("Debes indicar la especialidad tecnica del proyecto.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
         if not requirements:

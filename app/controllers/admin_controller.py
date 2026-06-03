@@ -1846,17 +1846,13 @@ def _resolve_member_academic_fields(form_data):
         return None, None, "Debes seleccionar una seccion valida."
 
     level_code = (section.level.code or "").strip() if section.level else ""
-    focus_name = ""
-    if level_code in {"7", "8", "9"}:
-        workshop = Workshop.query.get(form_data.get("member_workshop_id", type=int))
-        if not workshop:
-            return None, None, "Para niveles 7, 8 y 9 debes seleccionar un taller."
-        focus_name = workshop.name
-    elif level_code in {"10", "11", "12"}:
-        specialty = Specialty.query.get(form_data.get("member_specialty_id", type=int))
-        if not specialty:
-            return None, None, "Para niveles 10, 11 y 12 debes seleccionar una especialidad."
-        focus_name = specialty.name
+    if level_code not in {"10", "11", "12"}:
+        return None, None, "La ExpoTecnica solo permite estudiantes de especialidad tecnica (niveles 10, 11 y 12)."
+
+    specialty = Specialty.query.get(form_data.get("member_specialty_id", type=int))
+    if not specialty:
+        return None, None, "Debes seleccionar la especialidad tecnica del integrante."
+    focus_name = specialty.name
 
     return section.name, focus_name, None
 

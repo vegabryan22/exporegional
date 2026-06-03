@@ -2,10 +2,27 @@
 {% block content %}
 <section class="judge-register-shell">
     <div class="judge-register-head">
-        <p class="maintenance-kicker">ExpoTecnica 2026</p>
+        <p class="maintenance-kicker">ExpoTécnica 2026</p>
         <h2>Registro de jueces</h2>
-        <p>Completa la informacion para colaborar en la evaluacion de proyectos del CTP Roberto Gamboa Valverde.</p>
+        <p>Completa la información para colaborar en la evaluación de proyectos del CTP Roberto Gamboa Valverde.</p>
     </div>
+
+    <article class="judge-register-intro">
+        <p>La ExpoTÉCNICA ofrece un espacio para que las personas estudiantes demuestren sus habilidades técnicas y de innovación a través de dos categorías principales:</p>
+        <ul>
+            <li>Desafío STEAM</li>
+            <li>Emprendimiento e Innovación</li>
+        </ul>
+        <p>También los estudiantes pueden participar y/o defender su proyecto en inglés mediante la exposición del proyecto con dominio lingüístico en inglés. Esto solo aplica en el momento de exposición, de manera presencial.</p>
+        <p>Cada una de estas categorías responde a enfoques distintos de aplicación del conocimiento, fomentando el pensamiento crítico, la creatividad y la resolución de problemas.</p>
+        <p>Para llevar con éxito la Feria Institucional del CTP Roberto Gamboa Valverde, necesitamos el apoyo de personas profesionales en distintas áreas que puedan brindar su colaboración como jueces para la evaluación de proyectos. Esta actividad se divide en dos partes:</p>
+        <ul>
+            <li>Evaluación de parte escrita, de manera virtual o desde el hogar de cada juez.</li>
+            <li>Evaluación de la exposición de los proyectos, de forma presencial en el CTP Roberto Gamboa Valverde, San Rafael Abajo, Desamparados, San José, el 20 de agosto de 8:30 a.m. a 2:00 p.m.</li>
+        </ul>
+        <p>Por lo que le solicitamos unos minutos de su valioso tiempo para completar la información que se detalla. Agradecemos su colaboración y apoyo a la educación técnica costarricense.</p>
+        <p class="judge-register-note">Cuando envíe este formulario, el sistema no recopilará automáticamente sus detalles, como el nombre y la dirección de correo electrónico, a menos que usted los proporcione.</p>
+    </article>
 
     <form method="post" class="judge-register-form">
         <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off">
@@ -22,13 +39,13 @@
                 <label>Segundo apellido
                     <input type="text" name="segundo_apellido" value="{{ form_data.get('segundo_apellido', '') }}">
                 </label>
-                <label>Correo electronico
+                <label>Correo electrónico
                     <input type="email" name="correo" value="{{ form_data.get('correo', '') }}" required>
                 </label>
-                <label>Telefono
+                <label>Teléfono
                     <input type="text" name="telefono" value="{{ form_data.get('telefono', '') }}" required>
                 </label>
-                <label>Cedula o identificacion
+                <label>Cédula o identificación
                     <input type="text" name="cedula" value="{{ form_data.get('cedula', '') }}" required>
                 </label>
             </div>
@@ -37,13 +54,13 @@
         <div class="judge-register-band">
             <h3>Perfil profesional</h3>
             <div class="form-grid">
-                <label>Profesion o area tecnica
+                <label>Profesión o área técnica
                     <input type="text" name="profesion" value="{{ form_data.get('profesion', '') }}" required>
                 </label>
-                <label>Institucion o empresa
+                <label>Institución o empresa
                     <input type="text" name="institucion" value="{{ form_data.get('institucion', '') }}">
                 </label>
-                <label>Ha participado en otras ferias de ExpoTecnica
+                <label>Ha participado en otras ferias de ExpoTécnica
                     <select name="ha_participado" required>
                         <option value="">Seleccione...</option>
                         <option value="Si" {% if form_data.get('ha_participado') == 'Si' %}selected{% endif %}>Si</option>
@@ -54,37 +71,37 @@
         </div>
 
         <div class="judge-register-band">
-            <h3>Disponibilidad de evaluacion</h3>
+            <h3>Disponibilidad de evaluación</h3>
             <div class="form-grid">
                 <label>Modalidad en la que puede colaborar
                     <select name="modalidad" required>
                         <option value="">Seleccione...</option>
-                        <option value="Evaluacion escrita virtual" {% if form_data.get('modalidad') == 'Evaluacion escrita virtual' %}selected{% endif %}>Evaluacion escrita virtual</option>
-                        <option value="Exposicion presencial" {% if form_data.get('modalidad') == 'Exposicion presencial' %}selected{% endif %}>Exposicion presencial</option>
+                        <option value="Evaluacion escrita virtual" {% if form_data.get('modalidad') == 'Evaluacion escrita virtual' %}selected{% endif %}>Evaluación escrita virtual</option>
+                        <option value="Exposicion presencial" {% if form_data.get('modalidad') == 'Exposicion presencial' %}selected{% endif %}>Exposición presencial</option>
                         <option value="Ambas" {% if form_data.get('modalidad') == 'Ambas' %}selected{% endif %}>Ambas</option>
                     </select>
                 </label>
-                <label>Puede evaluar exposicion en ingles
+                <label>Puede evaluar exposición en inglés
                     <select name="ingles" required>
                         <option value="">Seleccione...</option>
                         <option value="Si" {% if form_data.get('ingles') == 'Si' %}selected{% endif %}>Si</option>
                         <option value="No" {% if form_data.get('ingles') == 'No' %}selected{% endif %}>No</option>
                     </select>
                 </label>
-                <label>Areas que puede evaluar
+                <label>Áreas que puede evaluar
                     <select name="areas" required>
                         <option value="">Seleccione...</option>
-                        <option value="STEAM" {% if form_data.get('areas') == 'STEAM' %}selected{% endif %}>Desafio STEAM</option>
-                        <option value="Emprendimiento" {% if form_data.get('areas') == 'Emprendimiento' %}selected{% endif %}>Emprendimiento e Innovacion</option>
-                        <option value="STEAM, Emprendimiento" {% if form_data.get('areas') == 'STEAM, Emprendimiento' %}selected{% endif %}>Ambas categorias</option>
+                        <option value="STEAM" {% if form_data.get('areas') == 'STEAM' %}selected{% endif %}>Desafío STEAM</option>
+                        <option value="Emprendimiento" {% if form_data.get('areas') == 'Emprendimiento' %}selected{% endif %}>Emprendimiento e Innovación</option>
+                        <option value="STEAM, Emprendimiento" {% if form_data.get('areas') == 'STEAM, Emprendimiento' %}selected{% endif %}>Ambas categorías</option>
                     </select>
                 </label>
             </div>
         </div>
 
         <div class="judge-register-band">
-            <h3>Confirmacion</h3>
-            <label>Esta de acuerdo en participar como juez
+            <h3>Confirmación</h3>
+            <label>Está de acuerdo en participar como juez
                 <select name="acepta_participar" required>
                     <option value="">Seleccione...</option>
                     <option value="Si" {% if form_data.get('acepta_participar') == 'Si' %}selected{% endif %}>Si</option>

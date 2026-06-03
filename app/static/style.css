@@ -1638,6 +1638,40 @@ dialog.maintenance-dialog::backdrop {
     gap: 1rem;
 }
 
+.judge-register-intro {
+    display: grid;
+    gap: 0.75rem;
+    border: 1px solid #d7e3ef;
+    border-left: 5px solid #1f7a54;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 1.1rem;
+    color: #30465f;
+    line-height: 1.58;
+}
+
+.judge-register-intro p,
+.judge-register-intro ul {
+    margin: 0;
+}
+
+.judge-register-intro ul {
+    padding-left: 1.25rem;
+}
+
+.judge-register-intro li {
+    margin: 0.2rem 0;
+}
+
+.judge-register-note {
+    border-radius: 8px;
+    background: #f1f7fd;
+    border: 1px solid #cfe0f1;
+    padding: 0.75rem;
+    color: #163f66;
+    font-weight: 700;
+}
+
 .judge-register-band {
     display: grid;
     gap: 0.8rem;

@@ -330,6 +330,12 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN logistics_logo_ok BOOLEAN NOT NULL DEFAULT 0"))
         if "logistics_photos_ok" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN logistics_photos_ok BOOLEAN NOT NULL DEFAULT 0"))
+        if "logistics_registration_form_signed_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN logistics_registration_form_signed_ok BOOLEAN NOT NULL DEFAULT 0"))
+        if "logistics_student_consents_signed_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN logistics_student_consents_signed_ok BOOLEAN NOT NULL DEFAULT 0"))
+        if "logistics_requirements_reviewed_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN logistics_requirements_reviewed_ok BOOLEAN NOT NULL DEFAULT 0"))
         if "logistics_status" in project_columns:
             connection.execute(text("UPDATE projects SET is_active = 0 WHERE logistics_status = 'retirado'"))
             connection.execute(text("UPDATE projects SET logistics_status = 'incompleto' WHERE logistics_status = 'retirado'"))

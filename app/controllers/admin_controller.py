@@ -634,6 +634,26 @@ def _save_gitops_result(action: str, result: dict):
     SystemSetting.set_value("gitops_last_ran_at", stamp)
 
 
+def _project_logistics_missing_items(project):
+    missing = []
+    if not project.project_document_path:
+        missing.append("documento digital adjunto")
+    if not project.logistics_document_ok:
+        missing.append("proyecto escrito completo")
+    if not project.has_real_logo or not project.logistics_logo_ok:
+        missing.append("logo validado")
+    missing_member_photos = len([member for member in project.members if not member.photo_url])
+    if missing_member_photos > 0 or not project.logistics_photos_ok:
+        missing.append("fotos de integrantes")
+    if not project.logistics_registration_form_signed_ok:
+        missing.append("formulario fisico firmado")
+    if not project.logistics_student_consents_signed_ok:
+        missing.append("consentimientos fisicos firmados")
+    if not project.logistics_requirements_reviewed_ok:
+        missing.append("revision de requisitos")
+    return missing
+
+
 def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_per_page=5):
     active_projects = [project for project in projects if project.is_active]
     active_project_ids = {project.id for project in active_projects}
@@ -668,16 +688,13 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
             )
 
         missing_member_photos = len([member for member in project.members if not member.photo_url])
-        if (
-            project.logistics_status != "completo"
-            or not project.has_real_logo
-            or not project.project_document_path
-            or missing_member_photos > 0
-        ):
+        missing_logistics_items = _project_logistics_missing_items(project)
+        if project.logistics_status != "completo" or missing_logistics_items:
             projects_pending_logistics.append(
                 {
                     "project": project,
                     "missing_member_photos": missing_member_photos,
+                    "missing_logistics_items": missing_logistics_items,
                 }
             )
 
@@ -702,7 +719,7 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "projects_without_judges": len(projects_without_judges),
         "projects_pending_evaluations": len(projects_with_pending_evaluations),
         "projects_pending_review": len([project for project in active_projects if project.logistics_status == "pendiente_revision"]),
-        "projects_incomplete_logistics": len([project for project in active_projects if project.logistics_status == "incompleto"]),
+        "projects_incomplete_logistics": len([project for project in active_projects if project.logistics_status == "incompleto" or _project_logistics_missing_items(project)]),
         "completed_evaluations": total_completed_evaluations,
         "expected_evaluations": total_expected_evaluations,
         "urgent_projects": sorted(projects_without_judges, key=lambda item: item.created_at, reverse=True)[:5],
@@ -2365,10 +2382,20 @@ def _handle_action(action: str):
                 flash("Estado logistico invalido.", "error")
             else:
                 project.is_active = _str_to_bool(request.form.get("project_is_active", "1"))
-                project.logistics_status = status
                 project.logistics_document_ok = _str_to_bool(request.form.get("logistics_document_ok"))
                 project.logistics_logo_ok = _str_to_bool(request.form.get("logistics_logo_ok"))
                 project.logistics_photos_ok = _str_to_bool(request.form.get("logistics_photos_ok"))
+                project.logistics_registration_form_signed_ok = _str_to_bool(request.form.get("logistics_registration_form_signed_ok"))
+                project.logistics_student_consents_signed_ok = _str_to_bool(request.form.get("logistics_student_consents_signed_ok"))
+                project.logistics_requirements_reviewed_ok = _str_to_bool(request.form.get("logistics_requirements_reviewed_ok"))
+                missing_items = _project_logistics_missing_items(project)
+                forced_incomplete = False
+                if status == "completo" and missing_items:
+                    project.logistics_status = "incompleto"
+                    forced_incomplete = True
+                    flash("No se puede marcar como completo. Pendientes: " + ", ".join(missing_items) + ".", "error")
+                else:
+                    project.logistics_status = status
                 project.logistics_notes = request.form.get("logistics_notes", "").strip()
                 log_event(
                     "admin.project.logistics.update",
@@ -2377,11 +2404,13 @@ def _handle_action(action: str):
                     detail=(
                         f"Proyecto #{project.id} '{project.title}' => activo={project.is_active}, status={project.logistics_status}, "
                         f"doc={project.logistics_document_ok}, logo={project.logistics_logo_ok}, "
-                        f"fotos={project.logistics_photos_ok}"
+                        f"fotos={project.logistics_photos_ok}, formulario_fisico={project.logistics_registration_form_signed_ok}, "
+                        f"consentimientos={project.logistics_student_consents_signed_ok}, requisitos={project.logistics_requirements_reviewed_ok}"
                     ),
                 )
                 db.session.commit()
-                flash("Control logistico actualizado.", "success")
+                if not forced_incomplete:
+                    flash("Control logistico actualizado.", "success")
 
     elif action == "upload_project_logo":
         project_id = request.form.get("project_id", type=int)

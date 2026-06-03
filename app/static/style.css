@@ -1169,6 +1169,39 @@ th {
     white-space: nowrap;
 }
 
+.logistics-review-card,
+.logistics-requirements-summary {
+    border: 1px solid #d7e6f5;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f7fbff 0%, #eef7ff 100%);
+    padding: 0.85rem;
+}
+
+.logistics-review-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+}
+
+.logistics-review-card h5 {
+    margin: 0 0 0.2rem;
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.logistics-review-card p {
+    margin: 0;
+    color: #526d8a;
+}
+
+.logistics-requirements-summary {
+    display: grid;
+    gap: 0.32rem;
+    color: #314f73;
+}
+
 .member-count-badge {
     min-width: 2rem;
     text-align: center;

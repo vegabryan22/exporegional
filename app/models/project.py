@@ -40,6 +40,9 @@ class Project(db.Model):
     logistics_document_ok = db.Column(db.Boolean, nullable=False, default=False)
     logistics_logo_ok = db.Column(db.Boolean, nullable=False, default=False)
     logistics_photos_ok = db.Column(db.Boolean, nullable=False, default=False)
+    logistics_registration_form_signed_ok = db.Column(db.Boolean, nullable=False, default=False)
+    logistics_student_consents_signed_ok = db.Column(db.Boolean, nullable=False, default=False)
+    logistics_requirements_reviewed_ok = db.Column(db.Boolean, nullable=False, default=False)
     consent_terms = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
@@ -59,3 +62,18 @@ class Project(db.Model):
     @property
     def display_logo_path(self) -> str:
         return self.project_logo_path if self.has_real_logo else self.GENERIC_LOGO_PATH
+
+    @property
+    def logistics_requirements_complete(self) -> bool:
+        return all(
+            [
+                bool(self.project_document_path),
+                self.logistics_document_ok,
+                self.has_real_logo,
+                self.logistics_logo_ok,
+                self.logistics_photos_ok,
+                self.logistics_registration_form_signed_ok,
+                self.logistics_student_consents_signed_ok,
+                self.logistics_requirements_reviewed_ok,
+            ]
+        )

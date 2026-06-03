@@ -91,8 +91,9 @@
                         </span>
                     </td>
                     <td class="table-cell-center">
-                        <span class="tag logistics-status-tag {{ 'ok' if project.logistics_status == 'completo' else 'off' }}">
-                            {{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}
+                        {% set logistics_ok = project.logistics_status == 'completo' and project.logistics_requirements_complete %}
+                        <span class="tag logistics-status-tag {{ 'ok' if logistics_ok else 'off' }}">
+                            {{ logistics_status_map.get(project.logistics_status, project.logistics_status) if logistics_ok else 'Pendiente requisitos' }}
                         </span>
                     </td>
                     <td class="table-cell-center">
@@ -179,6 +180,28 @@
                 <label><input type="checkbox" name="logistics_document_ok" value="1" {% if project.logistics_document_ok %}checked{% endif %}> Proyecto escrito completo</label>
                 <label><input type="checkbox" name="logistics_logo_ok" value="1" {% if project.logistics_logo_ok %}checked{% endif %}> Logo validado</label>
                 <label><input type="checkbox" name="logistics_photos_ok" value="1" {% if project.logistics_photos_ok %}checked{% endif %}> Fotos completas</label>
+            </div>
+            <div class="logistics-review-card">
+                <div>
+                    <h5>Documentos fisicos firmados</h5>
+                    <p>Los estudiantes deben entregar el paquete impreso y firmado a la organizacion.</p>
+                </div>
+                <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" target="_blank" class="table-link-btn secondary" data-no-iconify>Imprimir paquete PDF</a>
+            </div>
+            <div class="grid-3">
+                <label><input type="checkbox" name="logistics_registration_form_signed_ok" value="1" {% if project.logistics_registration_form_signed_ok %}checked{% endif %}> Formulario de inscripcion fisico firmado</label>
+                <label><input type="checkbox" name="logistics_student_consents_signed_ok" value="1" {% if project.logistics_student_consents_signed_ok %}checked{% endif %}> Consentimientos fisicos firmados</label>
+                <label><input type="checkbox" name="logistics_requirements_reviewed_ok" value="1" {% if project.logistics_requirements_reviewed_ok %}checked{% endif %}> Requisitos e insumos revisados</label>
+            </div>
+            <div class="logistics-requirements-summary">
+                <strong>Requerimientos solicitados:</strong>
+                <span>{{ project.requirements_summary or 'Sin requerimientos seleccionados' }}</span>
+                {% if project.requirements_other %}
+                    <span>Otros: {{ project.requirements_other }}</span>
+                {% endif %}
+                {% if project.required_resources %}
+                    <span>Detalle: {{ project.required_resources }}</span>
+                {% endif %}
             </div>
             <label>Observaciones de logística
                 <textarea name="logistics_notes" rows="4">{{ project.logistics_notes or '' }}</textarea>

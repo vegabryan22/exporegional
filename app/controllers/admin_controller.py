@@ -3298,7 +3298,7 @@ def _base_context(active_page: str, **kwargs):
     )
     judge_form_settings = _judge_form_settings()
     judge_form_webhook_url = url_for("public.judge_form_webhook", _external=True)
-    judge_public_registration_url = url_for("public.judge_registration", _external=True)
+    judge_public_registration_url = url_for("public.judge_registration_short", _external=True)
     overview_metrics = _build_overview_metrics(
         projects,
         assignments,

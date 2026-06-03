@@ -35,6 +35,20 @@ public_bp.add_url_rule(
 )
 
 public_bp.add_url_rule(
+    "/registro-jueces",
+    endpoint="judge_registration_short",
+    view_func=admin_controller.public_judge_registration,
+    methods=["GET", "POST"],
+)
+
+public_bp.add_url_rule(
+    "/registro/jueces",
+    endpoint="judge_registration_alt",
+    view_func=admin_controller.public_judge_registration,
+    methods=["GET", "POST"],
+)
+
+public_bp.add_url_rule(
     "/api/forms/judge-access",
     view_func=admin_controller.judge_form_webhook,
     methods=["POST"],

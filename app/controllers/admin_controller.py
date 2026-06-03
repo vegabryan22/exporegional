@@ -212,7 +212,11 @@ ACTION_MODULE_MAP = {
     "save_maintenance_settings": "maintenance",
     "gitops_fetch": "gitops",
     "gitops_pull_ff": "gitops",
+    "gitops_pull_apply": "gitops",
     "gitops_refresh": "gitops",
+    "gitops_service_reload": "gitops",
+    "gitops_service_restart": "gitops",
+    "gitops_service_check": "gitops",
     "save_gitops_remote": "gitops",
     "gitops_test_remote": "gitops",
     "save_permissions_matrix": "permissions",
@@ -483,6 +487,139 @@ def _git_status_snapshot() -> dict:
         "behind": behind,
         "last_commits": [line for line in (last["out"] or "").splitlines() if line.strip()],
     }
+
+
+def _read_gunicorn_config_text() -> str:
+    config_path = _git_repo_path() / "gunicorn_conf.py"
+    if not config_path.exists():
+        return ""
+    try:
+        return config_path.read_text(encoding="utf-8", errors="ignore")
+    except OSError:
+        return ""
+
+
+def _extract_gunicorn_value(config_text: str, key: str, default: str = "") -> str:
+    match = re.search(rf"^\s*{re.escape(key)}\s*=\s*['\"]([^'\"]+)['\"]", config_text, re.MULTILINE)
+    return match.group(1).strip() if match else default
+
+
+def _gitops_service_config() -> dict:
+    repo_path = _git_repo_path()
+    config_text = _read_gunicorn_config_text()
+    bind = _extract_gunicorn_value(config_text, "bind", "127.0.0.1:5055")
+    pidfile = _extract_gunicorn_value(config_text, "pidfile", str(repo_path / "logs" / "expotecnica.pid"))
+    if "chdir +" in pidfile:
+        pidfile = str(repo_path / "logs" / "expotecnica.pid")
+    return {
+        "repo_path": str(repo_path),
+        "config_path": str(repo_path / "gunicorn_conf.py"),
+        "bind": bind,
+        "pidfile": pidfile,
+        "health_path": SystemSetting.get_value("gitops_health_path", "/registro-jueces") or "/registro-jueces",
+    }
+
+
+def _pid_is_running(pid: int) -> bool:
+    if not pid or pid < 1:
+        return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def _gitops_service_status() -> dict:
+    config = _gitops_service_config()
+    pid = None
+    pidfile_exists = os.path.exists(config["pidfile"])
+    if pidfile_exists:
+        try:
+            with open(config["pidfile"], "r", encoding="utf-8") as handle:
+                pid = int((handle.read() or "").strip())
+        except (OSError, ValueError):
+            pid = None
+
+    running = _pid_is_running(pid or 0)
+    bind = config["bind"]
+    host = "127.0.0.1"
+    port = ""
+    if ":" in bind:
+        host_part, port = bind.rsplit(":", 1)
+        if host_part and host_part != "0.0.0.0":
+            host = host_part
+
+    health_url = f"http://{host}:{port}{config['health_path']}" if port else ""
+    http_code = "N/D"
+    health_ok = False
+    if health_url and running:
+        curl = subprocess.run(
+            ["curl", "-sS", "-o", os.devnull, "-w", "%{http_code}", "--max-time", "8", health_url],
+            capture_output=True,
+            text=True,
+            timeout=12,
+        )
+        http_code = (curl.stdout or curl.stderr or "").strip() or "N/D"
+        health_ok = http_code.startswith("2") or http_code.startswith("3")
+
+    return {
+        **config,
+        "pid": pid,
+        "pidfile_exists": pidfile_exists,
+        "running": running,
+        "health_url": health_url,
+        "http_code": http_code,
+        "health_ok": health_ok,
+        "status_label": "Activo" if running and health_ok else ("Proceso activo con alerta" if running else "Detenido"),
+    }
+
+
+def _gitops_reload_service() -> dict:
+    status = _gitops_service_status()
+    pid = status.get("pid")
+    if not pid or not status.get("running"):
+        return {"ok": False, "code": -1, "out": "", "err": "No hay PID activo para recargar Gunicorn."}
+    try:
+        os.kill(pid, 1)
+    except OSError as ex:
+        return {"ok": False, "code": -2, "out": "", "err": str(ex)}
+    recheck = _gitops_service_status()
+    out = f"HUP enviado a PID {pid}. Estado: {recheck['status_label']} HTTP {recheck['http_code']}"
+    return {"ok": recheck["running"], "code": 0 if recheck["running"] else -3, "out": out, "err": ""}
+
+
+def _gitops_restart_service() -> dict:
+    status = _gitops_service_status()
+    pid = status.get("pid")
+    if pid and status.get("running"):
+        try:
+            os.kill(pid, 15)
+        except OSError:
+            pass
+    repo_path = _git_repo_path()
+    venv_bins = sorted(repo_path.glob("*_venv/bin/gunicorn"))
+    gunicorn_bin = str(venv_bins[0]) if venv_bins else "gunicorn"
+    config_path = repo_path / "gunicorn_conf.py"
+    if not config_path.exists():
+        return {"ok": False, "code": -1, "out": "", "err": f"No existe {config_path}"}
+    try:
+        subprocess.Popen(
+            [gunicorn_bin, "-c", str(config_path), "run:app"],
+            cwd=str(repo_path),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+    except Exception as ex:
+        return {"ok": False, "code": -2, "out": "", "err": str(ex)}
+
+    import time as _time
+
+    _time.sleep(3)
+    recheck = _gitops_service_status()
+    out = f"Reinicio solicitado. Estado: {recheck['status_label']} HTTP {recheck['http_code']}"
+    return {"ok": recheck["running"] and recheck["health_ok"], "code": 0 if recheck["running"] else -3, "out": out, "err": ""}
 
 
 def _save_gitops_result(action: str, result: dict):
@@ -3124,6 +3261,75 @@ def _handle_action(action: str):
             flash(f"Pull falló: {result.get('err') or 'sin detalle'}", "error")
         db.session.commit()
 
+    elif action == "gitops_pull_apply":
+        branch_result = _run_git_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], timeout=20)
+        branch = branch_result["out"] if branch_result["ok"] and branch_result["out"] else "main"
+        fetch_result = _run_git_remote_command(["git", "fetch", "--all", "--prune"], timeout=180)
+        if fetch_result["ok"]:
+            pull_result = _run_git_remote_command(["git", "pull", "--ff-only", "origin", branch], timeout=300)
+        else:
+            pull_result = fetch_result
+
+        if pull_result["ok"]:
+            reload_result = _gitops_reload_service()
+            combined = {
+                "ok": reload_result["ok"],
+                "code": reload_result["code"],
+                "out": "\n\n".join(
+                    [
+                        f"Fetch:\n{fetch_result.get('out') or '(sin salida)'}",
+                        f"Pull:\n{pull_result.get('out') or '(sin salida)'}",
+                        f"Servicio:\n{reload_result.get('out') or reload_result.get('err') or '(sin salida)'}",
+                    ]
+                ),
+                "err": reload_result.get("err", ""),
+            }
+            _save_gitops_result("pull_apply_reload", combined)
+            if reload_result["ok"]:
+                log_event("admin.git.apply", "system", detail=f"Pull aplicado y servicio recargado en rama {branch}")
+                flash("Cambios aplicados y servicio recargado.", "success")
+            else:
+                log_event("admin.git.apply.reload_fail", "system", detail=reload_result.get("err") or "Fallo recargando servicio")
+                flash(f"Pull aplicado, pero fallo la recarga: {reload_result.get('err') or 'sin detalle'}", "error")
+        else:
+            _save_gitops_result("pull_apply_reload", pull_result)
+            log_event("admin.git.apply.fail", "system", detail=pull_result.get("err") or "Error en pull")
+            flash(f"No se pudieron aplicar cambios: {pull_result.get('err') or 'sin detalle'}", "error")
+        db.session.commit()
+
+    elif action == "gitops_service_check":
+        status = _gitops_service_status()
+        result = {
+            "ok": status["running"] and status["health_ok"],
+            "code": 0 if status["running"] and status["health_ok"] else -1,
+            "out": (
+                f"Estado: {status['status_label']}\n"
+                f"PID: {status.get('pid') or 'N/D'}\n"
+                f"Bind: {status['bind']}\n"
+                f"Health URL: {status['health_url']}\n"
+                f"HTTP: {status['http_code']}"
+            ),
+            "err": "",
+        }
+        _save_gitops_result("service_check", result)
+        log_event("admin.git.service.check", "system", detail=result["out"])
+        db.session.commit()
+        flash("Estado del servicio actualizado.", "success" if result["ok"] else "error")
+
+    elif action == "gitops_service_reload":
+        result = _gitops_reload_service()
+        _save_gitops_result("service_reload", result)
+        log_event("admin.git.service.reload" if result["ok"] else "admin.git.service.reload_fail", "system", detail=result.get("out") or result.get("err"))
+        db.session.commit()
+        flash("Servicio recargado correctamente." if result["ok"] else f"No se pudo recargar: {result.get('err') or 'sin detalle'}", "success" if result["ok"] else "error")
+
+    elif action == "gitops_service_restart":
+        result = _gitops_restart_service()
+        _save_gitops_result("service_restart", result)
+        log_event("admin.git.service.restart" if result["ok"] else "admin.git.service.restart_fail", "system", detail=result.get("out") or result.get("err"))
+        db.session.commit()
+        flash("Servicio reiniciado correctamente." if result["ok"] else f"No se pudo reiniciar: {result.get('err') or 'sin detalle'}", "success" if result["ok"] else "error")
+
     elif action == "save_gitops_remote":
         remote_url = (request.form.get("gitops_remote_url", "") or "").strip()
         username = (request.form.get("gitops_username", "") or "").strip() or "x-access-token"
@@ -3273,6 +3479,7 @@ def _base_context(active_page: str, **kwargs):
         "maintenance_image_path": SystemSetting.get_value("maintenance_image_path", ""),
     }
     gitops_status = _git_status_snapshot()
+    gitops_service = _gitops_service_status()
     gitops_last = {
         "action": SystemSetting.get_value("gitops_last_action", ""),
         "status": SystemSetting.get_value("gitops_last_status", ""),
@@ -3332,6 +3539,7 @@ def _base_context(active_page: str, **kwargs):
         "institution_settings": institution_settings,
         "maintenance_settings": maintenance_settings,
         "gitops_status": gitops_status,
+        "gitops_service": gitops_service,
         "gitops_last": gitops_last,
         "gitops_remote": gitops_remote,
         "gitops_logs": gitops_logs,

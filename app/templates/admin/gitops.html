@@ -50,6 +50,18 @@
             <span>Cambios locales</span>
             <strong>{{ gitops_status.dirty_count }} archivo(s)</strong>
         </article>
+        <article class="mini-stat gitops-service-stat {{ 'ok' if gitops_service.health_ok else 'warn' }}">
+            <span>Servicio Python</span>
+            <strong>{{ gitops_service.status_label }}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>PID / Puerto</span>
+            <strong>{{ gitops_service.pid or 'N/D' }} · {{ gitops_service.bind }}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>Prueba HTTP</span>
+            <strong>{{ gitops_service.http_code }} · {{ gitops_service.health_path }}</strong>
+        </article>
     </div>
 
     <div class="inline-card gitops-card gitops-actions">
@@ -68,6 +80,41 @@
             <input type="hidden" name="action" value="gitops_pull_ff">
             <button type="submit" class="gitops-btn gitops-btn-success">Aplicar cambios (pull ff-only)</button>
         </form>
+        <form method="post" action="{{ action_url }}" class="inline-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="gitops_pull_apply">
+            <button type="submit" class="gitops-btn gitops-btn-deploy">Aplicar cambios y recargar servicio</button>
+        </form>
+    </div>
+
+    <div class="inline-card gitops-card gitops-service-panel">
+        <div>
+            <h4>Servicio de aplicacion</h4>
+            <p>
+                <strong>Estado:</strong> {{ gitops_service.status_label }}<br>
+                <strong>PID:</strong> {{ gitops_service.pid or 'N/D' }}<br>
+                <strong>Bind:</strong> {{ gitops_service.bind }}<br>
+                <strong>Health:</strong> {{ gitops_service.health_url or 'N/D' }}<br>
+                <strong>HTTP:</strong> {{ gitops_service.http_code }}
+            </p>
+        </div>
+        <div class="gitops-actions">
+            <form method="post" action="{{ action_url }}" class="inline-form">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="gitops_service_check">
+                <button type="submit" class="gitops-btn gitops-btn-neutral">Verificar servicio</button>
+            </form>
+            <form method="post" action="{{ action_url }}" class="inline-form">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="gitops_service_reload">
+                <button type="submit" class="gitops-btn gitops-btn-info">Recargar servicio (HUP)</button>
+            </form>
+            <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Reiniciar el servicio Python de Expotecnica?')">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="gitops_service_restart">
+                <button type="submit" class="gitops-btn gitops-btn-danger">Reiniciar servicio completo</button>
+            </form>
+        </div>
     </div>
 
     <div class="inline-card gitops-card">

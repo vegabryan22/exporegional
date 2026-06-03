@@ -3237,6 +3237,25 @@ dialog.maintenance-dialog::backdrop {
 .gitops-btn-neutral { background: linear-gradient(180deg, #6b7280 0%, #4b5563 100%); }
 .gitops-btn-warn { background: linear-gradient(180deg, #e7a42f 0%, #c9820f 100%); color: #142033; }
 .gitops-btn-success { background: linear-gradient(180deg, #2d9a68 0%, #1f7d53 100%); }
+.gitops-btn-deploy { background: linear-gradient(180deg, #0f8b8d 0%, #076b6d 100%); }
+.gitops-btn-danger { background: linear-gradient(180deg, #dc3545 0%, #a91f2f 100%); }
+
+.gitops-service-stat.ok {
+    border-color: #b7dfc5;
+    background: #f0fbf4;
+}
+
+.gitops-service-stat.warn {
+    border-color: #f1c2c8;
+    background: #fff4f5;
+}
+
+.gitops-service-panel {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) minmax(320px, 1.2fr);
+    gap: 1rem;
+    align-items: start;
+}
 
 .gitops-file-list {
     display: grid;

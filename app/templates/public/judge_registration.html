@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="judge-register-shell">
+    <div class="judge-register-head">
+        <p class="maintenance-kicker">ExpoTecnica 2026</p>
+        <h2>Registro de jueces</h2>
+        <p>Completa la informacion para colaborar en la evaluacion de proyectos del CTP Roberto Gamboa Valverde.</p>
+    </div>
+
+    <form method="post" class="judge-register-form">
+        <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off">
+
+        <div class="judge-register-band">
+            <h3>Datos personales</h3>
+            <div class="form-grid">
+                <label>Nombre
+                    <input type="text" name="nombre" value="{{ form_data.get('nombre', '') }}" required>
+                </label>
+                <label>Primer apellido
+                    <input type="text" name="primer_apellido" value="{{ form_data.get('primer_apellido', '') }}" required>
+                </label>
+                <label>Segundo apellido
+                    <input type="text" name="segundo_apellido" value="{{ form_data.get('segundo_apellido', '') }}">
+                </label>
+                <label>Correo electronico
+                    <input type="email" name="correo" value="{{ form_data.get('correo', '') }}" required>
+                </label>
+                <label>Telefono
+                    <input type="text" name="telefono" value="{{ form_data.get('telefono', '') }}" required>
+                </label>
+                <label>Cedula o identificacion
+                    <input type="text" name="cedula" value="{{ form_data.get('cedula', '') }}" required>
+                </label>
+            </div>
+        </div>
+
+        <div class="judge-register-band">
+            <h3>Perfil profesional</h3>
+            <div class="form-grid">
+                <label>Profesion o area tecnica
+                    <input type="text" name="profesion" value="{{ form_data.get('profesion', '') }}" required>
+                </label>
+                <label>Institucion o empresa
+                    <input type="text" name="institucion" value="{{ form_data.get('institucion', '') }}">
+                </label>
+                <label>Ha participado en otras ferias de ExpoTecnica
+                    <select name="ha_participado" required>
+                        <option value="">Seleccione...</option>
+                        <option value="Si" {% if form_data.get('ha_participado') == 'Si' %}selected{% endif %}>Si</option>
+                        <option value="No" {% if form_data.get('ha_participado') == 'No' %}selected{% endif %}>No</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <div class="judge-register-band">
+            <h3>Disponibilidad de evaluacion</h3>
+            <div class="form-grid">
+                <label>Modalidad en la que puede colaborar
+                    <select name="modalidad" required>
+                        <option value="">Seleccione...</option>
+                        <option value="Evaluacion escrita virtual" {% if form_data.get('modalidad') == 'Evaluacion escrita virtual' %}selected{% endif %}>Evaluacion escrita virtual</option>
+                        <option value="Exposicion presencial" {% if form_data.get('modalidad') == 'Exposicion presencial' %}selected{% endif %}>Exposicion presencial</option>
+                        <option value="Ambas" {% if form_data.get('modalidad') == 'Ambas' %}selected{% endif %}>Ambas</option>
+                    </select>
+                </label>
+                <label>Puede evaluar exposicion en ingles
+                    <select name="ingles" required>
+                        <option value="">Seleccione...</option>
+                        <option value="Si" {% if form_data.get('ingles') == 'Si' %}selected{% endif %}>Si</option>
+                        <option value="No" {% if form_data.get('ingles') == 'No' %}selected{% endif %}>No</option>
+                    </select>
+                </label>
+                <label>Areas que puede evaluar
+                    <select name="areas" required>
+                        <option value="">Seleccione...</option>
+                        <option value="STEAM" {% if form_data.get('areas') == 'STEAM' %}selected{% endif %}>Desafio STEAM</option>
+                        <option value="Emprendimiento" {% if form_data.get('areas') == 'Emprendimiento' %}selected{% endif %}>Emprendimiento e Innovacion</option>
+                        <option value="STEAM, Emprendimiento" {% if form_data.get('areas') == 'STEAM, Emprendimiento' %}selected{% endif %}>Ambas categorias</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <div class="judge-register-band">
+            <h3>Confirmacion</h3>
+            <label>Esta de acuerdo en participar como juez
+                <select name="acepta_participar" required>
+                    <option value="">Seleccione...</option>
+                    <option value="Si" {% if form_data.get('acepta_participar') == 'Si' %}selected{% endif %}>Si</option>
+                    <option value="No" {% if form_data.get('acepta_participar') == 'No' %}selected{% endif %}>No</option>
+                </select>
+            </label>
+            <label>Observaciones
+                <textarea name="observaciones" rows="4">{{ form_data.get('observaciones', '') }}</textarea>
+            </label>
+            <div class="actions-row">
+                <button type="submit">Enviar registro</button>
+            </div>
+        </div>
+    </form>
+</section>
+{% endblock %}

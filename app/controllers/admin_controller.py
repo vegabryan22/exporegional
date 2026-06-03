@@ -5,13 +5,14 @@ import uuid
 import json
 import subprocess
 import base64
+import hmac
 from io import BytesIO
 from datetime import datetime
 from pathlib import Path
 
 from functools import wraps
 
-from flask import abort, current_app, flash, redirect, render_template, request, send_file, url_for
+from flask import abort, current_app, flash, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
@@ -174,6 +175,8 @@ ACTION_MODULE_MAP = {
     "toggle_judge_active": "judges",
     "toggle_judge_admin": "judges",
     "delete_judge": "judges",
+    "save_judge_form_settings": "judges",
+    "rotate_judge_form_secret": "judges",
     "update_project": "projects",
     "update_project_logistics": "projects",
     "upload_project_logo": "projects",
@@ -1421,6 +1424,193 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
         flash(f"No se pudo enviar correo de credenciales: {error}", "error")
 
 
+def _get_judge_form_secret():
+    return (SystemSetting.get_value("judge_form_webhook_secret", "") or "").strip()
+
+
+def _judge_form_settings():
+    secret = _get_judge_form_secret()
+    return {
+        "form_url": SystemSetting.get_value("judge_form_url", ""),
+        "enabled": SystemSetting.get_value("judge_form_enabled", "0") == "1",
+        "auto_send_email": SystemSetting.get_value("judge_form_auto_send_email", "1") == "1",
+        "has_secret": bool(secret),
+        "secret": secret,
+        "secret_preview": f"{secret[:6]}...{secret[-4:]}" if len(secret) >= 12 else "",
+    }
+
+
+def _extract_json_value(payload: dict, *keys: str) -> str:
+    normalized = {}
+    for key, value in (payload or {}).items():
+        cleaned_key = re.sub(r"[^a-z0-9]", "", str(key).strip().lower())
+        normalized[cleaned_key] = value
+
+    for key in keys:
+        cleaned_key = re.sub(r"[^a-z0-9]", "", key.strip().lower())
+        value = normalized.get(cleaned_key)
+        if value is not None:
+            return str(value).strip()
+    return ""
+
+
+def _yes_no_value(value: str) -> str:
+    normalized = (value or "").strip().lower()
+    if normalized in {"si", "s", "yes", "y", "true", "1", "sí"}:
+        return "Si"
+    if normalized in {"no", "n", "false", "0"}:
+        return "No"
+    return value.strip()
+
+
+def _join_payload_values(*values: str) -> str:
+    return " ".join(value.strip() for value in values if value and value.strip())
+
+
+def _extract_judge_form_payload(payload: dict):
+    first_last_name = _extract_json_value(
+        payload,
+        "primer_apellido",
+        "primer apellido",
+        "indique su primer apellido",
+        "indique su primer apellido 1 apellido",
+        "apellido1",
+        "apellido_1",
+    )
+    second_last_name = _extract_json_value(
+        payload,
+        "segundo_apellido",
+        "segundo apellido",
+        "indique su segundo apellido",
+        "indique su segundo apellido 2 apellido",
+        "apellido2",
+        "apellido_2",
+    )
+    given_names = _extract_json_value(
+        payload,
+        "nombres",
+        "nombre",
+        "nombre_completo",
+        "nombre completo",
+        "indique su nombre completo",
+        "indique su nombre completo nombre",
+        "name",
+    )
+    full_name = _extract_json_value(payload, "full_name", "full name")
+    if not full_name:
+        full_name = _join_payload_values(given_names, first_last_name, second_last_name)
+    email = _extract_json_value(payload, "email", "correo", "correo electronico", "correo_electronico", "mail")
+    phone = _extract_json_value(payload, "phone", "telefono", "teléfono", "celular")
+    identity = _extract_json_value(payload, "cedula", "cédula", "identificacion", "identificación", "documento")
+    job_title = _extract_json_value(payload, "job_title", "cargo", "puesto", "profesion", "profesión", "especialidad")
+    institution = _extract_json_value(payload, "institucion", "institución", "empresa", "lugar de trabajo")
+    previous_expo = _yes_no_value(
+        _extract_json_value(
+            payload,
+            "ha_participado",
+            "a participado en otras ferias de expotecnica",
+            "ha participado en otras ferias de expotecnica",
+            "experiencia expotecnica",
+        )
+    )
+    accepts_participation = _yes_no_value(
+        _extract_json_value(
+            payload,
+            "acepta_participar",
+            "esta de acuerdo en participar",
+            "esta de acuerdo en participar como juez",
+            "está de acuerdo en participar",
+        )
+    )
+    modality = _extract_json_value(payload, "modalidad", "participacion", "participación", "tipo de evaluacion")
+    evaluation_areas = _extract_json_value(payload, "areas", "areas de evaluacion", "categorias", "categorías")
+    english_available = _yes_no_value(_extract_json_value(payload, "ingles", "inglés", "evalua ingles", "dominio ingles"))
+    notes = _extract_json_value(payload, "notes", "observaciones", "comentarios")
+    detail_parts = []
+    if identity:
+        detail_parts.append(f"cedula={identity}")
+    if institution:
+        detail_parts.append(f"institucion={institution}")
+    if previous_expo:
+        detail_parts.append(f"participacion_previa={previous_expo}")
+    if accepts_participation:
+        detail_parts.append(f"acepta_participar={accepts_participation}")
+    if modality:
+        detail_parts.append(f"modalidad={modality}")
+    if evaluation_areas:
+        detail_parts.append(f"areas={evaluation_areas}")
+    if english_available:
+        detail_parts.append(f"ingles={english_available}")
+    if notes:
+        detail_parts.append(f"notas={notes}")
+    return {
+        "full_name": full_name,
+        "email": email.lower(),
+        "phone": phone,
+        "job_title": _join_payload_values(job_title, institution),
+        "notes": "; ".join(detail_parts),
+        "accepts_participation": accepts_participation,
+    }
+
+
+def _request_judge_form_token(payload: dict):
+    return (
+        request.headers.get("X-Expotecnica-Token")
+        or request.headers.get("X-Forms-Token")
+        or request.args.get("token")
+        or (payload or {}).get("token")
+        or ""
+    ).strip()
+
+
+def _create_or_update_judge_from_form(payload: dict):
+    data = _extract_judge_form_payload(payload)
+    if not data["full_name"] or not data["email"]:
+        return None, None, "Nombre y correo son obligatorios."
+    if "@" not in data["email"]:
+        return None, None, "El correo recibido no es valido."
+    if data.get("accepts_participation") == "No":
+        return None, None, "La persona indico que no acepta participar."
+
+    judge = Judge.query.filter_by(email=data["email"]).first()
+    created = judge is None
+    temporary_password = ""
+    if created:
+        temporary_password = secrets.token_urlsafe(10)
+        judge = Judge(
+            full_name=data["full_name"],
+            email=data["email"],
+            department="",
+            job_title=data["job_title"],
+            phone=data["phone"],
+            role=Judge.ROLE_JUDGE,
+            is_admin=False,
+            is_active_user=True,
+            must_change_password=True,
+        )
+        judge.set_password(temporary_password)
+        db.session.add(judge)
+        db.session.flush()
+    else:
+        judge.full_name = data["full_name"]
+        judge.job_title = data["job_title"] or judge.job_title
+        judge.phone = data["phone"] or judge.phone
+        judge.role = Judge.ROLE_JUDGE
+        judge.is_admin = False
+        judge.is_active_user = True
+
+    detail = f"Solicitud de juez: {judge.full_name} <{judge.email}>"
+    if data["notes"]:
+        detail = f"{detail}; notas={data['notes'][:300]}"
+    log_event("forms.judge_access.created" if created else "forms.judge_access.updated", "judge", entity_id=judge.id, detail=detail)
+    db.session.commit()
+
+    if created and SystemSetting.get_value("judge_form_auto_send_email", "1") == "1":
+        _send_judge_credentials_email(judge, temporary_password)
+
+    return judge, temporary_password, ""
+
+
 def _send_assignment_email(judge: Judge, project: Project):
     if not smtp_is_configured():
         return
@@ -1977,6 +2167,33 @@ def _handle_action(action: str):
             db.session.delete(judge)
             db.session.commit()
             flash("Usuario eliminado.", "success")
+
+    elif action == "save_judge_form_settings":
+        form_url = request.form.get("judge_form_url", "").strip()
+        enabled = _str_to_bool(request.form.get("judge_form_enabled"))
+        auto_send_email = _str_to_bool(request.form.get("judge_form_auto_send_email", "1"))
+        manual_secret = request.form.get("judge_form_secret", "").strip()
+
+        SystemSetting.set_value("judge_form_url", form_url)
+        SystemSetting.set_value("judge_form_enabled", "1" if enabled else "0")
+        SystemSetting.set_value("judge_form_auto_send_email", "1" if auto_send_email else "0")
+        if manual_secret:
+            SystemSetting.set_value("judge_form_webhook_secret", manual_secret)
+        elif not _get_judge_form_secret():
+            SystemSetting.set_value("judge_form_webhook_secret", secrets.token_urlsafe(32))
+        log_event(
+            "admin.forms.judge_settings.save",
+            "system_setting",
+            detail=f"Integracion Forms jueces actualizada: enabled={enabled}, auto_email={auto_send_email}",
+        )
+        db.session.commit()
+        flash("Integracion de Microsoft Forms actualizada.", "success")
+
+    elif action == "rotate_judge_form_secret":
+        SystemSetting.set_value("judge_form_webhook_secret", secrets.token_urlsafe(32))
+        log_event("admin.forms.judge_secret.rotate", "system_setting", detail="Token webhook Microsoft Forms rotado")
+        db.session.commit()
+        flash("Token del webhook rotado correctamente.", "success")
 
     elif action == "update_project":
         project_id = request.form.get("project_id", type=int)
@@ -3073,6 +3290,15 @@ def _base_context(active_page: str, **kwargs):
         .limit(40)
         .all()
     )
+    judge_form_logs = (
+        SystemAuditLog.query.filter(SystemAuditLog.action.ilike("%forms.judge%"))
+        .order_by(SystemAuditLog.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    judge_form_settings = _judge_form_settings()
+    judge_form_webhook_url = url_for("public.judge_form_webhook", _external=True)
+    judge_public_registration_url = url_for("public.judge_registration", _external=True)
     overview_metrics = _build_overview_metrics(
         projects,
         assignments,
@@ -3109,6 +3335,10 @@ def _base_context(active_page: str, **kwargs):
         "gitops_last": gitops_last,
         "gitops_remote": gitops_remote,
         "gitops_logs": gitops_logs,
+        "judge_form_settings": judge_form_settings,
+        "judge_form_logs": judge_form_logs,
+        "judge_form_webhook_url": judge_form_webhook_url,
+        "judge_public_registration_url": judge_public_registration_url,
         "overview_metrics": overview_metrics,
         "logistics_statuses": LOGISTICS_STATUSES,
         "logistics_status_map": {code: label for code, label in LOGISTICS_STATUSES},
@@ -3466,3 +3696,59 @@ def maintenance_page():
 @admin_module_required("gitops")
 def gitops_page():
     return _render("admin/gitops.html", "gitops")
+
+
+def judge_form_webhook():
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        return jsonify({"ok": False, "error": "El cuerpo debe ser JSON."}), 400
+
+    if SystemSetting.get_value("judge_form_enabled", "0") != "1":
+        log_event("forms.judge_access.blocked", "judge", detail="Webhook deshabilitado")
+        db.session.commit()
+        return jsonify({"ok": False, "error": "Webhook deshabilitado."}), 403
+
+    expected_secret = _get_judge_form_secret()
+    received_secret = _request_judge_form_token(payload)
+    if not expected_secret or not hmac.compare_digest(expected_secret, received_secret):
+        log_event("forms.judge_access.invalid_token", "judge", detail="Solicitud con token invalido")
+        db.session.commit()
+        return jsonify({"ok": False, "error": "Token invalido."}), 401
+
+    judge, temporary_password, error = _create_or_update_judge_from_form(payload)
+    if error:
+        log_event("forms.judge_access.invalid_payload", "judge", detail=error)
+        db.session.commit()
+        return jsonify({"ok": False, "error": error}), 400
+
+    return jsonify(
+        {
+            "ok": True,
+            "judge_id": judge.id,
+            "email": judge.email,
+            "created_password": bool(temporary_password),
+            "must_change_password": bool(judge.must_change_password),
+        }
+    )
+
+
+def public_judge_registration():
+    if request.method == "POST":
+        if request.form.get("website", "").strip():
+            return redirect(url_for("public.judge_registration"))
+
+        payload = request.form.to_dict()
+        judge, temporary_password, error = _create_or_update_judge_from_form(payload)
+        if error:
+            flash(error, "error")
+            return render_template("public/judge_registration.html", form_data=payload)
+
+        email_sent = bool(temporary_password) and smtp_is_configured()
+        return render_template(
+            "public/judge_registration_success.html",
+            judge=judge,
+            temporary_password=temporary_password if not email_sent else "",
+            email_sent=email_sent,
+        )
+
+    return render_template("public/judge_registration.html", form_data={})

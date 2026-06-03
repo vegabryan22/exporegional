@@ -1,5 +1,109 @@
 ﻿{% extends "admin/layout.html" %}
 {% block admin_content %}
+<section class="card admin-section forms-integration-panel">
+    <div class="page-head">
+        <div>
+            <p class="maintenance-kicker">Formulario publico</p>
+            <h3>Registro de jueces</h3>
+            <p class="table-subtext">Comparte este enlace para que cada juez se registre directamente en Expotecnica.</p>
+        </div>
+        <div class="page-head-actions">
+            <span class="tag {{ 'ok' if judge_form_settings.enabled else 'off' }}">{{ 'Activo' if judge_form_settings.enabled else 'Inactivo' }}</span>
+            <span class="tag {{ 'ok' if judge_form_settings.has_secret else 'off' }}">{{ 'Token listo' if judge_form_settings.has_secret else 'Sin token' }}</span>
+        </div>
+    </div>
+
+    <div class="forms-integration-grid">
+        <div class="compact-form forms-integration-config">
+            <label>Enlace publico para jueces
+                <input type="text" value="{{ judge_public_registration_url }}" readonly>
+            </label>
+            <div class="actions-row">
+                <a class="outline-btn" href="{{ url_for('public.judge_registration') }}" target="_blank" rel="noopener">Abrir registro publico</a>
+            </div>
+        </div>
+
+        <form method="post" action="{{ action_url }}" class="compact-form forms-integration-config">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="save_judge_form_settings">
+            <label>URL externa opcional
+                <input type="url" name="judge_form_url" value="{{ judge_form_settings.form_url }}" placeholder="https://forms.cloud.microsoft/...">
+            </label>
+            <label>Webhook API opcional
+                <input type="text" value="{{ judge_form_webhook_url }}" readonly>
+            </label>
+            <label>Token secreto
+                <input type="text" name="judge_form_secret" value="{{ judge_form_settings.secret }}" placeholder="Genera o escribe un token privado">
+            </label>
+            <div class="toggle-row">
+                <label><input type="checkbox" name="judge_form_enabled" value="1" {% if judge_form_settings.enabled %}checked{% endif %}> Activar recepcion automatica</label>
+                <label><input type="checkbox" name="judge_form_auto_send_email" value="1" {% if judge_form_settings.auto_send_email %}checked{% endif %}> Enviar credenciales por correo</label>
+            </div>
+            <div class="actions-row">
+                <button type="submit">Guardar integracion</button>
+                {% if judge_form_settings.form_url %}
+                    <a class="outline-btn" href="{{ judge_form_settings.form_url }}" target="_blank" rel="noopener">Abrir formulario</a>
+                {% endif %}
+            </div>
+        </form>
+
+        <div class="forms-integration-help">
+            <div>
+                <h4>Campos del registro publico</h4>
+                <p class="table-subtext">El formulario propio ya solicita estos datos y crea el acceso automaticamente.</p>
+            </div>
+            <div class="forms-required-fields">
+                <strong>Campos recomendados para el formulario 2026</strong>
+                <span>Correo electronico</span>
+                <span>Telefono</span>
+                <span>Cedula o identificacion</span>
+                <span>Profesion o area tecnica</span>
+                <span>Institucion o empresa</span>
+                <span>Modalidad: escrita, exposicion presencial o ambas</span>
+                <span>Puede evaluar exposicion en ingles: Si/No</span>
+                <span>Areas que puede evaluar: STEAM, Emprendimiento, Ingles</span>
+            </div>
+            <pre>{
+  "token": "{{ judge_form_settings.secret or 'TOKEN_SECRETO' }}",
+  "primer_apellido": "Primer apellido",
+  "segundo_apellido": "Segundo apellido",
+  "nombre": "Nombre",
+  "correo": "correo@institucion.com",
+  "telefono": "8888-8888",
+  "cedula": "000000000",
+  "profesion": "Especialidad profesional",
+  "institucion": "Institucion o empresa",
+  "ha_participado": "Si",
+  "acepta_participar": "Si",
+  "modalidad": "Ambas",
+  "areas": "STEAM, Emprendimiento",
+  "ingles": "No",
+  "observaciones": "Respuesta original del formulario"
+}</pre>
+            <form method="post" action="{{ action_url }}" class="inline-form">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="rotate_judge_form_secret">
+                <button type="submit" class="secondary-btn" onclick="return confirm('Rotar el token invalida el anterior. Continuar?')">Rotar token</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="forms-log-strip">
+        <h4>Ultimas solicitudes</h4>
+        {% if judge_form_logs %}
+            {% for log in judge_form_logs %}
+                <article>
+                    <strong>{{ log.action }}</strong>
+                    <span>{{ log.created_at.strftime('%Y-%m-%d %H:%M') if log.created_at else '' }}</span>
+                    <p>{{ log.detail }}</p>
+                </article>
+            {% endfor %}
+        {% else %}
+            <p class="muted-empty">Aun no hay solicitudes recibidas desde Forms.</p>
+        {% endif %}
+    </div>
+</section>
+
 <section class="card admin-section">
     <div class="page-head">
         <div>

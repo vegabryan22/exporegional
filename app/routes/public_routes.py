@@ -1,6 +1,6 @@
 from flask import Blueprint
 
-from app.controllers import project_controller
+from app.controllers import admin_controller, project_controller
 
 public_bp = Blueprint("public", __name__)
 
@@ -25,4 +25,17 @@ public_bp.add_url_rule(
     "/proyecto/<int:project_id>/evaluar",
     view_func=project_controller.evaluate_project_entry,
     methods=["GET"],
+)
+
+public_bp.add_url_rule(
+    "/jueces/registro",
+    endpoint="judge_registration",
+    view_func=admin_controller.public_judge_registration,
+    methods=["GET", "POST"],
+)
+
+public_bp.add_url_rule(
+    "/api/forms/judge-access",
+    view_func=admin_controller.judge_form_webhook,
+    methods=["POST"],
 )

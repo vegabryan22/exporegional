@@ -73,6 +73,7 @@
             <tbody>
             {% for project in projects %}
                 <tr
+                    id="project-row-{{ project.id }}"
                     class="project-row"
                     data-project-title="{{ project.title|lower }}"
                     data-project-team="{{ project.team_name|lower }}"
@@ -109,7 +110,7 @@
                     </td>
                     <td class="actions-cell">
                         <button type="button" class="outline-btn" data-dialog-open="edit-project-{{ project.id }}">Editar</button>
-                        <button type="button" class="secondary-btn" data-dialog-open="logistics-project-{{ project.id }}">Logística</button>
+                        <button type="button" class="secondary-btn logistics-open-btn" data-dialog-open="logistics-project-{{ project.id }}">Logística</button>
                         <button type="button" class="secondary-btn" data-dialog-open="members-project-{{ project.id }}">Integrantes</button>
                         <a href="{{ url_for('public.project_documents', project_id=project.id) }}" target="_blank" class="table-link-btn">Documentos</a>
                         <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" class="table-link-btn secondary">Paquete PDF</a>
@@ -586,6 +587,45 @@
             });
         }
         applyProjectFilters();
+
+        function clearProjectFilters() {
+            if (textInput) {
+                textInput.value = '';
+            }
+            if (categorySelect) {
+                categorySelect.value = '';
+            }
+            if (statusSelect) {
+                statusSelect.value = '';
+            }
+            activeRadios.forEach(function (radio) {
+                radio.checked = radio.value === '';
+            });
+            applyProjectFilters();
+        }
+
+        function focusProjectFromHash() {
+            var hash = window.location.hash || '';
+            var match = hash.match(/^#logistics-project-(\d+)$/);
+            if (!match) {
+                return;
+            }
+
+            clearProjectFilters();
+            var row = document.getElementById('project-row-' + match[1]);
+            if (!row) {
+                return;
+            }
+
+            row.classList.add('project-row-focus');
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            window.setTimeout(function () {
+                row.classList.remove('project-row-focus');
+            }, 4500);
+        }
+
+        window.addEventListener('hashchange', focusProjectFromHash);
+        focusProjectFromHash();
     })();
 </script>
 {% endblock %}

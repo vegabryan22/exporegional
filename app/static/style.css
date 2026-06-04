@@ -1455,6 +1455,36 @@ th {
     border-color: #cbd7e7;
 }
 
+.logistics-control-link {
+    background: linear-gradient(135deg, #0b6fae 0%, #2f9c84 100%);
+    border-color: transparent;
+    box-shadow: 0 8px 18px rgba(19, 105, 150, 0.16);
+    color: #ffffff;
+}
+
+.logistics-control-link:hover {
+    background: linear-gradient(135deg, #075f98 0%, #277f6f 100%);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.project-row-focus {
+    position: relative;
+    outline: 3px solid rgba(47, 156, 132, 0.35);
+    outline-offset: -3px;
+    box-shadow: inset 5px 0 0 #2f9c84, 0 12px 30px rgba(47, 156, 132, 0.16);
+    animation: projectFocusPulse 1.25s ease-in-out 3;
+}
+
+@keyframes projectFocusPulse {
+    0%, 100% {
+        background: #ffffff;
+    }
+    50% {
+        background: #ecfff9;
+    }
+}
+
 .report-banner-actions {
     display: flex;
     align-items: center;

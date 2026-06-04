@@ -123,6 +123,7 @@
                         <th>Requisitos</th>
                         <th>Fotos</th>
                         <th>Revisión</th>
+                        <th>Control</th>
                     </tr>
                 </thead>
                 <tbody id="pending-logistics-body" data-page="1" data-per-page="{{ overview_metrics.pending_logistics_per_page }}">
@@ -139,9 +140,12 @@
                             <td class="table-cell-center"><span class="tag {{ 'ok' if project.logistics_requirements_reviewed_ok else 'off' }}">{{ 'OK' if project.logistics_requirements_reviewed_ok else 'Falta' }}</span></td>
                             <td class="table-cell-center"><span class="tag {{ 'ok' if row.missing_member_photos == 0 else 'off' }}">{{ row.missing_member_photos if row.missing_member_photos else 'OK' }}</span></td>
                             <td class="table-cell-center"><span class="tag {{ 'ok' if project.logistics_status == 'completo' else 'off' }}">{{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}</span></td>
+                            <td class="table-cell-center">
+                                <a class="table-link-btn logistics-control-link" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Verificar</a>
+                            </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="7">No hay pendientes logísticos registrados.</td></tr>
+                        <tr><td colspan="8">No hay pendientes logísticos registrados.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

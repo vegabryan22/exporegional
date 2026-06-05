@@ -100,7 +100,10 @@
             <h3>Sección 2 de 6 - Datos del estudiante N.1</h3>
             <div class="form-grid inline-grid-3">
                 <label>Nombre completo *<input type="text" name="student_1_full_name" value="{{ form_data.get('student_1_full_name', '') }}" required></label>
-                <label>Cédula *<input type="text" name="student_1_identity" value="{{ form_data.get('student_1_identity', '') }}" required></label>
+                <label>Cédula / documento de identidad *
+                    <input type="text" name="student_1_identity" value="{{ form_data.get('student_1_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input required>
+                    <small>Máximo 12 caracteres. Sin guiones al guardar.</small>
+                </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_1_birth_date" value="{{ form_data.get('student_1_birth_date', '') }}" required></label>
             </div>
             <div class="form-grid inline-grid-4">
@@ -144,7 +147,10 @@
             <h3>Sección 3 de 6 - Datos del estudiante N.2</h3>
             <div class="form-grid inline-grid-3">
                 <label>Nombre completo *<input type="text" name="student_2_full_name" value="{{ form_data.get('student_2_full_name', '') }}"></label>
-                <label>Cédula *<input type="text" name="student_2_identity" value="{{ form_data.get('student_2_identity', '') }}"></label>
+                <label>Cédula / documento de identidad *
+                    <input type="text" name="student_2_identity" value="{{ form_data.get('student_2_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input>
+                    <small>Máximo 12 caracteres. No puede repetirse.</small>
+                </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_2_birth_date" value="{{ form_data.get('student_2_birth_date', '') }}"></label>
             </div>
             <div class="form-grid inline-grid-4">
@@ -188,7 +194,10 @@
             <h3>Sección 4 de 6 - Datos del estudiante N.3</h3>
             <div class="form-grid inline-grid-3">
                 <label>Nombre completo *<input type="text" name="student_3_full_name" value="{{ form_data.get('student_3_full_name', '') }}"></label>
-                <label>Cédula *<input type="text" name="student_3_identity" value="{{ form_data.get('student_3_identity', '') }}"></label>
+                <label>Cédula / documento de identidad *
+                    <input type="text" name="student_3_identity" value="{{ form_data.get('student_3_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input>
+                    <small>Máximo 12 caracteres. No puede repetirse.</small>
+                </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_3_birth_date" value="{{ form_data.get('student_3_birth_date', '') }}"></label>
             </div>
             <div class="form-grid inline-grid-4">
@@ -226,7 +235,10 @@
                 <h3>Sección 5 de 6 - Datos del docente tutor(a)</h3>
                 <div class="form-grid inline-grid-1">
                     <label>Nombre completo del docente *<input type="text" name="advisor_name" value="{{ form_data.get('advisor_name', '') }}" required></label>
-                    <label>Cédula de identidad del docente *<input type="text" name="advisor_identity" value="{{ form_data.get('advisor_identity', '') }}" required></label>
+                    <label>Cédula de identidad del docente *
+                        <input type="text" name="advisor_identity" value="{{ form_data.get('advisor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input required>
+                        <small>Máximo 12 caracteres.</small>
+                    </label>
                     <label>Correo electrónico del docente *<input type="email" name="advisor_email" value="{{ form_data.get('advisor_email', '') }}" required></label>
                 </div>
             </section>
@@ -261,6 +273,43 @@
     var category = document.getElementById('category');
     var specialtyWrapper = document.getElementById('specialty-wrapper');
     var specialtySelect = document.getElementById('specialty-id');
+    var form = document.getElementById('expotec-form');
+    var identityInputs = Array.prototype.slice.call(document.querySelectorAll('[data-identity-input]'));
+
+    function normalizeIdentity(value) {
+        return (value || '').toUpperCase().replace(/[\s-]+/g, '');
+    }
+
+    function validateIdentityInputs() {
+        identityInputs.forEach(function (input) {
+            var normalized = normalizeIdentity(input.value);
+            if (normalized.length > 12) {
+                input.setCustomValidity('El documento no puede superar 12 caracteres.');
+            } else if (normalized && !/^[A-Z0-9]+$/.test(normalized)) {
+                input.setCustomValidity('Usa solo letras y números, sin símbolos.');
+            } else {
+                input.setCustomValidity('');
+            }
+        });
+
+        var participantInputs = [
+            document.querySelector('[name="student_1_identity"]'),
+            student1More.value === 'si' ? document.querySelector('[name="student_2_identity"]') : null,
+            student1More.value === 'si' && student2More.value === 'si' ? document.querySelector('[name="student_3_identity"]') : null
+        ].filter(Boolean);
+        var seen = {};
+        participantInputs.forEach(function (input) {
+            var normalized = normalizeIdentity(input.value);
+            if (!normalized) {
+                return;
+            }
+            if (seen[normalized]) {
+                input.setCustomValidity('Este documento ya fue usado por otro participante.');
+            } else {
+                seen[normalized] = true;
+            }
+        });
+    }
 
     function toggleStudentSections() {
         var showStudent2 = student1More.value === 'si';
@@ -268,6 +317,7 @@
 
         var showStudent3 = showStudent2 && student2More.value === 'si';
         student3Section.style.display = showStudent3 ? 'block' : 'none';
+        validateIdentityInputs();
     }
 
     function toggleOtros() {
@@ -295,10 +345,20 @@
         reqOtros.addEventListener('change', toggleOtros);
     }
     category.addEventListener('change', toggleFocusFields);
+    identityInputs.forEach(function (input) {
+        input.addEventListener('input', function () {
+            input.value = normalizeIdentity(input.value).slice(0, 12);
+            validateIdentityInputs();
+        });
+    });
+    if (form) {
+        form.addEventListener('submit', validateIdentityInputs);
+    }
 
     toggleStudentSections();
     toggleOtros();
     toggleFocusFields();
+    validateIdentityInputs();
 })();
 </script>
 {% endblock %}

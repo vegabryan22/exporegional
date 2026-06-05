@@ -1,7 +1,7 @@
 import json
 import time
 
-from flask import Flask
+from flask import Flask, render_template
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import OperationalError
 
@@ -43,6 +43,7 @@ def create_app():
 
     register_cli(app)
     register_context_processors(app)
+    register_error_handlers(app)
     return app
 
 
@@ -171,6 +172,19 @@ def register_context_processors(app):
                 "maintenance_image_path": SystemSetting.get_value("maintenance_image_path", ""),
             },
         }
+
+
+def register_error_handlers(app):
+    @app.errorhandler(413)
+    def request_entity_too_large(error):
+        max_mb = app.config.get("MAX_CONTENT_LENGTH", 0) / (1024 * 1024)
+        return (
+            render_template(
+                "errors/413.html",
+                max_upload_mb=round(max_mb, 1) if max_mb else None,
+            ),
+            413,
+        )
 
 
 def ensure_schema_updates():

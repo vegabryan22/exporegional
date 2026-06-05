@@ -3076,6 +3076,45 @@ dialog.maintenance-dialog::backdrop {
     gap: 0.55rem;
 }
 
+.upload-error-page {
+    max-width: 860px;
+    margin: 2rem auto;
+}
+
+.upload-error-hero {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.2rem;
+    align-items: center;
+    padding: 1.2rem;
+    border: 1px solid #ffd2d2;
+    border-radius: 24px;
+    background: linear-gradient(135deg, #fff7f2 0%, #f2fbff 100%);
+}
+
+.upload-error-code {
+    display: inline-grid;
+    place-items: center;
+    width: 86px;
+    height: 86px;
+    border-radius: 26px;
+    background: #b4232f;
+    color: #ffffff;
+    font-size: 1.8rem;
+    font-weight: 900;
+}
+
+.upload-error-hero h2 {
+    margin: 0.1rem 0 0.45rem;
+}
+
+.upload-error-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1.2rem;
+}
+
 .focus-grid {
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     align-items: end;

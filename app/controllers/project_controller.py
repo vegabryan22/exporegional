@@ -1,10 +1,12 @@
 import os
+import re
 import uuid
 from io import BytesIO
 from datetime import date, datetime
 
 from flask import current_app, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user
+from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
@@ -32,6 +34,7 @@ except Exception:
 
 ALLOWED_DOC_EXTENSIONS = {"pdf", "doc", "docx", "ppt", "pptx", "zip", "rar"}
 REGISTRATION_DRAFT_SESSION_KEY = "project_registration_draft"
+IDENTITY_MAX_LENGTH = 12
 REQUIREMENTS_OPTIONS = [
     ("corriente", "Conexion a corriente"),
     ("internet", "Internet"),
@@ -49,6 +52,22 @@ def _parse_date(raw_value):
         return datetime.strptime((raw_value or "").strip(), "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def _normalize_identity(raw_value: str) -> str:
+    value = (raw_value or "").strip().upper()
+    value = re.sub(r"[\s-]+", "", value)
+    return value
+
+
+def _identity_error(identity: str, label: str) -> str | None:
+    if not identity:
+        return f"{label} es obligatorio."
+    if len(identity) > IDENTITY_MAX_LENGTH:
+        return f"{label} no puede superar {IDENTITY_MAX_LENGTH} caracteres."
+    if not re.fullmatch(r"[A-Z0-9]+", identity):
+        return f"{label} solo puede contener letras y numeros, sin espacios ni guiones."
+    return None
 
 
 def _get_extension(filename):
@@ -401,7 +420,7 @@ def _build_student(form_data, index, section_name, focus_name):
     return {
         "student_number": index,
         "full_name": (form_data.get(f"student_{index}_full_name") or "").strip(),
-        "identity_number": (form_data.get(f"student_{index}_identity") or "").strip(),
+        "identity_number": _normalize_identity(form_data.get(f"student_{index}_identity")),
         "birth_date": _parse_date(form_data.get(f"student_{index}_birth_date")),
         "gender": _normalize_gender(form_data, index),
         "specialty": focus_name,
@@ -415,6 +434,7 @@ def _build_student(form_data, index, section_name, focus_name):
 
 def _validate_students(students, required_numbers):
     by_number = {student["student_number"]: student for student in students}
+    required_identities = []
     for number in required_numbers:
         student = by_number[number]
         required = [
@@ -429,6 +449,28 @@ def _validate_students(students, required_numbers):
         ]
         if not all(required):
             return f"Completa todos los datos obligatorios del estudiante N.{number}."
+        identity_error = _identity_error(student["identity_number"], f"La cedula/documento del estudiante N.{number}")
+        if identity_error:
+            return identity_error
+        required_identities.append((number, student["identity_number"]))
+
+    seen = {}
+    for number, identity in required_identities:
+        if identity in seen:
+            return (
+                "La cedula/documento no puede repetirse entre participantes: "
+                f"estudiante N.{seen[identity]} y estudiante N.{number}."
+            )
+        seen[identity] = number
+
+    normalized_db_identity = func.upper(func.replace(func.replace(ProjectMember.identity_number, "-", ""), " ", ""))
+    existing_identity = (
+        ProjectMember.query.filter(normalized_db_identity.in_([identity for _, identity in required_identities]))
+        .with_entities(ProjectMember.identity_number)
+        .scalar()
+    )
+    if existing_identity:
+        return f"La cedula/documento {existing_identity} ya esta registrada en otro proyecto."
     return None
 
 
@@ -567,6 +609,7 @@ def register_project():
         focus_name = specialty.name if specialty else ""
         section_name = section.name if section else ""
         students = [_build_student(form_data, i, section_name, focus_name) for i in [1, 2, 3]]
+        advisor_identity = _normalize_identity(_draft_form_value(form_data, "advisor_identity"))
 
         project = Project(
             registration_date=registration_date,
@@ -583,7 +626,7 @@ def register_project():
             workshop_id=None,
             campaign_id=active_campaign.id,
             advisor_name=(_draft_form_value(form_data, "advisor_name") or "").strip(),
-            advisor_identity=(_draft_form_value(form_data, "advisor_identity") or "").strip(),
+            advisor_identity=advisor_identity,
             advisor_email=(_draft_form_value(form_data, "advisor_email") or "").strip().lower(),
             category=category,
             description=(_draft_form_value(form_data, "description") or "Proyecto registrado mediante ExpoTEC-1.").strip(),
@@ -635,6 +678,10 @@ def register_project():
 
         if not all([project.advisor_name, project.advisor_identity, project.advisor_email]):
             flash("Completa los datos del docente tutor.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        advisor_identity_error = _identity_error(project.advisor_identity, "La cedula/documento del docente")
+        if advisor_identity_error:
+            flash(advisor_identity_error, "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
         if not project.consent_terms:

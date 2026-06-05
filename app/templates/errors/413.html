@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card upload-error-page">
+    <div class="upload-error-hero">
+        <span class="upload-error-code">413</span>
+        <div>
+            <p class="maintenance-kicker">Archivo demasiado grande</p>
+            <h2>No pudimos recibir el archivo</h2>
+            <p>
+                El documento supera el tamaño máximo permitido{% if max_upload_mb %} de {{ max_upload_mb }} MB{% endif %}.
+                Reduce el peso del archivo o comprímelo antes de intentarlo nuevamente.
+            </p>
+        </div>
+    </div>
+    <div class="upload-error-actions">
+        <a class="project-action" href="{{ url_for('public.register_project') }}">Volver a inscripción</a>
+        <a class="project-action secondary" href="{{ url_for('public.index') }}">Ir al inicio</a>
+    </div>
+</section>
+{% endblock %}

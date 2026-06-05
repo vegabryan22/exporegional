@@ -29,6 +29,15 @@
                 <label>Fecha *
                     <input type="date" name="registration_date" value="{{ form_data.get('registration_date', '') }}" required>
                 </label>
+                <label>Fecha inicio del proyecto *
+                    <input type="date" name="project_start_date" value="{{ form_data.get('project_start_date', '') }}" required>
+                </label>
+                <label>Fecha finalización del proyecto *
+                    <input type="date" name="project_end_date" value="{{ form_data.get('project_end_date', '') }}" required>
+                </label>
+            </div>
+
+            <div class="form-grid inline-grid-2">
                 <label>Nombre del proyecto *
                     <input type="text" name="title" value="{{ form_data.get('title', '') }}" required>
                 </label>
@@ -63,8 +72,9 @@
                 </label>
             </div>
 
-            <label>Requerimientos del proyecto *</label>
-            <div class="requirements-grid">
+            <div class="register-fieldset">
+                <span>Requerimientos del proyecto *</span>
+                <div class="requirements-grid">
                 {% for code, label in requirements_options %}
                     <label class="requirement-item">
                         <input
@@ -73,16 +83,18 @@
                             value="{{ code }}"
                             {% if code == 'otros' %}id="req-otros"{% endif %}
                             {% if code in req_values %}checked{% endif %}
-                        > {{ label }}
+                        >
+                        <span>{{ label }}</span>
                     </label>
                 {% endfor %}
+                </div>
             </div>
             <div class="form-grid inline-grid-2">
                 <label id="req-otros-wrapper">Otros:
                     <input type="text" name="requirements_other" value="{{ form_data.get('requirements_other', '') }}">
                 </label>
-                <label>Detalle de requerimientos
-                    <textarea name="required_resources" rows="3">{{ form_data.get('required_resources', '') }}</textarea>
+                <label>Detalle adicional de requerimientos
+                    <input type="text" name="required_resources" value="{{ form_data.get('required_resources', '') }}">
                 </label>
             </div>
             <label>Documentación del proyecto *
@@ -98,135 +110,156 @@
 
         <section class="inline-card stage-block stage-2" id="student-1">
             <h3>Sección 2 de 6 - Datos del estudiante N.1</h3>
-            <div class="form-grid inline-grid-3">
+            <div class="form-grid inline-grid-4">
                 <label>Nombre completo *<input type="text" name="student_1_full_name" value="{{ form_data.get('student_1_full_name', '') }}" required></label>
+                <label>Carrera técnica / especialidad *
+                    <select name="student_1_specialty_id" required>
+                        <option value="">Seleccione...</option>
+                        {% for specialty in specialties %}
+                            <option value="{{ specialty.id }}" {% if form_data.get('student_1_specialty_id') == specialty.id|string or (not form_data.get('student_1_specialty_id') and form_data.get('specialty_id') == specialty.id|string) %}selected{% endif %}>{{ specialty.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
                 <label>Cédula / documento de identidad *
                     <input type="text" name="student_1_identity" value="{{ form_data.get('student_1_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input required>
                     <small>Máximo 12 caracteres. Sin guiones al guardar.</small>
                 </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_1_birth_date" value="{{ form_data.get('student_1_birth_date', '') }}" required></label>
             </div>
-            <div class="form-grid inline-grid-4">
-                <label>Género *
-                    <select name="student_1_gender" required>
-                        <option value="">Seleccione...</option>
-                        <option value="masculino" {% if form_data.get('student_1_gender') == 'masculino' %}selected{% endif %}>Masculino</option>
-                        <option value="femenino" {% if form_data.get('student_1_gender') == 'femenino' %}selected{% endif %}>Femenino</option>
-                        <option value="otros" {% if form_data.get('student_1_gender') == 'otros' %}selected{% endif %}>Otros</option>
-                    </select>
-                </label>
-                <label>Otros (género)<input type="text" name="student_1_gender_other" value="{{ form_data.get('student_1_gender_other', '') }}"></label>
-                <label>Beca de comedor *
-                    <select name="student_1_scholarship" required>
-                        <option value="">Seleccione...</option>
-                        <option value="si" {% if form_data.get('student_1_scholarship') == 'si' %}selected{% endif %}>Si</option>
-                        <option value="no" {% if form_data.get('student_1_scholarship') == 'no' %}selected{% endif %}>No</option>
-                    </select>
-                </label>
-                <label>Teléfono *<input type="text" name="student_1_phone" value="{{ form_data.get('student_1_phone', '') }}" required></label>
+            <div class="form-grid inline-grid-3">
+                <div class="register-fieldset">
+                    <span>Sexo *</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="student_1_gender" value="masculino" {% if form_data.get('student_1_gender') == 'masculino' %}checked{% endif %} required><span>Masculino</span></label>
+                        <label><input type="radio" name="student_1_gender" value="femenino" {% if form_data.get('student_1_gender') == 'femenino' %}checked{% endif %} required><span>Femenino</span></label>
+                    </div>
+                </div>
+                <div class="register-fieldset">
+                    <span>Beca de comedor *</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="student_1_scholarship" value="si" {% if form_data.get('student_1_scholarship') == 'si' %}checked{% endif %} required><span>Sí</span></label>
+                        <label><input type="radio" name="student_1_scholarship" value="no" {% if form_data.get('student_1_scholarship') == 'no' %}checked{% endif %} required><span>No</span></label>
+                    </div>
+                </div>
+                <label>Teléfono *<input type="tel" name="student_1_phone" value="{{ form_data.get('student_1_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input required></label>
             </div>
             <div class="form-grid inline-grid-3">
                 <label>Correo electrónico *<input type="email" name="student_1_email" value="{{ form_data.get('student_1_email', '') }}" required></label>
-                <label>Exposición en inglés
-                    <select name="student_1_english">
-                        <option value="no" {% if form_data.get('student_1_english', 'no') == 'no' %}selected{% endif %}>No</option>
-                        <option value="si" {% if form_data.get('student_1_english') == 'si' %}selected{% endif %}>Si</option>
-                    </select>
-                </label>
-                <label>¿Participan más estudiantes? *
-                    <select name="student_1_more" id="student-1-more" required>
-                        <option value="">Seleccione...</option>
-                        <option value="si" {% if form_data.get('student_1_more') == 'si' %}selected{% endif %}>Si</option>
-                        <option value="no" {% if form_data.get('student_1_more') == 'no' %}selected{% endif %}>No</option>
-                    </select>
-                </label>
+                <div class="register-fieldset">
+                    <span>Exposición en inglés</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="student_1_english" value="si" {% if form_data.get('student_1_english') == 'si' %}checked{% endif %}><span>Sí</span></label>
+                        <label><input type="radio" name="student_1_english" value="no" {% if form_data.get('student_1_english', 'no') == 'no' %}checked{% endif %}><span>No</span></label>
+                    </div>
+                </div>
+                <div class="register-fieldset">
+                    <span>¿Participan más estudiantes? *</span>
+                    <div class="radio-card-group" id="student-1-more">
+                        <label><input type="radio" name="student_1_more" value="si" {% if form_data.get('student_1_more') == 'si' %}checked{% endif %} required><span>Sí</span></label>
+                        <label><input type="radio" name="student_1_more" value="no" {% if form_data.get('student_1_more') == 'no' %}checked{% endif %} required><span>No</span></label>
+                    </div>
+                </div>
             </div>
         </section>
 
         <section class="inline-card stage-block stage-3" id="student-2">
             <h3>Sección 3 de 6 - Datos del estudiante N.2</h3>
-            <div class="form-grid inline-grid-3">
+            <div class="form-grid inline-grid-4">
                 <label>Nombre completo *<input type="text" name="student_2_full_name" value="{{ form_data.get('student_2_full_name', '') }}"></label>
+                <label>Carrera técnica / especialidad *
+                    <select name="student_2_specialty_id">
+                        <option value="">Seleccione...</option>
+                        {% for specialty in specialties %}
+                            <option value="{{ specialty.id }}" {% if form_data.get('student_2_specialty_id') == specialty.id|string or (not form_data.get('student_2_specialty_id') and form_data.get('specialty_id') == specialty.id|string) %}selected{% endif %}>{{ specialty.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
                 <label>Cédula / documento de identidad *
                     <input type="text" name="student_2_identity" value="{{ form_data.get('student_2_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input>
                     <small>Máximo 12 caracteres. No puede repetirse.</small>
                 </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_2_birth_date" value="{{ form_data.get('student_2_birth_date', '') }}"></label>
             </div>
-            <div class="form-grid inline-grid-4">
-                <label>Género *
-                    <select name="student_2_gender">
-                        <option value="">Seleccione...</option>
-                        <option value="masculino" {% if form_data.get('student_2_gender') == 'masculino' %}selected{% endif %}>Masculino</option>
-                        <option value="femenino" {% if form_data.get('student_2_gender') == 'femenino' %}selected{% endif %}>Femenino</option>
-                        <option value="otros" {% if form_data.get('student_2_gender') == 'otros' %}selected{% endif %}>Otros</option>
-                    </select>
-                </label>
-                <label>Otros (género)<input type="text" name="student_2_gender_other" value="{{ form_data.get('student_2_gender_other', '') }}"></label>
-                <label>Beca de comedor *
-                    <select name="student_2_scholarship">
-                        <option value="">Seleccione...</option>
-                        <option value="si" {% if form_data.get('student_2_scholarship') == 'si' %}selected{% endif %}>Si</option>
-                        <option value="no" {% if form_data.get('student_2_scholarship') == 'no' %}selected{% endif %}>No</option>
-                    </select>
-                </label>
-                <label>Teléfono *<input type="text" name="student_2_phone" value="{{ form_data.get('student_2_phone', '') }}"></label>
+            <div class="form-grid inline-grid-3">
+                <div class="register-fieldset">
+                    <span>Sexo *</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="student_2_gender" value="masculino" {% if form_data.get('student_2_gender') == 'masculino' %}checked{% endif %}><span>Masculino</span></label>
+                        <label><input type="radio" name="student_2_gender" value="femenino" {% if form_data.get('student_2_gender') == 'femenino' %}checked{% endif %}><span>Femenino</span></label>
+                    </div>
+                </div>
+                <div class="register-fieldset">
+                    <span>Beca de comedor *</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="student_2_scholarship" value="si" {% if form_data.get('student_2_scholarship') == 'si' %}checked{% endif %}><span>Sí</span></label>
+                        <label><input type="radio" name="student_2_scholarship" value="no" {% if form_data.get('student_2_scholarship') == 'no' %}checked{% endif %}><span>No</span></label>
+                    </div>
+                </div>
+                <label>Teléfono *<input type="tel" name="student_2_phone" value="{{ form_data.get('student_2_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input></label>
             </div>
             <div class="form-grid inline-grid-3">
                 <label>Correo electrónico *<input type="email" name="student_2_email" value="{{ form_data.get('student_2_email', '') }}"></label>
-                <label>Exposición en inglés
-                    <select name="student_2_english">
-                        <option value="no" {% if form_data.get('student_2_english', 'no') == 'no' %}selected{% endif %}>No</option>
-                        <option value="si" {% if form_data.get('student_2_english') == 'si' %}selected{% endif %}>Si</option>
-                    </select>
-                </label>
-                <label>¿Participan más estudiantes? *
-                    <select name="student_2_more" id="student-2-more">
-                        <option value="">Seleccione...</option>
-                        <option value="si" {% if form_data.get('student_2_more') == 'si' %}selected{% endif %}>Si</option>
-                        <option value="no" {% if form_data.get('student_2_more') == 'no' %}selected{% endif %}>No</option>
-                    </select>
-                </label>
+                <div class="register-fieldset">
+                    <span>Exposición en inglés</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="student_2_english" value="si" {% if form_data.get('student_2_english') == 'si' %}checked{% endif %}><span>Sí</span></label>
+                        <label><input type="radio" name="student_2_english" value="no" {% if form_data.get('student_2_english', 'no') == 'no' %}checked{% endif %}><span>No</span></label>
+                    </div>
+                </div>
+                <div class="register-fieldset">
+                    <span>¿Participan más estudiantes? *</span>
+                    <div class="radio-card-group" id="student-2-more">
+                        <label><input type="radio" name="student_2_more" value="si" {% if form_data.get('student_2_more') == 'si' %}checked{% endif %}><span>Sí</span></label>
+                        <label><input type="radio" name="student_2_more" value="no" {% if form_data.get('student_2_more') == 'no' %}checked{% endif %}><span>No</span></label>
+                    </div>
+                </div>
             </div>
         </section>
 
         <section class="inline-card stage-block stage-4" id="student-3">
             <h3>Sección 4 de 6 - Datos del estudiante N.3</h3>
-            <div class="form-grid inline-grid-3">
+            <div class="form-grid inline-grid-4">
                 <label>Nombre completo *<input type="text" name="student_3_full_name" value="{{ form_data.get('student_3_full_name', '') }}"></label>
+                <label>Carrera técnica / especialidad *
+                    <select name="student_3_specialty_id">
+                        <option value="">Seleccione...</option>
+                        {% for specialty in specialties %}
+                            <option value="{{ specialty.id }}" {% if form_data.get('student_3_specialty_id') == specialty.id|string or (not form_data.get('student_3_specialty_id') and form_data.get('specialty_id') == specialty.id|string) %}selected{% endif %}>{{ specialty.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
                 <label>Cédula / documento de identidad *
                     <input type="text" name="student_3_identity" value="{{ form_data.get('student_3_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input>
                     <small>Máximo 12 caracteres. No puede repetirse.</small>
                 </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_3_birth_date" value="{{ form_data.get('student_3_birth_date', '') }}"></label>
             </div>
-            <div class="form-grid inline-grid-4">
-                <label>Género *
-                    <select name="student_3_gender">
-                        <option value="">Seleccione...</option>
-                        <option value="masculino" {% if form_data.get('student_3_gender') == 'masculino' %}selected{% endif %}>Masculino</option>
-                        <option value="femenino" {% if form_data.get('student_3_gender') == 'femenino' %}selected{% endif %}>Femenino</option>
-                        <option value="otros" {% if form_data.get('student_3_gender') == 'otros' %}selected{% endif %}>Otros</option>
-                    </select>
-                </label>
-                <label>Otros (género)<input type="text" name="student_3_gender_other" value="{{ form_data.get('student_3_gender_other', '') }}"></label>
-                <label>Beca de comedor *
-                    <select name="student_3_scholarship">
-                        <option value="">Seleccione...</option>
-                        <option value="si" {% if form_data.get('student_3_scholarship') == 'si' %}selected{% endif %}>Si</option>
-                        <option value="no" {% if form_data.get('student_3_scholarship') == 'no' %}selected{% endif %}>No</option>
-                    </select>
-                </label>
-                <label>Teléfono *<input type="text" name="student_3_phone" value="{{ form_data.get('student_3_phone', '') }}"></label>
+            <div class="form-grid inline-grid-3">
+                <div class="register-fieldset">
+                    <span>Sexo *</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="student_3_gender" value="masculino" {% if form_data.get('student_3_gender') == 'masculino' %}checked{% endif %}><span>Masculino</span></label>
+                        <label><input type="radio" name="student_3_gender" value="femenino" {% if form_data.get('student_3_gender') == 'femenino' %}checked{% endif %}><span>Femenino</span></label>
+                    </div>
+                </div>
+                <div class="register-fieldset">
+                    <span>Beca de comedor *</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="student_3_scholarship" value="si" {% if form_data.get('student_3_scholarship') == 'si' %}checked{% endif %}><span>Sí</span></label>
+                        <label><input type="radio" name="student_3_scholarship" value="no" {% if form_data.get('student_3_scholarship') == 'no' %}checked{% endif %}><span>No</span></label>
+                    </div>
+                </div>
+                <label>Teléfono *<input type="tel" name="student_3_phone" value="{{ form_data.get('student_3_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input></label>
             </div>
             <div class="form-grid inline-grid-2">
                 <label>Correo electrónico *<input type="email" name="student_3_email" value="{{ form_data.get('student_3_email', '') }}"></label>
-                <label>Exposición en inglés
-                    <select name="student_3_english">
-                        <option value="no" {% if form_data.get('student_3_english', 'no') == 'no' %}selected{% endif %}>No</option>
-                        <option value="si" {% if form_data.get('student_3_english') == 'si' %}selected{% endif %}>Si</option>
-                    </select>
-                </label>
+                <div class="register-fieldset">
+                    <span>Exposición en inglés</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="student_3_english" value="si" {% if form_data.get('student_3_english') == 'si' %}checked{% endif %}><span>Sí</span></label>
+                        <label><input type="radio" name="student_3_english" value="no" {% if form_data.get('student_3_english', 'no') == 'no' %}checked{% endif %}><span>No</span></label>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -240,16 +273,14 @@
                         <small>Máximo 12 caracteres.</small>
                     </label>
                     <label>Fecha de nacimiento del docente *<input type="date" name="advisor_birth_date" value="{{ form_data.get('advisor_birth_date', '') }}" required></label>
-                    <label>Sexo del docente *
-                        <select name="advisor_gender" required>
-                            <option value="">Seleccione...</option>
-                            <option value="masculino" {% if form_data.get('advisor_gender') == 'masculino' %}selected{% endif %}>Masculino</option>
-                            <option value="femenino" {% if form_data.get('advisor_gender') == 'femenino' %}selected{% endif %}>Femenino</option>
-                            <option value="otros" {% if form_data.get('advisor_gender') == 'otros' %}selected{% endif %}>Otros</option>
-                        </select>
-                    </label>
-                    <label>Otros (sexo docente)<input type="text" name="advisor_gender_other" value="{{ form_data.get('advisor_gender_other', '') }}"></label>
-                    <label>Teléfono del docente *<input type="text" name="advisor_phone" value="{{ form_data.get('advisor_phone', '') }}" required></label>
+                    <div class="register-fieldset">
+                        <span>Sexo del docente *</span>
+                        <div class="radio-card-group">
+                            <label><input type="radio" name="advisor_gender" value="masculino" {% if form_data.get('advisor_gender') == 'masculino' %}checked{% endif %} required><span>Masculino</span></label>
+                            <label><input type="radio" name="advisor_gender" value="femenino" {% if form_data.get('advisor_gender') == 'femenino' %}checked{% endif %} required><span>Femenino</span></label>
+                        </div>
+                    </div>
+                    <label>Teléfono del docente *<input type="tel" name="advisor_phone" value="{{ form_data.get('advisor_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input required></label>
                     <label>Correo electrónico del docente *<input type="email" name="advisor_email" value="{{ form_data.get('advisor_email', '') }}" required></label>
                 </div>
             </section>
@@ -264,28 +295,26 @@
                         <small>Máximo 12 caracteres.</small>
                     </label>
                     <label>Fecha de nacimiento de la persona mentora<input type="date" name="mentor_birth_date" value="{{ form_data.get('mentor_birth_date', '') }}"></label>
-                    <label>Sexo de la persona mentora
-                        <select name="mentor_gender">
-                            <option value="">Seleccione...</option>
-                            <option value="masculino" {% if form_data.get('mentor_gender') == 'masculino' %}selected{% endif %}>Masculino</option>
-                            <option value="femenino" {% if form_data.get('mentor_gender') == 'femenino' %}selected{% endif %}>Femenino</option>
-                            <option value="otros" {% if form_data.get('mentor_gender') == 'otros' %}selected{% endif %}>Otros</option>
-                        </select>
-                    </label>
-                    <label>Otros (sexo mentor)<input type="text" name="mentor_gender_other" value="{{ form_data.get('mentor_gender_other', '') }}"></label>
+                    <div class="register-fieldset">
+                        <span>Sexo de la persona mentora</span>
+                        <div class="radio-card-group">
+                            <label><input type="radio" name="mentor_gender" value="masculino" {% if form_data.get('mentor_gender') == 'masculino' %}checked{% endif %}><span>Masculino</span></label>
+                            <label><input type="radio" name="mentor_gender" value="femenino" {% if form_data.get('mentor_gender') == 'femenino' %}checked{% endif %}><span>Femenino</span></label>
+                        </div>
+                    </div>
                     <label>Carrera técnica / especialidad de la persona mentora<input type="text" name="mentor_specialty" value="{{ form_data.get('mentor_specialty', '') }}"></label>
-                    <label>Teléfono de la persona mentora<input type="text" name="mentor_phone" value="{{ form_data.get('mentor_phone', '') }}"></label>
+                    <label>Teléfono de la persona mentora<input type="tel" name="mentor_phone" value="{{ form_data.get('mentor_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input></label>
                     <label>Correo electrónico de la persona mentora<input type="email" name="mentor_email" value="{{ form_data.get('mentor_email', '') }}"></label>
                 </div>
                 <p>Declaramos bajo juramento que el proyecto inscrito en el formulario ExpoTEC-1 fue realizado por los estudiantes y el docente asesoró durante el proceso.</p>
                 <div class="form-grid inline-grid-1">
-                    <label>Declaración *
-                        <select name="declaration" required>
-                            <option value="">Seleccione...</option>
-                            <option value="si" {% if form_data.get('declaration') == 'si' %}selected{% endif %}>Si</option>
-                            <option value="no" {% if form_data.get('declaration') == 'no' %}selected{% endif %}>No</option>
-                        </select>
-                    </label>
+                    <div class="register-fieldset">
+                        <span>Declaración *</span>
+                        <div class="radio-card-group radio-card-group-wide">
+                            <label><input type="radio" name="declaration" value="si" {% if form_data.get('declaration') == 'si' %}checked{% endif %} required><span>Acepto la declaración</span></label>
+                            <label><input type="radio" name="declaration" value="no" {% if form_data.get('declaration') == 'no' %}checked{% endif %} required><span>No acepto</span></label>
+                        </div>
+                    </div>
                 </div>
             </section>
         </div>
@@ -307,6 +336,12 @@
     var specialtySelect = document.getElementById('specialty-id');
     var form = document.getElementById('expotec-form');
     var identityInputs = Array.prototype.slice.call(document.querySelectorAll('[data-identity-input]'));
+    var phoneInputs = Array.prototype.slice.call(document.querySelectorAll('[data-phone-input]'));
+
+    function radioValue(name) {
+        var selected = document.querySelector('input[name="' + name + '"]:checked');
+        return selected ? selected.value : '';
+    }
 
     function normalizeIdentity(value) {
         return (value || '').toUpperCase().replace(/[\s-]+/g, '');
@@ -326,8 +361,8 @@
 
         var participantInputs = [
             document.querySelector('[name="student_1_identity"]'),
-            student1More.value === 'si' ? document.querySelector('[name="student_2_identity"]') : null,
-            student1More.value === 'si' && student2More.value === 'si' ? document.querySelector('[name="student_3_identity"]') : null
+            radioValue('student_1_more') === 'si' ? document.querySelector('[name="student_2_identity"]') : null,
+            radioValue('student_1_more') === 'si' && radioValue('student_2_more') === 'si' ? document.querySelector('[name="student_3_identity"]') : null
         ].filter(Boolean);
         var seen = {};
         participantInputs.forEach(function (input) {
@@ -344,12 +379,24 @@
     }
 
     function toggleStudentSections() {
-        var showStudent2 = student1More.value === 'si';
+        var showStudent2 = radioValue('student_1_more') === 'si';
         student2Section.style.display = showStudent2 ? 'block' : 'none';
+        setStudentRequired(2, showStudent2);
 
-        var showStudent3 = showStudent2 && student2More.value === 'si';
+        var showStudent3 = showStudent2 && radioValue('student_2_more') === 'si';
         student3Section.style.display = showStudent3 ? 'block' : 'none';
+        setStudentRequired(3, showStudent3);
         validateIdentityInputs();
+    }
+
+    function setStudentRequired(number, enabled) {
+        var section = document.getElementById('student-' + number);
+        if (!section) {
+            return;
+        }
+        section.querySelectorAll('input[name^="student_' + number + '_"], select[name^="student_' + number + '_"]').forEach(function (field) {
+            field.required = enabled;
+        });
     }
 
     function toggleOtros() {
@@ -371,16 +418,29 @@
         }
     }
 
-    student1More.addEventListener('change', toggleStudentSections);
-    student2More.addEventListener('change', toggleStudentSections);
+    document.querySelectorAll('input[name="student_1_more"], input[name="student_2_more"]').forEach(function (input) {
+        input.addEventListener('change', toggleStudentSections);
+    });
     if (reqOtros) {
         reqOtros.addEventListener('change', toggleOtros);
     }
     category.addEventListener('change', toggleFocusFields);
+    specialtySelect.addEventListener('change', function () {
+        document.querySelectorAll('[name$="_specialty_id"]').forEach(function (select) {
+            if (!select.value) {
+                select.value = specialtySelect.value;
+            }
+        });
+    });
     identityInputs.forEach(function (input) {
         input.addEventListener('input', function () {
             input.value = normalizeIdentity(input.value).slice(0, 12);
             validateIdentityInputs();
+        });
+    });
+    phoneInputs.forEach(function (input) {
+        input.addEventListener('input', function () {
+            input.value = (input.value || '').replace(/\D+/g, '').slice(0, 8);
         });
     });
     if (form) {

@@ -36,6 +36,8 @@ except Exception:
 ALLOWED_DOC_EXTENSIONS = {"pdf", "doc", "docx", "ppt", "pptx", "zip", "rar"}
 REGISTRATION_DRAFT_SESSION_KEY = "project_registration_draft"
 IDENTITY_MAX_LENGTH = 12
+PHONE_RE = re.compile(r"^\d{8}$")
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 REQUIREMENTS_OPTIONS = [
     ("corriente", "Conexion a corriente"),
     ("salidas", "Salidas"),
@@ -60,6 +62,26 @@ def _normalize_identity(raw_value: str) -> str:
     value = (raw_value or "").strip().upper()
     value = re.sub(r"[\s-]+", "", value)
     return value
+
+
+def _normalize_phone(raw_value: str) -> str:
+    return re.sub(r"\D+", "", raw_value or "")
+
+
+def _phone_error(phone: str, label: str) -> str | None:
+    if not phone:
+        return f"{label} es obligatorio."
+    if not PHONE_RE.fullmatch(phone):
+        return f"{label} debe contener exactamente 8 digitos."
+    return None
+
+
+def _email_error(email: str, label: str, required: bool = True) -> str | None:
+    if not email:
+        return f"{label} es obligatorio." if required else None
+    if not EMAIL_RE.fullmatch(email):
+        return f"{label} debe tener un formato valido."
+    return None
 
 
 def _identity_error(identity: str, label: str) -> str | None:
@@ -360,8 +382,8 @@ def _render_project_documents_packet(project: Project):
     coordinator_email = _pdf_setting("expotec_technical_coordinator_email", "")
     course_year = _pdf_setting("expotec_school_year", "2026")
     stage = _pdf_setting("expotec_stage", "Institucional")
-    start_date = _pdf_date(_pdf_setting("expotec_project_start_date", _pdf_date(project.campaign.start_date) if project.campaign else ""))
-    end_date = _pdf_date(_pdf_setting("expotec_project_end_date", _pdf_date(project.campaign.end_date) if project.campaign else ""))
+    start_date = _pdf_date(project.project_start_date) or _pdf_date(_pdf_setting("expotec_project_start_date", _pdf_date(project.campaign.start_date) if project.campaign else ""))
+    end_date = _pdf_date(project.project_end_date) or _pdf_date(_pdf_setting("expotec_project_end_date", _pdf_date(project.campaign.end_date) if project.campaign else ""))
 
     _draw_excel_background(pdf, width, height)
 
@@ -664,18 +686,22 @@ def _normalize_person_gender(form_data, field_name):
     return (form_data.get(f"{field_name}_other") or "").strip()
 
 
-def _build_student(form_data, index, section_name, focus_name):
+def _build_student(form_data, index, section_name, default_specialty_name, specialties_by_id):
+    specialty_id_raw = (form_data.get(f"student_{index}_specialty_id") or "").strip()
+    specialty_id = int(specialty_id_raw) if specialty_id_raw.isdigit() else None
+    specialty = specialties_by_id.get(specialty_id)
     return {
         "student_number": index,
         "full_name": (form_data.get(f"student_{index}_full_name") or "").strip(),
         "identity_number": _normalize_identity(form_data.get(f"student_{index}_identity")),
         "birth_date": _parse_date(form_data.get(f"student_{index}_birth_date")),
         "gender": _normalize_gender(form_data, index),
-        "specialty": focus_name,
+        "specialty_id": specialty_id,
+        "specialty": specialty.name if specialty else default_specialty_name,
         "section_name": section_name,
         "has_dining_scholarship": (form_data.get(f"student_{index}_scholarship") or "").strip().lower() == "si",
         "participates_in_english": (form_data.get(f"student_{index}_english") or "").strip().lower() == "si",
-        "phone": (form_data.get(f"student_{index}_phone") or "").strip(),
+        "phone": _normalize_phone(form_data.get(f"student_{index}_phone")),
         "email": (form_data.get(f"student_{index}_email") or "").strip().lower(),
     }
 
@@ -693,6 +719,7 @@ def _validate_students(students, required_numbers):
             student["phone"],
             student["email"],
             student["section_name"],
+            student["specialty_id"],
             student["specialty"],
         ]
         if not all(required):
@@ -700,6 +727,12 @@ def _validate_students(students, required_numbers):
         identity_error = _identity_error(student["identity_number"], f"La cedula/documento del estudiante N.{number}")
         if identity_error:
             return identity_error
+        phone_error = _phone_error(student["phone"], f"El telefono del estudiante N.{number}")
+        if phone_error:
+            return phone_error
+        email_error = _email_error(student["email"], f"El correo del estudiante N.{number}")
+        if email_error:
+            return email_error
         required_identities.append((number, student["identity_number"]))
 
     seen = {}
@@ -842,6 +875,8 @@ def register_project():
         _store_registration_draft(form_data, temp_document_path)
 
         registration_date = _parse_date(_draft_form_value(form_data, "registration_date"))
+        project_start_date = _parse_date(_draft_form_value(form_data, "project_start_date"))
+        project_end_date = _parse_date(_draft_form_value(form_data, "project_end_date"))
         category = (_draft_form_value(form_data, "category") or "").strip()
         section_id = request.form.get("section_id", type=int)
         specialty_id = request.form.get("specialty_id", type=int)
@@ -856,7 +891,8 @@ def register_project():
 
         focus_name = specialty.name if specialty else ""
         section_name = section.name if section else ""
-        students = [_build_student(form_data, i, section_name, focus_name) for i in [1, 2, 3]]
+        specialties_by_id = {item.id: item for item in Specialty.query.filter_by(is_active=True).all()}
+        students = [_build_student(form_data, i, section_name, focus_name, specialties_by_id) for i in [1, 2, 3]]
         advisor_identity = _normalize_identity(_draft_form_value(form_data, "advisor_identity"))
         mentor_identity = _normalize_identity(_draft_form_value(form_data, "mentor_identity"))
 
@@ -866,7 +902,7 @@ def register_project():
             team_name=(_draft_form_value(form_data, "team_name") or "").strip() or "Equipo ExpoTEC",
             representative_name=(_draft_form_value(form_data, "student_1_full_name") or "").strip(),
             representative_email=(_draft_form_value(form_data, "student_1_email") or "").strip().lower(),
-            representative_phone=(_draft_form_value(form_data, "student_1_phone") or "").strip(),
+            representative_phone=_normalize_phone(_draft_form_value(form_data, "student_1_phone")),
             institution_name="CTP Roberto Gamboa Valverde",
             grade_level=level_code,
             specialty=focus_name,
@@ -879,17 +915,19 @@ def register_project():
             advisor_birth_date=_parse_date(_draft_form_value(form_data, "advisor_birth_date")),
             advisor_gender=_normalize_person_gender(form_data, "advisor_gender"),
             advisor_email=(_draft_form_value(form_data, "advisor_email") or "").strip().lower(),
-            advisor_phone=(_draft_form_value(form_data, "advisor_phone") or "").strip(),
+            advisor_phone=_normalize_phone(_draft_form_value(form_data, "advisor_phone")),
             mentor_name=(_draft_form_value(form_data, "mentor_name") or "").strip(),
             mentor_identity=mentor_identity,
             mentor_birth_date=_parse_date(_draft_form_value(form_data, "mentor_birth_date")),
             mentor_gender=_normalize_person_gender(form_data, "mentor_gender"),
             mentor_specialty=(_draft_form_value(form_data, "mentor_specialty") or "").strip(),
             mentor_email=(_draft_form_value(form_data, "mentor_email") or "").strip().lower(),
-            mentor_phone=(_draft_form_value(form_data, "mentor_phone") or "").strip(),
+            mentor_phone=_normalize_phone(_draft_form_value(form_data, "mentor_phone")),
             category=category,
             description=(_draft_form_value(form_data, "description") or "Proyecto registrado mediante ExpoTEC-1.").strip(),
             required_resources=(_draft_form_value(form_data, "required_resources") or "").strip(),
+            project_start_date=project_start_date,
+            project_end_date=project_end_date,
             requirements_summary=", ".join(requirements),
             requirements_other=requirements_other,
             consent_terms=(_draft_form_value(form_data, "declaration") or "").strip().lower() == "si",
@@ -902,6 +940,12 @@ def register_project():
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
         if not project.title:
             flash("El nombre del proyecto es obligatorio.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if not project.project_start_date or not project.project_end_date:
+            flash("Debes indicar fecha de inicio y fecha de finalizacion del proyecto.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if project.project_end_date < project.project_start_date:
+            flash("La fecha de finalizacion no puede ser anterior a la fecha de inicio.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
         if category not in valid_categories:
             flash("Categoria invalida.", "error")
@@ -949,11 +993,40 @@ def register_project():
         if advisor_identity_error:
             flash(advisor_identity_error, "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        advisor_phone_error = _phone_error(project.advisor_phone, "El telefono del docente")
+        if advisor_phone_error:
+            flash(advisor_phone_error, "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        advisor_email_error = _email_error(project.advisor_email, "El correo del docente")
+        if advisor_email_error:
+            flash(advisor_email_error, "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
         if project.mentor_identity:
             mentor_identity_error = _identity_error(project.mentor_identity, "La cedula/documento de la persona mentora")
             if mentor_identity_error:
                 flash(mentor_identity_error, "error")
                 return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        mentor_values = [
+            project.mentor_name,
+            project.mentor_identity,
+            project.mentor_birth_date,
+            project.mentor_gender,
+            project.mentor_specialty,
+            project.mentor_phone,
+            project.mentor_email,
+        ]
+        if any(mentor_values) and not all(mentor_values):
+            flash("Si agregas persona mentora, completa todos sus datos.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if project.mentor_phone:
+            mentor_phone_error = _phone_error(project.mentor_phone, "El telefono de la persona mentora")
+            if mentor_phone_error:
+                flash(mentor_phone_error, "error")
+                return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        mentor_email_error = _email_error(project.mentor_email, "El correo de la persona mentora", required=False)
+        if mentor_email_error:
+            flash(mentor_email_error, "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
         if not project.consent_terms:
             flash("Debes aceptar la declaracion para finalizar la inscripcion.", "error")

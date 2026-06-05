@@ -3442,21 +3442,82 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .requirements-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.55rem 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.6rem;
 }
 
 .requirement-item {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.55rem;
     margin: 0;
-    font-weight: 600;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid #bdd3e8;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #193b5e;
+    font-weight: 800;
+    cursor: pointer;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
 
-.requirement-item input[type="checkbox"] {
+.requirement-item:hover,
+.requirement-item:has(input:checked) {
+    border-color: #1f8fb5;
+    box-shadow: 0 10px 20px rgba(31, 143, 181, 0.12);
+    transform: translateY(-1px);
+}
+
+.requirement-item input[type="checkbox"],
+.radio-card-group input[type="radio"] {
     margin: 0;
+    accent-color: #0f6f95;
+}
+
+.register-fieldset {
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.register-fieldset > span {
+    color: var(--text);
+    font-weight: 800;
+}
+
+.radio-card-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.radio-card-group-wide {
+    grid-template-columns: minmax(180px, 1.2fr) minmax(120px, 0.8fr);
+}
+
+.radio-card-group label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #bdd3e8;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #193b5e;
+    font-weight: 850;
+    cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.radio-card-group label:hover,
+.radio-card-group label:has(input:checked) {
+    border-color: #1f8fb5;
+    background: linear-gradient(135deg, #edfaff 0%, #ffffff 100%);
+    box-shadow: 0 10px 20px rgba(31, 143, 181, 0.12);
+    transform: translateY(-1px);
 }
 
 .upload-retained-note {

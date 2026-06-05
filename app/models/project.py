@@ -39,6 +39,8 @@ class Project(db.Model):
     project_objective = db.Column(db.Text, nullable=True)
     expected_impact = db.Column(db.Text, nullable=True)
     required_resources = db.Column(db.Text, nullable=True)
+    project_start_date = db.Column(db.Date, nullable=True)
+    project_end_date = db.Column(db.Date, nullable=True)
     requirements_summary = db.Column(db.Text, nullable=True)
     requirements_other = db.Column(db.String(255), nullable=True)
     project_document_path = db.Column(db.String(300), nullable=True)

@@ -328,6 +328,10 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN expected_impact TEXT NULL"))
         if "required_resources" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN required_resources TEXT NULL"))
+        if "project_start_date" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN project_start_date DATE NULL"))
+        if "project_end_date" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN project_end_date DATE NULL"))
         if "consent_terms" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN consent_terms BOOLEAN NOT NULL DEFAULT 0"))
         if "registration_date" not in project_columns:
@@ -447,6 +451,8 @@ def ensure_schema_updates():
                 connection.execute(text("ALTER TABLE project_members ADD COLUMN birth_date DATE NULL"))
             if "gender" not in member_columns:
                 connection.execute(text("ALTER TABLE project_members ADD COLUMN gender VARCHAR(20) NULL"))
+            if "specialty_id" not in member_columns:
+                connection.execute(text("ALTER TABLE project_members ADD COLUMN specialty_id INT NULL"))
             if "specialty" not in member_columns:
                 connection.execute(text("ALTER TABLE project_members ADD COLUMN specialty VARCHAR(140) NULL"))
             if "section_name" not in member_columns:

@@ -233,18 +233,50 @@
         <div class="final-stages-grid">
             <section class="inline-card stage-block stage-5">
                 <h3>Sección 5 de 6 - Datos del docente tutor(a)</h3>
-                <div class="form-grid inline-grid-1">
+                <div class="form-grid inline-grid-2">
                     <label>Nombre completo del docente *<input type="text" name="advisor_name" value="{{ form_data.get('advisor_name', '') }}" required></label>
                     <label>Cédula de identidad del docente *
                         <input type="text" name="advisor_identity" value="{{ form_data.get('advisor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input required>
                         <small>Máximo 12 caracteres.</small>
                     </label>
+                    <label>Fecha de nacimiento del docente *<input type="date" name="advisor_birth_date" value="{{ form_data.get('advisor_birth_date', '') }}" required></label>
+                    <label>Sexo del docente *
+                        <select name="advisor_gender" required>
+                            <option value="">Seleccione...</option>
+                            <option value="masculino" {% if form_data.get('advisor_gender') == 'masculino' %}selected{% endif %}>Masculino</option>
+                            <option value="femenino" {% if form_data.get('advisor_gender') == 'femenino' %}selected{% endif %}>Femenino</option>
+                            <option value="otros" {% if form_data.get('advisor_gender') == 'otros' %}selected{% endif %}>Otros</option>
+                        </select>
+                    </label>
+                    <label>Otros (sexo docente)<input type="text" name="advisor_gender_other" value="{{ form_data.get('advisor_gender_other', '') }}"></label>
+                    <label>Teléfono del docente *<input type="text" name="advisor_phone" value="{{ form_data.get('advisor_phone', '') }}" required></label>
                     <label>Correo electrónico del docente *<input type="email" name="advisor_email" value="{{ form_data.get('advisor_email', '') }}" required></label>
                 </div>
             </section>
 
             <section class="inline-card stage-block stage-6">
-                <h3>Sección 6 de 6 - Declaración</h3>
+                <h3>Sección 6 de 6 - Mentor y declaración</h3>
+                <p>Si el proyecto cuenta con persona mentora externa o especialista, completa sus datos. Si no aplica, deja esta parte en blanco.</p>
+                <div class="form-grid inline-grid-2">
+                    <label>Nombre completo de la persona mentora<input type="text" name="mentor_name" value="{{ form_data.get('mentor_name', '') }}"></label>
+                    <label>Cédula / documento de la persona mentora
+                        <input type="text" name="mentor_identity" value="{{ form_data.get('mentor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input>
+                        <small>Máximo 12 caracteres.</small>
+                    </label>
+                    <label>Fecha de nacimiento de la persona mentora<input type="date" name="mentor_birth_date" value="{{ form_data.get('mentor_birth_date', '') }}"></label>
+                    <label>Sexo de la persona mentora
+                        <select name="mentor_gender">
+                            <option value="">Seleccione...</option>
+                            <option value="masculino" {% if form_data.get('mentor_gender') == 'masculino' %}selected{% endif %}>Masculino</option>
+                            <option value="femenino" {% if form_data.get('mentor_gender') == 'femenino' %}selected{% endif %}>Femenino</option>
+                            <option value="otros" {% if form_data.get('mentor_gender') == 'otros' %}selected{% endif %}>Otros</option>
+                        </select>
+                    </label>
+                    <label>Otros (sexo mentor)<input type="text" name="mentor_gender_other" value="{{ form_data.get('mentor_gender_other', '') }}"></label>
+                    <label>Carrera técnica / especialidad de la persona mentora<input type="text" name="mentor_specialty" value="{{ form_data.get('mentor_specialty', '') }}"></label>
+                    <label>Teléfono de la persona mentora<input type="text" name="mentor_phone" value="{{ form_data.get('mentor_phone', '') }}"></label>
+                    <label>Correo electrónico de la persona mentora<input type="email" name="mentor_email" value="{{ form_data.get('mentor_email', '') }}"></label>
+                </div>
                 <p>Declaramos bajo juramento que el proyecto inscrito en el formulario ExpoTEC-1 fue realizado por los estudiantes y el docente asesoró durante el proceso.</p>
                 <div class="form-grid inline-grid-1">
                     <label>Declaración *

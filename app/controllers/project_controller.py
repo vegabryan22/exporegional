@@ -38,6 +38,7 @@ REGISTRATION_DRAFT_SESSION_KEY = "project_registration_draft"
 IDENTITY_MAX_LENGTH = 12
 REQUIREMENTS_OPTIONS = [
     ("corriente", "Conexion a corriente"),
+    ("salidas", "Salidas"),
     ("internet", "Internet"),
     ("agua", "Agua"),
     ("otros", "Otros"),
@@ -431,7 +432,7 @@ def _render_project_documents_packet(project: Project):
     y -= 17
     requirement_rows = [
         ("Voltaje (no sistema trifasico)", _requirements_value(project, "corriente")),
-        ("Salidas", ""),
+        ("Salidas", _requirements_value(project, "salidas")),
         ("Agua", _requirements_value(project, "agua")),
         ("Internet", _requirements_value(project, "internet")),
         ("Otro:", project.requirements_other or ""),
@@ -492,9 +493,25 @@ def _render_project_documents_packet(project: Project):
         for member in members
     ]
     y = draw_people_table("Datos de las personas estudiantes:", student_rows, y)
-    teacher_rows = [[project.advisor_name or "", project.specialty or "", "", "", project.advisor_identity or "", project.advisor_phone or "", project.advisor_email or ""]]
+    teacher_rows = [[
+        project.advisor_name or "",
+        project.specialty or "",
+        _pdf_date(project.advisor_birth_date),
+        project.advisor_gender or "",
+        project.advisor_identity or "",
+        project.advisor_phone or "",
+        project.advisor_email or "",
+    ]]
     y = draw_people_table("Datos de la persona docente tutor:", teacher_rows, y, max_rows=1)
-    mentor_rows = [["", "", "", "", "", "", ""]]
+    mentor_rows = [[
+        project.mentor_name or "",
+        project.mentor_specialty or project.specialty or "",
+        _pdf_date(project.mentor_birth_date),
+        project.mentor_gender or "",
+        project.mentor_identity or "",
+        project.mentor_phone or "",
+        project.mentor_email or "",
+    ]]
     y = draw_people_table("Datos de la persona mentor:", mentor_rows, y, max_rows=1)
 
     pdf.setFillColor(colors.red)
@@ -638,6 +655,13 @@ def _normalize_gender(form_data, index):
     if base != "otros":
         return base
     return (form_data.get(f"student_{index}_gender_other") or "").strip()
+
+
+def _normalize_person_gender(form_data, field_name):
+    base = (form_data.get(field_name) or "").strip().lower()
+    if base != "otros":
+        return base
+    return (form_data.get(f"{field_name}_other") or "").strip()
 
 
 def _build_student(form_data, index, section_name, focus_name):
@@ -834,6 +858,7 @@ def register_project():
         section_name = section.name if section else ""
         students = [_build_student(form_data, i, section_name, focus_name) for i in [1, 2, 3]]
         advisor_identity = _normalize_identity(_draft_form_value(form_data, "advisor_identity"))
+        mentor_identity = _normalize_identity(_draft_form_value(form_data, "mentor_identity"))
 
         project = Project(
             registration_date=registration_date,
@@ -851,7 +876,17 @@ def register_project():
             campaign_id=active_campaign.id,
             advisor_name=(_draft_form_value(form_data, "advisor_name") or "").strip(),
             advisor_identity=advisor_identity,
+            advisor_birth_date=_parse_date(_draft_form_value(form_data, "advisor_birth_date")),
+            advisor_gender=_normalize_person_gender(form_data, "advisor_gender"),
             advisor_email=(_draft_form_value(form_data, "advisor_email") or "").strip().lower(),
+            advisor_phone=(_draft_form_value(form_data, "advisor_phone") or "").strip(),
+            mentor_name=(_draft_form_value(form_data, "mentor_name") or "").strip(),
+            mentor_identity=mentor_identity,
+            mentor_birth_date=_parse_date(_draft_form_value(form_data, "mentor_birth_date")),
+            mentor_gender=_normalize_person_gender(form_data, "mentor_gender"),
+            mentor_specialty=(_draft_form_value(form_data, "mentor_specialty") or "").strip(),
+            mentor_email=(_draft_form_value(form_data, "mentor_email") or "").strip().lower(),
+            mentor_phone=(_draft_form_value(form_data, "mentor_phone") or "").strip(),
             category=category,
             description=(_draft_form_value(form_data, "description") or "Proyecto registrado mediante ExpoTEC-1.").strip(),
             required_resources=(_draft_form_value(form_data, "required_resources") or "").strip(),
@@ -900,13 +935,25 @@ def register_project():
             flash(students_error, "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
-        if not all([project.advisor_name, project.advisor_identity, project.advisor_email]):
+        if not all([
+            project.advisor_name,
+            project.advisor_identity,
+            project.advisor_birth_date,
+            project.advisor_gender,
+            project.advisor_phone,
+            project.advisor_email,
+        ]):
             flash("Completa los datos del docente tutor.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
         advisor_identity_error = _identity_error(project.advisor_identity, "La cedula/documento del docente")
         if advisor_identity_error:
             flash(advisor_identity_error, "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if project.mentor_identity:
+            mentor_identity_error = _identity_error(project.mentor_identity, "La cedula/documento de la persona mentora")
+            if mentor_identity_error:
+                flash(mentor_identity_error, "error")
+                return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
         if not project.consent_terms:
             flash("Debes aceptar la declaracion para finalizar la inscripcion.", "error")

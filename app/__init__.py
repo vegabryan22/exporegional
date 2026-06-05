@@ -304,6 +304,24 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN advisor_email VARCHAR(120) NULL"))
         if "advisor_phone" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN advisor_phone VARCHAR(40) NULL"))
+        if "advisor_birth_date" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN advisor_birth_date DATE NULL"))
+        if "advisor_gender" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN advisor_gender VARCHAR(20) NULL"))
+        if "mentor_name" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN mentor_name VARCHAR(120) NULL"))
+        if "mentor_identity" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN mentor_identity VARCHAR(40) NULL"))
+        if "mentor_birth_date" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN mentor_birth_date DATE NULL"))
+        if "mentor_gender" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN mentor_gender VARCHAR(20) NULL"))
+        if "mentor_specialty" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN mentor_specialty VARCHAR(140) NULL"))
+        if "mentor_email" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN mentor_email VARCHAR(120) NULL"))
+        if "mentor_phone" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN mentor_phone VARCHAR(40) NULL"))
         if "project_objective" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN project_objective TEXT NULL"))
         if "expected_impact" not in project_columns:

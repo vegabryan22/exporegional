@@ -600,6 +600,146 @@ nav a:hover,
     min-height: 38px;
 }
 
+.restore-trace-panel {
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid #d6e7f8;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f7fbff 0%, #ffffff 68%);
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.section-heading h4 {
+    margin: 0.1rem 0 0;
+    color: var(--primary);
+}
+
+.eyebrow {
+    margin: 0;
+    color: var(--primary-2);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.helper-text {
+    margin: 0.5rem 0 0;
+    color: #5d708b;
+}
+
+.restore-job-list {
+    display: grid;
+    gap: 0.8rem;
+    margin-top: 0.9rem;
+}
+
+.restore-job-card {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0.9rem;
+    border: 1px solid #d9e7f5;
+    border-left: 6px solid var(--primary-2);
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 14px 32px rgba(18, 63, 107, 0.07);
+}
+
+.restore-job-success {
+    border-left-color: #6ea51c;
+}
+
+.restore-job-failed {
+    border-left-color: #c43d55;
+}
+
+.restore-job-running {
+    border-left-color: var(--warning);
+}
+
+.restore-job-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.restore-job-header strong,
+.restore-job-header span {
+    display: block;
+}
+
+.restore-job-header strong {
+    color: var(--primary);
+}
+
+.restore-job-header span {
+    color: #5d708b;
+    font-size: 0.88rem;
+}
+
+.restore-job-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin: 0;
+}
+
+.restore-job-meta div {
+    padding: 0.55rem;
+    border-radius: 10px;
+    background: #f3f8fe;
+}
+
+.restore-job-meta dt {
+    color: #5d708b;
+    font-size: 0.74rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.restore-job-meta dd {
+    margin: 0.16rem 0 0;
+    color: var(--primary);
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.restore-job-message {
+    margin: 0;
+    color: #334e68;
+    font-weight: 700;
+}
+
+.restore-log-tail {
+    max-height: 220px;
+    overflow: auto;
+    margin: 0;
+    padding: 0.75rem;
+    border-radius: 12px;
+    background: #071827;
+    color: #d8f3ff;
+    font-size: 0.82rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
+.empty-state {
+    margin: 0;
+    padding: 0.9rem;
+    border: 1px dashed #b9cce1;
+    border-radius: 12px;
+    color: #5d708b;
+    background: #ffffff;
+}
+
 .switch-card {
     position: relative;
     display: grid;
@@ -1250,6 +1390,18 @@ th {
     background: #fbecef;
     color: #8a2d3d;
     border: 1px solid #efbfca;
+}
+
+.tag.warning {
+    background: var(--warning-soft);
+    color: #8a5f00;
+    border: 1px solid rgba(247, 198, 47, 0.55);
+}
+
+.tag.muted {
+    background: #eef4fb;
+    color: #5d708b;
+    border: 1px solid #d6e2ef;
 }
 
 .logistics-status-tag {

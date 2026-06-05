@@ -1590,6 +1590,12 @@ def _database_backup_dir() -> Path:
     return backup_dir
 
 
+def _database_restore_jobs_dir() -> Path:
+    jobs_dir = Path(current_app.instance_path).resolve() / "database_restore_jobs"
+    jobs_dir.mkdir(parents=True, exist_ok=True)
+    return jobs_dir
+
+
 def _safe_backup_filename(filename: str) -> str:
     filename = (filename or "").strip()
     if not re.fullmatch(r"expotecnica_db_\d{8}_\d{6}_[a-z0-9_-]+\.sql", filename):
@@ -1731,6 +1737,193 @@ def _restore_database_backup(filename: str) -> dict:
         "filename": safe_filename,
         "size_bytes": backup_path.stat().st_size,
     }
+
+
+def _restore_job_paths(job_id: str) -> dict:
+    jobs_dir = _database_restore_jobs_dir()
+    safe_job_id = re.sub(r"[^a-z0-9_-]+", "", (job_id or "").lower())
+    if not safe_job_id:
+        raise ValueError("Identificador de restauracion invalido.")
+    return {
+        "status": jobs_dir / f"{safe_job_id}.json",
+        "log": jobs_dir / f"{safe_job_id}.log",
+    }
+
+
+def _write_restore_job_status(job_id: str, payload: dict) -> None:
+    paths = _restore_job_paths(job_id)
+    paths["status"].write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def _tail_text_file(path: Path, max_lines: int = 12) -> str:
+    if not path.exists() or not path.is_file():
+        return ""
+    try:
+        lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return ""
+    return "\n".join(lines[-max_lines:])
+
+
+def _list_restore_jobs(limit: int = 8) -> list[dict]:
+    jobs = []
+    jobs_dir = _database_restore_jobs_dir()
+    for status_path in jobs_dir.glob("*.json"):
+        try:
+            payload = json.loads(status_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        job_id = payload.get("job_id") or status_path.stem
+        log_path = jobs_dir / f"{job_id}.log"
+        payload["job_id"] = job_id
+        payload["log_tail"] = _tail_text_file(log_path)
+        payload["log_path"] = str(log_path)
+        payload["is_running"] = payload.get("status") == "running"
+        jobs.append(payload)
+    jobs.sort(key=lambda item: item.get("updated_at") or item.get("started_at") or "", reverse=True)
+    return jobs[:limit]
+
+
+def _start_database_restore_job(filename: str) -> dict:
+    safe_filename = _safe_backup_filename(filename)
+    db_config = _database_url_config()
+    backup_path = _database_backup_dir() / safe_filename
+    job_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
+    started_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    safe_reason = f"antes_restaurar_{job_id}".lower()
+    safety_filename = f"expotecnica_db_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_reason}.sql"
+    safety_path = _database_backup_dir() / safety_filename
+    paths = _restore_job_paths(job_id)
+
+    initial_payload = {
+        "job_id": job_id,
+        "status": "queued",
+        "filename": safe_filename,
+        "safety_backup": safety_filename,
+        "message": "Restauracion en cola.",
+        "started_at": started_at,
+        "updated_at": started_at,
+        "finished_at": "",
+    }
+    _write_restore_job_status(job_id, initial_payload)
+    paths["log"].write_text(f"[{started_at}] Restauracion solicitada para {safe_filename}\n", encoding="utf-8")
+
+    script = r'''
+set +e
+log_line() {
+  printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "$EXPOTEC_LOG_FILE"
+}
+write_status() {
+  status="$1"
+  message="$2"
+  finished_at="$3"
+  updated_at="$(date '+%Y-%m-%d %H:%M:%S')"
+  cat > "$EXPOTEC_STATUS_FILE" <<EOF
+{
+  "job_id": "$EXPOTEC_JOB_ID",
+  "status": "$status",
+  "filename": "$EXPOTEC_BACKUP_NAME",
+  "safety_backup": "$EXPOTEC_SAFETY_NAME",
+  "message": "$message",
+  "started_at": "$EXPOTEC_STARTED_AT",
+  "updated_at": "$updated_at",
+  "finished_at": "$finished_at"
+}
+EOF
+}
+fail_job() {
+  log_line "$1"
+  write_status "failed" "$1" "$(date '+%Y-%m-%d %H:%M:%S')"
+  exit 1
+}
+
+write_status "running" "Creando respaldo preventivo antes de restaurar..." ""
+log_line "Verificando herramientas mysql y mysqldump."
+command -v mysqldump >/dev/null 2>&1 || fail_job "No se encontro mysqldump en el servidor."
+command -v mysql >/dev/null 2>&1 || fail_job "No se encontro mysql en el servidor."
+
+log_line "Creando respaldo preventivo: $EXPOTEC_SAFETY_NAME"
+mysqldump \
+  --host "$EXPOTEC_DB_HOST" \
+  --port "$EXPOTEC_DB_PORT" \
+  --user "$EXPOTEC_DB_USER" \
+  --default-character-set=utf8mb4 \
+  --single-transaction \
+  --quick \
+  --routines \
+  --triggers \
+  --events \
+  "$EXPOTEC_DB_NAME" > "$EXPOTEC_SAFETY_FILE" 2>> "$EXPOTEC_LOG_FILE"
+backup_code=$?
+if [ "$backup_code" -ne 0 ]; then
+  rm -f "$EXPOTEC_SAFETY_FILE"
+  fail_job "Fallo el respaldo preventivo. Codigo $backup_code. Revisa el log."
+fi
+
+write_status "running" "Respaldo preventivo creado. Restaurando base de datos..." ""
+log_line "Restaurando desde: $EXPOTEC_BACKUP_NAME"
+mysql \
+  --host "$EXPOTEC_DB_HOST" \
+  --port "$EXPOTEC_DB_PORT" \
+  --user "$EXPOTEC_DB_USER" \
+  --default-character-set=utf8mb4 \
+  "$EXPOTEC_DB_NAME" < "$EXPOTEC_BACKUP_FILE" >> "$EXPOTEC_LOG_FILE" 2>&1
+restore_code=$?
+if [ "$restore_code" -ne 0 ]; then
+  fail_job "Fallo la restauracion. Codigo $restore_code. Se conserva el respaldo preventivo."
+fi
+
+log_line "Restauracion completada correctamente."
+write_status "success" "Restauracion completada correctamente." "$(date '+%Y-%m-%d %H:%M:%S')"
+exit 0
+'''
+    env = _mysql_env(db_config)
+    env.update(
+        {
+            "EXPOTEC_JOB_ID": job_id,
+            "EXPOTEC_BACKUP_NAME": safe_filename,
+            "EXPOTEC_BACKUP_FILE": str(backup_path),
+            "EXPOTEC_SAFETY_NAME": safety_filename,
+            "EXPOTEC_SAFETY_FILE": str(safety_path),
+            "EXPOTEC_STATUS_FILE": str(paths["status"]),
+            "EXPOTEC_LOG_FILE": str(paths["log"]),
+            "EXPOTEC_STARTED_AT": started_at,
+            "EXPOTEC_DB_HOST": db_config["host"],
+            "EXPOTEC_DB_PORT": db_config["port"],
+            "EXPOTEC_DB_USER": db_config["user"],
+            "EXPOTEC_DB_NAME": db_config["database"],
+        }
+    )
+    try:
+        process = subprocess.Popen(
+            ["/bin/sh", "-c", script],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=env,
+            start_new_session=True,
+        )
+    except FileNotFoundError as error:
+        _write_restore_job_status(
+            job_id,
+            {
+                **initial_payload,
+                "status": "failed",
+                "message": "No se encontro /bin/sh para iniciar la restauracion.",
+                "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "finished_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            },
+        )
+        raise RuntimeError("No se encontro /bin/sh para iniciar la restauracion.") from error
+
+    queued_payload = {
+        **initial_payload,
+        "status": "running",
+        "pid": process.pid,
+        "message": "Restauracion iniciada en segundo plano.",
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    _write_restore_job_status(job_id, queued_payload)
+    return queued_payload
 
 
 def _format_bytes(size: int) -> str:
@@ -3537,26 +3730,23 @@ def _handle_action(action: str):
             flash("Para restaurar debes escribir exactamente: RESTAURAR RESPALDO.", "error")
             return
         try:
-            safety_backup = _create_database_backup("antes_restaurar")
-            restored = _restore_database_backup(filename)
-            db.session.rollback()
-            db.session.remove()
+            restore_job = _start_database_restore_job(filename)
             log_event(
-                "admin.maintenance.restore_database",
+                "admin.maintenance.restore_database_started",
                 "system",
                 detail=(
-                    f"Respaldo restaurado: {restored['filename']} "
-                    f"(respaldo preventivo={safety_backup['filename']})"
+                    f"Restauracion iniciada: {restore_job['filename']} "
+                    f"(job={restore_job['job_id']}, respaldo preventivo={restore_job['safety_backup']})"
                 ),
             )
             db.session.commit()
         except (RuntimeError, ValueError) as error:
             db.session.rollback()
-            flash(f"No se pudo restaurar el respaldo: {error}", "error")
+            flash(f"No se pudo iniciar la restauracion: {error}", "error")
             return
         flash(
-            f"Respaldo restaurado: {restored['filename']}. "
-            f"Antes de restaurar se creo respaldo preventivo: {safety_backup['filename']}.",
+            f"Restauracion iniciada en segundo plano: {restore_job['filename']}. "
+            "Puedes seguir el avance en la traza visual de esta pantalla.",
             "success",
         )
 
@@ -3814,6 +4004,8 @@ def _base_context(active_page: str, **kwargs):
     }
     cleanup_stats = _cleanup_expotecnica_counts()
     database_backups = _list_database_backups()
+    restore_jobs = _list_restore_jobs()
+    restore_job_running = any(job.get("is_running") for job in restore_jobs)
     gitops_status = _git_status_snapshot()
     gitops_service = _gitops_service_status()
     gitops_last = {
@@ -3876,6 +4068,8 @@ def _base_context(active_page: str, **kwargs):
         "maintenance_settings": maintenance_settings,
         "cleanup_stats": cleanup_stats,
         "database_backups": database_backups,
+        "restore_jobs": restore_jobs,
+        "restore_job_running": restore_job_running,
         "gitops_status": gitops_status,
         "gitops_service": gitops_service,
         "gitops_last": gitops_last,

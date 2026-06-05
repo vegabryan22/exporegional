@@ -92,7 +92,7 @@
                         <td>{{ backup.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td class="table-cell-center">{{ backup.size_label }}</td>
                         <td class="table-cell-center">
-                            <form method="post" action="{{ action_url }}" class="compact-form backup-restore-form" onsubmit="return confirm('Vas a restaurar la base de datos desde este respaldo. El sistema creara un respaldo preventivo antes de restaurar. Deseas continuar?')">
+                            <form method="post" action="{{ action_url }}" class="compact-form backup-restore-form" onsubmit="return confirm('Vas a iniciar una restauracion en segundo plano. El sistema creara un respaldo preventivo y mostrara el avance en esta pantalla. Deseas continuar?')">
                                 <input type="hidden" name="next" value="{{ next_url }}">
                                 <input type="hidden" name="action" value="restore_database">
                                 <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
@@ -100,7 +100,7 @@
                                     <span>Confirmar restauracion</span>
                                     <input type="text" name="restore_confirmation" placeholder="RESTAURAR RESPALDO" required>
                                 </label>
-                                <button type="submit" class="danger-btn">Restaurar</button>
+                                <button type="submit" class="danger-btn">Iniciar restauracion</button>
                             </form>
                         </td>
                     </tr>
@@ -110,7 +110,73 @@
             </tbody>
         </table>
     </div>
+
+    <div class="restore-trace-panel">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Traza visual</p>
+                <h4>Restauraciones recientes</h4>
+            </div>
+            {% if restore_job_running %}
+                <span class="tag warning">Restauracion en proceso</span>
+            {% else %}
+                <span class="tag ok">Sin procesos activos</span>
+            {% endif %}
+        </div>
+        {% if restore_job_running %}
+            <p class="helper-text">Esta pantalla se actualiza automaticamente cada 5 segundos mientras la restauracion esta activa.</p>
+        {% endif %}
+
+        <div class="restore-job-list">
+            {% for job in restore_jobs %}
+                <article class="restore-job-card restore-job-{{ job.status }}">
+                    <div class="restore-job-header">
+                        <div>
+                            <strong>{{ job.filename }}</strong>
+                            <span>Job {{ job.job_id }}{% if job.pid %} · PID {{ job.pid }}{% endif %}</span>
+                        </div>
+                        {% if job.status == 'success' %}
+                            <span class="tag ok">Completada</span>
+                        {% elif job.status == 'failed' %}
+                            <span class="tag off">Fallida</span>
+                        {% elif job.status == 'running' %}
+                            <span class="tag warning">En proceso</span>
+                        {% else %}
+                            <span class="tag muted">{{ job.status }}</span>
+                        {% endif %}
+                    </div>
+                    <dl class="restore-job-meta">
+                        <div>
+                            <dt>Inicio</dt>
+                            <dd>{{ job.started_at or '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt>Actualizado</dt>
+                            <dd>{{ job.updated_at or '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt>Respaldo preventivo</dt>
+                            <dd><code>{{ job.safety_backup or '-' }}</code></dd>
+                        </div>
+                    </dl>
+                    <p class="restore-job-message">{{ job.message }}</p>
+                    {% if job.log_tail %}
+                        <pre class="restore-log-tail">{{ job.log_tail }}</pre>
+                    {% endif %}
+                </article>
+            {% else %}
+                <p class="empty-state">Todavia no hay restauraciones registradas.</p>
+            {% endfor %}
+        </div>
+    </div>
 </section>
+{% if restore_job_running %}
+<script>
+    window.setTimeout(function () {
+        window.location.reload();
+    }, 5000);
+</script>
+{% endif %}
 <section class="card admin-section maintenance-page cleanup-section">
     <div class="maintenance-banner cleanup-banner">
         <div>

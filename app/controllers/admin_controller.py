@@ -1246,11 +1246,13 @@ def _certificate_script_font():
         except Exception:
             continue
 
-    try:
-        pdfmetrics.getFont("ZapfChancery")
-        return "ZapfChancery"
-    except Exception:
-        return "Helvetica-Bold"
+    for fallback_name in ["ZapfChancery-MediumItalic", "Times-Italic"]:
+        try:
+            pdfmetrics.getFont(fallback_name)
+            return fallback_name
+        except Exception:
+            continue
+    return "Helvetica-Oblique"
 
 
 def _pdf_new_page_with_header(pdf, width, height, title, subtitle):
@@ -1515,22 +1517,22 @@ def _render_participation_certificates_pdf(context):
             )
 
         pdf.setFillColor(colors.black)
-        pdf.setFont("Helvetica-Bold", 26)
+        pdf.setFont("Helvetica", 25)
         pdf.drawCentredString(width / 2, 475, _pdf_normalize_text("Ministerio de Educaci\u00f3n P\u00fablica"))
         pdf.setFont("Helvetica", 14)
         pdf.drawCentredString(width / 2, 421, _pdf_normalize_text(institution_name))
 
-        pdf.setFont("Helvetica-Bold", 29)
-        pdf.drawCentredString(width / 2, 364, _pdf_normalize_text("Otorga el presente certificado a:"))
+        pdf.setFont("Helvetica-Bold", 15)
+        pdf.drawCentredString(width / 2, 369, _pdf_normalize_text("Otorga el presente certificado a:"))
 
-        pdf.setFont(script_font, 48)
-        pdf.drawCentredString(width / 2, 292, _pdf_normalize_text(member.full_name))
+        pdf.setFont(script_font, 42)
+        pdf.drawCentredString(width / 2, 312, _pdf_normalize_text(member.full_name))
 
-        pdf.setFont("Helvetica", 31)
-        pdf.drawCentredString(width / 2, 232, _pdf_normalize_text("Por su participaci\u00f3n en la:"))
+        pdf.setFont("Helvetica", 18)
+        pdf.drawCentredString(width / 2, 247, _pdf_normalize_text("Por su participaci\u00f3n en la:"))
 
-        pdf.setFont(script_font, 28)
-        pdf.drawCentredString(width / 2, 186, _pdf_normalize_text("Etapa institucional de ExpoT\u00c9CNICA"))
+        pdf.setFont(script_font, 23)
+        pdf.drawCentredString(width / 2, 194, _pdf_normalize_text("Etapa institucional de ExpoT\u00c9CNICA"))
 
         date_line = (
             f"Realizada el {generated_at.day} del mes de {_month_name_es(generated_at.month)} "

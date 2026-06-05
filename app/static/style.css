@@ -4151,14 +4151,15 @@ dialog.maintenance-dialog::backdrop {
     width: 100%;
     text-align: left;
     border: 1px solid #d5deeb;
-    background: #f7faff;
+    background: #eaf2fd;
     color: #1f3f66;
     margin-bottom: 0.35rem;
 }
 
 .project-link.active {
-    border-color: #9ab7db;
-    background: #e8f1fd;
+    border-color: #0f3557;
+    background: #123f6b;
+    color: #ffffff;
 }
 
 .institutional-banner {
@@ -4166,12 +4167,15 @@ dialog.maintenance-dialog::backdrop {
     align-items: center;
     justify-content: space-between;
     gap: 0.8rem;
+    background: linear-gradient(180deg, #123f6b 0%, #0f3557 100%);
+    color: #ffffff;
+    border: 1px solid #0f3557;
 }
 
 .institutional-banner h1 {
     margin: 0;
     font-size: clamp(2rem, 5vw, 4rem);
-    color: #2f6a33;
+    color: #ffffff;
     text-transform: uppercase;
 }
 
@@ -4179,7 +4183,7 @@ dialog.maintenance-dialog::backdrop {
     display: inline-block;
     font-weight: 800;
     font-size: 1.2rem;
-    color: #f4a320;
+    color: #ffffff;
     text-transform: uppercase;
 }
 
@@ -4187,7 +4191,7 @@ dialog.maintenance-dialog::backdrop {
     width: 160px;
     height: 160px;
     border-radius: 50%;
-    background: linear-gradient(145deg, #f4a320 0%, #e36b1f 35%, #64a93e 100%);
+    background: linear-gradient(145deg, #123f6b 0%, #0f3557 100%);
     color: #fff;
     font-weight: 800;
     display: grid;
@@ -4366,8 +4370,8 @@ dialog.maintenance-dialog::backdrop {
 
 .integrants-strip {
     border-radius: 10px;
-    border: 1px solid #2d6926;
-    background: #266f1e;
+    border: 1px solid #0f3557;
+    background: #123f6b;
     color: #fff;
     padding: 0.85rem;
 }
@@ -4389,12 +4393,12 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .integrant-card h4 {
-    color: #fff;
+    color: #ffffff;
     margin: 0.5rem 0 0.35rem;
 }
 
 .integrant-card p {
-    color: #eff9ea;
+    color: #dbe9ff;
     margin: 0.22rem 0;
 }
 
@@ -4404,10 +4408,10 @@ dialog.maintenance-dialog::backdrop {
     height: auto;
     object-fit: cover;
     background: transparent;
-    border: 3px solid #eaf6df;
-    outline: 2px solid #9ec47e;
+    border: 3px solid #dbe9ff;
+    outline: 2px solid #9fb7e0;
     border-radius: 14px;
-    box-shadow: 0 10px 22px rgba(7, 36, 9, 0.28);
+    box-shadow: 0 10px 22px rgba(7, 36, 74, 0.28);
 }
 
 .integrant-placeholder {
@@ -4416,7 +4420,7 @@ dialog.maintenance-dialog::backdrop {
     font-size: 2rem;
     font-weight: 800;
     color: #f6fff3;
-    background: #355f35;
+    background: #0f3557;
 }
 
 @media (max-width: 1100px) {

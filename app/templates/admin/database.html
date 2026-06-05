@@ -111,30 +111,18 @@
                 </div>
                 <div class="database-backup-actions">
                     <a class="secondary-btn" href="{{ url_for('admin.database_backup_download', filename=backup.filename) }}">Descargar SQL</a>
-                    <form method="post" action="{{ action_url }}" class="compact-form backup-restore-form" onsubmit="return confirm('Vas a iniciar una restauracion en segundo plano. El sistema creara un respaldo preventivo y mostrara el avance. Deseas continuar?')">
+                    <form method="post" action="{{ action_url }}" class="inline-form database-confirm-form" data-confirm-message="Vas a restaurar este respaldo. Se creara un respaldo preventivo antes de restaurar. Deseas continuar?">
                         <input type="hidden" name="next" value="{{ next_url }}">
                         <input type="hidden" name="action" value="restore_database">
                         <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
-                        <label class="backup-confirm-field">
-                            <span>Restaurar</span>
-                            <select name="restore_confirmation" required>
-                                <option value="">Confirmar</option>
-                                <option value="SI">SI</option>
-                            </select>
-                        </label>
+                        <input type="hidden" name="restore_confirmation" value="">
                         <button type="submit" class="danger-btn">Restaurar</button>
                     </form>
-                    <form method="post" action="{{ action_url }}" class="compact-form backup-restore-form" onsubmit="return confirm('Eliminar este respaldo? Esta accion no restaura datos ni toca la base, pero borra el archivo SQL.')">
+                    <form method="post" action="{{ action_url }}" class="inline-form database-confirm-form" data-confirm-message="Eliminar este respaldo? Esta accion borra el archivo SQL y no toca la base de datos.">
                         <input type="hidden" name="next" value="{{ next_url }}">
                         <input type="hidden" name="action" value="delete_database_backup">
                         <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
-                        <label class="backup-confirm-field">
-                            <span>Eliminar</span>
-                            <select name="delete_backup_confirmation" required>
-                                <option value="">Confirmar</option>
-                                <option value="SI">SI</option>
-                            </select>
-                        </label>
+                        <input type="hidden" name="delete_backup_confirmation" value="">
                         <button type="submit" class="danger-btn">Eliminar</button>
                     </form>
                 </div>
@@ -405,4 +393,25 @@
     }, 5000);
 </script>
 {% endif %}
+<script>
+    document.addEventListener("submit", function (event) {
+        const form = event.target.closest(".database-confirm-form");
+        if (!form) {
+            return;
+        }
+        const message = form.dataset.confirmMessage || "Deseas continuar?";
+        if (!window.confirm(message)) {
+            event.preventDefault();
+            return;
+        }
+        const restoreInput = form.querySelector('input[name="restore_confirmation"]');
+        const deleteInput = form.querySelector('input[name="delete_backup_confirmation"]');
+        if (restoreInput) {
+            restoreInput.value = "SI";
+        }
+        if (deleteInput) {
+            deleteInput.value = "SI";
+        }
+    });
+</script>
 {% endblock %}

@@ -877,33 +877,14 @@ nav a:hover,
     text-decoration: none;
 }
 
-.database-backup-actions .backup-restore-form {
-    grid-template-columns: 96px auto;
-    gap: 0.35rem;
-    min-width: 0;
-}
-
-.database-backup-actions .backup-confirm-field {
-    min-width: 96px;
-}
-
-.database-backup-actions .backup-confirm-field span {
-    font-size: 0.68rem;
-}
-
-.database-backup-actions .backup-confirm-field select {
-    min-height: 38px;
-    border-radius: 8px;
-    border: 1px solid #c7d6e8;
-    background: #ffffff;
-    color: var(--primary);
-    font-weight: 800;
-}
-
 .database-backup-actions .danger-btn {
     min-height: 38px;
     padding: 0.44rem 0.65rem;
     white-space: nowrap;
+}
+
+.database-confirm-form {
+    margin: 0;
 }
 
 .database-check-grid {

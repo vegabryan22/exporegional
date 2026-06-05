@@ -54,6 +54,7 @@ try:
     from reportlab.lib.pagesizes import landscape, letter
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfgen import canvas
 
     REPORTLAB_AVAILABLE = True
@@ -1087,6 +1088,8 @@ def _build_participation_certificate_context(project_id: int | None = None):
         "generated_at": datetime.now(),
         "institution_name": _institution_name(),
         "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
+        "director_name": SystemSetting.get_value("expotec_director_name", ""),
+        "technical_coordinator_name": SystemSetting.get_value("expotec_technical_coordinator_name", ""),
         "projects": projects,
         "recipients": recipients,
         "projects_count": len(projects),
@@ -1214,6 +1217,40 @@ def _pdf_draw_wrapped_line_set(pdf, text, x, y, max_width, font_name="Helvetica"
         pdf.drawString(x, y, line)
         y -= line_gap
     return y
+
+
+def _pdf_draw_centered_wrapped_line_set(pdf, text, center_x, y, max_width, font_name="Helvetica", font_size=10, line_gap=12):
+    pdf.setFont(font_name, font_size)
+    lines = _pdf_wrap_text(text, max_width, font_name, font_size)
+    for line in lines:
+        pdf.drawCentredString(center_x, y, line)
+        y -= line_gap
+    return y
+
+
+def _certificate_script_font():
+    if not REPORTLAB_AVAILABLE:
+        return "Helvetica-Bold"
+
+    static_folder = current_app.static_folder if current_app else ""
+    candidates = [
+        ("LucidaCalligraphy", os.path.join(static_folder, "fonts", "LucidaCalligraphy.ttf")),
+        ("LucidaCalligraphy", os.path.join(static_folder, "fonts", "lucida-calligraphy.ttf")),
+    ]
+    for font_name, font_path in candidates:
+        if not os.path.exists(font_path):
+            continue
+        try:
+            pdfmetrics.registerFont(TTFont(font_name, font_path))
+            return font_name
+        except Exception:
+            continue
+
+    try:
+        pdfmetrics.getFont("ZapfChancery")
+        return "ZapfChancery"
+    except Exception:
+        return "Helvetica-Bold"
 
 
 def _pdf_new_page_with_header(pdf, width, height, title, subtitle):
@@ -1450,102 +1487,88 @@ def _render_judge_acta_pdf(context):
 
 def _render_participation_certificates_pdf(context):
     buffer = BytesIO()
-    page_size = landscape(letter)
+    page_size = (720, 540)  # 10 x 7.5 in, same 4:3 canvas as the official PowerPoint template.
     pdf = canvas.Canvas(buffer, pagesize=page_size)
     width, height = page_size
     institution_name = context["institution_name"]
     generated_at = context["generated_at"]
-    expo_logo_path = context.get("expo_logo_path", "")
+    director_name = context.get("director_name") or "MSc. __________________"
+    coordinator_name = context.get("technical_coordinator_name") or "MSc. __________________"
+    script_font = _certificate_script_font()
+    template_path = os.path.join(current_app.static_folder, "certificates", "institucional_2026_bg.jpg")
 
     for index, recipient in enumerate(context["recipients"]):
         if index:
             pdf.showPage()
 
-        project = recipient["project"]
         member = recipient["member"]
-        _draw_certificate_watermark(pdf, width, height, expo_logo_path)
-        pdf.setFillColor(colors.HexColor("#0f3c73"))
-        pdf.setFont("Helvetica-Bold", 15)
-        pdf.drawCentredString(width / 2, height - 48, "Ministerio de Educación Pública")
-        pdf.setFont("Helvetica-Bold", 16)
-        pdf.drawCentredString(width / 2, height - 76, _pdf_normalize_text(institution_name))
-        pdf.setFont("Helvetica", 15)
-        pdf.drawCentredString(width / 2, height - 118, "Otorga el presente certificado a:")
-        pdf.setFont("Helvetica-Bold", 24)
-        pdf.drawCentredString(width / 2, height - 160, _pdf_normalize_text(member.full_name))
-        pdf.setFont("Helvetica", 16)
-        pdf.drawCentredString(width / 2, height - 205, "Por su participación en la:")
-        pdf.setFont("Helvetica-Bold", 18)
-        pdf.drawCentredString(width / 2, height - 238, "Etapa institucional de ExpoTÉCNICA")
 
-        y = height - 284
-        y = _pdf_draw_wrapped_line_set(
-            pdf,
-            (
-                f"Realizada el {_long_date_es(generated_at)} en el {institution_name}. "
-                f"Participó como integrante del proyecto {project.title}, equipo {project.team_name}."
-            ),
-            70,
-            y,
-            width - 140,
-            "Helvetica",
-            13,
-            18,
-        )
-        y -= 10
-        y = _pdf_draw_wrapped_line_set(
-            pdf,
-            f"Categoría: {recipient['category_label']}",
-            70,
-            y,
-            width - 140,
-            "Helvetica-Bold",
-            12,
-            16,
-        )
-        if recipient["grade_label"] or recipient["focus_label"]:
-            extra_parts = []
-            if recipient["grade_label"]:
-                extra_parts.append(f"Seccion: {recipient['grade_label']}")
-            if recipient["focus_label"]:
-                extra_parts.append(f"Enfasis: {recipient['focus_label']}")
-            y -= 6
-            y = _pdf_draw_wrapped_line_set(
-                pdf,
-                " | ".join(extra_parts),
-                70,
-                y,
-                width - 140,
-                "Helvetica",
-                11,
-                15,
+        if os.path.exists(template_path):
+            pdf.drawImage(
+                ImageReader(template_path),
+                25.5,
+                101.4,
+                width=682.8,
+                height=384.1,
+                mask="auto",
+                preserveAspectRatio=False,
             )
 
-        y -= 22
-        y = _pdf_draw_wrapped_line_set(
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica-Bold", 26)
+        pdf.drawCentredString(width / 2, 475, _pdf_normalize_text("Ministerio de Educaci\u00f3n P\u00fablica"))
+        pdf.setFont("Helvetica", 14)
+        pdf.drawCentredString(width / 2, 421, _pdf_normalize_text(institution_name))
+
+        pdf.setFont("Helvetica-Bold", 29)
+        pdf.drawCentredString(width / 2, 364, _pdf_normalize_text("Otorga el presente certificado a:"))
+
+        pdf.setFont(script_font, 48)
+        pdf.drawCentredString(width / 2, 292, _pdf_normalize_text(member.full_name))
+
+        pdf.setFont("Helvetica", 31)
+        pdf.drawCentredString(width / 2, 232, _pdf_normalize_text("Por su participaci\u00f3n en la:"))
+
+        pdf.setFont(script_font, 28)
+        pdf.drawCentredString(width / 2, 186, _pdf_normalize_text("Etapa institucional de ExpoT\u00c9CNICA"))
+
+        date_line = (
+            f"Realizada el {generated_at.day} del mes de {_month_name_es(generated_at.month)} "
+            f"del a\u00f1o {generated_at.year} en el Colegio T\u00e9cnico Profesional {institution_name}."
+        )
+        _pdf_draw_centered_wrapped_line_set(
             pdf,
-            f"Dado a los {generated_at.day} días del mes de {_month_name_es(generated_at.month)} de {generated_at.year}.",
-            70,
-            y,
-            width - 140,
+            date_line,
+            width / 2,
+            130,
+            width - 160,
             "Helvetica",
-            12,
-            16,
+            8.8,
+            11,
         )
 
-        signature_y = 128
+        pdf.setFont("Helvetica", 8.8)
+        pdf.drawCentredString(
+            width / 2,
+            105,
+            _pdf_normalize_text(
+                f"Dado a los {generated_at.day} d\u00edas del mes de {_month_name_es(generated_at.month)} de {generated_at.year}."
+            ),
+        )
+
         pdf.setStrokeColor(colors.black)
-        pdf.line(84, signature_y, 252, signature_y)
-        pdf.line(width - 252, signature_y, width - 84, signature_y)
-        pdf.setFont("Helvetica", 10)
-        pdf.setFillColor(colors.black)
-        pdf.drawCentredString(168, signature_y - 14, "Director(a) del centro educativo")
-        pdf.drawCentredString(width - 168, signature_y - 14, "Coordinador Institucional ExpoTÉCNICA")
+        pdf.setLineWidth(0.75)
+        pdf.line(108, 78, 280, 78)
+        pdf.line(440, 78, 612, 78)
+        pdf.setFont("Helvetica-Bold", 8.5)
+        pdf.drawCentredString(194, 61, _pdf_normalize_text(director_name))
+        pdf.drawCentredString(526, 61, _pdf_normalize_text(coordinator_name))
+        pdf.drawCentredString(194, 47, "Director del centro educativo")
+        pdf.drawCentredString(526, 47, _pdf_normalize_text("Coordinador Institucional ExpoT\u00c9CNICA"))
 
     pdf.save()
     buffer.seek(0)
     return buffer
-
 
 def _get_extension(filename):
     return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""

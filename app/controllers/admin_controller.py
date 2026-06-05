@@ -3030,6 +3030,10 @@ def _handle_action(action: str):
         if not project:
             flash("Proyecto no encontrado.", "error")
         else:
+            thematic_axis_id = request.form.get("project_thematic_axis_id", type=int)
+            project_type_id = request.form.get("project_project_type_id", type=int)
+            thematic_axis = ThematicAxis.query.get(thematic_axis_id) if thematic_axis_id else None
+            project_type = ProjectType.query.get(project_type_id) if project_type_id else None
             project.title = request.form.get("project_title", "").strip()
             project.team_name = request.form.get("project_team_name", "").strip()
             project.representative_name = request.form.get("project_representative_name", "").strip()
@@ -3037,12 +3041,21 @@ def _handle_action(action: str):
             project.description = request.form.get("project_description", "").strip()
             if not all([project.title, project.team_name, project.representative_name, project.representative_email]):
                 flash("Campos obligatorios incompletos en proyecto.", "error")
+            elif not thematic_axis or not thematic_axis.is_active:
+                flash("Debes seleccionar un eje tematico valido.", "error")
+            elif not project_type or not project_type.is_active:
+                flash("Debes seleccionar un tipo de proyecto valido.", "error")
             else:
+                project.thematic_axis_id = thematic_axis.id
+                project.project_type_id = project_type.id
                 log_event(
                     "admin.project.update",
                     "project",
                     entity_id=project.id,
-                    detail=f"Proyecto actualizado: #{project.id} '{project.title}' (equipo: {project.team_name})",
+                    detail=(
+                        f"Proyecto actualizado: #{project.id} '{project.title}' "
+                        f"(equipo: {project.team_name}, eje={thematic_axis.name}, tipo={project_type.name})"
+                    ),
                 )
                 db.session.commit()
                 flash("Proyecto actualizado.", "success")

@@ -149,6 +149,24 @@
                 <label>Representante<input type="text" name="project_representative_name" value="{{ project.representative_name }}" required></label>
                 <label>Correo representante<input type="email" name="project_representative_email" value="{{ project.representative_email }}" required></label>
             </div>
+            <div class="grid-2">
+                <label>Eje temático
+                    <select name="project_thematic_axis_id" required>
+                        <option value="">Seleccione...</option>
+                        {% for axis in thematic_axes %}
+                            <option value="{{ axis.id }}" {% if project.thematic_axis_id == axis.id %}selected{% endif %}>{{ axis.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>Tipo de proyecto
+                    <select name="project_project_type_id" required>
+                        <option value="">Seleccione...</option>
+                        {% for project_type in project_types %}
+                            <option value="{{ project_type.id }}" {% if project.project_type_id == project_type.id %}selected{% endif %}>{{ project_type.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
             <label>Descripcion
                 <textarea name="project_description" rows="4" required>{{ project.description }}</textarea>
             </label>

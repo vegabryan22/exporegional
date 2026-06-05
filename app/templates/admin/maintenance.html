@@ -57,12 +57,66 @@
     </form>
 </section>
 
+<section class="card admin-section maintenance-page backup-section">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Respaldo y recuperacion</p>
+            <h3>Respaldos de base de datos</h3>
+            <p>Antes de limpiar ExpoTecnica el sistema crea un respaldo automatico de la base de datos. Tambien puedes crear uno manual y restaurar datos si ocurre un error.</p>
+        </div>
+        <span class="tag ok">{{ database_backups|length }} respaldo(s)</span>
+    </div>
+
+    <div class="actions-row maintenance-actions">
+        <form method="post" action="{{ action_url }}" class="inline-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="backup_database">
+            <button type="submit" class="secondary-btn">Crear respaldo ahora</button>
+        </form>
+    </div>
+
+    <div class="table-wrap backup-table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Archivo</th>
+                    <th>Fecha</th>
+                    <th>Tamano</th>
+                    <th>Accion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for backup in database_backups %}
+                    <tr>
+                        <td><code>{{ backup.filename }}</code></td>
+                        <td>{{ backup.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td class="table-cell-center">{{ backup.size_label }}</td>
+                        <td class="table-cell-center">
+                            <form method="post" action="{{ action_url }}" class="compact-form backup-restore-form" onsubmit="return confirm('Vas a restaurar la base de datos desde este respaldo. El sistema creara un respaldo preventivo antes de restaurar. Deseas continuar?')">
+                                <input type="hidden" name="next" value="{{ next_url }}">
+                                <input type="hidden" name="action" value="restore_database">
+                                <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
+                                <label class="backup-confirm-field">
+                                    <span>Confirmar restauracion</span>
+                                    <input type="text" name="restore_confirmation" placeholder="RESTAURAR RESPALDO" required>
+                                </label>
+                                <button type="submit" class="danger-btn">Restaurar</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4">No hay respaldos registrados todavia.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
 <section class="card admin-section maintenance-page cleanup-section">
     <div class="maintenance-banner cleanup-banner">
         <div>
             <p class="maintenance-kicker">Cierre anual</p>
             <h3>Limpiar ExpoTécnica</h3>
-            <p>Prepara el sistema para una nueva edición eliminando los datos operativos del año actual.</p>
+            <p>Prepara el sistema para una nueva edicion. Primero crea respaldo automatico de base de datos y luego elimina los datos operativos del ano actual.</p>
         </div>
         <span class="tag off">Acción irreversible</span>
     </div>

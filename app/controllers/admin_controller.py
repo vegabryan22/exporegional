@@ -16,6 +16,7 @@ from functools import wraps
 from flask import abort, current_app, flash, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
@@ -212,6 +213,8 @@ ACTION_MODULE_MAP = {
     "save_institution": "institution",
     "save_maintenance_settings": "maintenance",
     "cleanup_expotecnica": "maintenance",
+    "backup_database": "maintenance",
+    "restore_database": "maintenance",
     "gitops_fetch": "gitops",
     "gitops_pull_ff": "gitops",
     "gitops_pull_apply": "gitops",
@@ -1579,6 +1582,164 @@ def _cleanup_expotecnica_counts():
         "evaluations": Evaluation.query.count(),
         "evaluation_scores": EvaluationScore.query.count(),
     }
+
+
+def _database_backup_dir() -> Path:
+    backup_dir = Path(current_app.instance_path).resolve() / "database_backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    return backup_dir
+
+
+def _safe_backup_filename(filename: str) -> str:
+    filename = (filename or "").strip()
+    if not re.fullmatch(r"expotecnica_db_\d{8}_\d{6}_[a-z0-9_-]+\.sql", filename):
+        raise ValueError("Nombre de respaldo invalido.")
+    backup_dir = _database_backup_dir()
+    candidate = (backup_dir / filename).resolve()
+    if backup_dir not in candidate.parents:
+        raise ValueError("Ruta de respaldo no permitida.")
+    if not candidate.exists() or not candidate.is_file():
+        raise ValueError("El respaldo seleccionado no existe.")
+    return filename
+
+
+def _database_url_config():
+    url = make_url(current_app.config["SQLALCHEMY_DATABASE_URI"])
+    if not url.drivername.startswith("mysql"):
+        raise RuntimeError("Los respaldos automaticos estan disponibles solo para bases MySQL/MariaDB.")
+    if not url.database:
+        raise RuntimeError("DATABASE_URL no define el nombre de la base de datos.")
+    return {
+        "host": url.host or "localhost",
+        "port": str(url.port or 3306),
+        "user": url.username or "",
+        "password": url.password or "",
+        "database": url.database,
+    }
+
+
+def _mysql_env(db_config: dict) -> dict:
+    env = os.environ.copy()
+    if db_config.get("password"):
+        env["MYSQL_PWD"] = db_config["password"]
+    return env
+
+
+def _mysql_base_args(binary: str, db_config: dict) -> list[str]:
+    args = [
+        binary,
+        "--host",
+        db_config["host"],
+        "--port",
+        db_config["port"],
+        "--user",
+        db_config["user"],
+        "--default-character-set=utf8mb4",
+    ]
+    return args
+
+
+def _create_database_backup(reason: str = "manual") -> dict:
+    db_config = _database_url_config()
+    backup_dir = _database_backup_dir()
+    safe_reason = re.sub(r"[^a-z0-9_-]+", "_", (reason or "manual").strip().lower()).strip("_") or "manual"
+    filename = f"expotecnica_db_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_reason}.sql"
+    backup_path = backup_dir / filename
+
+    command = _mysql_base_args("mysqldump", db_config) + [
+        "--single-transaction",
+        "--quick",
+        "--routines",
+        "--triggers",
+        "--events",
+        db_config["database"],
+    ]
+    try:
+        with backup_path.open("wb") as backup_file:
+            result = subprocess.run(
+                command,
+                stdout=backup_file,
+                stderr=subprocess.PIPE,
+                env=_mysql_env(db_config),
+                timeout=300,
+                check=False,
+            )
+    except FileNotFoundError as error:
+        raise RuntimeError("No se encontro mysqldump en el servidor.") from error
+    except subprocess.TimeoutExpired as error:
+        backup_path.unlink(missing_ok=True)
+        raise RuntimeError("El respaldo excedio el tiempo maximo permitido.") from error
+
+    if result.returncode != 0:
+        backup_path.unlink(missing_ok=True)
+        error_text = (result.stderr or b"").decode("utf-8", "replace").strip()
+        raise RuntimeError(error_text or "No se pudo crear el respaldo de base de datos.")
+
+    return {
+        "filename": filename,
+        "path": str(backup_path),
+        "size_bytes": backup_path.stat().st_size,
+        "created_at": datetime.fromtimestamp(backup_path.stat().st_mtime),
+    }
+
+
+def _list_database_backups() -> list[dict]:
+    backups = []
+    backup_dir = _database_backup_dir()
+    for path in backup_dir.glob("expotecnica_db_*.sql"):
+        if not path.is_file():
+            continue
+        stat = path.stat()
+        backups.append(
+            {
+                "filename": path.name,
+                "size_bytes": stat.st_size,
+                "size_label": _format_bytes(stat.st_size),
+                "created_at": datetime.fromtimestamp(stat.st_mtime),
+            }
+        )
+    backups.sort(key=lambda item: item["created_at"], reverse=True)
+    return backups
+
+
+def _restore_database_backup(filename: str) -> dict:
+    safe_filename = _safe_backup_filename(filename)
+    db_config = _database_url_config()
+    backup_path = _database_backup_dir() / safe_filename
+    command = _mysql_base_args("mysql", db_config) + [db_config["database"]]
+    try:
+        with backup_path.open("rb") as backup_file:
+            result = subprocess.run(
+                command,
+                stdin=backup_file,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=_mysql_env(db_config),
+                timeout=300,
+                check=False,
+            )
+    except FileNotFoundError as error:
+        raise RuntimeError("No se encontro mysql en el servidor.") from error
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError("La restauracion excedio el tiempo maximo permitido.") from error
+
+    if result.returncode != 0:
+        error_text = (result.stderr or b"").decode("utf-8", "replace").strip()
+        raise RuntimeError(error_text or "No se pudo restaurar el respaldo.")
+
+    return {
+        "filename": safe_filename,
+        "size_bytes": backup_path.stat().st_size,
+    }
+
+
+def _format_bytes(size: int) -> str:
+    value = float(size or 0)
+    for unit in ["B", "KB", "MB", "GB"]:
+        if value < 1024 or unit == "GB":
+            return f"{value:.1f} {unit}" if unit != "B" else f"{int(value)} B"
+        value /= 1024
+    return f"{value:.1f} GB"
 
 
 def _clear_static_upload_dir(relative_dir: str) -> int:
@@ -3324,6 +3485,12 @@ def _handle_action(action: str):
             flash("Para limpiar ExpoTecnica debes escribir exactamente: LIMPIAR EXPOTECNICA.", "error")
             return
 
+        try:
+            backup = _create_database_backup("antes_limpiar")
+        except RuntimeError as error:
+            flash(f"No se ejecuto la limpieza porque fallo el respaldo: {error}", "error")
+            return
+
         before, deleted_files = _run_expotecnica_cleanup()
         SystemSetting.set_value("maintenance_enabled", "1")
         log_event(
@@ -3336,16 +3503,60 @@ def _handle_action(action: str):
                 f"evaluations_preserved={before['evaluations']}, "
                 f"evaluation_scores_preserved={before['evaluation_scores']}, "
                 f"member_changes={before['member_changes']}, "
-                f"archivos={deleted_files}"
+                f"archivos={deleted_files}, respaldo={backup['filename']}"
             ),
         )
         db.session.commit()
         flash(
-            "ExpoTecnica limpiada. Se eliminaron "
+            f"Respaldo creado: {backup['filename']}. ExpoTecnica limpiada. Se eliminaron "
             f"{before['projects']} proyectos, {before['members']} integrantes, "
             f"{before['assignments']} asignaciones, {before['users']} usuarios no admin "
             f"y {deleted_files} archivo(s). Evaluaciones y rubricas se conservaron. "
             "El sitio quedo en mantenimiento.",
+            "success",
+        )
+
+    elif action == "backup_database":
+        try:
+            backup = _create_database_backup("manual")
+        except RuntimeError as error:
+            flash(f"No se pudo crear el respaldo: {error}", "error")
+            return
+        log_event(
+            "admin.maintenance.backup_database",
+            "system",
+            detail=f"Respaldo manual creado: {backup['filename']} ({_format_bytes(backup['size_bytes'])})",
+        )
+        db.session.commit()
+        flash(f"Respaldo creado correctamente: {backup['filename']}.", "success")
+
+    elif action == "restore_database":
+        filename = (request.form.get("backup_filename") or "").strip()
+        confirmation = (request.form.get("restore_confirmation") or "").strip().upper()
+        if confirmation != "RESTAURAR RESPALDO":
+            flash("Para restaurar debes escribir exactamente: RESTAURAR RESPALDO.", "error")
+            return
+        try:
+            safety_backup = _create_database_backup("antes_restaurar")
+            restored = _restore_database_backup(filename)
+            db.session.rollback()
+            db.session.remove()
+            log_event(
+                "admin.maintenance.restore_database",
+                "system",
+                detail=(
+                    f"Respaldo restaurado: {restored['filename']} "
+                    f"(respaldo preventivo={safety_backup['filename']})"
+                ),
+            )
+            db.session.commit()
+        except (RuntimeError, ValueError) as error:
+            db.session.rollback()
+            flash(f"No se pudo restaurar el respaldo: {error}", "error")
+            return
+        flash(
+            f"Respaldo restaurado: {restored['filename']}. "
+            f"Antes de restaurar se creo respaldo preventivo: {safety_backup['filename']}.",
             "success",
         )
 
@@ -3602,6 +3813,7 @@ def _base_context(active_page: str, **kwargs):
         "maintenance_image_path": SystemSetting.get_value("maintenance_image_path", ""),
     }
     cleanup_stats = _cleanup_expotecnica_counts()
+    database_backups = _list_database_backups()
     gitops_status = _git_status_snapshot()
     gitops_service = _gitops_service_status()
     gitops_last = {
@@ -3663,6 +3875,7 @@ def _base_context(active_page: str, **kwargs):
         "institution_settings": institution_settings,
         "maintenance_settings": maintenance_settings,
         "cleanup_stats": cleanup_stats,
+        "database_backups": database_backups,
         "gitops_status": gitops_status,
         "gitops_service": gitops_service,
         "gitops_last": gitops_last,

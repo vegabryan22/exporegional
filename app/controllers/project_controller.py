@@ -716,15 +716,16 @@ def _render_project_documents_packet(project: Project):
         pdf.setFont("Helvetica-Bold", 9)
         pdf.drawCentredString(width / 2, height - 68, f"Curso lectivo {course_year}")
 
-        y = height - 108
-        consent_line_field("El suscrito,", "", 40, y, 150, label_w=62)
-        consent_line_field("cedula", "", 278, y, 118, label_w=44)
+        y = height - 112
+        consent_line_field("El suscrito,", "", 42, y, 180, label_w=66)
+        consent_line_field("cedula", "", 302, y, 128, label_w=42)
         pdf.setFont("Helvetica", 8.2)
-        pdf.drawString(452, y + 4, "en mi condicion de padre, madre o encargado legal, doy mi")
-        y -= 28
-        consent_line_field("consentimiento para que la persona estudiante", member.full_name, 40, y, 205, label_w=246)
-        consent_line_field("numero de identidad", member.identity_number or "", 570, y, 130, label_w=118)
-        y -= 28
+        pdf.drawString(494, y + 4, "en mi condicion de padre, madre o encargado legal, doy mi")
+        y -= 30
+        consent_line_field("consentimiento para que la persona estudiante", member.full_name, 42, y, 250, label_w=250)
+        y -= 30
+        consent_line_field("numero de identidad", member.identity_number or "", 42, y, 150, label_w=120)
+        y -= 26
         pdf.setFont("Helvetica", 8.2)
         pdf.drawString(34, y + 3, "realice lo que a continuacion se detalla:")
 

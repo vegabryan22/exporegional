@@ -767,14 +767,110 @@ nav a:hover,
     text-decoration: none;
 }
 
+.database-backup-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.database-backup-card {
+    display: grid;
+    gap: 0.8rem;
+    padding: 1rem;
+    border: 1px solid #d5e6f5;
+    border-radius: 16px;
+    background:
+        linear-gradient(135deg, rgba(232, 246, 255, 0.8) 0%, rgba(255, 255, 255, 0.96) 42%),
+        #ffffff;
+    box-shadow: 0 14px 34px rgba(18, 63, 107, 0.08);
+}
+
+.database-backup-main {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 0.85rem;
+    align-items: start;
+}
+
+.database-backup-icon {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #123f6b 0%, #1f8fb5 100%);
+    color: #ffffff;
+}
+
+.database-backup-icon svg {
+    width: 26px;
+    height: 26px;
+    fill: currentColor;
+}
+
+.database-backup-copy {
+    min-width: 0;
+}
+
+.database-backup-title {
+    display: flex;
+    gap: 0.55rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.database-backup-title code {
+    display: block;
+    max-width: 100%;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid #d7e3ef;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #123f6b;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-height: 1.35;
+}
+
+.database-backup-meta {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    margin: 0.65rem 0 0;
+}
+
+.database-backup-meta div {
+    min-width: 150px;
+    padding: 0.45rem 0.6rem;
+    border-radius: 10px;
+    background: #f3f8fe;
+}
+
+.database-backup-meta dt {
+    color: #5d708b;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.database-backup-meta dd {
+    margin: 0.12rem 0 0;
+    color: var(--primary);
+    font-weight: 800;
+}
+
 .database-backup-actions {
     display: grid;
-    grid-template-columns: minmax(120px, auto) minmax(320px, 1fr) minmax(320px, 1fr);
-    gap: 0.55rem;
+    grid-template-columns: minmax(150px, 0.35fr) minmax(300px, 1fr) minmax(300px, 1fr);
+    gap: 0.65rem;
     align-items: end;
 }
 
 .database-backup-actions .secondary-btn {
+    min-height: 42px;
+    display: inline-grid;
+    place-items: center;
     text-align: center;
     text-decoration: none;
 }
@@ -798,6 +894,10 @@ nav a:hover,
 
 @media (max-width: 1100px) {
     .database-backup-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .database-backup-main {
         grid-template-columns: 1fr;
     }
 }

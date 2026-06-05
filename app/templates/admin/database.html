@@ -110,20 +110,29 @@
                     </div>
                 </div>
                 <div class="database-backup-actions">
-                    <a class="secondary-btn" href="{{ url_for('admin.database_backup_download', filename=backup.filename) }}">Descargar SQL</a>
+                    <a class="db-action-btn db-action-download" href="{{ url_for('admin.database_backup_download', filename=backup.filename) }}">
+                        <svg aria-hidden="true" focusable="false"><use href="#ico-download"></use></svg>
+                        <span>Descargar SQL</span>
+                    </a>
                     <form method="post" action="{{ action_url }}" class="inline-form database-confirm-form" data-confirm-message="Vas a restaurar este respaldo. Se creara un respaldo preventivo antes de restaurar. Deseas continuar?">
                         <input type="hidden" name="next" value="{{ next_url }}">
                         <input type="hidden" name="action" value="restore_database">
                         <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
                         <input type="hidden" name="restore_confirmation" value="">
-                        <button type="submit" class="danger-btn">Restaurar</button>
+                        <button type="submit" class="db-action-btn db-action-restore">
+                            <svg aria-hidden="true" focusable="false"><use href="#ico-restore"></use></svg>
+                            <span>Restaurar</span>
+                        </button>
                     </form>
                     <form method="post" action="{{ action_url }}" class="inline-form database-confirm-form" data-confirm-message="Eliminar este respaldo? Esta accion borra el archivo SQL y no toca la base de datos.">
                         <input type="hidden" name="next" value="{{ next_url }}">
                         <input type="hidden" name="action" value="delete_database_backup">
                         <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
                         <input type="hidden" name="delete_backup_confirmation" value="">
-                        <button type="submit" class="danger-btn">Eliminar</button>
+                        <button type="submit" class="db-action-btn db-action-delete">
+                            <svg aria-hidden="true" focusable="false"><use href="#ico-delete"></use></svg>
+                            <span>Eliminar</span>
+                        </button>
                     </form>
                 </div>
             </article>

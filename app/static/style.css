@@ -4098,8 +4098,41 @@ dialog.maintenance-dialog::backdrop {
 
 .project-sidebar-head {
     border-bottom: 1px solid #dbe7f4;
-    padding: 1rem 1rem 0.85rem;
+    padding: 1rem 1rem 0.9rem;
     background: #ffffff;
+}
+
+.project-sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.8rem;
+}
+
+.project-sidebar-logo {
+    width: 62px;
+    height: 62px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #cddced;
+    border-radius: 16px;
+    background: #ffffff;
+    color: #123f6b;
+    font-weight: 900;
+    line-height: 1;
+    text-align: center;
+    box-shadow: 0 8px 20px rgba(15, 53, 87, 0.08);
+}
+
+.project-sidebar-logo.expo {
+    width: 108px;
+}
+
+.project-sidebar-logo img {
+    max-width: 86%;
+    max-height: 86%;
+    object-fit: contain;
+    display: block;
 }
 
 .project-sidebar-list {
@@ -4191,11 +4224,27 @@ dialog.maintenance-dialog::backdrop {
     border: 1px solid #0f3557;
 }
 
+.institutional-banner-compact {
+    padding: 1.2rem 1.35rem;
+    min-height: auto;
+}
+
 .institutional-banner h1 {
     margin: 0;
     font-size: clamp(2rem, 5vw, 4rem);
     color: #ffffff;
     text-transform: uppercase;
+}
+
+.institutional-banner-compact h1 {
+    margin-top: 0.25rem;
+    font-size: clamp(1.65rem, 3vw, 2.45rem);
+    text-transform: none;
+}
+
+.institutional-banner-compact p {
+    margin: 0.45rem 0 0;
+    color: rgba(255, 255, 255, 0.78);
 }
 
 .banner-kicker {
@@ -4204,6 +4253,11 @@ dialog.maintenance-dialog::backdrop {
     font-size: 1.2rem;
     color: #ffffff;
     text-transform: uppercase;
+}
+
+.institutional-banner-compact .banner-kicker {
+    font-size: 0.82rem;
+    letter-spacing: 0.12em;
 }
 
 .banner-badge {
@@ -5367,10 +5421,6 @@ button {
         align-items: flex-start;
     }
 
-    .project-sidebar {
-        padding: 0.65rem;
-    }
-
     .project-link {
         white-space: normal;
     }
@@ -6279,6 +6329,24 @@ button {
 
     .institutional-banner h1 {
         font-size: clamp(1.7rem, 11vw, 2.7rem);
+    }
+
+    .institutional-banner-compact h1 {
+        font-size: clamp(1.35rem, 8vw, 2rem);
+    }
+
+    .project-sidebar-brand {
+        gap: 0.5rem;
+    }
+
+    .project-sidebar-logo {
+        width: 52px;
+        height: 52px;
+        border-radius: 14px;
+    }
+
+    .project-sidebar-logo.expo {
+        width: 92px;
     }
 
     .banner-badge {

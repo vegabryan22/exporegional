@@ -15,6 +15,22 @@
 <div class="showcase-layout">
     <aside class="project-sidebar">
         <div class="project-sidebar-head">
+            <div class="project-sidebar-brand" aria-label="Identidad institucional">
+                <div class="project-sidebar-logo">
+                    {% if institution.logo_path %}
+                        <img src="{{ url_for('static', filename=institution.logo_path) }}" alt="Logo {{ institution.name }}">
+                    {% else %}
+                        <span>CTP</span>
+                    {% endif %}
+                </div>
+                <div class="project-sidebar-logo expo">
+                    {% if institution.expo_logo_path %}
+                        <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica">
+                    {% else %}
+                        <span>ExpoTEC</span>
+                    {% endif %}
+                </div>
+            </div>
             <h2>ExpoTécnica CTPRGV</h2>
             <p>Proyectos institucionales</p>
         </div>
@@ -51,19 +67,12 @@
     </aside>
 
     <section class="project-view">
-        <header class="institutional-banner card">
+        <header class="institutional-banner institutional-banner-compact card">
             <div>
-                <span class="banner-kicker">Etapa</span>
-                <h1>Institucional</h1>
+                <span class="banner-kicker">Etapa institucional</span>
+                <h1>Proyectos de especialidades técnicas</h1>
                 <p>Muestra oficial de proyectos de especialidades técnicas.</p>
             </div>
-            {% if institution.expo_logo_path %}
-                <div class="banner-badge banner-badge-image">
-                    <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica" class="banner-badge-logo">
-                </div>
-            {% else %}
-                <div class="banner-badge">EXPO<br>TEC</div>
-            {% endif %}
         </header>
 
         {% for category_code, category_label in category_map.items() %}

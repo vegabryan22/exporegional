@@ -664,72 +664,80 @@ def _render_project_documents_packet(project: Project):
     pdf.drawString(68, y, "Adjuntar las fotocopias de las cedulas del estudiantado, docente tutor y mentor.")
     pdf.showPage()
 
-    def consent_line_field(label, value, x, y_pos, w, label_w=0):
+    def consent_field(label, value, x, y_pos, w):
         pdf.setFillColor(colors.black)
-        pdf.setFont("Helvetica", 8.2)
-        if label:
-            pdf.drawString(x, y_pos + 3, _pdf_text(label))
-        field_x = x + label_w
+        pdf.setFont("Helvetica-Bold", 8)
+        pdf.drawString(x, y_pos + 18, _pdf_text(label))
         pdf.setStrokeColor(colors.black)
-        pdf.rect(field_x, y_pos, w, 15, stroke=1, fill=0)
+        pdf.rect(x, y_pos, w, 15, stroke=1, fill=0)
         if value:
             pdf.setFont("Helvetica", 8)
-            pdf.drawString(field_x + 4, y_pos + 4, _pdf_text(value))
+            pdf.drawString(x + 4, y_pos + 4, _pdf_text(value))
 
-    def consent_check(text, x, y_pos, width_chars=112):
+    def consent_signature_line(label, x, y_pos, w):
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica-Bold", 8)
+        pdf.drawString(x, y_pos, _pdf_text(label))
+        pdf.line(x + 170, y_pos, x + w, y_pos)
+
+    def consent_check(text, x, y_pos, width_chars=82):
         pdf.setStrokeColor(colors.black)
-        pdf.line(x, y_pos + 4, x + 72, y_pos + 4)
+        pdf.line(x, y_pos + 4, x + 62, y_pos + 4)
         pdf.setFillColor(colors.black)
         pdf.setFont("Helvetica", 8)
-        _draw_wrapped(pdf, text, x + 88, y_pos + 8, width_chars=width_chars, leading=9.2, size=8)
+        return _draw_wrapped(pdf, text, x + 78, y_pos + 8, width_chars=width_chars, leading=9.5, size=8)
 
-    pdf.setPageSize(landscape(letter))
-    width, height = landscape(letter)
+    pdf.setPageSize(letter)
+    width, height = letter
     for member in sorted(project.members, key=lambda item: item.student_number):
         pdf.setFillColor(colors.white)
         pdf.rect(0, 0, width, height, stroke=0, fill=1)
 
-        logo_y = height - 82
-        if not _draw_pdf_logo(pdf, school_logo, 32, logo_y, max_width=120, max_height=48):
+        logo_y = height - 88
+        if not _draw_pdf_logo(pdf, school_logo, 42, logo_y, max_width=86, max_height=50):
             pdf.setFillColor(colors.HexColor("#1d3461"))
             pdf.setFont("Helvetica-Bold", 7)
-            pdf.drawString(34, height - 50, "MINISTERIO DE EDUCACION PUBLICA")
+            pdf.drawString(42, height - 52, "MINISTERIO DE")
+            pdf.drawString(42, height - 62, "EDUCACION PUBLICA")
         pdf.setFillColor(colors.HexColor("#1d3461"))
         pdf.setFont("Helvetica-Bold", 7)
-        for index, line in enumerate(_pdf_lines(program_office, width_chars=26)[:3]):
-            pdf.drawString(170, height - 45 - (index * 10), _pdf_text(line))
-        if not _draw_pdf_logo(pdf, expo_logo, width - 152, height - 86, max_width=108, max_height=58):
+        for index, line in enumerate(_pdf_lines(program_office, width_chars=24)[:3]):
+            pdf.drawString(145, height - 50 - (index * 10), _pdf_text(line))
+        if not _draw_pdf_logo(pdf, expo_logo, width - 132, height - 92, max_width=88, max_height=58):
             pdf.setFillColor(colors.HexColor("#f37021"))
-            pdf.setFont("Helvetica-Bold", 24)
-            pdf.drawRightString(width - 42, height - 50, "Expo")
+            pdf.setFont("Helvetica-Bold", 22)
+            pdf.drawRightString(width - 42, height - 54, "Expo")
             pdf.setFillColor(colors.HexColor("#666666"))
-            pdf.setFont("Helvetica-Bold", 14)
-            pdf.drawRightString(width - 42, height - 70, "tecnica")
+            pdf.setFont("Helvetica-Bold", 13)
+            pdf.drawRightString(width - 42, height - 73, "tecnica")
 
         pdf.setFillColor(colors.HexColor("#073d70"))
-        pdf.setFont("Helvetica-Bold", 11)
-        pdf.drawCentredString(width / 2, height - 38, "ExpoTEC-2")
+        pdf.setFont("Helvetica-Bold", 13)
+        pdf.drawCentredString(width / 2, height - 42, "ExpoTEC-2")
         pdf.setFillColor(colors.HexColor("#c34d0a"))
-        pdf.setFont("Helvetica-Bold", 10)
-        pdf.drawCentredString(width / 2, height - 53, "Consentimiento Informado")
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawCentredString(width / 2, height - 58, "Consentimiento Informado")
         pdf.setFillColor(colors.HexColor("#1d7a22"))
         pdf.setFont("Helvetica-Bold", 9)
-        pdf.drawCentredString(width / 2, height - 68, f"Curso lectivo {course_year}")
+        pdf.drawCentredString(width / 2, height - 73, f"Curso lectivo {course_year}")
+        pdf.setStrokeColor(colors.HexColor("#c8d6e6"))
+        pdf.line(42, height - 104, width - 42, height - 104)
 
-        y = height - 112
-        consent_line_field("El suscrito,", "", 42, y, 180, label_w=66)
-        consent_line_field("cedula", "", 302, y, 128, label_w=42)
-        pdf.setFont("Helvetica", 8.2)
-        pdf.drawString(494, y + 4, "en mi condicion de padre, madre o encargado legal, doy mi")
-        y -= 30
-        consent_line_field("consentimiento para que la persona estudiante", member.full_name, 42, y, 250, label_w=250)
-        y -= 30
-        consent_line_field("numero de identidad", member.identity_number or "", 42, y, 150, label_w=120)
+        y = height - 132
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica", 8.4)
+        pdf.drawString(42, y, "El suscrito, en mi condicion de padre, madre o encargado legal, doy mi consentimiento para que")
+        y -= 28
+        consent_field("Nombre del padre, madre o encargado legal", "", 42, y, 250)
+        consent_field("Cedula", "", 314, y, 120)
+        y -= 52
+        consent_field("Persona estudiante", member.full_name, 42, y, 250)
+        consent_field("Numero de identidad", member.identity_number or "", 314, y, 150)
+        y -= 32
+        pdf.setFont("Helvetica", 8.4)
+        pdf.drawString(42, y, "realice lo que a continuacion se detalla:")
+
         y -= 26
-        pdf.setFont("Helvetica", 8.2)
-        pdf.drawString(34, y + 3, "realice lo que a continuacion se detalla:")
-
-        y -= 24
         info_text = (
             "Anuncio sin fines de lucro con mensaje dirigido al estudiantado del sistema educativo sobre la ExpoTECNICA "
             "Institucional, Regional CORVEC y Nacional. Actividad que se realiza con el aval del Ministerio de Educacion "
@@ -740,42 +748,38 @@ def _render_project_documents_packet(project: Project):
         )
         pdf.setStrokeColor(colors.HexColor("#4c8a41"))
         pdf.setFillColor(colors.HexColor("#e6f4df"))
-        pdf.rect(40, y - 66, width - 80, 68, stroke=1, fill=1)
+        pdf.rect(42, y - 78, width - 84, 82, stroke=1, fill=1)
         pdf.setFillColor(colors.black)
-        _draw_wrapped(pdf, info_text, 50, y - 12, width_chars=132, leading=9.2, size=8)
+        _draw_wrapped(pdf, info_text, 52, y - 12, width_chars=96, leading=9.2, size=7.8)
 
-        y -= 88
+        y -= 104
         pdf.setFont("Helvetica-Bold", 8.4)
-        pdf.drawString(40, y, "Para lo cual dejo constancia que:  (escriba una X sobre la linea, segun corresponda).")
-        y -= 28
-        consent_check("Recibi informacion sencilla y comprensible respecto a los beneficios y actividades que conlleva esta actividad, por parte del Ministerio de Educacion Publica.", 40, y, width_chars=112)
-        y -= 42
-        consent_check("Se me ha explicado este documento.", 40, y, width_chars=112)
-        y -= 34
-        consent_check("Libero de toda responsabilidad a los y las funcionarias que trabajaran en esta grabacion, en la medida que las imagenes no sean utilizadas para fines comerciales.", 40, y, width_chars=112)
+        pdf.drawString(42, y, "Para lo cual dejo constancia que:  (escriba una X sobre la linea, segun corresponda).")
+        y -= 30
+        y = consent_check("Recibi informacion sencilla y comprensible respecto a los beneficios y actividades que conlleva esta actividad, por parte del Ministerio de Educacion Publica.", 42, y, width_chars=80) - 12
+        y = consent_check("Se me ha explicado este documento.", 42, y, width_chars=80) - 12
+        y = consent_check("Libero de toda responsabilidad a los y las funcionarias que trabajaran en esta grabacion, en la medida que las imagenes no sean utilizadas para fines comerciales.", 42, y, width_chars=80) - 10
 
-        y -= 42
-        pdf.setFont("Helvetica", 7.8)
-        pdf.drawString(40, y, "Lo anterior, se respalda en los Articulos 47 y 48 del Codigo Civil que rezan:")
+        pdf.setFont("Helvetica", 8)
+        pdf.drawString(42, y, "Lo anterior, se respalda en los Articulos 47 y 48 del Codigo Civil que rezan:")
         y -= 18
-        pdf.setFont("Helvetica-Bold", 7.8)
-        pdf.drawString(40, y, "Articulo 47")
-        y -= 10
-        pdf.setFont("Helvetica", 7.2)
-        _draw_wrapped(pdf, "La fotografia o la imagen de una persona no puede ser publicada, reproducida, expuesta ni vendida en forma alguna si no es con su consentimiento.", 40, y, width_chars=152, leading=8.2, size=7.2)
-        y -= 26
-        pdf.setFont("Helvetica-Bold", 7.8)
-        pdf.drawString(40, y, "Articulo 48")
-        y -= 10
-        pdf.setFont("Helvetica", 7.2)
-        _draw_wrapped(pdf, "Si la imagen o fotografia de una persona se publica sin su consentimiento y no se encuentra dentro de los casos de excepcion previstos en el articulo anterior, procede el reclamo correspondiente.", 40, y, width_chars=152, leading=8.2, size=7.2)
-
-        y = 72
         pdf.setFont("Helvetica-Bold", 8)
-        pdf.drawString(40, y, "Firma del padre, madre o encargado legal:")
-        pdf.line(276, y, 470, y)
-        pdf.drawString(512, y, "Fecha:")
-        pdf.rect(558, y - 7, 112, 16, stroke=1, fill=0)
+        pdf.drawString(42, y, "Articulo 47")
+        y -= 10
+        pdf.setFont("Helvetica", 7.3)
+        y = _draw_wrapped(pdf, "La fotografia o la imagen de una persona no puede ser publicada, reproducida, expuesta ni vendida en forma alguna si no es con su consentimiento.", 42, y, width_chars=100, leading=8.4, size=7.3)
+        y -= 10
+        pdf.setFont("Helvetica-Bold", 8)
+        pdf.drawString(42, y, "Articulo 48")
+        y -= 10
+        pdf.setFont("Helvetica", 7.3)
+        _draw_wrapped(pdf, "Si la imagen o fotografia de una persona se publica sin su consentimiento y no se encuentra dentro de los casos de excepcion previstos en el articulo anterior, procede el reclamo correspondiente.", 42, y, width_chars=100, leading=8.4, size=7.3)
+
+        y = 74
+        consent_signature_line("Firma del padre, madre o encargado legal:", 42, y, 390)
+        pdf.setFont("Helvetica-Bold", 8)
+        pdf.drawString(455, y, "Fecha:")
+        pdf.rect(500, y - 7, 70, 16, stroke=1, fill=0)
         pdf.showPage()
 
     pdf.save()

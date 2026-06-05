@@ -3919,8 +3919,8 @@ def _handle_action(action: str):
     elif action == "restore_database":
         filename = (request.form.get("backup_filename") or "").strip()
         confirmation = (request.form.get("restore_confirmation") or "").strip().upper()
-        if confirmation != "RESTAURAR RESPALDO":
-            flash("Para restaurar debes escribir exactamente: RESTAURAR RESPALDO.", "error")
+        if confirmation not in {"SI", "SÍ", "RESTAURAR RESPALDO"}:
+            flash("Para restaurar debes confirmar con SI.", "error")
             return
         try:
             restore_job = _start_database_restore_job(filename)
@@ -3946,8 +3946,8 @@ def _handle_action(action: str):
     elif action == "delete_database_backup":
         filename = (request.form.get("backup_filename") or "").strip()
         confirmation = (request.form.get("delete_backup_confirmation") or "").strip().upper()
-        if confirmation != "ELIMINAR RESPALDO":
-            flash("Para eliminar el respaldo debes escribir exactamente: ELIMINAR RESPALDO.", "error")
+        if confirmation not in {"SI", "SÍ", "ELIMINAR RESPALDO"}:
+            flash("Para eliminar el respaldo debes confirmar con SI.", "error")
             return
         try:
             deleted = _delete_database_backup(filename)

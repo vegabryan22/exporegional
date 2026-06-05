@@ -82,15 +82,6 @@
                     <div class="database-backup-copy">
                         <div class="database-backup-title">
                             <code>{{ backup.filename }}</code>
-                            {% if 'antes_restaurar' in backup.filename %}
-                                <span class="tag warning">Preventivo restore</span>
-                            {% elif 'antes_limpiar' in backup.filename %}
-                                <span class="tag warning">Preventivo limpieza</span>
-                            {% elif 'manual' in backup.filename %}
-                                <span class="tag ok">Manual</span>
-                            {% else %}
-                                <span class="tag muted">Sistema</span>
-                            {% endif %}
                         </div>
                         <dl class="database-backup-meta">
                             <div>
@@ -100,6 +91,20 @@
                             <div>
                                 <dt>Tamano</dt>
                                 <dd>{{ backup.size_label }}</dd>
+                            </div>
+                            <div>
+                                <dt>Tipo</dt>
+                                <dd>
+                                    {% if 'antes_restaurar' in backup.filename %}
+                                        <span class="tag warning">Preventivo restore</span>
+                                    {% elif 'antes_limpiar' in backup.filename %}
+                                        <span class="tag warning">Preventivo limpieza</span>
+                                    {% elif 'manual' in backup.filename %}
+                                        <span class="tag ok">Manual</span>
+                                    {% else %}
+                                        <span class="tag muted">Sistema</span>
+                                    {% endif %}
+                                </dd>
                             </div>
                         </dl>
                     </div>
@@ -112,9 +117,12 @@
                         <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
                         <label class="backup-confirm-field">
                             <span>Restaurar</span>
-                            <input type="text" name="restore_confirmation" placeholder="RESTAURAR RESPALDO" required>
+                            <select name="restore_confirmation" required>
+                                <option value="">Confirmar</option>
+                                <option value="SI">SI</option>
+                            </select>
                         </label>
-                        <button type="submit" class="danger-btn">Iniciar restore</button>
+                        <button type="submit" class="danger-btn">Restaurar</button>
                     </form>
                     <form method="post" action="{{ action_url }}" class="compact-form backup-restore-form" onsubmit="return confirm('Eliminar este respaldo? Esta accion no restaura datos ni toca la base, pero borra el archivo SQL.')">
                         <input type="hidden" name="next" value="{{ next_url }}">
@@ -122,9 +130,12 @@
                         <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
                         <label class="backup-confirm-field">
                             <span>Eliminar</span>
-                            <input type="text" name="delete_backup_confirmation" placeholder="ELIMINAR RESPALDO" required>
+                            <select name="delete_backup_confirmation" required>
+                                <option value="">Confirmar</option>
+                                <option value="SI">SI</option>
+                            </select>
                         </label>
-                        <button type="submit" class="danger-btn">Eliminar archivo</button>
+                        <button type="submit" class="danger-btn">Eliminar</button>
                     </form>
                 </div>
             </article>

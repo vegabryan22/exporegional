@@ -304,6 +304,14 @@ def _pdf_setting(key, default=""):
     return SystemSetting.get_value(key, default) or default
 
 
+def _pdf_setting_any(keys, default=""):
+    for key in keys:
+        value = SystemSetting.get_value(key, "")
+        if value:
+            return value
+    return default
+
+
 def _draw_excel_background(pdf, width, height, step_x=50, step_y=18):
     pdf.saveState()
     pdf.setStrokeColor(colors.HexColor("#d9d9d9"))
@@ -382,102 +390,131 @@ def _render_project_documents_packet(project: Project):
     service_type = _pdf_setting("expotec_service_type", "Tecnico profesional")
     school_phone = _pdf_setting("school_phone", "")
     school_email = _pdf_setting("school_email", "")
-    director_name = _pdf_setting("expotec_director_name", "")
-    director_email = _pdf_setting("expotec_director_email", "")
-    coordinator_name = _pdf_setting("expotec_technical_coordinator_name", "")
-    coordinator_email = _pdf_setting("expotec_technical_coordinator_email", "")
+    director_name = _pdf_setting_any(["expotec_director_name", "director_name", "school_director_name"], "")
+    director_email = _pdf_setting_any(["expotec_director_email", "director_email", "school_director_email"], "")
+    coordinator_name = _pdf_setting_any(
+        ["expotec_technical_coordinator_name", "technical_coordinator_name", "school_coordinator_name"],
+        "",
+    )
+    coordinator_email = _pdf_setting_any(
+        ["expotec_technical_coordinator_email", "technical_coordinator_email", "school_coordinator_email"],
+        "",
+    )
     course_year = _pdf_setting("expotec_school_year", "2026")
     stage = _pdf_setting("expotec_stage", "Institucional")
     start_date = _pdf_date(project.project_start_date) or _pdf_date(project.campaign.start_date if project.campaign else "")
     end_date = _pdf_date(project.project_end_date) or _pdf_date(project.campaign.end_date if project.campaign else "")
 
-    _draw_excel_background(pdf, width, height)
+    pdf.setFillColor(colors.white)
+    pdf.rect(0, 0, width, height, stroke=0, fill=1)
+
+    def clean_section(title, y_pos):
+        pdf.setFillColor(colors.HexColor("#eaf3fb"))
+        pdf.roundRect(36, y_pos - 22, width - 72, 24, 7, stroke=0, fill=1)
+        pdf.setFillColor(colors.HexColor("#073d70"))
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(48, y_pos - 15, _pdf_text(title))
+        return y_pos - 34
+
+    def clean_field(label, value, x, y_pos, w, h=34):
+        pdf.setFillColor(colors.HexColor("#3b4a5c"))
+        pdf.setFont("Helvetica-Bold", 7.6)
+        pdf.drawString(x, y_pos + h + 3, _pdf_text(label))
+        pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
+        pdf.setFillColor(colors.white)
+        pdf.roundRect(x, y_pos, w, h, 5, stroke=1, fill=1)
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
+        pdf.setFont("Helvetica", 8.3)
+        text_y = y_pos + h - 13
+        for line in _pdf_lines(value or "", max(12, int(w / 4.4)))[:2]:
+            pdf.drawString(x + 8, text_y, _pdf_text(line))
+            text_y -= 10
+
+    def clean_checkbox(label, checked, x, y_pos, w=116):
+        pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
+        pdf.setFillColor(colors.white)
+        pdf.roundRect(x, y_pos, w, 22, 5, stroke=1, fill=1)
+        pdf.rect(x + 8, y_pos + 6, 10, 10, stroke=1, fill=0)
+        if checked:
+            pdf.setFillColor(colors.HexColor("#0f7a38"))
+            pdf.setFont("Helvetica-Bold", 9)
+            pdf.drawCentredString(x + 13, y_pos + 6, "X")
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
+        pdf.setFont("Helvetica", 8)
+        pdf.drawString(x + 24, y_pos + 7, _pdf_text(label))
 
     # Header
-    logo_y = height - 78
+    logo_y = height - 86
     school_logo = _pdf_setting("school_logo_path", "")
     expo_logo = _pdf_setting("expo_logo_path", "")
-    if not _draw_pdf_logo(pdf, school_logo, 18, logo_y, max_width=110, max_height=42):
+    if not _draw_pdf_logo(pdf, school_logo, 40, logo_y, max_width=118, max_height=52):
         pdf.setFillColor(colors.HexColor("#1d3461"))
         pdf.setFont("Helvetica-Bold", 8)
-        pdf.drawString(18, height - 42, "MINISTERIO DE")
-        pdf.drawString(18, height - 53, "EDUCACION PUBLICA")
-        pdf.drawString(96, height - 42, "GOBIERNO")
-        pdf.drawString(96, height - 53, "DE COSTA RICA")
-    pdf.setStrokeColor(colors.HexColor("#7f8ca3"))
-    pdf.line(132, height - 25, 122, height - 76)
+        pdf.drawString(44, height - 48, "MINISTERIO DE EDUCACION PUBLICA")
+        pdf.drawString(44, height - 60, "GOBIERNO DE COSTA RICA")
     pdf.setFillColor(colors.HexColor("#1d3461"))
     pdf.setFont("Helvetica-Bold", 8)
     program_office = _pdf_setting("expotec_program_office", "Direccion de Educacion Tecnica y Capacidades Emprendedoras")
     for index, line in enumerate(_pdf_lines(program_office, width_chars=26)[:3]):
-        pdf.drawString(142, height - 34 - (index * 14), _pdf_text(line))
+        pdf.drawString(168, height - 44 - (index * 11), _pdf_text(line))
 
-    pdf.setFont("Helvetica-Bold", 15)
+    pdf.setFont("Helvetica-Bold", 17)
     pdf.setFillColor(colors.HexColor("#004b73"))
-    pdf.drawCentredString(width / 2, height - 23, "ExpoTEC-1")
-    pdf.setFont("Helvetica-Bold", 14)
+    pdf.drawCentredString(width / 2, height - 31, "ExpoTEC-1")
+    pdf.setFont("Helvetica-Bold", 15)
     pdf.setFillColor(colors.HexColor("#c34d0a"))
-    pdf.drawCentredString(width / 2, height - 43, "Inscripcion del Proyecto")
+    pdf.drawCentredString(width / 2, height - 53, "Inscripcion del Proyecto")
     pdf.setFont("Helvetica-Bold", 13)
     pdf.setFillColor(colors.HexColor("#1d7a22"))
-    pdf.drawCentredString(width / 2, height - 63, f"Curso lectivo {course_year}")
-    if not _draw_pdf_logo(pdf, expo_logo, width - 150, height - 84, max_width=110, max_height=70):
+    pdf.drawCentredString(width / 2, height - 74, f"Curso lectivo {course_year}")
+    if not _draw_pdf_logo(pdf, expo_logo, width - 160, height - 92, max_width=120, max_height=72):
         pdf.setFillColor(colors.HexColor("#f37021"))
         pdf.setFont("Helvetica-Bold", 27)
-        pdf.drawRightString(width - 42, height - 45, "Expo")
+        pdf.drawRightString(width - 42, height - 48, "Expo")
         pdf.setFillColor(colors.HexColor("#666666"))
         pdf.setFont("Helvetica-Bold", 16)
-        pdf.drawRightString(width - 42, height - 67, "tecnica")
+        pdf.drawRightString(width - 42, height - 70, "tecnica")
 
-    y = height - 102
-    _draw_pdf_label_box(pdf, "Etapa:", stage, 0, y, 64, 98, h=13)
-    _draw_pdf_label_box(pdf, "Fecha de inscripcion:", today, 248, y, 106, 148, h=13)
-    y -= 24
-    _draw_pdf_label_box(pdf, "Nombre del centro educativo:", school_name, 0, y, 162, 338, h=13)
-    y -= 24
-    _draw_pdf_label_box(pdf, "Tipo de servicio educativo:", service_type, 0, y, 162, 338, h=13)
-    y -= 24
-    _draw_pdf_label_box(pdf, "Telefono institucional:", school_phone, 0, y, 162, 125, h=13)
-    _draw_pdf_label_box(pdf, "Correo institucional:", school_email, 314, y, 96, 210, h=13)
-    y -= 24
-    _draw_pdf_label_box(pdf, "Persona directora:", director_name, 0, y, 114, 174, h=13)
-    _draw_pdf_label_box(pdf, "Correo electronico:", director_email, 314, y, 96, 210, h=13)
-    y -= 24
-    _draw_pdf_label_box(pdf, "Persona coordinadora tecnica:", coordinator_name, 0, y, 162, 190, h=13)
-    _draw_pdf_label_box(pdf, "Correo electronico:", coordinator_email, 404, y, 96, 248, h=13)
-    y -= 24
-    _draw_pdf_label_box(pdf, "Nombre del proyecto:", project.title, 0, y, 114, 632, h=13)
-    y -= 24
-    _draw_pdf_label_box(pdf, "Categoria:", _project_category_label(project), 0, y, 64, 224, h=13)
-    _draw_pdf_label_box(pdf, "Eje tematico:", _project_thematic_axis_label(project), 344, y, 96, 210, h=13)
-    y -= 24
-    _draw_pdf_label_box(pdf, "Tipo de proyecto:", _project_type_label(project), 0, y, 114, 240, h=13)
-    y -= 24
+    pdf.setStrokeColor(colors.HexColor("#c8d6e6"))
+    pdf.line(36, height - 104, width - 36, height - 104)
 
-    pdf.setFillColor(colors.black)
-    pdf.setFont("Helvetica-Bold", 9)
-    pdf.drawString(0, y + 3, "Requerimientos del proyecto:  (escriba una X en la respectiva casilla, si corresponde)")
-    y -= 17
-    requirement_rows = [
-        ("Voltaje (no sistema trifasico)", _requirements_value(project, "corriente")),
-        ("Salidas", _requirements_value(project, "salidas")),
-        ("Agua", _requirements_value(project, "agua")),
-        ("Internet", _requirements_value(project, "internet")),
-        ("Otro:", project.requirements_other or ""),
-    ]
-    for label, value in requirement_rows:
-        pdf.setFont("Helvetica", 8)
-        pdf.drawString(2, y + 3, _pdf_text(label))
-        _draw_pdf_cell(pdf, 166, y, 50 if label != "Otro:" else 345, 13, value, size=8)
-        y -= 13
-    y -= 12
-    _draw_pdf_label_box(pdf, "Fecha inicio del proyecto:", start_date, 2, y, 162, 190, h=13)
-    y -= 24
-    _draw_pdf_label_box(pdf, "Fecha finalizacion del proyecto:", end_date, 2, y, 162, 190, h=13)
+    y = clean_section("Datos institucionales", height - 122)
+    clean_field("Etapa", stage, 42, y - 28, 150)
+    clean_field("Fecha de inscripcion", today, 210, y - 28, 150)
+    clean_field("Nombre del centro educativo", school_name, 378, y - 28, 372)
+    y -= 76
+    clean_field("Tipo de servicio educativo", service_type, 42, y, 214)
+    clean_field("Telefono institucional", school_phone, 274, y, 166)
+    clean_field("Correo institucional", school_email, 458, y, 292)
+    y -= 64
+    clean_field("Persona directora", director_name, 42, y, 276)
+    clean_field("Correo persona directora", director_email, 336, y, 414)
+    y -= 56
+    clean_field("Persona coordinadora tecnica", coordinator_name, 42, y, 276)
+    clean_field("Correo coordinacion tecnica", coordinator_email, 336, y, 414)
+
+    y = clean_section("Datos del proyecto", y - 20)
+    clean_field("Nombre del proyecto", project.title, 42, y - 28, 708)
+    y -= 65
+    clean_field("Categoria", _project_category_label(project), 42, y, 206)
+    clean_field("Eje tematico", _project_thematic_axis_label(project), 266, y, 250)
+    clean_field("Tipo de proyecto", _project_type_label(project), 534, y, 216)
+
+    y = clean_section("Requerimientos y calendario", y - 36)
+    req_y = y - 24
+    clean_checkbox("Corriente", bool(_requirements_value(project, "corriente")), 42, req_y)
+    clean_checkbox("Salidas", bool(_requirements_value(project, "salidas")), 170, req_y)
+    clean_checkbox("Agua", bool(_requirements_value(project, "agua")), 298, req_y)
+    clean_checkbox("Internet", bool(_requirements_value(project, "internet")), 426, req_y)
+    clean_field("Otro requerimiento", project.requirements_other or "", 554, req_y - 6, 196, h=28)
+    y = req_y - 40
+    clean_field("Fecha inicio del proyecto", start_date, 42, y, 214)
+    clean_field("Fecha finalizacion del proyecto", end_date, 274, y, 214)
     pdf.showPage()
     pdf.setPageSize(landscape(letter))
     width, height = landscape(letter)
-    _draw_excel_background(pdf, width, height)
+    pdf.setFillColor(colors.white)
+    pdf.rect(0, 0, width, height, stroke=0, fill=1)
     y = height - 38
 
     def draw_people_table(title, rows, y_position, max_rows=3):

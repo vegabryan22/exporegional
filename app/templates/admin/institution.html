@@ -40,6 +40,58 @@
                 </div>
             </section>
 
+            <section class="institution-panel">
+                <div class="institution-panel-head">
+                    <h4>Formulario ExpoTEC-1</h4>
+                    <p>Datos fijos que se imprimen automaticamente en la hoja oficial de inscripcion.</p>
+                </div>
+
+                <div class="grid-2">
+                    <label>Etapa
+                        <input type="text" name="expotec_stage" value="{{ institution_settings.expotec_stage }}">
+                    </label>
+                    <label>Curso lectivo
+                        <input type="text" name="expotec_school_year" value="{{ institution_settings.expotec_school_year }}">
+                    </label>
+                </div>
+
+                <div class="grid-2">
+                    <label>Tipo de servicio educativo
+                        <input type="text" name="expotec_service_type" value="{{ institution_settings.expotec_service_type }}">
+                    </label>
+                    <label>Dependencia MEP / encabezado
+                        <input type="text" name="expotec_program_office" value="{{ institution_settings.expotec_program_office }}">
+                    </label>
+                </div>
+
+                <div class="grid-2">
+                    <label>Persona directora
+                        <input type="text" name="expotec_director_name" value="{{ institution_settings.expotec_director_name }}">
+                    </label>
+                    <label>Correo persona directora
+                        <input type="email" name="expotec_director_email" value="{{ institution_settings.expotec_director_email }}">
+                    </label>
+                </div>
+
+                <div class="grid-2">
+                    <label>Persona coordinadora tecnica
+                        <input type="text" name="expotec_technical_coordinator_name" value="{{ institution_settings.expotec_technical_coordinator_name }}">
+                    </label>
+                    <label>Correo coordinacion tecnica
+                        <input type="email" name="expotec_technical_coordinator_email" value="{{ institution_settings.expotec_technical_coordinator_email }}">
+                    </label>
+                </div>
+
+                <div class="grid-2">
+                    <label>Fecha inicio del proyecto
+                        <input type="date" name="expotec_project_start_date" value="{{ institution_settings.expotec_project_start_date }}">
+                    </label>
+                    <label>Fecha finalizacion del proyecto
+                        <input type="date" name="expotec_project_end_date" value="{{ institution_settings.expotec_project_end_date }}">
+                    </label>
+                </div>
+            </section>
+
             <div class="institution-logo-stack">
                 <section class="institution-panel institution-logo-panel">
                     <div class="institution-panel-head">

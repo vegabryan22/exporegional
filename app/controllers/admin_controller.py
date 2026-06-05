@@ -3814,6 +3814,19 @@ def _handle_action(action: str):
             SystemSetting.set_value("school_address", address)
             SystemSetting.set_value("school_phone", phone)
             SystemSetting.set_value("school_email", email)
+            for setting_key in [
+                "expotec_stage",
+                "expotec_school_year",
+                "expotec_service_type",
+                "expotec_program_office",
+                "expotec_director_name",
+                "expotec_director_email",
+                "expotec_technical_coordinator_name",
+                "expotec_technical_coordinator_email",
+                "expotec_project_start_date",
+                "expotec_project_end_date",
+            ]:
+                SystemSetting.set_value(setting_key, request.form.get(setting_key, "").strip())
             if logo_file and logo_file.filename:
                 try:
                     old_logo = SystemSetting.get_value("school_logo_path", "")
@@ -4193,6 +4206,16 @@ def _base_context(active_page: str, **kwargs):
             "email": "",
             "logo_path": "",
             "expo_logo_path": "",
+            "expotec_stage": "Institucional",
+            "expotec_school_year": "2026",
+            "expotec_service_type": "Tecnico profesional",
+            "expotec_program_office": "Direccion de Educacion Tecnica y Capacidades Emprendedoras",
+            "expotec_director_name": "",
+            "expotec_director_email": "",
+            "expotec_technical_coordinator_name": "",
+            "expotec_technical_coordinator_email": "",
+            "expotec_project_start_date": "",
+            "expotec_project_end_date": "",
         }
         maintenance_settings = {
             "maintenance_enabled": False,
@@ -4267,6 +4290,19 @@ def _base_context(active_page: str, **kwargs):
             "email": SystemSetting.get_value("school_email", ""),
             "logo_path": SystemSetting.get_value("school_logo_path", ""),
             "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
+            "expotec_stage": SystemSetting.get_value("expotec_stage", "Institucional"),
+            "expotec_school_year": SystemSetting.get_value("expotec_school_year", "2026"),
+            "expotec_service_type": SystemSetting.get_value("expotec_service_type", "Tecnico profesional"),
+            "expotec_program_office": SystemSetting.get_value(
+                "expotec_program_office",
+                "Direccion de Educacion Tecnica y Capacidades Emprendedoras",
+            ),
+            "expotec_director_name": SystemSetting.get_value("expotec_director_name", ""),
+            "expotec_director_email": SystemSetting.get_value("expotec_director_email", ""),
+            "expotec_technical_coordinator_name": SystemSetting.get_value("expotec_technical_coordinator_name", ""),
+            "expotec_technical_coordinator_email": SystemSetting.get_value("expotec_technical_coordinator_email", ""),
+            "expotec_project_start_date": SystemSetting.get_value("expotec_project_start_date", ""),
+            "expotec_project_end_date": SystemSetting.get_value("expotec_project_end_date", ""),
         }
         maintenance_settings = {
             "maintenance_enabled": SystemSetting.get_value("maintenance_enabled", "0") == "1",

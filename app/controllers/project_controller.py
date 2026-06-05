@@ -24,7 +24,8 @@ from app.services.audit_service import log_event
 from app.services.parameter_service import get_active_evaluation_types
 
 try:
-    from reportlab.lib.pagesizes import letter
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import landscape, letter
     from reportlab.lib.utils import ImageReader
     from reportlab.pdfgen import canvas
 
@@ -262,6 +263,80 @@ def _draw_field(pdf, label, value, x, y, line_width=230):
     return y - 30
 
 
+def _pdf_date(value):
+    if not value:
+        return ""
+    if isinstance(value, (date, datetime)):
+        return value.strftime("%d/%m/%Y")
+    try:
+        return datetime.strptime(str(value), "%Y-%m-%d").strftime("%d/%m/%Y")
+    except ValueError:
+        pass
+    return str(value)
+
+
+def _pdf_setting(key, default=""):
+    return SystemSetting.get_value(key, default) or default
+
+
+def _draw_excel_background(pdf, width, height, step_x=50, step_y=18):
+    pdf.saveState()
+    pdf.setStrokeColor(colors.HexColor("#d9d9d9"))
+    pdf.setLineWidth(0.25)
+    x = 0
+    while x <= width:
+        pdf.line(x, 0, x, height)
+        x += step_x
+    y = 0
+    while y <= height:
+        pdf.line(0, y, width, y)
+        y += step_y
+    pdf.restoreState()
+
+
+def _draw_pdf_cell(pdf, x, y, w, h, text="", bold=False, size=8, align="left", valign="middle", fill=None):
+    if fill:
+        pdf.setFillColor(fill)
+        pdf.rect(x, y, w, h, stroke=0, fill=1)
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.55)
+    pdf.rect(x, y, w, h, stroke=1, fill=0)
+    if text:
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica-Bold" if bold else "Helvetica", size)
+        lines = _pdf_lines(text, max(8, int(w / (size * 0.52))))
+        line_height = size + 2
+        total_height = len(lines) * line_height
+        if valign == "top":
+            text_y = y + h - size - 4
+        else:
+            text_y = y + (h + total_height) / 2 - line_height + 1
+        for line in lines[: max(1, int(h / line_height))]:
+            if align == "center":
+                pdf.drawCentredString(x + w / 2, text_y, _pdf_text(line))
+            elif align == "right":
+                pdf.drawRightString(x + w - 4, text_y, _pdf_text(line))
+            else:
+                pdf.drawString(x + 4, text_y, _pdf_text(line))
+            text_y -= line_height
+
+
+def _draw_pdf_label_box(pdf, label, value, x, y, label_w, value_w, h=14, label_size=8):
+    pdf.setFillColor(colors.black)
+    pdf.setFont("Helvetica-Bold", label_size)
+    pdf.drawString(x, y + 3, _pdf_text(label))
+    _draw_pdf_cell(pdf, x + label_w, y, value_w, h, value, size=8)
+
+
+def _project_type_label(project):
+    return "Especialidad tecnica"
+
+
+def _requirements_value(project, keyword):
+    haystack = f"{project.requirements_summary or ''} {project.required_resources or ''}".lower()
+    return "X" if keyword in haystack else ""
+
+
 def _project_category_label(project):
     category = Category.query.filter_by(code=project.category).first()
     return category.name if category else project.category
@@ -269,64 +344,213 @@ def _project_category_label(project):
 
 def _render_project_documents_packet(project: Project):
     buffer = BytesIO()
-    pdf = canvas.Canvas(buffer, pagesize=letter)
+    pdf = canvas.Canvas(buffer, pagesize=landscape(letter))
     width, height = letter
-    today = date.today().strftime("%Y-%m-%d")
+    width, height = landscape(letter)
+    today = _pdf_date(project.registration_date or date.today())
+    members = sorted(project.members, key=lambda item: item.student_number)
+    school_name = project.institution_name or _pdf_setting("school_name", "CTP Roberto Gamboa Valverde")
+    service_type = _pdf_setting("expotec_service_type", "Tecnico profesional")
+    school_phone = _pdf_setting("school_phone", "")
+    school_email = _pdf_setting("school_email", "")
+    director_name = _pdf_setting("expotec_director_name", "")
+    director_email = _pdf_setting("expotec_director_email", "")
+    coordinator_name = _pdf_setting("expotec_technical_coordinator_name", "")
+    coordinator_email = _pdf_setting("expotec_technical_coordinator_email", "")
+    course_year = _pdf_setting("expotec_school_year", "2026")
+    stage = _pdf_setting("expotec_stage", "Institucional")
+    start_date = _pdf_date(_pdf_setting("expotec_project_start_date", _pdf_date(project.campaign.start_date) if project.campaign else ""))
+    end_date = _pdf_date(_pdf_setting("expotec_project_end_date", _pdf_date(project.campaign.end_date) if project.campaign else ""))
 
-    y = _draw_document_header(pdf, "ExpoTEC-1 - Inscripcion del Proyecto")
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(42, y, "Etapa:")
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(88, y, "Institucional")
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(330, y, "Fecha de impresion:")
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(430, y, today)
-    y -= 28
+    _draw_excel_background(pdf, width, height)
 
-    fields = [
-        ("Nombre del centro educativo", project.institution_name or "CTP Roberto Gamboa Valverde"),
-        ("Nombre del proyecto", project.title),
-        ("Categoria", _project_category_label(project)),
-        ("Seccion", project.section.name if project.section else project.grade_level),
-        ("Especialidad tecnica", project.specialty or ""),
-        ("Docente tutor(a)", project.advisor_name or ""),
-        ("Cedula docente", project.advisor_identity or ""),
-        ("Correo docente", project.advisor_email or ""),
-        ("Requerimientos", project.requirements_summary or ""),
-        ("Detalle requerimientos", project.required_resources or project.requirements_other or ""),
-    ]
-    for index in range(0, len(fields), 2):
-        left = fields[index]
-        right = fields[index + 1] if index + 1 < len(fields) else ("", "")
-        _draw_field(pdf, left[0], left[1], 42, y, 245)
-        _draw_field(pdf, right[0], right[1], 320, y, 230)
-        y -= 36
-
-    y -= 4
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(42, y, "Estudiantes participantes")
-    y -= 18
+    # Header
+    logo_y = height - 78
+    school_logo = _pdf_setting("school_logo_path", "")
+    expo_logo = _pdf_setting("expo_logo_path", "")
+    if not _draw_pdf_logo(pdf, school_logo, 18, logo_y, max_width=110, max_height=42):
+        pdf.setFillColor(colors.HexColor("#1d3461"))
+        pdf.setFont("Helvetica-Bold", 8)
+        pdf.drawString(18, height - 42, "MINISTERIO DE")
+        pdf.drawString(18, height - 53, "EDUCACION PUBLICA")
+        pdf.drawString(96, height - 42, "GOBIERNO")
+        pdf.drawString(96, height - 53, "DE COSTA RICA")
+    pdf.setStrokeColor(colors.HexColor("#7f8ca3"))
+    pdf.line(132, height - 25, 122, height - 76)
+    pdf.setFillColor(colors.HexColor("#1d3461"))
     pdf.setFont("Helvetica-Bold", 8)
-    for x, label in [(42, "#"), (70, "Nombre"), (260, "Identificacion"), (365, "Seccion"), (445, "Ingles")]:
-        pdf.drawString(x, y, label)
-    y -= 8
-    pdf.line(42, y, width - 42, y)
-    y -= 15
-    pdf.setFont("Helvetica", 8)
-    for member in sorted(project.members, key=lambda item: item.student_number):
-        pdf.drawString(42, y, str(member.student_number))
-        pdf.drawString(70, y, _pdf_text(member.full_name)[:34])
-        pdf.drawString(260, y, _pdf_text(member.identity_number or ""))
-        pdf.drawString(365, y, _pdf_text(member.section_name or ""))
-        pdf.drawString(445, y, "Si" if member.participates_in_english else "No")
-        y -= 16
+    pdf.drawString(142, height - 34, _pdf_setting("expotec_program_office", "Direccion de Educacion"))
+    pdf.drawString(142, height - 48, "Tecnica y Capacidades")
+    pdf.drawString(142, height - 62, "Emprendedoras")
 
-    y -= 18
-    _draw_field(pdf, "Firma docente tutor(a)", "", 42, y, 240)
-    _draw_field(pdf, "Firma coordinacion ExpoTecnica", "", 320, y, 230)
+    pdf.setFont("Helvetica-Bold", 15)
+    pdf.setFillColor(colors.HexColor("#004b73"))
+    pdf.drawCentredString(width / 2, height - 23, "ExpoTEC-1")
+    pdf.setFont("Helvetica-Bold", 14)
+    pdf.setFillColor(colors.HexColor("#c34d0a"))
+    pdf.drawCentredString(width / 2, height - 43, "Inscripcion del Proyecto")
+    pdf.setFont("Helvetica-Bold", 13)
+    pdf.setFillColor(colors.HexColor("#1d7a22"))
+    pdf.drawCentredString(width / 2, height - 63, f"Curso lectivo {course_year}")
+    if not _draw_pdf_logo(pdf, expo_logo, width - 150, height - 84, max_width=110, max_height=70):
+        pdf.setFillColor(colors.HexColor("#f37021"))
+        pdf.setFont("Helvetica-Bold", 27)
+        pdf.drawRightString(width - 42, height - 45, "Expo")
+        pdf.setFillColor(colors.HexColor("#666666"))
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawRightString(width - 42, height - 67, "tecnica")
+
+    y = height - 102
+    _draw_pdf_label_box(pdf, "Etapa:", stage, 0, y, 64, 98, h=13)
+    _draw_pdf_label_box(pdf, "Fecha de inscripcion:", today, 248, y, 106, 148, h=13)
+    y -= 24
+    _draw_pdf_label_box(pdf, "Nombre del centro educativo:", school_name, 0, y, 162, 338, h=13)
+    y -= 24
+    _draw_pdf_label_box(pdf, "Tipo de servicio educativo:", service_type, 0, y, 162, 338, h=13)
+    y -= 24
+    _draw_pdf_label_box(pdf, "Telefono institucional:", school_phone, 0, y, 162, 125, h=13)
+    _draw_pdf_label_box(pdf, "Correo institucional:", school_email, 314, y, 96, 210, h=13)
+    y -= 24
+    _draw_pdf_label_box(pdf, "Persona directora:", director_name, 0, y, 114, 174, h=13)
+    _draw_pdf_label_box(pdf, "Correo electronico:", director_email, 314, y, 96, 210, h=13)
+    y -= 24
+    _draw_pdf_label_box(pdf, "Persona coordinadora tecnica:", coordinator_name, 0, y, 162, 190, h=13)
+    _draw_pdf_label_box(pdf, "Correo electronico:", coordinator_email, 404, y, 96, 248, h=13)
+    y -= 24
+    _draw_pdf_label_box(pdf, "Nombre del proyecto:", project.title, 0, y, 114, 632, h=13)
+    y -= 24
+    _draw_pdf_label_box(pdf, "Categoria:", _project_category_label(project), 0, y, 64, 224, h=13)
+    _draw_pdf_label_box(pdf, "Eje tematico:", project.specialty or (project.specialty_ref.name if project.specialty_ref else ""), 344, y, 96, 210, h=13)
+    y -= 24
+    _draw_pdf_label_box(pdf, "Tipo de proyecto:", _project_type_label(project), 0, y, 114, 240, h=13)
+    y -= 24
+
+    pdf.setFillColor(colors.black)
+    pdf.setFont("Helvetica-Bold", 9)
+    pdf.drawString(0, y + 3, "Requerimientos del proyecto:  (escriba una X en la respectiva casilla, si corresponde)")
+    y -= 17
+    requirement_rows = [
+        ("Voltaje (no sistema trifasico)", _requirements_value(project, "corriente")),
+        ("Salidas", ""),
+        ("Agua", _requirements_value(project, "agua")),
+        ("Internet", _requirements_value(project, "internet")),
+        ("Otro:", project.requirements_other or ""),
+    ]
+    for label, value in requirement_rows:
+        pdf.setFont("Helvetica", 8)
+        pdf.drawString(2, y + 3, _pdf_text(label))
+        _draw_pdf_cell(pdf, 166, y, 50 if label != "Otro:" else 345, 13, value, size=8)
+        y -= 13
+    y -= 12
+    _draw_pdf_label_box(pdf, "Fecha inicio del proyecto:", start_date, 2, y, 162, 190, h=13)
+    y -= 24
+    _draw_pdf_label_box(pdf, "Fecha finalizacion del proyecto:", end_date, 2, y, 162, 190, h=13)
+    pdf.showPage()
+    pdf.setPageSize(landscape(letter))
+    width, height = landscape(letter)
+    _draw_excel_background(pdf, width, height)
+    y = height - 38
+
+    def draw_people_table(title, rows, y_position, max_rows=3):
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica-Bold", 9)
+        pdf.drawString(2, y_position + 3, _pdf_text(title))
+        y_position -= 16
+        headers = [
+            ("Nombre completo", 116),
+            ("Carrera tecnica", 174),
+            ("Fecha de\nnacimiento", 66),
+            ("Sexo", 56),
+            ("Cedula", 90),
+            ("Telefono", 120),
+            ("E-mail", 128),
+        ]
+        x = 2
+        for label, col_w in headers:
+            _draw_pdf_cell(pdf, x, y_position, col_w, 25, label, bold=True, size=8, align="center")
+            x += col_w
+        y_position -= 25
+        for index in range(max_rows):
+            row = rows[index] if index < len(rows) else ["", "", "", "", "", "", ""]
+            x = 2
+            for value, (_, col_w) in zip(row, headers):
+                _draw_pdf_cell(pdf, x, y_position, col_w, 13, value, size=6.8)
+                x += col_w
+            y_position -= 13
+        return y_position - 14
+
+    student_rows = [
+        [
+            member.full_name,
+            member.specialty or project.specialty or "",
+            _pdf_date(member.birth_date),
+            member.gender or "",
+            member.identity_number or "",
+            member.phone or "",
+            member.email or "",
+        ]
+        for member in members
+    ]
+    y = draw_people_table("Datos de las personas estudiantes:", student_rows, y)
+    teacher_rows = [[project.advisor_name or "", project.specialty or "", "", "", project.advisor_identity or "", project.advisor_phone or "", project.advisor_email or ""]]
+    y = draw_people_table("Datos de la persona docente tutor:", teacher_rows, y, max_rows=1)
+    mentor_rows = [["", "", "", "", "", "", ""]]
+    y = draw_people_table("Datos de la persona mentor:", mentor_rows, y, max_rows=1)
+
+    pdf.setFillColor(colors.red)
+    pdf.setFont("Helvetica-Bold", 9)
+    pdf.drawString(2, y + 4, "Personas estudiantes")
+    y -= 17
+    pdf.setFillColor(colors.black)
+    pdf.setFont("Helvetica-Bold", 8.5)
+    pdf.drawString(2, y + 5, "¿Desea participar en la exposicion del proyecto con dominio linguistico en ingles con lengua extranjera?")
+    y -= 15
+    _draw_pdf_cell(pdf, 2, y, 166, 13, "Nombre del estudiante", bold=True, size=8, align="center")
+    _draw_pdf_cell(pdf, 168, y, 50, 13, "Si", bold=True, size=8, align="center")
+    _draw_pdf_cell(pdf, 218, y, 76, 13, "No", bold=True, size=8, align="center")
+    y -= 13
+    for member in members[:3]:
+        _draw_pdf_cell(pdf, 2, y, 166, 13, member.full_name, size=7)
+        _draw_pdf_cell(pdf, 168, y, 50, 13, "X" if member.participates_in_english else "", size=8, align="center")
+        _draw_pdf_cell(pdf, 218, y, 76, 13, "" if member.participates_in_english else "X", size=8, align="center")
+        y -= 13
+    for _ in range(max(0, 3 - len(members[:3]))):
+        _draw_pdf_cell(pdf, 2, y, 166, 13, "", size=7)
+        _draw_pdf_cell(pdf, 168, y, 50, 13, "", size=8)
+        _draw_pdf_cell(pdf, 218, y, 76, 13, "", size=8)
+        y -= 13
+    y -= 14
+    declaration = (
+        "Declaramos bajo juramento que el proyecto inscrito en el formulario ExpoTEC-1 fue realizado por las personas "
+        "estudiantes y la persona docente o especialista que los asesoro durante el proceso. El documento presentado es "
+        "de autoria propia, no violenta los derechos de terceras personas. Los datos que sustentan el proyecto son "
+        "verdaderos y producto de la investigacion o desarrollo. Ademas, damos fe de que este proyecto ha sido "
+        "desarrollado por un maximo de tres participantes y aceptamos los lineamientos establecidos por la organizacion "
+        "de la ExpoTECNICA."
+    )
+    y = _draw_wrapped(pdf, declaration, 2, y, width_chars=150, leading=10, size=8)
+    y -= 10
+    pdf.setFont("Helvetica-Bold", 8)
+    pdf.drawString(2, y, "Firmas de las personas estudiantes:")
+    y -= 26
+    pdf.line(2, y, 220, y)
+    pdf.line(294, y, 510, y)
+    y -= 24
+    pdf.setFont("Helvetica-Bold", 8)
+    pdf.drawString(2, y, "Firma de la persona docente tutora:")
+    pdf.line(178, y, 345, y)
+    y -= 24
+    pdf.drawString(2, y, "Firma de la persona mentor:")
+    pdf.line(148, y, 315, y)
+    y -= 20
+    pdf.setFont("Helvetica-Bold", 8)
+    pdf.drawString(2, y, "Nota:")
+    pdf.setFont("Helvetica", 8)
+    pdf.drawString(30, y, "Adjuntar las fotocopias de las cedulas del estudiantado, docente tutor y mentor.")
     pdf.showPage()
 
+    pdf.setPageSize(letter)
+    width, height = letter
     for member in sorted(project.members, key=lambda item: item.student_number):
         y = _draw_document_header(pdf, "ExpoTEC-2 - Consentimiento Informado")
         intro = (

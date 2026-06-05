@@ -4456,13 +4456,15 @@ dialog.maintenance-dialog::backdrop {
 
 .integrants-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 220px));
+    gap: 1rem 1.2rem;
+    justify-content: center;
+    align-items: start;
 }
 
 .integrant-card {
     text-align: center;
-    padding: 0.4rem;
+    padding: 0.35rem;
 }
 
 .integrant-card h4 {
@@ -4476,10 +4478,10 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .integrant-photo {
-    width: 100%;
-    max-width: 360px;
-    height: auto;
+    width: 180px;
+    height: 220px;
     object-fit: cover;
+    object-position: center;
     background: transparent;
     border: 3px solid #dbe9ff;
     outline: 2px solid #9fb7e0;
@@ -6323,10 +6325,6 @@ button {
         min-width: 0;
     }
 
-    .integrant-photo {
-        max-width: 260px;
-    }
-
     .institutional-banner h1 {
         font-size: clamp(1.7rem, 11vw, 2.7rem);
     }
@@ -6486,9 +6484,17 @@ body {
     }
 
     .project-main-image,
-    .project-main-placeholder,
-    .integrant-photo {
+    .project-main-placeholder {
         max-width: 220px;
+    }
+
+    .integrants-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .integrant-photo {
+        width: 150px;
+        height: 185px;
     }
 }
 

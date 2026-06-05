@@ -121,8 +121,7 @@
                     </select>
                 </label>
                 <label>Cédula / documento de identidad *
-                    <input type="text" name="student_1_identity" value="{{ form_data.get('student_1_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input required>
-                    <small>Máximo 12 caracteres. Sin guiones al guardar.</small>
+                    <input type="text" name="student_1_identity" value="{{ form_data.get('student_1_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input required>
                 </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_1_birth_date" value="{{ form_data.get('student_1_birth_date', '') }}" required></label>
             </div>
@@ -175,8 +174,7 @@
                     </select>
                 </label>
                 <label>Cédula / documento de identidad *
-                    <input type="text" name="student_2_identity" value="{{ form_data.get('student_2_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input>
-                    <small>Máximo 12 caracteres. No puede repetirse.</small>
+                    <input type="text" name="student_2_identity" value="{{ form_data.get('student_2_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones, espacios ni repetidos." data-identity-input>
                 </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_2_birth_date" value="{{ form_data.get('student_2_birth_date', '') }}"></label>
             </div>
@@ -229,8 +227,7 @@
                     </select>
                 </label>
                 <label>Cédula / documento de identidad *
-                    <input type="text" name="student_3_identity" value="{{ form_data.get('student_3_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input>
-                    <small>Máximo 12 caracteres. No puede repetirse.</small>
+                    <input type="text" name="student_3_identity" value="{{ form_data.get('student_3_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones, espacios ni repetidos." data-identity-input>
                 </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_3_birth_date" value="{{ form_data.get('student_3_birth_date', '') }}"></label>
             </div>
@@ -269,8 +266,7 @@
                 <div class="form-grid inline-grid-2">
                     <label>Nombre completo del docente *<input type="text" name="advisor_name" value="{{ form_data.get('advisor_name', '') }}" required></label>
                     <label>Cédula de identidad del docente *
-                        <input type="text" name="advisor_identity" value="{{ form_data.get('advisor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input required>
-                        <small>Máximo 12 caracteres.</small>
+                        <input type="text" name="advisor_identity" value="{{ form_data.get('advisor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input required>
                     </label>
                     <label>Fecha de nacimiento del docente *<input type="date" name="advisor_birth_date" value="{{ form_data.get('advisor_birth_date', '') }}" required></label>
                     <div class="register-fieldset">
@@ -291,8 +287,7 @@
                 <div class="form-grid inline-grid-2">
                     <label>Nombre completo de la persona mentora<input type="text" name="mentor_name" value="{{ form_data.get('mentor_name', '') }}"></label>
                     <label>Cédula / documento de la persona mentora
-                        <input type="text" name="mentor_identity" value="{{ form_data.get('mentor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" data-identity-input>
-                        <small>Máximo 12 caracteres.</small>
+                        <input type="text" name="mentor_identity" value="{{ form_data.get('mentor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input>
                     </label>
                     <label>Fecha de nacimiento de la persona mentora<input type="date" name="mentor_birth_date" value="{{ form_data.get('mentor_birth_date', '') }}"></label>
                     <div class="register-fieldset">

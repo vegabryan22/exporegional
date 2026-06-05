@@ -107,7 +107,6 @@
                             </p>
                             <p class="project-main-description">{{ project.description }}</p>
                             <div class="project-main-actions">
-                                <a href="mailto:{{ project.representative_email }}" class="project-action">Contacto del proyecto</a>
                                 {% if project.project_document_path %}
                                     <a href="{{ url_for('static', filename=project.project_document_path) }}" class="project-action" target="_blank">Documentación</a>
                                 {% else %}

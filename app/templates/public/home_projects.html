@@ -16,13 +16,6 @@
     <aside class="project-sidebar">
         <div class="project-sidebar-head">
             <div class="project-sidebar-brand" aria-label="Identidad institucional">
-                <div class="project-sidebar-logo school">
-                    {% if institution.logo_path %}
-                        <img src="{{ url_for('static', filename=institution.logo_path) }}" alt="Logo {{ institution.name }}">
-                    {% else %}
-                        <span>CTP</span>
-                    {% endif %}
-                </div>
                 <div class="project-sidebar-logo expo">
                     {% if institution.expo_logo_path %}
                         <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica">

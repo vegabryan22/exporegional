@@ -4098,24 +4098,24 @@ dialog.maintenance-dialog::backdrop {
 
 .project-sidebar-head {
     border-bottom: 1px solid #dbe7f4;
-    padding: 1.05rem 1.05rem 0.95rem;
+    padding: 1rem 1rem 0.9rem;
     background: #ffffff;
 }
 
 .project-sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 0.55rem;
-    margin-bottom: 0.9rem;
+    justify-content: center;
+    margin-bottom: 0.75rem;
 }
 
 .project-sidebar-logo {
-    width: 72px;
-    height: 72px;
+    width: 190px;
+    height: 82px;
     display: grid;
     place-items: center;
     border: 1px solid #cddced;
-    border-radius: 18px;
+    border-radius: 20px;
     background: #ffffff;
     color: #123f6b;
     font-weight: 900;
@@ -4126,18 +4126,13 @@ dialog.maintenance-dialog::backdrop {
     box-shadow: 0 8px 20px rgba(15, 53, 87, 0.08);
 }
 
-.project-sidebar-logo.school img {
-    max-width: 76%;
-    max-height: 76%;
-}
-
 .project-sidebar-logo.expo {
-    width: 122px;
+    width: 190px;
 }
 
 .project-sidebar-logo.expo img {
-    max-width: 92%;
-    max-height: 72%;
+    max-width: 94%;
+    max-height: 82%;
 }
 
 .project-sidebar-logo img {
@@ -4161,10 +4156,12 @@ dialog.maintenance-dialog::backdrop {
 
 .project-sidebar-head h2 {
     margin: 0;
+    text-align: center;
 }
 
 .project-sidebar-head p {
     margin: 0.2rem 0 0;
+    text-align: center;
 }
 
 .project-sidebar-list h3 {
@@ -6346,18 +6343,18 @@ button {
     }
 
     .project-sidebar-brand {
-        gap: 0.5rem;
+        justify-content: center;
     }
 
     .project-sidebar-logo {
-        width: 60px;
-        height: 60px;
-        border-radius: 15px;
+        width: min(190px, 100%);
+        height: 76px;
+        border-radius: 18px;
         padding: 0.32rem;
     }
 
     .project-sidebar-logo.expo {
-        width: 104px;
+        width: min(190px, 100%);
     }
 
     .banner-badge {

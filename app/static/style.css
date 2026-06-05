@@ -3863,8 +3863,8 @@ dialog.maintenance-dialog::backdrop {
 
 .home-logos-panel {
     border-radius: 12px;
-    border: 1px solid #3a7d28;
-    background: #357f21;
+    border: 1px solid #1a5f7f;
+    background: #1f7fa0;
     padding: 1rem;
     color: #fff;
 }

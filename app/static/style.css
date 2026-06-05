@@ -882,6 +882,48 @@ nav a:hover,
     margin-bottom: 1rem;
 }
 
+.database-control-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 0.85rem;
+    margin: 1rem 0;
+}
+
+.database-control-card {
+    display: grid;
+    gap: 0.45rem;
+    align-content: start;
+    min-height: 160px;
+    padding: 0.95rem;
+    border: 1px solid #d2e3f3;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #ffffff 0%, #f2f8ff 100%);
+    box-shadow: 0 12px 26px rgba(18, 63, 107, 0.07);
+}
+
+.database-control-card strong {
+    color: var(--primary);
+    font-size: 1.02rem;
+}
+
+.database-control-card span {
+    color: #5d708b;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.database-control-card .gitops-btn {
+    width: 100%;
+    margin-top: auto;
+    text-align: center;
+    text-decoration: none;
+}
+
+.database-control-card .inline-form {
+    width: 100%;
+    margin-top: auto;
+}
+
 .database-check-grid .mini-stat small {
     color: #5d708b;
     font-weight: 700;

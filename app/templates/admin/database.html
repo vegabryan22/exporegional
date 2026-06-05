@@ -207,6 +207,37 @@
         {% endif %}
     </div>
 
+    <div class="database-control-panel">
+        <article class="database-control-card">
+            <strong>Actualizar diagnostico</strong>
+            <span>Vuelve a consultar estructura, tamano y conteos.</span>
+            <a href="{{ url_for('admin.database_page') }}" class="gitops-btn gitops-btn-neutral">Refrescar ahora</a>
+        </article>
+        <article class="database-control-card">
+            <strong>Respaldo de seguridad</strong>
+            <span>Crea un SQL antes de cualquier operacion riesgosa.</span>
+            <form method="post" action="{{ action_url }}" class="inline-form">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="backup_database">
+                <button type="submit" class="gitops-btn gitops-btn-success">Crear respaldo</button>
+            </form>
+        </article>
+        <article class="database-control-card">
+            <strong>Recargar aplicacion</strong>
+            <span>Limpia workers/conexiones sin restaurar ni modificar datos.</span>
+            <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Recargar el servicio de aplicacion? No toca la base de datos.')">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="database_service_reload">
+                <button type="submit" class="gitops-btn gitops-btn-info">Recargar servicio</button>
+            </form>
+        </article>
+        <article class="database-control-card">
+            <strong>Trazabilidad</strong>
+            <span>Revisa eventos criticos del sistema completo.</span>
+            <a href="{{ url_for('admin.logs_page') }}" class="gitops-btn gitops-btn-primary">Abrir bitacora</a>
+        </article>
+    </div>
+
     <div class="database-check-grid">
         {% for check in database_diagnostics.checks %}
             <article class="mini-stat {{ 'gitops-service-stat ok' if check.ok else 'gitops-service-stat warn' }}">

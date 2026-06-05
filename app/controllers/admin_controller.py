@@ -219,6 +219,7 @@ ACTION_MODULE_MAP = {
     "backup_database": "database",
     "restore_database": "database",
     "delete_database_backup": "database",
+    "database_service_reload": "database",
     "gitops_fetch": "gitops",
     "gitops_pull_ff": "gitops",
     "gitops_pull_apply": "gitops",
@@ -2023,22 +2024,21 @@ def _database_diagnostics() -> dict:
             text(
                 """
                 SELECT
-                    table_name,
-                    table_rows,
-                    data_length,
-                    index_length,
-                    update_time
+                    TABLE_NAME AS table_name,
+                    TABLE_ROWS AS table_rows,
+                    DATA_LENGTH AS data_length,
+                    INDEX_LENGTH AS index_length,
+                    UPDATE_TIME AS update_time
                 FROM information_schema.tables
-                WHERE table_schema = :schema
-                ORDER BY (data_length + index_length) DESC, table_name ASC
+                WHERE TABLE_SCHEMA = :schema
+                ORDER BY (DATA_LENGTH + INDEX_LENGTH) DESC, TABLE_NAME ASC
                 LIMIT 40
                 """
             ),
             {"schema": db_config["database"]},
         ).mappings().all()
-        existing = {row["table_name"] for row in rows}
         all_tables = db.session.execute(
-            text("SELECT table_name FROM information_schema.tables WHERE table_schema = :schema"),
+            text("SELECT TABLE_NAME AS table_name FROM information_schema.tables WHERE TABLE_SCHEMA = :schema"),
             {"schema": db_config["database"]},
         ).scalars().all()
         existing_all = set(all_tables)
@@ -3962,6 +3962,19 @@ def _handle_action(action: str):
             flash(f"No se pudo eliminar el respaldo: {error}", "error")
             return
         flash(f"Respaldo eliminado: {deleted['filename']}.", "success")
+
+    elif action == "database_service_reload":
+        result = _gitops_reload_service()
+        log_event(
+            "admin.database.service.reload" if result["ok"] else "admin.database.service.reload_fail",
+            "system",
+            detail=result.get("out") or result.get("err") or "Recarga de servicio solicitada desde modulo BD",
+        )
+        db.session.commit()
+        flash(
+            "Servicio de aplicacion recargado correctamente." if result["ok"] else f"No se pudo recargar el servicio: {result.get('err') or 'sin detalle'}",
+            "success" if result["ok"] else "error",
+        )
 
     elif action == "gitops_refresh":
         result = {"ok": True, "out": "Estado actualizado.", "err": "", "code": 0}

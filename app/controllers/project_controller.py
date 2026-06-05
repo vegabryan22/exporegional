@@ -410,22 +410,22 @@ def _render_project_documents_packet(project: Project):
 
     def clean_section(title, y_pos):
         pdf.setFillColor(colors.HexColor("#eaf3fb"))
-        pdf.roundRect(36, y_pos - 22, width - 72, 24, 7, stroke=0, fill=1)
+        pdf.roundRect(36, y_pos - 20, width - 72, 22, 7, stroke=0, fill=1)
         pdf.setFillColor(colors.HexColor("#073d70"))
         pdf.setFont("Helvetica-Bold", 10)
-        pdf.drawString(48, y_pos - 15, _pdf_text(title))
-        return y_pos - 34
+        pdf.drawString(48, y_pos - 13, _pdf_text(title))
+        return y_pos - 38
 
-    def clean_field(label, value, x, y_pos, w, h=34):
-        pdf.setFillColor(colors.HexColor("#3b4a5c"))
-        pdf.setFont("Helvetica-Bold", 7.6)
-        pdf.drawString(x, y_pos + h + 3, _pdf_text(label))
+    def clean_field(label, value, x, y_pos, w, h=28):
         pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
-        pdf.setFillColor(colors.white)
+        pdf.setFillColor(colors.HexColor("#ffffff"))
         pdf.roundRect(x, y_pos, w, h, 5, stroke=1, fill=1)
+        pdf.setFillColor(colors.HexColor("#506a86"))
+        pdf.setFont("Helvetica-Bold", 6.8)
+        pdf.drawString(x + 8, y_pos + h - 10, _pdf_text(label.upper()))
         pdf.setFillColor(colors.HexColor("#0d1f33"))
-        pdf.setFont("Helvetica", 8.3)
-        text_y = y_pos + h - 13
+        pdf.setFont("Helvetica", 8.2)
+        text_y = y_pos + h - 20
         for line in _pdf_lines(value or "", max(12, int(w / 4.4)))[:2]:
             pdf.drawString(x + 8, text_y, _pdf_text(line))
             text_y -= 10
@@ -440,7 +440,7 @@ def _render_project_documents_packet(project: Project):
             pdf.setFont("Helvetica-Bold", 9)
             pdf.drawCentredString(x + 13, y_pos + 6, "X")
         pdf.setFillColor(colors.HexColor("#0d1f33"))
-        pdf.setFont("Helvetica", 8)
+        pdf.setFont("Helvetica", 7.8)
         pdf.drawString(x + 24, y_pos + 7, _pdf_text(label))
 
     # Header
@@ -479,34 +479,34 @@ def _render_project_documents_packet(project: Project):
     pdf.line(36, height - 104, width - 36, height - 104)
 
     y = clean_section("Datos institucionales", height - 122)
-    clean_field("Etapa", stage, 42, y - 28, 150)
-    clean_field("Fecha de inscripcion", today, 210, y - 28, 150)
-    clean_field("Nombre del centro educativo", school_name, 378, y - 28, 372)
-    y -= 76
+    clean_field("Etapa", stage, 42, y - 26, 150)
+    clean_field("Fecha de inscripcion", today, 210, y - 26, 150)
+    clean_field("Nombre del centro educativo", school_name, 378, y - 26, 372)
+    y -= 58
     clean_field("Tipo de servicio educativo", service_type, 42, y, 214)
     clean_field("Telefono institucional", school_phone, 274, y, 166)
     clean_field("Correo institucional", school_email, 458, y, 292)
-    y -= 64
+    y -= 48
     clean_field("Persona directora", director_name, 42, y, 276)
     clean_field("Correo persona directora", director_email, 336, y, 414)
-    y -= 56
+    y -= 44
     clean_field("Persona coordinadora tecnica", coordinator_name, 42, y, 276)
     clean_field("Correo coordinacion tecnica", coordinator_email, 336, y, 414)
 
-    y = clean_section("Datos del proyecto", y - 20)
-    clean_field("Nombre del proyecto", project.title, 42, y - 28, 708)
-    y -= 65
+    y = clean_section("Datos del proyecto", y - 16)
+    clean_field("Nombre del proyecto", project.title, 42, y - 26, 708)
+    y -= 54
     clean_field("Categoria", _project_category_label(project), 42, y, 206)
     clean_field("Eje tematico", _project_thematic_axis_label(project), 266, y, 250)
     clean_field("Tipo de proyecto", _project_type_label(project), 534, y, 216)
 
-    y = clean_section("Requerimientos y calendario", y - 36)
+    y = clean_section("Requerimientos y calendario", y - 30)
     req_y = y - 24
     clean_checkbox("Corriente", bool(_requirements_value(project, "corriente")), 42, req_y)
     clean_checkbox("Salidas", bool(_requirements_value(project, "salidas")), 170, req_y)
     clean_checkbox("Agua", bool(_requirements_value(project, "agua")), 298, req_y)
     clean_checkbox("Internet", bool(_requirements_value(project, "internet")), 426, req_y)
-    clean_field("Otro requerimiento", project.requirements_other or "", 554, req_y - 6, 196, h=28)
+    clean_field("Otro requerimiento", project.requirements_other or "", 554, req_y - 4, 196, h=26)
     y = req_y - 40
     clean_field("Fecha inicio del proyecto", start_date, 42, y, 214)
     clean_field("Fecha finalizacion del proyecto", end_date, 274, y, 214)
@@ -515,35 +515,58 @@ def _render_project_documents_packet(project: Project):
     width, height = landscape(letter)
     pdf.setFillColor(colors.white)
     pdf.rect(0, 0, width, height, stroke=0, fill=1)
-    y = height - 38
 
-    def draw_people_table(title, rows, y_position, max_rows=3):
-        pdf.setFillColor(colors.black)
-        pdf.setFont("Helvetica-Bold", 9)
-        pdf.drawString(2, y_position + 3, _pdf_text(title))
-        y_position -= 16
+    pdf.setFillColor(colors.HexColor("#073d70"))
+    pdf.setFont("Helvetica-Bold", 15)
+    pdf.drawString(42, height - 40, "ExpoTEC-1")
+    pdf.setFont("Helvetica", 9)
+    pdf.setFillColor(colors.HexColor("#506a86"))
+    pdf.drawString(42, height - 56, "Datos de participantes, declaracion y firmas")
+    pdf.setStrokeColor(colors.HexColor("#c8d6e6"))
+    pdf.line(42, height - 68, width - 42, height - 68)
+    y = height - 90
+
+    def clean_table(title, rows, y_position, max_rows=3):
+        y_position = clean_section(title, y_position)
         headers = [
-            ("Nombre completo", 116),
-            ("Carrera tecnica", 174),
-            ("Fecha de\nnacimiento", 66),
-            ("Sexo", 56),
-            ("Cedula", 90),
-            ("Telefono", 120),
-            ("E-mail", 128),
+            ("Nombre completo", 150),
+            ("Carrera tecnica", 150),
+            ("Fecha nac.", 78),
+            ("Sexo", 58),
+            ("Cedula", 88),
+            ("Telefono", 86),
+            ("E-mail", 98),
         ]
-        x = 2
+        pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
+        pdf.setFillColor(colors.HexColor("#f3f8fd"))
+        pdf.roundRect(42, y_position - 2, 708, 20, 5, stroke=1, fill=1)
+        x = 42
         for label, col_w in headers:
-            _draw_pdf_cell(pdf, x, y_position, col_w, 25, label, bold=True, size=8, align="center")
+            pdf.setFillColor(colors.HexColor("#073d70"))
+            pdf.setFont("Helvetica-Bold", 7.1)
+            pdf.drawCentredString(x + col_w / 2, y_position + 6, _pdf_text(label))
+            if x > 42:
+                pdf.setStrokeColor(colors.HexColor("#d6e2ef"))
+                pdf.line(x, y_position - 2, x, y_position + 18)
             x += col_w
-        y_position -= 25
+        y_position -= 18
         for index in range(max_rows):
             row = rows[index] if index < len(rows) else ["", "", "", "", "", "", ""]
-            x = 2
+            pdf.setStrokeColor(colors.HexColor("#d6e2ef"))
+            pdf.setFillColor(colors.white)
+            pdf.rect(42, y_position, 708, 16, stroke=1, fill=1)
+            x = 42
             for value, (_, col_w) in zip(row, headers):
-                _draw_pdf_cell(pdf, x, y_position, col_w, 13, value, size=6.8)
+                if x > 42:
+                    pdf.setStrokeColor(colors.HexColor("#d6e2ef"))
+                    pdf.line(x, y_position, x, y_position + 16)
+                pdf.setFillColor(colors.HexColor("#0d1f33"))
+                pdf.setFont("Helvetica", 6.8)
+                lines = _pdf_lines(value or "", max(8, int(col_w / 4.2)))
+                pdf.drawString(x + 4, y_position + 5, _pdf_text(lines[0] if lines else ""))
                 x += col_w
-            y_position -= 13
-        return y_position - 14
+            y_position -= 16
+        return y_position - 12
 
     student_rows = [
         [
@@ -557,7 +580,7 @@ def _render_project_documents_packet(project: Project):
         ]
         for member in members
     ]
-    y = draw_people_table("Datos de las personas estudiantes:", student_rows, y)
+    y = clean_table("Datos de las personas estudiantes", student_rows, y)
     teacher_rows = [[
         project.advisor_name or "",
         project.advisor_specialty or "",
@@ -567,7 +590,7 @@ def _render_project_documents_packet(project: Project):
         project.advisor_phone or "",
         project.advisor_email or "",
     ]]
-    y = draw_people_table("Datos de la persona docente tutor:", teacher_rows, y, max_rows=1)
+    y = clean_table("Datos de la persona docente tutor", teacher_rows, y, max_rows=1)
     mentor_rows = [[
         project.mentor_name or "",
         project.mentor_specialty or project.specialty or "",
@@ -577,31 +600,40 @@ def _render_project_documents_packet(project: Project):
         project.mentor_phone or "",
         project.mentor_email or "",
     ]]
-    y = draw_people_table("Datos de la persona mentor:", mentor_rows, y, max_rows=1)
+    y = clean_table("Datos de la persona mentor", mentor_rows, y, max_rows=1)
 
-    pdf.setFillColor(colors.red)
-    pdf.setFont("Helvetica-Bold", 9)
-    pdf.drawString(2, y + 4, "Personas estudiantes")
-    y -= 17
-    pdf.setFillColor(colors.black)
-    pdf.setFont("Helvetica-Bold", 8.5)
-    pdf.drawString(2, y + 5, "¿Desea participar en la exposicion del proyecto con dominio linguistico en ingles con lengua extranjera?")
-    y -= 15
-    _draw_pdf_cell(pdf, 2, y, 166, 13, "Nombre del estudiante", bold=True, size=8, align="center")
-    _draw_pdf_cell(pdf, 168, y, 50, 13, "Si", bold=True, size=8, align="center")
-    _draw_pdf_cell(pdf, 218, y, 76, 13, "No", bold=True, size=8, align="center")
-    y -= 13
+    y = clean_section("Personas estudiantes", y)
+    pdf.setFillColor(colors.HexColor("#0d1f33"))
+    pdf.setFont("Helvetica-Bold", 8.2)
+    pdf.drawString(42, y + 2, "Desea participar en la exposicion del proyecto con dominio linguistico en ingles con lengua extranjera?")
+    y -= 22
+    pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
+    pdf.setFillColor(colors.HexColor("#f3f8fd"))
+    pdf.roundRect(42, y, 310, 22, 5, stroke=1, fill=1)
+    pdf.setFillColor(colors.HexColor("#073d70"))
+    pdf.setFont("Helvetica-Bold", 7.3)
+    pdf.drawString(50, y + 8, "Nombre del estudiante")
+    pdf.drawCentredString(278, y + 8, "Si")
+    pdf.drawCentredString(326, y + 8, "No")
+    y -= 20
     for member in members[:3]:
-        _draw_pdf_cell(pdf, 2, y, 166, 13, member.full_name, size=7)
-        _draw_pdf_cell(pdf, 168, y, 50, 13, "X" if member.participates_in_english else "", size=8, align="center")
-        _draw_pdf_cell(pdf, 218, y, 76, 13, "" if member.participates_in_english else "X", size=8, align="center")
-        y -= 13
+        pdf.setStrokeColor(colors.HexColor("#d6e2ef"))
+        pdf.rect(42, y, 310, 18, stroke=1, fill=0)
+        pdf.line(260, y, 260, y + 18)
+        pdf.line(300, y, 300, y + 18)
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
+        pdf.setFont("Helvetica", 7)
+        pdf.drawString(50, y + 6, _pdf_text(member.full_name))
+        pdf.setFont("Helvetica-Bold", 8)
+        pdf.drawCentredString(280, y + 5, "X" if member.participates_in_english else "")
+        pdf.drawCentredString(326, y + 5, "" if member.participates_in_english else "X")
+        y -= 18
     for _ in range(max(0, 3 - len(members[:3]))):
-        _draw_pdf_cell(pdf, 2, y, 166, 13, "", size=7)
-        _draw_pdf_cell(pdf, 168, y, 50, 13, "", size=8)
-        _draw_pdf_cell(pdf, 218, y, 76, 13, "", size=8)
-        y -= 13
-    y -= 14
+        pdf.rect(42, y, 310, 18, stroke=1, fill=0)
+        pdf.line(260, y, 260, y + 18)
+        pdf.line(300, y, 300, y + 18)
+        y -= 18
+
     declaration = (
         "Declaramos bajo juramento que el proyecto inscrito en el formulario ExpoTEC-1 fue realizado por las personas "
         "estudiantes y la persona docente o especialista que los asesoro durante el proceso. El documento presentado es "
@@ -610,71 +642,139 @@ def _render_project_documents_packet(project: Project):
         "desarrollado por un maximo de tres participantes y aceptamos los lineamientos establecidos por la organizacion "
         "de la ExpoTECNICA."
     )
-    y = _draw_wrapped(pdf, declaration, 2, y, width_chars=150, leading=10, size=8)
-    y -= 10
-    pdf.setFont("Helvetica-Bold", 8)
-    pdf.drawString(2, y, "Firmas de las personas estudiantes:")
-    y -= 26
-    pdf.line(2, y, 220, y)
-    pdf.line(294, y, 510, y)
-    y -= 24
-    pdf.setFont("Helvetica-Bold", 8)
-    pdf.drawString(2, y, "Firma de la persona docente tutora:")
-    pdf.line(178, y, 345, y)
-    y -= 24
-    pdf.drawString(2, y, "Firma de la persona mentor:")
-    pdf.line(148, y, 315, y)
+    y -= 14
+    y = _draw_wrapped(pdf, declaration, 42, y, width_chars=138, leading=9, size=7.2)
+    y -= 7
+    pdf.setFont("Helvetica-Bold", 7.5)
+    pdf.drawString(42, y, "Firmas de las personas estudiantes:")
     y -= 20
-    pdf.setFont("Helvetica-Bold", 8)
-    pdf.drawString(2, y, "Nota:")
-    pdf.setFont("Helvetica", 8)
-    pdf.drawString(30, y, "Adjuntar las fotocopias de las cedulas del estudiantado, docente tutor y mentor.")
+    pdf.line(42, y, 262, y)
+    pdf.line(326, y, 546, y)
+    y -= 18
+    pdf.setFont("Helvetica-Bold", 7.5)
+    pdf.drawString(42, y, "Firma de la persona docente tutora:")
+    pdf.line(210, y, 380, y)
+    y -= 18
+    pdf.drawString(42, y, "Firma de la persona mentor:")
+    pdf.line(180, y, 350, y)
+    y -= 16
+    pdf.setFont("Helvetica-Bold", 7.5)
+    pdf.drawString(42, y, "Nota:")
+    pdf.setFont("Helvetica", 7.5)
+    pdf.drawString(68, y, "Adjuntar las fotocopias de las cedulas del estudiantado, docente tutor y mentor.")
     pdf.showPage()
 
-    pdf.setPageSize(letter)
-    width, height = letter
+    def consent_line_field(label, value, x, y_pos, w, label_w=0):
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica", 7.2)
+        if label:
+            pdf.drawString(x, y_pos + 3, _pdf_text(label))
+        field_x = x + label_w
+        pdf.setStrokeColor(colors.black)
+        pdf.rect(field_x, y_pos, w, 12, stroke=1, fill=0)
+        if value:
+            pdf.setFont("Helvetica", 7)
+            pdf.drawString(field_x + 3, y_pos + 3, _pdf_text(value))
+
+    def consent_check(text, x, y_pos, width_chars=112):
+        pdf.setStrokeColor(colors.black)
+        pdf.line(x, y_pos + 3, x + 58, y_pos + 3)
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica", 6.8)
+        _draw_wrapped(pdf, text, x + 70, y_pos + 7, width_chars=width_chars, leading=8, size=6.8)
+
+    pdf.setPageSize(landscape(letter))
+    width, height = landscape(letter)
     for member in sorted(project.members, key=lambda item: item.student_number):
-        y = _draw_document_header(pdf, "ExpoTEC-2 - Consentimiento Informado", f"Curso lectivo {course_year} | Etapa {stage}")
-        intro = (
-            f"El suscrito, en mi condicion de padre, madre o encargado legal, doy mi consentimiento para que "
-            f"la persona estudiante participe en la ExpoTECNICA {stage}, actividad avalada por el Ministerio de "
-            "Educacion Publica y orientada a estimular en las personas estudiantes la resolucion de problemas o "
-            "necesidades en un contexto especifico de la sociedad, la innovacion, ingenieria y autoaprendizaje."
-        )
-        y = _draw_wrapped(pdf, intro, 42, y, width_chars=105, leading=13, size=9)
-        y -= 10
+        pdf.setFillColor(colors.white)
+        pdf.rect(0, 0, width, height, stroke=0, fill=1)
 
-        _draw_field(pdf, "Nombre del estudiante", member.full_name, 42, y, 300)
-        _draw_field(pdf, "Numero de identidad", member.identity_number or "", 375, y, 170)
-        y -= 42
-        _draw_field(pdf, "Proyecto", project.title, 42, y, 300)
-        _draw_field(pdf, "Seccion", member.section_name or "", 375, y, 170)
-        y -= 48
+        logo_y = height - 82
+        if not _draw_pdf_logo(pdf, school_logo, 32, logo_y, max_width=120, max_height=48):
+            pdf.setFillColor(colors.HexColor("#1d3461"))
+            pdf.setFont("Helvetica-Bold", 7)
+            pdf.drawString(34, height - 50, "MINISTERIO DE EDUCACION PUBLICA")
+        pdf.setFillColor(colors.HexColor("#1d3461"))
+        pdf.setFont("Helvetica-Bold", 7)
+        for index, line in enumerate(_pdf_lines(program_office, width_chars=26)[:3]):
+            pdf.drawString(170, height - 45 - (index * 10), _pdf_text(line))
+        if not _draw_pdf_logo(pdf, expo_logo, width - 152, height - 86, max_width=108, max_height=58):
+            pdf.setFillColor(colors.HexColor("#f37021"))
+            pdf.setFont("Helvetica-Bold", 24)
+            pdf.drawRightString(width - 42, height - 50, "Expo")
+            pdf.setFillColor(colors.HexColor("#666666"))
+            pdf.setFont("Helvetica-Bold", 14)
+            pdf.drawRightString(width - 42, height - 70, "tecnica")
 
+        pdf.setFillColor(colors.HexColor("#073d70"))
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawCentredString(width / 2, height - 38, "ExpoTEC-2")
+        pdf.setFillColor(colors.HexColor("#c34d0a"))
         pdf.setFont("Helvetica-Bold", 10)
-        pdf.drawString(42, y, "Dejo constancia que:")
-        y -= 18
-        checks = [
-            "Recibi informacion sencilla y comprensible respecto a los beneficios y actividades de esta actividad.",
-            "Se me ha explicado este documento.",
-            "Autorizo la participacion de la persona estudiante en la ExpoTECNICA.",
-            "Libero de responsabilidad a las personas funcionarias cuando las imagenes no sean utilizadas para fines comerciales.",
-        ]
-        pdf.setFont("Helvetica", 9)
-        for item in checks:
-            pdf.rect(48, y - 2, 8, 8)
-            y = _draw_wrapped(pdf, item, 64, y, width_chars=92, leading=12, size=9)
-            y -= 6
+        pdf.drawCentredString(width / 2, height - 53, "Consentimiento Informado")
+        pdf.setFillColor(colors.HexColor("#1d7a22"))
+        pdf.setFont("Helvetica-Bold", 9)
+        pdf.drawCentredString(width / 2, height - 68, f"Curso lectivo {course_year}")
 
-        y -= 16
-        _draw_field(pdf, "Nombre padre, madre o encargado legal", "", 42, y, 300)
-        _draw_field(pdf, "Cedula", "", 375, y, 170)
-        y -= 46
-        _draw_field(pdf, "Firma", "", 42, y, 250)
-        _draw_field(pdf, "Fecha", "", 375, y, 170)
-        y -= 42
-        pdf.setFont("Helvetica", 8)
-        pdf.drawString(42, y, _pdf_text("Documento generado por el sistema ExpoTecnica. Debe imprimirse, firmarse y entregarse a la organizacion."))
+        y = height - 102
+        consent_line_field("El suscrito,", "", 34, y, 132, label_w=52)
+        consent_line_field("cedula", "", 220, y, 106, label_w=42)
+        pdf.setFont("Helvetica", 7.2)
+        pdf.drawString(340, y + 3, "en mi condicion de padre, madre o encargado legal, doy mi")
+        y -= 24
+        consent_line_field("consentimiento para que la persona estudiante", member.full_name, 34, y, 170, label_w=218)
+        consent_line_field("numero de identidad", member.identity_number or "", 470, y, 116, label_w=106)
+        y -= 24
+        pdf.setFont("Helvetica", 7.2)
+        pdf.drawString(34, y + 3, "realice lo que a continuacion se detalla:")
+
+        y -= 36
+        info_text = (
+            "Anuncio sin fines de lucro con mensaje dirigido al estudiantado del sistema educativo sobre la ExpoTECNICA "
+            "Institucional, Regional CORVEC y Nacional. Actividad que se realiza con el aval del Ministerio de Educacion "
+            "Publica y que tiene como proposito estimular en las personas estudiantes la resolucion de problemas o "
+            "necesidades en un contexto especifico de la sociedad, la innovacion, ingenieria y autoaprendizaje mediante "
+            "procesos que involucran la observacion, el diseno y desarrollo de prototipos, asi como la experimentacion, "
+            "el analisis de informacion y la divulgacion cientifica y tecnologica."
+        )
+        pdf.setStrokeColor(colors.HexColor("#4c8a41"))
+        pdf.setFillColor(colors.HexColor("#e6f4df"))
+        pdf.rect(34, y - 40, width - 68, 42, stroke=1, fill=1)
+        pdf.setFillColor(colors.black)
+        _draw_wrapped(pdf, info_text, 42, y - 8, width_chars=150, leading=7.4, size=6.4)
+
+        y -= 62
+        pdf.setFont("Helvetica-Bold", 7.5)
+        pdf.drawString(34, y, "Para lo cual dejo constancia que:  (escriba una X sobre la linea, segun corresponda).")
+        y -= 24
+        consent_check("Recibi informacion sencilla y comprensible respecto a los beneficios y actividades que conlleva esta actividad, por parte del Ministerio de Educacion Publica.", 34, y)
+        y -= 32
+        consent_check("Se me ha explicado este documento.", 34, y)
+        y -= 32
+        consent_check("Libero de toda responsabilidad a los y las funcionarias que trabajaran en esta grabacion, en la medida que las imagenes no sean utilizadas para fines comerciales.", 34, y)
+
+        y -= 38
+        pdf.setFont("Helvetica", 7)
+        pdf.drawString(34, y, "Lo anterior, se respalda en los Articulos 47 y 48 del Codigo Civil que rezan:")
+        y -= 18
+        pdf.setFont("Helvetica-Bold", 7)
+        pdf.drawString(34, y, "Articulo 47")
+        y -= 10
+        pdf.setFont("Helvetica", 6.6)
+        _draw_wrapped(pdf, "La fotografia o la imagen de una persona no puede ser publicada, reproducida, expuesta ni vendida en forma alguna si no es con su consentimiento.", 34, y, width_chars=152, leading=7.5, size=6.6)
+        y -= 24
+        pdf.setFont("Helvetica-Bold", 7)
+        pdf.drawString(34, y, "Articulo 48")
+        y -= 10
+        pdf.setFont("Helvetica", 6.6)
+        _draw_wrapped(pdf, "Si la imagen o fotografia de una persona se publica sin su consentimiento y no se encuentra dentro de los casos de excepcion previstos en el articulo anterior, procede el reclamo correspondiente.", 34, y, width_chars=152, leading=7.5, size=6.6)
+
+        y = 66
+        pdf.setFont("Helvetica-Bold", 7.2)
+        pdf.drawString(34, y, "Firma del padre, madre o encargado legal:")
+        pdf.line(248, y, 430, y)
+        pdf.drawString(458, y, "Fecha:")
+        pdf.rect(500, y - 6, 100, 14, stroke=1, fill=0)
         pdf.showPage()
 
     pdf.save()

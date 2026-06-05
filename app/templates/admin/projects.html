@@ -82,7 +82,10 @@
                     data-project-status="{{ project.logistics_status|lower }}"
                     data-project-active="{{ 'activo' if project.is_active else 'inactivo' }}"
                 >
-                    <td class="project-title-cell">{{ project.title }}</td>
+                    <td class="project-title-cell">
+                        <strong>{{ project.title }}</strong>
+                        <small>{{ project.thematic_axis.name if project.thematic_axis else 'Sin eje temático' }} · {{ project.project_type.name if project.project_type else 'Sin tipo' }}</small>
+                    </td>
                     <td class="table-cell-center">
                         <span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span>
                     </td>

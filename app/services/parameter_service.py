@@ -3,10 +3,12 @@ import json
 from app.models.category import Category
 from app.models.evaluation_type import EvaluationType
 from app.models.level import Level
+from app.models.project_type import ProjectType
 from app.models.rubric_criterion import RubricCriterion
 from app.models.section import Section
 from app.models.specialty import Specialty
 from app.models.system_setting import SystemSetting
+from app.models.thematic_axis import ThematicAxis
 from app.models.workshop import Workshop
 
 
@@ -41,6 +43,30 @@ DEFAULT_SPECIALTIES = [
 DEFAULT_WORKSHOPS = [
     {"name": "Taller 1", "sort_order": 1},
     {"name": "Taller 2", "sort_order": 2},
+]
+
+DEFAULT_THEMATIC_AXES = [
+    {"code": "produccion_agricola_pecuaria", "name": "Producción agrícola y pecuaria", "sort_order": 1},
+    {"code": "industria_alimentaria", "name": "Industria alimentaria", "sort_order": 2},
+    {"code": "energias_renovables", "name": "Energías renovables", "sort_order": 3},
+    {"code": "ingenieria_ambiental", "name": "Ingeniería ambiental", "sort_order": 4},
+    {"code": "mecatronica", "name": "Mecatrónica", "sort_order": 5},
+    {"code": "tecnologias_informacion", "name": "Tecnologías de la información aplicadas a la informática", "sort_order": 6},
+    {"code": "ingenieria_mecanica", "name": "Ingeniería mecánica", "sort_order": 7},
+    {"code": "ingenieria_materiales", "name": "Ingeniería de materiales", "sort_order": 8},
+    {"code": "industria_creativa", "name": "Industria creativa", "sort_order": 9},
+    {"code": "contabilidad_finanzas_banca", "name": "Contabilidad, finanzas y banca", "sort_order": 10},
+    {"code": "servicios_secretariales", "name": "Servicios secretariales", "sort_order": 11},
+    {"code": "hosteleria_servicios_turisticos", "name": "Hostelería y servicios turísticos", "sort_order": 12},
+    {"code": "gestion_suministros", "name": "Gestión de suministros", "sort_order": 13},
+    {"code": "mercadeo", "name": "Mercadeo", "sort_order": 14},
+    {"code": "seguridad_proteccion_laboral", "name": "Seguridad y protección laboral", "sort_order": 15},
+]
+
+DEFAULT_PROJECT_TYPES = [
+    {"code": "elaborado_2026", "name": "Proyecto elaborado en el 2026", "sort_order": 1},
+    {"code": "continuacion", "name": "Proyecto de continuación", "sort_order": 2},
+    {"code": "estudios_largo_plazo", "name": "Proyecto de estudios a largo plazo", "sort_order": 3},
 ]
 
 DEFAULT_EVALUATION_TYPES = [
@@ -304,6 +330,26 @@ def bootstrap_defaults(db):
             db.session.add(Workshop(**row))
         created = True
 
+    for row in DEFAULT_THEMATIC_AXES:
+        axis = ThematicAxis.query.filter_by(code=row["code"]).first()
+        if axis:
+            if axis.name != row["name"]:
+                axis.name = row["name"]
+                created = True
+            continue
+        db.session.add(ThematicAxis(**row))
+        created = True
+
+    for row in DEFAULT_PROJECT_TYPES:
+        project_type = ProjectType.query.filter_by(code=row["code"]).first()
+        if project_type:
+            if project_type.name != row["name"]:
+                project_type.name = row["name"]
+                created = True
+            continue
+        db.session.add(ProjectType(**row))
+        created = True
+
     default_settings = {
         "school_name": "CTP Roberto Gamboa Valverde",
         "school_address": "Direccion institucional no configurada",
@@ -319,8 +365,6 @@ def bootstrap_defaults(db):
         "expotec_director_email": "",
         "expotec_technical_coordinator_name": "",
         "expotec_technical_coordinator_email": "",
-        "expotec_project_start_date": "",
-        "expotec_project_end_date": "",
         EVALUATION_DEFAULTS_SEEDED_KEY: "1",
         EVALUATION_DESCRIPTIONS_MIGRATED_KEY: "1",
         "maintenance_enabled": "0",

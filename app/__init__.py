@@ -308,6 +308,8 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN advisor_birth_date DATE NULL"))
         if "advisor_gender" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN advisor_gender VARCHAR(20) NULL"))
+        if "advisor_specialty" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN advisor_specialty VARCHAR(140) NULL"))
         if "mentor_name" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN mentor_name VARCHAR(120) NULL"))
         if "mentor_identity" not in project_columns:
@@ -346,6 +348,10 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN section_id INT NULL"))
         if "specialty_id" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN specialty_id INT NULL"))
+        if "thematic_axis_id" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN thematic_axis_id INT NULL"))
+        if "project_type_id" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN project_type_id INT NULL"))
         if "workshop_id" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN workshop_id INT NULL"))
         if "project_document_path" not in project_columns:

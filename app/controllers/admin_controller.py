@@ -32,11 +32,13 @@ from app.models.level import Level
 from app.models.project import Project
 from app.models.project_member_change import ProjectMemberChange
 from app.models.project_member import ProjectMember
+from app.models.project_type import ProjectType
 from app.models.rubric_criterion import RubricCriterion
 from app.models.section import Section
 from app.models.specialty import Specialty
 from app.models.system_audit_log import SystemAuditLog
 from app.models.system_setting import SystemSetting
+from app.models.thematic_axis import ThematicAxis
 from app.models.workshop import Workshop
 from app.services.audit_service import log_event
 from app.services.evaluation_service import (
@@ -204,6 +206,12 @@ ACTION_MODULE_MAP = {
     "create_workshop": "academic",
     "update_workshop": "academic",
     "delete_workshop": "academic",
+    "create_thematic_axis": "academic",
+    "update_thematic_axis": "academic",
+    "delete_thematic_axis": "academic",
+    "create_project_type": "academic",
+    "update_project_type": "academic",
+    "delete_project_type": "academic",
     "create_evaluation_type": "rubrics",
     "update_evaluation_type": "rubrics",
     "delete_evaluation_type": "rubrics",
@@ -604,17 +612,41 @@ def _gitops_reload_service() -> dict:
 def _gitops_restart_service() -> dict:
     status = _gitops_service_status()
     pid = status.get("pid")
-    if pid and status.get("running"):
-        try:
-            os.kill(pid, 15)
-        except OSError:
-            pass
+    pidfile = status.get("pidfile")
     repo_path = _git_repo_path()
     venv_bins = sorted(repo_path.glob("*_venv/bin/gunicorn"))
     gunicorn_bin = str(venv_bins[0]) if venv_bins else "gunicorn"
     config_path = repo_path / "gunicorn_conf.py"
     if not config_path.exists():
         return {"ok": False, "code": -1, "out": "", "err": f"No existe {config_path}"}
+    if gunicorn_bin != "gunicorn" and not os.path.exists(gunicorn_bin):
+        return {"ok": False, "code": -2, "out": "", "err": f"No existe el binario Gunicorn: {gunicorn_bin}"}
+
+    if pid and status.get("running"):
+        try:
+            os.kill(pid, 15)
+        except OSError:
+            pass
+
+        import time as _time
+
+        for _ in range(20):
+            if not _pid_is_running(pid):
+                break
+            _time.sleep(0.5)
+
+    if pidfile:
+        try:
+            stale_pid = None
+            if os.path.exists(pidfile):
+                with open(pidfile, "r", encoding="utf-8") as handle:
+                    raw_pid = (handle.read() or "").strip()
+                stale_pid = int(raw_pid) if raw_pid.isdigit() else None
+            if not stale_pid or not _pid_is_running(stale_pid):
+                os.remove(pidfile)
+        except OSError:
+            pass
+
     try:
         subprocess.Popen(
             [gunicorn_bin, "-c", str(config_path), "run:app"],
@@ -624,14 +656,24 @@ def _gitops_restart_service() -> dict:
             start_new_session=True,
         )
     except Exception as ex:
-        return {"ok": False, "code": -2, "out": "", "err": str(ex)}
+        return {"ok": False, "code": -3, "out": "", "err": str(ex)}
 
     import time as _time
 
-    _time.sleep(3)
-    recheck = _gitops_service_status()
-    out = f"Reinicio solicitado. Estado: {recheck['status_label']} HTTP {recheck['http_code']}"
-    return {"ok": recheck["running"] and recheck["health_ok"], "code": 0 if recheck["running"] else -3, "out": out, "err": ""}
+    recheck = {}
+    for _ in range(20):
+        _time.sleep(0.5)
+        recheck = _gitops_service_status()
+        if recheck.get("running") and recheck.get("health_ok"):
+            break
+
+    out = (
+        f"Reinicio solicitado con {gunicorn_bin}. "
+        f"Estado: {recheck.get('status_label', 'N/D')} HTTP {recheck.get('http_code', 'N/D')} "
+        f"PID {recheck.get('pid') or 'N/D'}"
+    )
+    ok = bool(recheck.get("running") and recheck.get("health_ok"))
+    return {"ok": ok, "code": 0 if ok else -4, "out": out, "err": "" if ok else "El servicio no paso la verificacion despues del reinicio."}
 
 
 def _save_gitops_result(action: str, result: dict):
@@ -3592,6 +3634,108 @@ def _handle_action(action: str):
             db.session.commit()
             flash("Taller eliminado.", "success")
 
+    elif action == "create_thematic_axis":
+        code = _normalize_code(request.form.get("thematic_axis_code", "")) or _normalize_code(request.form.get("thematic_axis_name", ""))
+        name = request.form.get("thematic_axis_name", "").strip()
+        description = request.form.get("thematic_axis_description", "").strip()
+        sort_order = request.form.get("thematic_axis_sort_order", type=int) or 0
+        if not code or not name:
+            flash("Codigo y nombre del eje tematico son obligatorios.", "error")
+        elif ThematicAxis.query.filter_by(code=code).first():
+            flash("El eje tematico ya existe.", "error")
+        else:
+            db.session.add(ThematicAxis(code=code, name=name, description=description, sort_order=sort_order, is_active=True))
+            log_event("admin.thematic_axis.create", "thematic_axis", detail=f"Eje tematico creado: code={code} nombre='{name}'")
+            db.session.commit()
+            flash("Eje tematico creado.", "success")
+
+    elif action == "update_thematic_axis":
+        axis_id = request.form.get("thematic_axis_id", type=int)
+        axis = ThematicAxis.query.get(axis_id) if axis_id else None
+        if not axis:
+            flash("Eje tematico no encontrado.", "error")
+        else:
+            code = _normalize_code(request.form.get("thematic_axis_code", "")) or _normalize_code(request.form.get("thematic_axis_name", ""))
+            name = request.form.get("thematic_axis_name", "").strip()
+            duplicate = ThematicAxis.query.filter(ThematicAxis.code == code, ThematicAxis.id != axis.id).first()
+            if not code or not name:
+                flash("Codigo y nombre del eje tematico son obligatorios.", "error")
+            elif duplicate:
+                flash("Codigo de eje tematico ya en uso.", "error")
+            else:
+                axis.code = code
+                axis.name = name
+                axis.description = request.form.get("thematic_axis_description", "").strip()
+                axis.sort_order = request.form.get("thematic_axis_sort_order", type=int) or 0
+                axis.is_active = _str_to_bool(request.form.get("thematic_axis_is_active"))
+                log_event("admin.thematic_axis.update", "thematic_axis", entity_id=axis.id, detail=f"Eje tematico actualizado: code={axis.code} nombre='{axis.name}' activo={axis.is_active}")
+                db.session.commit()
+                flash("Eje tematico actualizado.", "success")
+
+    elif action == "delete_thematic_axis":
+        axis_id = request.form.get("thematic_axis_id", type=int)
+        axis = ThematicAxis.query.get(axis_id) if axis_id else None
+        if not axis:
+            flash("Eje tematico no encontrado.", "error")
+        elif Project.query.filter_by(thematic_axis_id=axis.id).count() > 0:
+            flash("No puedes eliminar un eje tematico con proyectos asociados.", "error")
+        else:
+            log_event("admin.thematic_axis.delete", "thematic_axis", entity_id=axis.id, detail=f"Eje tematico eliminado: nombre='{axis.name}'")
+            db.session.delete(axis)
+            db.session.commit()
+            flash("Eje tematico eliminado.", "success")
+
+    elif action == "create_project_type":
+        code = _normalize_code(request.form.get("project_type_code", "")) or _normalize_code(request.form.get("project_type_name", ""))
+        name = request.form.get("project_type_name", "").strip()
+        description = request.form.get("project_type_description", "").strip()
+        sort_order = request.form.get("project_type_sort_order", type=int) or 0
+        if not code or not name:
+            flash("Codigo y nombre del tipo de proyecto son obligatorios.", "error")
+        elif ProjectType.query.filter_by(code=code).first():
+            flash("El tipo de proyecto ya existe.", "error")
+        else:
+            db.session.add(ProjectType(code=code, name=name, description=description, sort_order=sort_order, is_active=True))
+            log_event("admin.project_type.create", "project_type", detail=f"Tipo de proyecto creado: code={code} nombre='{name}'")
+            db.session.commit()
+            flash("Tipo de proyecto creado.", "success")
+
+    elif action == "update_project_type":
+        project_type_id = request.form.get("project_type_id", type=int)
+        project_type = ProjectType.query.get(project_type_id) if project_type_id else None
+        if not project_type:
+            flash("Tipo de proyecto no encontrado.", "error")
+        else:
+            code = _normalize_code(request.form.get("project_type_code", "")) or _normalize_code(request.form.get("project_type_name", ""))
+            name = request.form.get("project_type_name", "").strip()
+            duplicate = ProjectType.query.filter(ProjectType.code == code, ProjectType.id != project_type.id).first()
+            if not code or not name:
+                flash("Codigo y nombre del tipo de proyecto son obligatorios.", "error")
+            elif duplicate:
+                flash("Codigo de tipo de proyecto ya en uso.", "error")
+            else:
+                project_type.code = code
+                project_type.name = name
+                project_type.description = request.form.get("project_type_description", "").strip()
+                project_type.sort_order = request.form.get("project_type_sort_order", type=int) or 0
+                project_type.is_active = _str_to_bool(request.form.get("project_type_is_active"))
+                log_event("admin.project_type.update", "project_type", entity_id=project_type.id, detail=f"Tipo de proyecto actualizado: code={project_type.code} nombre='{project_type.name}' activo={project_type.is_active}")
+                db.session.commit()
+                flash("Tipo de proyecto actualizado.", "success")
+
+    elif action == "delete_project_type":
+        project_type_id = request.form.get("project_type_id", type=int)
+        project_type = ProjectType.query.get(project_type_id) if project_type_id else None
+        if not project_type:
+            flash("Tipo de proyecto no encontrado.", "error")
+        elif Project.query.filter_by(project_type_id=project_type.id).count() > 0:
+            flash("No puedes eliminar un tipo de proyecto con proyectos asociados.", "error")
+        else:
+            log_event("admin.project_type.delete", "project_type", entity_id=project_type.id, detail=f"Tipo de proyecto eliminado: nombre='{project_type.name}'")
+            db.session.delete(project_type)
+            db.session.commit()
+            flash("Tipo de proyecto eliminado.", "success")
+
     elif action == "create_evaluation_type":
         name = request.form.get("eval_type_name", "").strip()
         description = request.form.get("eval_type_description", "").strip()
@@ -3814,8 +3958,8 @@ def _handle_action(action: str):
             SystemSetting.set_value("school_address", address)
             SystemSetting.set_value("school_phone", phone)
             SystemSetting.set_value("school_email", email)
+            SystemSetting.set_value("expotec_stage", "Institucional")
             for setting_key in [
-                "expotec_stage",
                 "expotec_school_year",
                 "expotec_service_type",
                 "expotec_program_office",
@@ -3823,8 +3967,6 @@ def _handle_action(action: str):
                 "expotec_director_email",
                 "expotec_technical_coordinator_name",
                 "expotec_technical_coordinator_email",
-                "expotec_project_start_date",
-                "expotec_project_end_date",
             ]:
                 SystemSetting.set_value(setting_key, request.form.get(setting_key, "").strip())
             if logo_file and logo_file.filename:
@@ -4193,6 +4335,8 @@ def _base_context(active_page: str, **kwargs):
         sections = []
         specialties = []
         workshops = []
+        thematic_axes = []
+        project_types = []
         projects = []
         assignments = []
         evaluation_types = []
@@ -4214,8 +4358,6 @@ def _base_context(active_page: str, **kwargs):
             "expotec_director_email": "",
             "expotec_technical_coordinator_name": "",
             "expotec_technical_coordinator_email": "",
-            "expotec_project_start_date": "",
-            "expotec_project_end_date": "",
         }
         maintenance_settings = {
             "maintenance_enabled": False,
@@ -4253,12 +4395,16 @@ def _base_context(active_page: str, **kwargs):
         sections = Section.query.options(joinedload(Section.level)).order_by(Section.sort_order.asc(), Section.name.asc()).all()
         specialties = Specialty.query.order_by(Specialty.sort_order.asc(), Specialty.name.asc()).all()
         workshops = Workshop.query.order_by(Workshop.sort_order.asc(), Workshop.name.asc()).all()
+        thematic_axes = ThematicAxis.query.order_by(ThematicAxis.sort_order.asc(), ThematicAxis.name.asc()).all()
+        project_types = ProjectType.query.order_by(ProjectType.sort_order.asc(), ProjectType.name.asc()).all()
         projects = Project.query.options(
             joinedload(Project.members),
             joinedload(Project.assignments),
             joinedload(Project.evaluations),
             joinedload(Project.section),
             joinedload(Project.specialty_ref),
+            joinedload(Project.thematic_axis),
+            joinedload(Project.project_type),
             joinedload(Project.workshop_ref),
             joinedload(Project.member_changes),
         ).order_by(Project.created_at.desc()).all()
@@ -4301,8 +4447,6 @@ def _base_context(active_page: str, **kwargs):
             "expotec_director_email": SystemSetting.get_value("expotec_director_email", ""),
             "expotec_technical_coordinator_name": SystemSetting.get_value("expotec_technical_coordinator_name", ""),
             "expotec_technical_coordinator_email": SystemSetting.get_value("expotec_technical_coordinator_email", ""),
-            "expotec_project_start_date": SystemSetting.get_value("expotec_project_start_date", ""),
-            "expotec_project_end_date": SystemSetting.get_value("expotec_project_end_date", ""),
         }
         maintenance_settings = {
             "maintenance_enabled": SystemSetting.get_value("maintenance_enabled", "0") == "1",
@@ -4401,6 +4545,8 @@ def _base_context(active_page: str, **kwargs):
         "sections": sections,
         "specialties": specialties,
         "workshops": workshops,
+        "thematic_axes": thematic_axes,
+        "project_types": project_types,
         "category_map": {row.code: row.name for row in categories},
         "projects": projects,
         "assignments": assignments,

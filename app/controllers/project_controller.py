@@ -16,10 +16,12 @@ from app.models.campaign import Campaign
 from app.models.level import Level
 from app.models.project import Project
 from app.models.project_member import ProjectMember
+from app.models.project_type import ProjectType
 from app.models.assignment import Assignment
 from app.models.section import Section
 from app.models.specialty import Specialty
 from app.models.system_setting import SystemSetting
+from app.models.thematic_axis import ThematicAxis
 from app.services.audit_service import log_event
 from app.services.parameter_service import get_active_evaluation_types
 
@@ -352,7 +354,11 @@ def _draw_pdf_label_box(pdf, label, value, x, y, label_w, value_w, h=14, label_s
 
 
 def _project_type_label(project):
-    return "Especialidad tecnica"
+    return project.project_type.name if project.project_type else ""
+
+
+def _project_thematic_axis_label(project):
+    return project.thematic_axis.name if project.thematic_axis else ""
 
 
 def _requirements_value(project, keyword):
@@ -382,8 +388,8 @@ def _render_project_documents_packet(project: Project):
     coordinator_email = _pdf_setting("expotec_technical_coordinator_email", "")
     course_year = _pdf_setting("expotec_school_year", "2026")
     stage = _pdf_setting("expotec_stage", "Institucional")
-    start_date = _pdf_date(project.project_start_date) or _pdf_date(_pdf_setting("expotec_project_start_date", _pdf_date(project.campaign.start_date) if project.campaign else ""))
-    end_date = _pdf_date(project.project_end_date) or _pdf_date(_pdf_setting("expotec_project_end_date", _pdf_date(project.campaign.end_date) if project.campaign else ""))
+    start_date = _pdf_date(project.project_start_date) or _pdf_date(project.campaign.start_date if project.campaign else "")
+    end_date = _pdf_date(project.project_end_date) or _pdf_date(project.campaign.end_date if project.campaign else "")
 
     _draw_excel_background(pdf, width, height)
 
@@ -402,9 +408,9 @@ def _render_project_documents_packet(project: Project):
     pdf.line(132, height - 25, 122, height - 76)
     pdf.setFillColor(colors.HexColor("#1d3461"))
     pdf.setFont("Helvetica-Bold", 8)
-    pdf.drawString(142, height - 34, _pdf_setting("expotec_program_office", "Direccion de Educacion"))
-    pdf.drawString(142, height - 48, "Tecnica y Capacidades")
-    pdf.drawString(142, height - 62, "Emprendedoras")
+    program_office = _pdf_setting("expotec_program_office", "Direccion de Educacion Tecnica y Capacidades Emprendedoras")
+    for index, line in enumerate(_pdf_lines(program_office, width_chars=26)[:3]):
+        pdf.drawString(142, height - 34 - (index * 14), _pdf_text(line))
 
     pdf.setFont("Helvetica-Bold", 15)
     pdf.setFillColor(colors.HexColor("#004b73"))
@@ -443,7 +449,7 @@ def _render_project_documents_packet(project: Project):
     _draw_pdf_label_box(pdf, "Nombre del proyecto:", project.title, 0, y, 114, 632, h=13)
     y -= 24
     _draw_pdf_label_box(pdf, "Categoria:", _project_category_label(project), 0, y, 64, 224, h=13)
-    _draw_pdf_label_box(pdf, "Eje tematico:", project.specialty or (project.specialty_ref.name if project.specialty_ref else ""), 344, y, 96, 210, h=13)
+    _draw_pdf_label_box(pdf, "Eje tematico:", _project_thematic_axis_label(project), 344, y, 96, 210, h=13)
     y -= 24
     _draw_pdf_label_box(pdf, "Tipo de proyecto:", _project_type_label(project), 0, y, 114, 240, h=13)
     y -= 24
@@ -517,7 +523,7 @@ def _render_project_documents_packet(project: Project):
     y = draw_people_table("Datos de las personas estudiantes:", student_rows, y)
     teacher_rows = [[
         project.advisor_name or "",
-        project.specialty or "",
+        project.advisor_specialty or "",
         _pdf_date(project.advisor_birth_date),
         project.advisor_gender or "",
         project.advisor_identity or "",
@@ -591,12 +597,12 @@ def _render_project_documents_packet(project: Project):
     pdf.setPageSize(letter)
     width, height = letter
     for member in sorted(project.members, key=lambda item: item.student_number):
-        y = _draw_document_header(pdf, "ExpoTEC-2 - Consentimiento Informado")
+        y = _draw_document_header(pdf, "ExpoTEC-2 - Consentimiento Informado", f"Curso lectivo {course_year} | Etapa {stage}")
         intro = (
-            "El suscrito, en mi condicion de padre, madre o encargado legal, doy mi consentimiento para que "
-            "la persona estudiante participe en la ExpoTECNICA Institucional, actividad avalada por el "
-            "Ministerio de Educacion Publica y orientada a estimular la resolucion de problemas, la innovacion, "
-            "la ingenieria y el autoaprendizaje."
+            f"El suscrito, en mi condicion de padre, madre o encargado legal, doy mi consentimiento para que "
+            f"la persona estudiante participe en la ExpoTECNICA {stage}, actividad avalada por el Ministerio de "
+            "Educacion Publica y orientada a estimular en las personas estudiantes la resolucion de problemas o "
+            "necesidades en un contexto especifico de la sociedad, la innovacion, ingenieria y autoaprendizaje."
         )
         y = _draw_wrapped(pdf, intro, 42, y, width_chars=105, leading=13, size=9)
         y -= 10
@@ -770,6 +776,8 @@ def _current_form_context(form_data):
         .all()
     )
     specialties = Specialty.query.filter_by(is_active=True).order_by(Specialty.sort_order.asc()).all()
+    thematic_axes = ThematicAxis.query.filter_by(is_active=True).order_by(ThematicAxis.sort_order.asc(), ThematicAxis.name.asc()).all()
+    project_types = ProjectType.query.filter_by(is_active=True).order_by(ProjectType.sort_order.asc(), ProjectType.name.asc()).all()
     req_values = form_data.getlist("requirements") if hasattr(form_data, "getlist") else _draft_form_list(form_data, "requirements")
 
     active_campaign = (
@@ -789,6 +797,8 @@ def _current_form_context(form_data):
         "levels": levels,
         "sections": sections,
         "specialties": specialties,
+        "thematic_axes": thematic_axes,
+        "project_types": project_types,
         "requirements_options": REQUIREMENTS_OPTIONS,
         "active_campaign": active_campaign,
     }
@@ -880,6 +890,8 @@ def register_project():
         category = (_draft_form_value(form_data, "category") or "").strip()
         section_id = request.form.get("section_id", type=int)
         specialty_id = request.form.get("specialty_id", type=int)
+        thematic_axis_id = request.form.get("thematic_axis_id", type=int)
+        project_type_id = request.form.get("project_type_id", type=int)
 
         requirements = [item.strip().lower() for item in request.form.getlist("requirements") if item.strip()]
         requirements_other = (_draft_form_value(form_data, "requirements_other") or "").strip()
@@ -887,6 +899,8 @@ def register_project():
 
         section = Section.query.get(section_id) if section_id else None
         specialty = Specialty.query.get(specialty_id) if specialty_id else None
+        thematic_axis = ThematicAxis.query.get(thematic_axis_id) if thematic_axis_id else None
+        project_type = ProjectType.query.get(project_type_id) if project_type_id else None
         level_code = section.level.code if section and section.level else ""
 
         focus_name = specialty.name if specialty else ""
@@ -908,12 +922,15 @@ def register_project():
             specialty=focus_name,
             section_id=section_id,
             specialty_id=specialty_id,
+            thematic_axis_id=thematic_axis_id,
+            project_type_id=project_type_id,
             workshop_id=None,
             campaign_id=active_campaign.id,
             advisor_name=(_draft_form_value(form_data, "advisor_name") or "").strip(),
             advisor_identity=advisor_identity,
             advisor_birth_date=_parse_date(_draft_form_value(form_data, "advisor_birth_date")),
             advisor_gender=_normalize_person_gender(form_data, "advisor_gender"),
+            advisor_specialty=(_draft_form_value(form_data, "advisor_specialty") or "").strip(),
             advisor_email=(_draft_form_value(form_data, "advisor_email") or "").strip().lower(),
             advisor_phone=_normalize_phone(_draft_form_value(form_data, "advisor_phone")),
             mentor_name=(_draft_form_value(form_data, "mentor_name") or "").strip(),
@@ -963,6 +980,12 @@ def register_project():
         if not specialty:
             flash("Debes indicar la especialidad tecnica del proyecto.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if not thematic_axis or not thematic_axis.is_active:
+            flash("Debes seleccionar un eje tematico valido.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if not project_type or not project_type.is_active:
+            flash("Debes seleccionar un tipo de proyecto valido.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
         if not requirements:
             flash("Debes seleccionar al menos un requerimiento.", "error")
@@ -984,6 +1007,7 @@ def register_project():
             project.advisor_identity,
             project.advisor_birth_date,
             project.advisor_gender,
+            project.advisor_specialty,
             project.advisor_phone,
             project.advisor_email,
         ]):
@@ -1067,6 +1091,8 @@ def project_documents(project_id: int):
             joinedload(Project.members),
             joinedload(Project.section),
             joinedload(Project.specialty_ref),
+            joinedload(Project.thematic_axis),
+            joinedload(Project.project_type),
             joinedload(Project.workshop_ref),
         )
         .filter(Project.id == project_id)
@@ -1081,6 +1107,8 @@ def project_documents_packet(project_id: int):
             joinedload(Project.members),
             joinedload(Project.section),
             joinedload(Project.specialty_ref),
+            joinedload(Project.thematic_axis),
+            joinedload(Project.project_type),
             joinedload(Project.workshop_ref),
         )
         .filter(Project.id == project_id)

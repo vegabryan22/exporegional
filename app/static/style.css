@@ -2466,64 +2466,178 @@ dialog.maintenance-dialog::backdrop {
     }
 }
 
-.institution-form {
-    gap: 1rem;
+.institution-page {
+    overflow: hidden;
 }
 
-.institution-grid {
+.institution-hero {
+    border: 1px solid #cfe0f4;
+    background:
+        radial-gradient(circle at top right, rgba(95, 164, 224, 0.18), transparent 36%),
+        linear-gradient(135deg, #f8fbff 0%, #eef6ff 100%);
+}
+
+.institution-form {
+    gap: 1.15rem;
+}
+
+.institution-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr);
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.36fr);
+    gap: 1.15rem;
     align-items: start;
 }
 
-.institution-panel {
-    border: 1px solid #dbe6f3;
-    border-radius: 16px;
-    background: linear-gradient(180deg, #fbfdff 0%, #f4f8fe 100%);
-    padding: 1rem;
+.institution-main,
+.institution-side {
     display: grid;
-    gap: 0.85rem;
+    gap: 1rem;
+}
+
+.institution-panel {
+    border: 1px solid #d5e3f4;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+    box-shadow: 0 14px 30px rgba(22, 62, 102, 0.07);
+    padding: 1.1rem;
+    display: grid;
+    gap: 0.95rem;
+}
+
+.institution-panel-primary {
+    border-color: #bcd8f5;
 }
 
 .institution-panel-head {
-    display: grid;
-    gap: 0.2rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.institution-panel-head.compact {
+    align-items: center;
 }
 
 .institution-panel-head h4 {
     margin: 0;
-    color: #0f4c8a;
-    font-size: 1.15rem;
+    color: #073d70;
+    font-size: 1.1rem;
 }
 
 .institution-panel-head p {
-    margin: 0;
+    margin: 0.18rem 0 0;
     color: #5d7696;
+    line-height: 1.35;
+}
+
+.institution-step {
+    min-width: 44px;
+    border-radius: 999px;
+    background: #0f4c8a;
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-align: center;
+    padding: 0.38rem 0.55rem;
+    box-shadow: 0 8px 18px rgba(15, 76, 138, 0.2);
+}
+
+.institution-fields-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem 1rem;
+}
+
+.institution-fields-grid label {
+    display: grid;
+    gap: 0.35rem;
+    font-weight: 800;
+    color: #30455e;
+}
+
+.institution-fields-grid input {
+    min-height: 46px;
+}
+
+.field-span-2 {
+    grid-column: 1 / -1;
+}
+
+.readonly-input {
+    background: #eef5fc;
+    color: #35556f;
+    cursor: not-allowed;
+}
+
+.institution-preview-panel {
+    border-color: #bad7ee;
+    background:
+        radial-gradient(circle at top right, rgba(134, 199, 92, 0.16), transparent 32%),
+        linear-gradient(180deg, #fbfdff 0%, #edf7ff 100%);
+}
+
+.institution-preview-list {
+    display: grid;
+    gap: 0.55rem;
+    margin: 0;
+}
+
+.institution-preview-list div {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: baseline;
+    border-bottom: 1px solid #dbe7f2;
+    padding-bottom: 0.45rem;
+}
+
+.institution-preview-list div:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+
+.institution-preview-list dt {
+    margin: 0;
+    color: #607a97;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.institution-preview-list dd {
+    margin: 0;
+    color: #063861;
+    font-weight: 800;
+    overflow-wrap: anywhere;
 }
 
 .institution-logo-panel {
     align-content: start;
 }
 
-.institution-logo-stack {
-    display: grid;
-    gap: 1rem;
-}
-
 .institution-logo-preview {
-    border: 1px dashed #c8d7eb;
-    border-radius: 16px;
-    min-height: 260px;
-    background: #ffffff;
+    border: 1px dashed #bfd2e8;
+    border-radius: 18px;
+    min-height: 170px;
+    background:
+        linear-gradient(45deg, rgba(15, 76, 138, 0.04) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(15, 76, 138, 0.04) 25%, transparent 25%),
+        #ffffff;
+    background-size: 20px 20px;
     padding: 1rem;
     display: grid;
     place-items: center;
 }
 
+.institution-logo-preview.compact {
+    min-height: 140px;
+}
+
 .institution-logo-image {
     max-width: 100%;
-    max-height: 220px;
+    max-height: 120px;
     width: auto;
     height: auto;
     display: block;
@@ -2544,8 +2658,14 @@ dialog.maintenance-dialog::backdrop {
 .institution-upload-field {
     display: grid;
     gap: 0.35rem;
-    font-weight: 700;
+    font-weight: 800;
     color: #214a78;
+}
+
+.institution-actions {
+    justify-content: flex-end;
+    border-top: 1px solid #dfe8f3;
+    padding-top: 1rem;
 }
 
 .section-block {
@@ -4342,7 +4462,7 @@ dialog.maintenance-dialog::backdrop {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
-    .institution-grid {
+    .institution-layout {
         grid-template-columns: 1fr;
     }
 
@@ -5740,7 +5860,8 @@ button {
     .project-main,
     .maintenance-grid,
     .cleanup-grid,
-    .institution-grid,
+    .institution-layout,
+    .institution-fields-grid,
     .admin-overview-grid,
     .permissions-grid,
     .permissions-summary,

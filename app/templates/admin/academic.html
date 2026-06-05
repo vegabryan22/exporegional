@@ -5,9 +5,9 @@
         <div>
             <p class="maintenance-kicker">Parámetros académicos</p>
             <h3>Mantenimiento académico</h3>
-            <p>Administra niveles, secciones, especialidades y talleres desde modales.</p>
+            <p>Administra niveles, secciones, especialidades, ejes temáticos y tipos de proyecto desde modales.</p>
         </div>
-        <span class="tag ok">{{ levels|length + sections|length + specialties|length + workshops|length }} registros</span>
+        <span class="tag ok">{{ levels|length + sections|length + specialties|length + workshops|length + thematic_axes|length + project_types|length }} registros</span>
     </div>
 
     <div class="academic-hub">
@@ -30,6 +30,16 @@
             <h4>Talleres</h4>
             <p>{{ workshops|length }} registros</p>
             <button type="button" class="secondary-btn" data-dialog-open="manage-workshops-dialog">Abrir</button>
+        </article>
+        <article class="academic-card">
+            <h4>Ejes temáticos</h4>
+            <p>{{ thematic_axes|length }} registros</p>
+            <button type="button" class="secondary-btn" data-dialog-open="manage-thematic-axes-dialog">Abrir</button>
+        </article>
+        <article class="academic-card">
+            <h4>Tipos de proyecto</h4>
+            <p>{{ project_types|length }} registros</p>
+            <button type="button" class="secondary-btn" data-dialog-open="manage-project-types-dialog">Abrir</button>
         </article>
     </div>
 </section>
@@ -167,6 +177,76 @@
     </div>
 </dialog>
 
+<dialog id="manage-thematic-axes-dialog" class="maintenance-dialog">
+    <div class="dialog-card">
+        <div class="dialog-head">
+            <h4>Ejes temáticos</h4>
+            <div class="maintenance-tools">
+                <button type="button" class="secondary-btn" data-dialog-open="create-thematic-axis-dialog">Nuevo eje</button>
+                <button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Código</th><th>Nombre</th><th>Orden</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                {% for axis in thematic_axes %}
+                    <tr>
+                        <td>{{ axis.code }}</td>
+                        <td>{{ axis.name }}</td>
+                        <td>{{ axis.sort_order }}</td>
+                        <td><span class="tag {{ 'ok' if axis.is_active else 'off' }}">{{ 'Activo' if axis.is_active else 'Inactivo' }}</span></td>
+                        <td class="actions-cell">
+                            <button type="button" class="outline-btn" data-dialog-open="edit-thematic-axis-{{ axis.id }}">Editar</button>
+                            <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar eje tematico?')">
+                                <input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="delete_thematic_axis"><input type="hidden" name="thematic_axis_id" value="{{ axis.id }}"><button type="submit" class="danger-btn">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5">Sin ejes temáticos.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</dialog>
+
+<dialog id="manage-project-types-dialog" class="maintenance-dialog">
+    <div class="dialog-card">
+        <div class="dialog-head">
+            <h4>Tipos de proyecto</h4>
+            <div class="maintenance-tools">
+                <button type="button" class="secondary-btn" data-dialog-open="create-project-type-dialog">Nuevo tipo</button>
+                <button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Código</th><th>Nombre</th><th>Orden</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <tbody>
+                {% for project_type in project_types %}
+                    <tr>
+                        <td>{{ project_type.code }}</td>
+                        <td>{{ project_type.name }}</td>
+                        <td>{{ project_type.sort_order }}</td>
+                        <td><span class="tag {{ 'ok' if project_type.is_active else 'off' }}">{{ 'Activo' if project_type.is_active else 'Inactivo' }}</span></td>
+                        <td class="actions-cell">
+                            <button type="button" class="outline-btn" data-dialog-open="edit-project-type-{{ project_type.id }}">Editar</button>
+                            <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar tipo de proyecto?')">
+                                <input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="delete_project_type"><input type="hidden" name="project_type_id" value="{{ project_type.id }}"><button type="submit" class="danger-btn">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5">Sin tipos de proyecto.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</dialog>
+
 <dialog id="create-level-dialog" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Nuevo nivel</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="create_level"><div class="grid-3"><label>Codigo<input type="text" name="level_code" required></label><label>Nombre<input type="text" name="level_name" required></label><label>Orden<input type="number" name="level_sort_order" value="0" required></label></div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear nivel</button></div></form></div></dialog>
 
 <dialog id="create-section-dialog" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Nueva sección</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="create_section"><div class="grid-3"><label>Nivel<select name="section_level_id" required><option value="">Seleccione...</option>{% for level in levels %}<option value="{{ level.id }}">{{ level.name }}</option>{% endfor %}</select></label><label>Nombre<input type="text" name="section_name" required></label><label>Orden<input type="number" name="section_sort_order" value="0" required></label></div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear sección</button></div></form></div></dialog>
@@ -174,6 +254,10 @@
 <dialog id="create-specialty-dialog" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Nueva especialidad</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="create_specialty"><div class="grid-2"><label>Nombre<input type="text" name="specialty_name" required></label><label>Orden<input type="number" name="specialty_sort_order" value="0" required></label></div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear especialidad</button></div></form></div></dialog>
 
 <dialog id="create-workshop-dialog" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Nuevo taller</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="create_workshop"><div class="grid-2"><label>Nombre<input type="text" name="workshop_name" required></label><label>Orden<input type="number" name="workshop_sort_order" value="0" required></label></div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear taller</button></div></form></div></dialog>
+
+<dialog id="create-thematic-axis-dialog" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Nuevo eje temático</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="create_thematic_axis"><div class="grid-3"><label>Código<input type="text" name="thematic_axis_code" placeholder="Se genera si lo dejas vacío"></label><label>Nombre<input type="text" name="thematic_axis_name" required></label><label>Orden<input type="number" name="thematic_axis_sort_order" value="0" required></label></div><label>Descripción<textarea name="thematic_axis_description" rows="3"></textarea></label><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear eje</button></div></form></div></dialog>
+
+<dialog id="create-project-type-dialog" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Nuevo tipo de proyecto</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="create_project_type"><div class="grid-3"><label>Código<input type="text" name="project_type_code" placeholder="Se genera si lo dejas vacío"></label><label>Nombre<input type="text" name="project_type_name" required></label><label>Orden<input type="number" name="project_type_sort_order" value="0" required></label></div><label>Descripción<textarea name="project_type_description" rows="3"></textarea></label><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear tipo</button></div></form></div></dialog>
 
 {% for level in levels %}
 <dialog id="edit-level-{{ level.id }}" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Editar nivel</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="update_level"><input type="hidden" name="level_id" value="{{ level.id }}"><div class="grid-3"><label>Codigo<input type="text" name="level_code" value="{{ level.code }}" required></label><label>Nombre<input type="text" name="level_name" value="{{ level.name }}" required></label><label>Orden<input type="number" name="level_sort_order" value="{{ level.sort_order }}" required></label></div><div class="grid-2"><label>Estado<select name="level_is_active"><option value="1" {% if level.is_active %}selected{% endif %}>Activo</option><option value="0" {% if not level.is_active %}selected{% endif %}>Inactivo</option></select></label></div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar</button></div></form></div></dialog>
@@ -189,6 +273,14 @@
 
 {% for workshop in workshops %}
 <dialog id="edit-workshop-{{ workshop.id }}" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Editar taller</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="update_workshop"><input type="hidden" name="workshop_id" value="{{ workshop.id }}"><div class="grid-2"><label>Nombre<input type="text" name="workshop_name" value="{{ workshop.name }}" required></label><label>Orden<input type="number" name="workshop_sort_order" value="{{ workshop.sort_order }}" required></label></div><div class="grid-2"><label>Estado<select name="workshop_is_active"><option value="1" {% if workshop.is_active %}selected{% endif %}>Activo</option><option value="0" {% if not workshop.is_active %}selected{% endif %}>Inactivo</option></select></label></div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar</button></div></form></div></dialog>
+{% endfor %}
+
+{% for axis in thematic_axes %}
+<dialog id="edit-thematic-axis-{{ axis.id }}" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Editar eje temático</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="update_thematic_axis"><input type="hidden" name="thematic_axis_id" value="{{ axis.id }}"><div class="grid-3"><label>Código<input type="text" name="thematic_axis_code" value="{{ axis.code }}" required></label><label>Nombre<input type="text" name="thematic_axis_name" value="{{ axis.name }}" required></label><label>Orden<input type="number" name="thematic_axis_sort_order" value="{{ axis.sort_order }}" required></label></div><label>Descripción<textarea name="thematic_axis_description" rows="3">{{ axis.description or '' }}</textarea></label><div class="grid-2"><label>Estado<select name="thematic_axis_is_active"><option value="1" {% if axis.is_active %}selected{% endif %}>Activo</option><option value="0" {% if not axis.is_active %}selected{% endif %}>Inactivo</option></select></label></div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar</button></div></form></div></dialog>
+{% endfor %}
+
+{% for project_type in project_types %}
+<dialog id="edit-project-type-{{ project_type.id }}" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h4>Editar tipo de proyecto</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="update_project_type"><input type="hidden" name="project_type_id" value="{{ project_type.id }}"><div class="grid-3"><label>Código<input type="text" name="project_type_code" value="{{ project_type.code }}" required></label><label>Nombre<input type="text" name="project_type_name" value="{{ project_type.name }}" required></label><label>Orden<input type="number" name="project_type_sort_order" value="{{ project_type.sort_order }}" required></label></div><label>Descripción<textarea name="project_type_description" rows="3">{{ project_type.description or '' }}</textarea></label><div class="grid-2"><label>Estado<select name="project_type_is_active"><option value="1" {% if project_type.is_active %}selected{% endif %}>Activo</option><option value="0" {% if not project_type.is_active %}selected{% endif %}>Inactivo</option></select></label></div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar</button></div></form></div></dialog>
 {% endfor %}
 {% endblock %}
 

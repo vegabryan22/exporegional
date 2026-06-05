@@ -1,105 +1,142 @@
-﻿{% extends "admin/layout.html" %}
+{% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section maintenance-page">
-    <div class="maintenance-banner">
+<section class="card admin-section institution-page">
+    <div class="maintenance-banner institution-hero">
         <div>
-            <p class="maintenance-kicker">Identidad institucional</p>
-            <h3>Información del colegio</h3>
-            <p>Configura nombre, dirección, teléfono, correo, el logo del colegio y el logo propio de ExpoTécnica.</p>
+            <p class="maintenance-kicker">Parametros institucionales</p>
+            <h3>Institucion y documentos oficiales</h3>
+            <p>Estos datos alimentan el encabezado del sitio, el formulario ExpoTEC-1 y los consentimientos ExpoTEC-2.</p>
         </div>
-        <span class="tag ok">Configuracion global</span>
+        <span class="tag ok">Datos globales</span>
     </div>
 
     <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form institution-form">
         <input type="hidden" name="next" value="{{ next_url }}">
         <input type="hidden" name="action" value="save_institution">
+        <input type="hidden" name="expotec_stage" value="Institucional">
 
-        <div class="institution-grid">
-            <section class="institution-panel">
-                <div class="institution-panel-head">
-                    <h4>Datos institucionales</h4>
-                    <p>Información visible en encabezado, pie de página y módulos públicos.</p>
-                </div>
-
-                <div class="grid-2">
-                    <label>Nombre del colegio
-                        <input type="text" name="school_name" value="{{ institution_settings.name }}" required>
-                    </label>
-                    <label>Correo institucional
-                        <input type="email" name="school_email" value="{{ institution_settings.email }}" required>
-                    </label>
-                </div>
-
-                <div class="grid-2">
-                    <label>Teléfono
-                        <input type="text" name="school_phone" value="{{ institution_settings.phone }}">
-                    </label>
-                    <label>Dirección
-                        <input type="text" name="school_address" value="{{ institution_settings.address }}">
-                    </label>
-                </div>
-            </section>
-
-            <section class="institution-panel">
-                <div class="institution-panel-head">
-                    <h4>Formulario ExpoTEC-1</h4>
-                    <p>Datos fijos que se imprimen automaticamente en la hoja oficial de inscripcion.</p>
-                </div>
-
-                <div class="grid-2">
-                    <label>Etapa
-                        <input type="text" name="expotec_stage" value="{{ institution_settings.expotec_stage }}">
-                    </label>
-                    <label>Curso lectivo
-                        <input type="text" name="expotec_school_year" value="{{ institution_settings.expotec_school_year }}">
-                    </label>
-                </div>
-
-                <div class="grid-2">
-                    <label>Tipo de servicio educativo
-                        <input type="text" name="expotec_service_type" value="{{ institution_settings.expotec_service_type }}">
-                    </label>
-                    <label>Dependencia MEP / encabezado
-                        <input type="text" name="expotec_program_office" value="{{ institution_settings.expotec_program_office }}">
-                    </label>
-                </div>
-
-                <div class="grid-2">
-                    <label>Persona directora
-                        <input type="text" name="expotec_director_name" value="{{ institution_settings.expotec_director_name }}">
-                    </label>
-                    <label>Correo persona directora
-                        <input type="email" name="expotec_director_email" value="{{ institution_settings.expotec_director_email }}">
-                    </label>
-                </div>
-
-                <div class="grid-2">
-                    <label>Persona coordinadora tecnica
-                        <input type="text" name="expotec_technical_coordinator_name" value="{{ institution_settings.expotec_technical_coordinator_name }}">
-                    </label>
-                    <label>Correo coordinacion tecnica
-                        <input type="email" name="expotec_technical_coordinator_email" value="{{ institution_settings.expotec_technical_coordinator_email }}">
-                    </label>
-                </div>
-
-                <div class="grid-2">
-                    <label>Fecha inicio del proyecto
-                        <input type="date" name="expotec_project_start_date" value="{{ institution_settings.expotec_project_start_date }}">
-                    </label>
-                    <label>Fecha finalizacion del proyecto
-                        <input type="date" name="expotec_project_end_date" value="{{ institution_settings.expotec_project_end_date }}">
-                    </label>
-                </div>
-            </section>
-
-            <div class="institution-logo-stack">
-                <section class="institution-panel institution-logo-panel">
+        <div class="institution-layout">
+            <div class="institution-main">
+                <section class="institution-panel institution-panel-primary">
                     <div class="institution-panel-head">
-                        <h4>Logo del colegio</h4>
-                        <p>Identidad institucional general del centro educativo.</p>
+                        <span class="institution-step">01</span>
+                        <div>
+                            <h4>Centro educativo</h4>
+                            <p>Informacion principal del colegio que aparece en pantallas publicas y documentos.</p>
+                        </div>
                     </div>
 
-                    <div class="institution-logo-preview">
+                    <div class="institution-fields-grid">
+                        <label class="field-span-2">Nombre del centro educativo
+                            <input type="text" name="school_name" value="{{ institution_settings.name }}" required>
+                        </label>
+                        <label>Tipo de servicio educativo
+                            <input type="text" name="expotec_service_type" value="{{ institution_settings.expotec_service_type }}" placeholder="Ej: Tecnico profesional" required>
+                        </label>
+                        <label>Telefono institucional
+                            <input type="text" name="school_phone" value="{{ institution_settings.phone }}" placeholder="Ej: 2222-2222">
+                        </label>
+                        <label class="field-span-2">Correo institucional
+                            <input type="email" name="school_email" value="{{ institution_settings.email }}" placeholder="correo@institucion.ed.cr" required>
+                        </label>
+                        <label class="field-span-2">Direccion institucional
+                            <input type="text" name="school_address" value="{{ institution_settings.address }}">
+                        </label>
+                    </div>
+                </section>
+
+                <section class="institution-panel">
+                    <div class="institution-panel-head">
+                        <span class="institution-step">02</span>
+                        <div>
+                            <h4>Formulario ExpoTEC-1</h4>
+                            <p>Datos fijos que se imprimen automaticamente en la hoja oficial de inscripcion.</p>
+                        </div>
+                    </div>
+
+                    <div class="institution-fields-grid">
+                        <label>Etapa
+                            <input type="text" value="Institucional" readonly class="readonly-input">
+                        </label>
+                        <label>Curso lectivo
+                            <input type="text" name="expotec_school_year" value="{{ institution_settings.expotec_school_year }}" placeholder="2026" required>
+                        </label>
+                        <label class="field-span-2">Dependencia MEP / encabezado
+                            <input type="text" name="expotec_program_office" value="{{ institution_settings.expotec_program_office }}" placeholder="Direccion de Educacion Tecnica y Capacidades Emprendedoras">
+                        </label>
+                    </div>
+                </section>
+
+                <section class="institution-panel">
+                    <div class="institution-panel-head">
+                        <span class="institution-step">03</span>
+                        <div>
+                            <h4>Responsables institucionales</h4>
+                            <p>Se imprimen en ExpoTEC-1 junto al telefono y correos institucionales.</p>
+                        </div>
+                    </div>
+
+                    <div class="institution-fields-grid">
+                        <label>Persona directora
+                            <input type="text" name="expotec_director_name" value="{{ institution_settings.expotec_director_name }}">
+                        </label>
+                        <label>Correo persona directora
+                            <input type="email" name="expotec_director_email" value="{{ institution_settings.expotec_director_email }}">
+                        </label>
+                        <label>Persona coordinadora tecnica
+                            <input type="text" name="expotec_technical_coordinator_name" value="{{ institution_settings.expotec_technical_coordinator_name }}">
+                        </label>
+                        <label>Correo coordinacion tecnica
+                            <input type="email" name="expotec_technical_coordinator_email" value="{{ institution_settings.expotec_technical_coordinator_email }}">
+                        </label>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="institution-side">
+                <section class="institution-panel institution-preview-panel">
+                    <div class="institution-panel-head">
+                        <span class="institution-step">PDF</span>
+                        <div>
+                            <h4>Vista de datos impresos</h4>
+                            <p>Resumen de parametros que alimentan ExpoTEC-1 y ExpoTEC-2.</p>
+                        </div>
+                    </div>
+
+                    <dl class="institution-preview-list">
+                        <div>
+                            <dt>Etapa</dt>
+                            <dd>Institucional</dd>
+                        </div>
+                        <div>
+                            <dt>Centro</dt>
+                            <dd>{{ institution_settings.name or "Sin configurar" }}</dd>
+                        </div>
+                        <div>
+                            <dt>Tipo de servicio</dt>
+                            <dd>{{ institution_settings.expotec_service_type or "Sin configurar" }}</dd>
+                        </div>
+                        <div>
+                            <dt>Telefono</dt>
+                            <dd>{{ institution_settings.phone or "Sin configurar" }}</dd>
+                        </div>
+                        <div>
+                            <dt>Correo institucional</dt>
+                            <dd>{{ institution_settings.email or "Sin configurar" }}</dd>
+                        </div>
+                    </dl>
+                </section>
+
+                <section class="institution-panel institution-logo-panel">
+                    <div class="institution-panel-head compact">
+                        <span class="institution-step">Logo</span>
+                        <div>
+                            <h4>Colegio</h4>
+                            <p>Se usa en encabezados y documentos.</p>
+                        </div>
+                    </div>
+
+                    <div class="institution-logo-preview compact">
                         {% if institution_settings.logo_path %}
                             <img src="{{ url_for('static', filename=institution_settings.logo_path) }}" alt="Logo del colegio" class="institution-logo-image">
                         {% else %}
@@ -110,20 +147,23 @@
                         {% endif %}
                     </div>
 
-                    <label class="institution-upload-field">Archivo del colegio
+                    <label class="institution-upload-field">Actualizar logo del colegio
                         <input type="file" name="school_logo" accept="image/png,image/jpeg,image/webp,image/gif">
                     </label>
                 </section>
 
                 <section class="institution-panel institution-logo-panel">
-                    <div class="institution-panel-head">
-                        <h4>Logo de ExpoTécnica</h4>
-                        <p>Identidad grafica propia del evento, separada del logo del colegio.</p>
+                    <div class="institution-panel-head compact">
+                        <span class="institution-step">Expo</span>
+                        <div>
+                            <h4>ExpoTecnica</h4>
+                            <p>Logo del evento para el PDF.</p>
+                        </div>
                     </div>
 
-                    <div class="institution-logo-preview">
+                    <div class="institution-logo-preview compact">
                         {% if institution_settings.expo_logo_path %}
-                            <img src="{{ url_for('static', filename=institution_settings.expo_logo_path) }}" alt="Logo de ExpoTécnica" class="institution-logo-image">
+                            <img src="{{ url_for('static', filename=institution_settings.expo_logo_path) }}" alt="Logo de ExpoTecnica" class="institution-logo-image">
                         {% else %}
                             <div class="institution-logo-empty">
                                 <strong>Sin logo cargado</strong>
@@ -132,18 +172,16 @@
                         {% endif %}
                     </div>
 
-                    <label class="institution-upload-field">Archivo de ExpoTécnica
+                    <label class="institution-upload-field">Actualizar logo de ExpoTecnica
                         <input type="file" name="expo_logo" accept="image/png,image/jpeg,image/webp,image/gif">
                     </label>
                 </section>
-            </div>
+            </aside>
         </div>
 
-        <div class="actions-row">
-            <button type="submit">Guardar información</button>
+        <div class="actions-row institution-actions">
+            <button type="submit">Guardar parametros institucionales</button>
         </div>
     </form>
 </section>
 {% endblock %}
-
-

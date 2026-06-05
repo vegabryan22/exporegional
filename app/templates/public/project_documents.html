@@ -15,6 +15,16 @@
         </article>
 
         <article class="project-documents-card">
+            <h3>Datos ExpoTEC</h3>
+            <ul>
+                <li><strong>Categoría:</strong> {{ project.category }}</li>
+                <li><strong>Eje temático:</strong> {{ project.thematic_axis.name if project.thematic_axis else 'N/D' }}</li>
+                <li><strong>Tipo de proyecto:</strong> {{ project.project_type.name if project.project_type else 'N/D' }}</li>
+                <li><strong>Especialidad técnica:</strong> {{ project.specialty or 'N/D' }}</li>
+            </ul>
+        </article>
+
+        <article class="project-documents-card">
             <h3>Entrega física</h3>
             <ul>
                 <li>Imprimir todas las páginas del paquete.</li>

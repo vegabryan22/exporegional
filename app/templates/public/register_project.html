@@ -51,6 +51,25 @@
                 </label>
             </div>
 
+            <div class="form-grid inline-grid-2">
+                <label>Eje temático *
+                    <select name="thematic_axis_id" required>
+                        <option value="">Seleccione...</option>
+                        {% for axis in thematic_axes %}
+                            <option value="{{ axis.id }}" {% if form_data.get('thematic_axis_id') == axis.id|string %}selected{% endif %}>{{ axis.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>Tipo de proyecto *
+                    <select name="project_type_id" required>
+                        <option value="">Seleccione...</option>
+                        {% for project_type in project_types %}
+                            <option value="{{ project_type.id }}" {% if form_data.get('project_type_id') == project_type.id|string %}selected{% endif %}>{{ project_type.name }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+            </div>
+
             <div class="form-grid focus-grid">
                 <label>Sección *
                     <select name="section_id" required>
@@ -268,6 +287,7 @@
                     <label>Cédula de identidad del docente *
                         <input type="text" name="advisor_identity" value="{{ form_data.get('advisor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input required>
                     </label>
+                    <label>Carrera técnica / especialidad del docente *<input type="text" name="advisor_specialty" value="{{ form_data.get('advisor_specialty', '') }}" required></label>
                     <label>Fecha de nacimiento del docente *<input type="date" name="advisor_birth_date" value="{{ form_data.get('advisor_birth_date', '') }}" required></label>
                     <div class="register-fieldset">
                         <span>Sexo del docente *</span>

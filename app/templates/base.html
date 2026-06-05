@@ -6,7 +6,7 @@
     <title>ExpoTécnica CTPRGV</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=20260529-fixed-header-frame">
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     <header class="header">
         <div class="header-inner">
             <div class="brand-block">

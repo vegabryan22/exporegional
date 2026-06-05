@@ -4082,6 +4082,14 @@ dialog.maintenance-dialog::backdrop {
     align-items: start;
 }
 
+.projects-showcase-page .container {
+    padding-top: 0;
+}
+
+.projects-showcase-page .showcase-layout {
+    gap: 0.75rem;
+}
+
 .project-sidebar {
     background:
         linear-gradient(180deg, rgba(18, 63, 107, 0.04), rgba(255, 255, 255, 0.96)),
@@ -4098,7 +4106,7 @@ dialog.maintenance-dialog::backdrop {
 
 .project-sidebar-head {
     border-bottom: 1px solid #dbe7f4;
-    padding: 1rem 1rem 0.9rem;
+    padding: 0.65rem 1rem 0.7rem;
     background: #ffffff;
 }
 
@@ -4106,33 +4114,33 @@ dialog.maintenance-dialog::backdrop {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.35rem;
 }
 
 .project-sidebar-logo {
-    width: 190px;
-    height: 82px;
+    width: 220px;
+    height: 72px;
     display: grid;
     place-items: center;
-    border: 1px solid #cddced;
-    border-radius: 20px;
-    background: #ffffff;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
     color: #123f6b;
     font-weight: 900;
     line-height: 1;
     text-align: center;
     overflow: hidden;
-    padding: 0.35rem;
-    box-shadow: 0 8px 20px rgba(15, 53, 87, 0.08);
+    padding: 0;
+    box-shadow: none;
 }
 
 .project-sidebar-logo.expo {
-    width: 190px;
+    width: 220px;
 }
 
 .project-sidebar-logo.expo img {
-    max-width: 94%;
-    max-height: 82%;
+    max-width: 100%;
+    max-height: 100%;
 }
 
 .project-sidebar-logo img {
@@ -4157,6 +4165,7 @@ dialog.maintenance-dialog::backdrop {
 .project-sidebar-head h2 {
     margin: 0;
     text-align: center;
+    line-height: 1.1;
 }
 
 .project-sidebar-head p {
@@ -6347,14 +6356,14 @@ button {
     }
 
     .project-sidebar-logo {
-        width: min(190px, 100%);
-        height: 76px;
-        border-radius: 18px;
-        padding: 0.32rem;
+        width: min(220px, 100%);
+        height: 68px;
+        border-radius: 0;
+        padding: 0;
     }
 
     .project-sidebar-logo.expo {
-        width: min(190px, 100%);
+        width: min(220px, 100%);
     }
 
     .banner-badge {

@@ -3487,29 +3487,48 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .radio-card-group {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
 }
 
 .radio-card-group-wide {
-    grid-template-columns: minmax(180px, 1.2fr) minmax(120px, 0.8fr);
+    display: flex;
 }
 
 .radio-card-group label {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
-    min-height: 44px;
-    padding: 0.55rem 0.7rem;
+    gap: 0.42rem;
+    width: auto;
+    min-width: 108px;
+    min-height: 36px;
+    padding: 0.42rem 0.68rem;
     border: 1px solid #bdd3e8;
-    border-radius: 14px;
+    border-radius: 999px;
     background: #ffffff;
     color: #193b5e;
+    font-size: 0.92rem;
     font-weight: 850;
+    line-height: 1.05;
+    text-align: center;
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
     cursor: pointer;
     transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.radio-card-group label span {
+    display: inline-block;
+    white-space: nowrap;
+    word-break: normal;
+    overflow-wrap: normal;
+}
+
+.radio-card-group input[type="radio"] {
+    flex: 0 0 auto;
 }
 
 .radio-card-group label:hover,
@@ -3595,6 +3614,18 @@ dialog.maintenance-dialog::backdrop {
 
 .register-form .form-grid {
     gap: 0.55rem;
+}
+
+.register-form .inline-grid-3 {
+    grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) minmax(260px, 1.15fr);
+}
+
+.register-form .inline-grid-4 {
+    grid-template-columns: minmax(220px, 1.2fr) minmax(220px, 1.15fr) minmax(220px, 1.15fr) minmax(180px, 0.9fr);
+}
+
+.final-stages-grid .radio-card-group label {
+    min-width: 120px;
 }
 
 .upload-error-page {

@@ -97,7 +97,7 @@
                             <p class="project-main-meta">
                                 Categoría: {{ category_label }}<br>
                                 Equipo: {{ project.team_name }}<br>
-                                Sección: {{ project.section.name if project.section else (project.members[0].section_name if project.members else 'N/D') }}
+                                Eje temático: {{ project.thematic_axis.name if project.thematic_axis else 'N/D' }}
                             </p>
                             <p class="project-main-description">{{ project.description }}</p>
                             <div class="project-main-actions">

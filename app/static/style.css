@@ -3471,7 +3471,16 @@ dialog.maintenance-dialog::backdrop {
 
 .requirement-item input[type="checkbox"],
 .radio-card-group input[type="radio"] {
+    appearance: auto;
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    padding: 0;
     margin: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: none;
     accent-color: #0f6f95;
 }
 
@@ -3531,6 +3540,10 @@ dialog.maintenance-dialog::backdrop {
 
 .radio-card-group input[type="radio"] {
     flex: 0 0 auto;
+}
+
+.radio-card-group input[type="radio"]:focus {
+    box-shadow: none;
 }
 
 .radio-card-group label:hover,

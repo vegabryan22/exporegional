@@ -4090,6 +4090,10 @@ dialog.maintenance-dialog::backdrop {
     gap: 0.75rem;
 }
 
+.projects-showcase-page .project-sidebar {
+    top: 0;
+}
+
 .project-sidebar {
     background:
         linear-gradient(180deg, rgba(18, 63, 107, 0.04), rgba(255, 255, 255, 0.96)),

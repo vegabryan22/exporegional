@@ -15,7 +15,7 @@ from functools import wraps
 
 from flask import abort, current_app, flash, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
@@ -91,6 +91,7 @@ ADMIN_MENU_ITEMS = [
     ("smtp", "admin.smtp_page", "SMTP"),
     ("institution", "admin.institution_page", "Institución"),
     ("maintenance", "admin.maintenance_page", "Mantenimiento"),
+    ("database", "admin.database_page", "Base de datos"),
     ("gitops", "admin.gitops_page", "Mantenimiento Git"),
     ("logs", "admin.logs_page", "Bitácora"),
 ]
@@ -99,7 +100,7 @@ ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Operación", ["assignments", "projects", "evaluations"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
-    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "gitops", "logs"]),
+    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "logs"]),
 ]
 
 ADMIN_MENU_ICONS = {
@@ -117,6 +118,7 @@ ADMIN_MENU_ICONS = {
     "smtp": "send",
     "institution": "box",
     "maintenance": "settings",
+    "database": "box",
     "gitops": "settings",
     "logs": "doc",
 }
@@ -137,6 +139,7 @@ ADMIN_MENU_ITEMS = [
     ("smtp", "admin.smtp_page", "SMTP"),
     ("institution", "admin.institution_page", "Institución"),
     ("maintenance", "admin.maintenance_page", "Mantenimiento"),
+    ("database", "admin.database_page", "Base de datos"),
     ("gitops", "admin.gitops_page", "Mantenimiento Git"),
     ("logs", "admin.logs_page", "Bitácora"),
 ]
@@ -146,14 +149,14 @@ ADMIN_MENU_GROUPS = [
     ("Documentos", ["documents"]),
     ("Operación", ["assignments", "projects", "evaluations"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
-    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "gitops", "logs"]),
+    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
     "logistica": {"overview", "assignments", "projects", "documents"},
     "datos": {"overview", "evaluations", "documents"},
     "diseno": {"overview", "campaigns", "categories", "academic", "rubrics", "institution"},
-    "qa": {"overview", "logs", "maintenance", "gitops"},
+    "qa": {"overview", "logs", "maintenance", "database", "gitops"},
 }
 PERMISSIONS_SETTING_KEY = "permissions_department_modules"
 PERMISSION_MANAGEABLE_MODULES = [
@@ -212,9 +215,10 @@ ACTION_MODULE_MAP = {
     "test_smtp": "smtp",
     "save_institution": "institution",
     "save_maintenance_settings": "maintenance",
-    "cleanup_expotecnica": "maintenance",
-    "backup_database": "maintenance",
-    "restore_database": "maintenance",
+    "cleanup_expotecnica": "database",
+    "backup_database": "database",
+    "restore_database": "database",
+    "delete_database_backup": "database",
     "gitops_fetch": "gitops",
     "gitops_pull_ff": "gitops",
     "gitops_pull_apply": "gitops",
@@ -1709,6 +1713,14 @@ def _list_database_backups() -> list[dict]:
     return backups
 
 
+def _delete_database_backup(filename: str) -> dict:
+    safe_filename = _safe_backup_filename(filename)
+    backup_path = _database_backup_dir() / safe_filename
+    size_bytes = backup_path.stat().st_size
+    backup_path.unlink()
+    return {"filename": safe_filename, "size_bytes": size_bytes}
+
+
 def _restore_database_backup(filename: str) -> dict:
     safe_filename = _safe_backup_filename(filename)
     db_config = _database_url_config()
@@ -1935,6 +1947,185 @@ def _format_bytes(size: int) -> str:
             return f"{value:.1f} {unit}" if unit != "B" else f"{int(value)} B"
         value /= 1024
     return f"{value:.1f} GB"
+
+
+def _database_backup_storage_summary(backups: list[dict]) -> dict:
+    total_size = sum(item.get("size_bytes", 0) for item in backups)
+    protected = [item for item in backups if "antes_restaurar" in item["filename"] or "antes_limpiar" in item["filename"]]
+    return {
+        "count": len(backups),
+        "total_size": total_size,
+        "total_size_label": _format_bytes(total_size),
+        "latest": backups[0] if backups else None,
+        "protected_count": len(protected),
+    }
+
+
+def _database_required_tables() -> list[str]:
+    return sorted(
+        {
+            Assignment.__tablename__,
+            Campaign.__tablename__,
+            Category.__tablename__,
+            Evaluation.__tablename__,
+            EvaluationScore.__tablename__,
+            EvaluationType.__tablename__,
+            Judge.__tablename__,
+            Level.__tablename__,
+            Project.__tablename__,
+            ProjectMember.__tablename__,
+            ProjectMemberChange.__tablename__,
+            RubricCriterion.__tablename__,
+            Section.__tablename__,
+            Specialty.__tablename__,
+            SystemAuditLog.__tablename__,
+            SystemSetting.__tablename__,
+            Workshop.__tablename__,
+        }
+    )
+
+
+def _database_diagnostics() -> dict:
+    db_config = _database_url_config()
+    required_tables = _database_required_tables()
+    result = {
+        "ok": False,
+        "database": db_config["database"],
+        "host": db_config["host"],
+        "port": db_config["port"],
+        "version": "N/D",
+        "size_label": "N/D",
+        "table_count": 0,
+        "missing_tables": required_tables,
+        "tables": [],
+        "checks": [],
+        "error": "",
+    }
+    try:
+        version_row = db.session.execute(text("SELECT VERSION() AS version")).mappings().first()
+        result["version"] = version_row["version"] if version_row else "N/D"
+        summary = db.session.execute(
+            text(
+                """
+                SELECT
+                    COUNT(*) AS table_count,
+                    COALESCE(SUM(data_length + index_length), 0) AS total_bytes
+                FROM information_schema.tables
+                WHERE table_schema = :schema
+                """
+            ),
+            {"schema": db_config["database"]},
+        ).mappings().first()
+        result["table_count"] = int(summary["table_count"] or 0) if summary else 0
+        result["size_label"] = _format_bytes(int(summary["total_bytes"] or 0)) if summary else "0 B"
+
+        rows = db.session.execute(
+            text(
+                """
+                SELECT
+                    table_name,
+                    table_rows,
+                    data_length,
+                    index_length,
+                    update_time
+                FROM information_schema.tables
+                WHERE table_schema = :schema
+                ORDER BY (data_length + index_length) DESC, table_name ASC
+                LIMIT 40
+                """
+            ),
+            {"schema": db_config["database"]},
+        ).mappings().all()
+        existing = {row["table_name"] for row in rows}
+        all_tables = db.session.execute(
+            text("SELECT table_name FROM information_schema.tables WHERE table_schema = :schema"),
+            {"schema": db_config["database"]},
+        ).scalars().all()
+        existing_all = set(all_tables)
+        result["missing_tables"] = [name for name in required_tables if name not in existing_all]
+        result["tables"] = [
+            {
+                "name": row["table_name"],
+                "rows": int(row["table_rows"] or 0),
+                "data_label": _format_bytes(int(row["data_length"] or 0)),
+                "index_label": _format_bytes(int(row["index_length"] or 0)),
+                "total_label": _format_bytes(int(row["data_length"] or 0) + int(row["index_length"] or 0)),
+                "update_time": row["update_time"],
+                "required": row["table_name"] in required_tables,
+            }
+            for row in rows
+        ]
+        result["checks"] = [
+            {"label": "Conexion MySQL", "ok": True, "detail": f"{db_config['host']}:{db_config['port']}"},
+            {"label": "Tablas requeridas", "ok": not result["missing_tables"], "detail": f"Faltantes: {len(result['missing_tables'])}"},
+            {"label": "Respaldos disponibles", "ok": bool(_list_database_backups()), "detail": "Ver seccion Respaldos"},
+        ]
+        result["ok"] = not result["missing_tables"]
+    except Exception as error:
+        db.session.rollback()
+        result["error"] = str(error)
+        result["checks"] = [
+            {"label": "Conexion MySQL", "ok": False, "detail": str(error)},
+            {"label": "Tablas requeridas", "ok": False, "detail": "No se pudo diagnosticar"},
+            {"label": "Respaldos disponibles", "ok": bool(_list_database_backups()), "detail": "Ver seccion Respaldos"},
+        ]
+    return result
+
+
+def _database_operational_counts() -> list[dict]:
+    counters = [
+        ("Proyectos", Project),
+        ("Integrantes", ProjectMember),
+        ("Jueces / usuarios", Judge),
+        ("Asignaciones", Assignment),
+        ("Evaluaciones", Evaluation),
+        ("Puntajes", EvaluationScore),
+        ("Bitacora", SystemAuditLog),
+    ]
+    rows = []
+    for label, model in counters:
+        try:
+            rows.append({"label": label, "value": model.query.count(), "ok": True})
+        except Exception as error:
+            db.session.rollback()
+            rows.append({"label": label, "value": "N/D", "ok": False, "detail": str(error)})
+    return rows
+
+
+def _safe_cleanup_expotecnica_counts() -> dict:
+    try:
+        return _cleanup_expotecnica_counts()
+    except Exception:
+        db.session.rollback()
+        return {
+            "projects": "N/D",
+            "members": "N/D",
+            "member_changes": "N/D",
+            "assignments": "N/D",
+            "users": "N/D",
+            "evaluations": "N/D",
+            "evaluation_scores": "N/D",
+        }
+
+
+def _database_audit_logs(limit: int = 30):
+    try:
+        return (
+            SystemAuditLog.query.filter(
+                or_(
+                    SystemAuditLog.action.ilike("%database%"),
+                    SystemAuditLog.action.ilike("%backup%"),
+                    SystemAuditLog.action.ilike("%restore%"),
+                    SystemAuditLog.action.ilike("%cleanup_expotecnica%"),
+                )
+            )
+            .order_by(SystemAuditLog.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+    except Exception:
+        db.session.rollback()
+        return []
 
 
 def _clear_static_upload_dir(relative_dir: str) -> int:
@@ -3752,6 +3943,26 @@ def _handle_action(action: str):
             "success",
         )
 
+    elif action == "delete_database_backup":
+        filename = (request.form.get("backup_filename") or "").strip()
+        confirmation = (request.form.get("delete_backup_confirmation") or "").strip().upper()
+        if confirmation != "ELIMINAR RESPALDO":
+            flash("Para eliminar el respaldo debes escribir exactamente: ELIMINAR RESPALDO.", "error")
+            return
+        try:
+            deleted = _delete_database_backup(filename)
+            log_event(
+                "admin.database.backup.delete",
+                "system",
+                detail=f"Respaldo eliminado: {deleted['filename']} ({_format_bytes(deleted['size_bytes'])})",
+            )
+            db.session.commit()
+        except (RuntimeError, ValueError, OSError) as error:
+            db.session.rollback()
+            flash(f"No se pudo eliminar el respaldo: {error}", "error")
+            return
+        flash(f"Respaldo eliminado: {deleted['filename']}.", "success")
+
     elif action == "gitops_refresh":
         result = {"ok": True, "out": "Estado actualizado.", "err": "", "code": 0}
         _save_gitops_result("refresh", result)
@@ -3916,7 +4127,8 @@ def _handle_action(action: str):
 def _base_context(active_page: str, **kwargs):
     restore_jobs = _list_restore_jobs()
     restore_job_running = any(job.get("is_running") for job in restore_jobs)
-    restore_safe_mode = active_page == "maintenance" and restore_job_running
+    restore_safe_mode = active_page in {"maintenance", "database"} and restore_job_running
+    database_light_mode = active_page == "database"
     allowed_modules = _allowed_modules_for_current_user()
     admin_menu_items = [
         {"key": key, "endpoint": endpoint, "label": label}
@@ -3940,7 +4152,7 @@ def _base_context(active_page: str, **kwargs):
         if entries:
             admin_menu_groups.append({"label": group_label, "items": entries})
 
-    if restore_safe_mode:
+    if restore_safe_mode or database_light_mode:
         permission_access_map = {}
         permission_modules = [
             {"key": key, "label": label}
@@ -3974,7 +4186,7 @@ def _base_context(active_page: str, **kwargs):
             "maintenance_message": "Restauracion de base de datos en proceso.",
             "maintenance_image_path": "",
         }
-        cleanup_stats = {
+        cleanup_stats = _safe_cleanup_expotecnica_counts() if database_light_mode and not restore_safe_mode else {
             "projects": 0,
             "members": 0,
             "member_changes": 0,
@@ -4053,9 +4265,30 @@ def _base_context(active_page: str, **kwargs):
         }
         cleanup_stats = _cleanup_expotecnica_counts()
     database_backups = _list_database_backups()
+    database_backup_summary = _database_backup_storage_summary(database_backups)
+    if active_page == "database" and not restore_safe_mode:
+        database_diagnostics = _database_diagnostics()
+        database_counts = _database_operational_counts()
+        database_logs = _database_audit_logs()
+    else:
+        database_diagnostics = {
+            "ok": not restore_job_running,
+            "database": "",
+            "host": "",
+            "port": "",
+            "version": "N/D",
+            "size_label": "N/D",
+            "table_count": 0,
+            "missing_tables": [],
+            "tables": [],
+            "checks": [],
+            "error": "",
+        }
+        database_counts = []
+        database_logs = []
     gitops_status = _git_status_snapshot()
     gitops_service = _gitops_service_status()
-    if restore_safe_mode:
+    if restore_safe_mode or database_light_mode:
         gitops_last = {"action": "", "status": "", "output": "", "ran_at": ""}
         gitops_remote = {
             "remote_url": gitops_status.get("remote") or "",
@@ -4098,7 +4331,7 @@ def _base_context(active_page: str, **kwargs):
         judge_form_settings = _judge_form_settings()
     judge_form_webhook_url = url_for("public.judge_form_webhook", _external=True)
     judge_public_registration_url = url_for("public.judge_registration_short", _external=True)
-    smtp_configured = False if restore_safe_mode else smtp_is_configured()
+    smtp_configured = False if (restore_safe_mode or database_light_mode) else smtp_is_configured()
     overview_metrics = _build_overview_metrics(
         projects,
         assignments,
@@ -4133,6 +4366,10 @@ def _base_context(active_page: str, **kwargs):
         "maintenance_settings": maintenance_settings,
         "cleanup_stats": cleanup_stats,
         "database_backups": database_backups,
+        "database_backup_summary": database_backup_summary,
+        "database_diagnostics": database_diagnostics,
+        "database_counts": database_counts,
+        "database_logs": database_logs,
         "restore_jobs": restore_jobs,
         "restore_job_running": restore_job_running,
         "gitops_status": gitops_status,
@@ -4496,6 +4733,26 @@ def institution_page():
 @admin_module_required("maintenance")
 def maintenance_page():
     return _render("admin/maintenance.html", "maintenance")
+
+
+@admin_module_required("database")
+def database_page():
+    return _render("admin/database.html", "database")
+
+
+@admin_module_required("database")
+def database_backup_download(filename: str):
+    try:
+        safe_filename = _safe_backup_filename(filename)
+    except ValueError:
+        abort(404)
+    backup_path = _database_backup_dir() / safe_filename
+    return send_file(
+        backup_path,
+        mimetype="application/sql",
+        as_attachment=True,
+        download_name=safe_filename,
+    )
 
 
 @admin_module_required("gitops")

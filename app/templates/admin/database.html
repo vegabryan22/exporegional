@@ -1,0 +1,366 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section database-page">
+    <div class="maintenance-banner database-hero">
+        <div>
+            <p class="maintenance-kicker">Operacion critica</p>
+            <h3>Mantenimiento de Base de Datos</h3>
+            <p>Controla respaldos, restauraciones, diagnostico, limpieza anual y trazabilidad sin dejar el proceso a ciegas.</p>
+        </div>
+        {% if restore_job_running %}
+            <span class="tag warning">Restauracion activa</span>
+        {% elif database_diagnostics.ok %}
+            <span class="tag ok">Base saludable</span>
+        {% else %}
+            <span class="tag off">Revisar base</span>
+        {% endif %}
+    </div>
+
+    <div class="admin-overview-grid database-status-grid">
+        <article class="mini-stat">
+            <span>Base</span>
+            <strong>{{ database_diagnostics.database or 'N/D' }}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>Servidor</span>
+            <strong>{{ database_diagnostics.host or 'N/D' }}{% if database_diagnostics.port %}:{{ database_diagnostics.port }}{% endif %}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>Version</span>
+            <strong>{{ database_diagnostics.version }}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>Tamano BD</span>
+            <strong>{{ database_diagnostics.size_label }}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>Tablas</span>
+            <strong>{{ database_diagnostics.table_count }}</strong>
+        </article>
+        <article class="mini-stat">
+            <span>Respaldos</span>
+            <strong>{{ database_backup_summary.count }} · {{ database_backup_summary.total_size_label }}</strong>
+        </article>
+    </div>
+
+    {% if restore_job_running %}
+        <div class="inline-card restore-safe-alert">
+            <h4>Modo seguro activo</h4>
+            <p>Hay una restauracion en proceso. Para evitar errores de tablas en cambio, esta vista limita las consultas y muestra principalmente la traza del job.</p>
+        </div>
+    {% endif %}
+</section>
+
+<section class="card admin-section database-page backup-section">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Respaldos</p>
+            <h3>Respaldo y recuperacion</h3>
+            <p>Crea respaldos manuales, descarga archivos SQL y restaura en segundo plano con respaldo preventivo automatico.</p>
+        </div>
+        <span class="tag ok">{{ database_backup_summary.count }} respaldo(s)</span>
+    </div>
+
+    <div class="database-action-strip">
+        <form method="post" action="{{ action_url }}" class="inline-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="backup_database">
+            <button type="submit" class="gitops-btn gitops-btn-success">Crear respaldo manual</button>
+        </form>
+        {% if database_backup_summary.latest %}
+            <a class="gitops-btn gitops-btn-info" href="{{ url_for('admin.database_backup_download', filename=database_backup_summary.latest.filename) }}">Descargar ultimo respaldo</a>
+        {% endif %}
+    </div>
+
+    <div class="table-wrap backup-table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Archivo</th>
+                    <th>Fecha</th>
+                    <th>Tamano</th>
+                    <th>Tipo</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for backup in database_backups %}
+                    <tr>
+                        <td><code>{{ backup.filename }}</code></td>
+                        <td>{{ backup.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td class="table-cell-center">{{ backup.size_label }}</td>
+                        <td class="table-cell-center">
+                            {% if 'antes_restaurar' in backup.filename %}
+                                <span class="tag warning">Preventivo restore</span>
+                            {% elif 'antes_limpiar' in backup.filename %}
+                                <span class="tag warning">Preventivo limpieza</span>
+                            {% elif 'manual' in backup.filename %}
+                                <span class="tag ok">Manual</span>
+                            {% else %}
+                                <span class="tag muted">Sistema</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="database-backup-actions">
+                                <a class="secondary-btn" href="{{ url_for('admin.database_backup_download', filename=backup.filename) }}">Descargar</a>
+                                <form method="post" action="{{ action_url }}" class="compact-form backup-restore-form" onsubmit="return confirm('Vas a iniciar una restauracion en segundo plano. El sistema creara un respaldo preventivo y mostrara el avance. Deseas continuar?')">
+                                    <input type="hidden" name="next" value="{{ next_url }}">
+                                    <input type="hidden" name="action" value="restore_database">
+                                    <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
+                                    <label class="backup-confirm-field">
+                                        <span>Restaurar</span>
+                                        <input type="text" name="restore_confirmation" placeholder="RESTAURAR RESPALDO" required>
+                                    </label>
+                                    <button type="submit" class="danger-btn">Iniciar</button>
+                                </form>
+                                <form method="post" action="{{ action_url }}" class="compact-form backup-restore-form" onsubmit="return confirm('Eliminar este respaldo? Esta accion no restaura datos ni toca la base, pero borra el archivo SQL.')">
+                                    <input type="hidden" name="next" value="{{ next_url }}">
+                                    <input type="hidden" name="action" value="delete_database_backup">
+                                    <input type="hidden" name="backup_filename" value="{{ backup.filename }}">
+                                    <label class="backup-confirm-field">
+                                        <span>Eliminar</span>
+                                        <input type="text" name="delete_backup_confirmation" placeholder="ELIMINAR RESPALDO" required>
+                                    </label>
+                                    <button type="submit" class="danger-btn">Eliminar</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5">No hay respaldos registrados todavia.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="restore-trace-panel">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Traza visual</p>
+                <h4>Restauraciones recientes</h4>
+            </div>
+            {% if restore_job_running %}
+                <span class="tag warning">Restauracion en proceso</span>
+            {% else %}
+                <span class="tag ok">Sin procesos activos</span>
+            {% endif %}
+        </div>
+        {% if restore_job_running %}
+            <p class="helper-text">Esta pantalla se actualiza automaticamente cada 5 segundos mientras la restauracion esta activa.</p>
+        {% endif %}
+
+        <div class="restore-job-list">
+            {% for job in restore_jobs %}
+                <article class="restore-job-card restore-job-{{ job.status }}">
+                    <div class="restore-job-header">
+                        <div>
+                            <strong>{{ job.filename }}</strong>
+                            <span>Job {{ job.job_id }}{% if job.pid %} · PID {{ job.pid }}{% endif %}</span>
+                        </div>
+                        {% if job.status == 'success' %}
+                            <span class="tag ok">Completada</span>
+                        {% elif job.status == 'failed' %}
+                            <span class="tag off">Fallida</span>
+                        {% elif job.status == 'running' %}
+                            <span class="tag warning">En proceso</span>
+                        {% else %}
+                            <span class="tag muted">{{ job.status }}</span>
+                        {% endif %}
+                    </div>
+                    <dl class="restore-job-meta">
+                        <div>
+                            <dt>Inicio</dt>
+                            <dd>{{ job.started_at or '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt>Actualizado</dt>
+                            <dd>{{ job.updated_at or '-' }}</dd>
+                        </div>
+                        <div>
+                            <dt>Respaldo preventivo</dt>
+                            <dd><code>{{ job.safety_backup or '-' }}</code></dd>
+                        </div>
+                    </dl>
+                    <p class="restore-job-message">{{ job.message }}</p>
+                    {% if job.log_tail %}
+                        <pre class="restore-log-tail">{{ job.log_tail }}</pre>
+                    {% endif %}
+                </article>
+            {% else %}
+                <p class="empty-state">Todavia no hay restauraciones registradas.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="card admin-section database-page">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Diagnostico</p>
+            <h3>Integridad y conteos</h3>
+            <p>Revisa tablas requeridas, volumen operativo y senales de una restauracion incompleta.</p>
+        </div>
+        {% if database_diagnostics.missing_tables %}
+            <span class="tag off">{{ database_diagnostics.missing_tables|length }} tabla(s) faltante(s)</span>
+        {% else %}
+            <span class="tag ok">Estructura completa</span>
+        {% endif %}
+    </div>
+
+    <div class="database-check-grid">
+        {% for check in database_diagnostics.checks %}
+            <article class="mini-stat {{ 'gitops-service-stat ok' if check.ok else 'gitops-service-stat warn' }}">
+                <span>{{ check.label }}</span>
+                <strong>{{ 'OK' if check.ok else 'Revisar' }}</strong>
+                <small>{{ check.detail }}</small>
+            </article>
+        {% else %}
+            <article class="mini-stat">
+                <span>Diagnostico</span>
+                <strong>{{ 'En pausa' if restore_job_running else 'Sin datos' }}</strong>
+                <small>{{ 'Se evita consultar MySQL durante una restauracion.' if restore_job_running else 'No hay datos disponibles.' }}</small>
+            </article>
+        {% endfor %}
+    </div>
+
+    {% if database_diagnostics.missing_tables %}
+        <div class="inline-card cleanup-warning-panel">
+            <h4>Tablas faltantes</h4>
+            <p><code>{{ database_diagnostics.missing_tables|join(', ') }}</code></p>
+        </div>
+    {% endif %}
+
+    <div class="admin-overview-grid">
+        {% for item in database_counts %}
+            <article class="mini-stat">
+                <span>{{ item.label }}</span>
+                <strong>{{ item.value }}</strong>
+                {% if not item.ok %}<small>{{ item.detail }}</small>{% endif %}
+            </article>
+        {% endfor %}
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Tabla</th>
+                    <th>Filas estimadas</th>
+                    <th>Datos</th>
+                    <th>Indices</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for table in database_diagnostics.tables %}
+                    <tr>
+                        <td>
+                            <code>{{ table.name }}</code>
+                            {% if table.required %}<span class="tag ok">Requerida</span>{% endif %}
+                        </td>
+                        <td class="table-cell-center">{{ table.rows }}</td>
+                        <td class="table-cell-center">{{ table.data_label }}</td>
+                        <td class="table-cell-center">{{ table.index_label }}</td>
+                        <td class="table-cell-center">{{ table.total_label }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="5">No hay inventario disponible.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card admin-section maintenance-page cleanup-section">
+    <div class="maintenance-banner cleanup-banner">
+        <div>
+            <p class="maintenance-kicker">Cierre anual</p>
+            <h3>Limpiar ExpoTecnica</h3>
+            <p>Accion critica con respaldo obligatorio. Primero crea un respaldo automatico y luego elimina datos operativos del ano actual.</p>
+        </div>
+        <span class="tag warning">Critica recuperable con respaldo</span>
+    </div>
+
+    <div class="cleanup-grid">
+        <article class="maintenance-panel cleanup-warning-panel">
+            <h4>Se eliminara</h4>
+            <ul class="cleanup-list">
+                <li><strong>{{ cleanup_stats.projects }}</strong> proyecto(s)</li>
+                <li><strong>{{ cleanup_stats.members }}</strong> integrante(s)</li>
+                <li><strong>{{ cleanup_stats.assignments }}</strong> asignacion(es)</li>
+                <li><strong>{{ cleanup_stats.users }}</strong> usuario(s) no administrador / juez(es)</li>
+                <li><strong>{{ cleanup_stats.member_changes }}</strong> movimiento(s) de integrantes</li>
+            </ul>
+            <p class="cleanup-note">Tambien se limpiaran documentos de proyectos, logos de proyectos, temporales e imagenes de integrantes.</p>
+        </article>
+
+        <article class="maintenance-panel cleanup-safe-panel">
+            <h4>Se conservara</h4>
+            <ul class="cleanup-list ok-list">
+                <li>Usuario(s) administrador(es)</li>
+                <li>Campanas, categorias, especialidades y secciones</li>
+                <li><strong>{{ cleanup_stats.evaluations }}</strong> evaluacion(es) historica(s)</li>
+                <li><strong>{{ cleanup_stats.evaluation_scores }}</strong> puntaje(s) de rubrica</li>
+                <li>Rubricas y tipos de evaluacion</li>
+                <li>Datos institucionales, permisos, SMTP y GitOps</li>
+                <li>Bitacora del sistema</li>
+            </ul>
+        </article>
+    </div>
+
+    <form method="post" action="{{ action_url }}" class="compact-form cleanup-form" onsubmit="return confirm('Esta accion creara respaldo y limpiara datos operativos de ExpoTecnica. Deseas continuar?')">
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <input type="hidden" name="action" value="cleanup_expotecnica">
+        <label>Confirmacion requerida
+            <input type="text" name="cleanup_confirmation" placeholder="Escribe: LIMPIAR EXPOTECNICA" autocomplete="off" required>
+            <small>Debe escribirse exactamente: <strong>LIMPIAR EXPOTECNICA</strong></small>
+        </label>
+        <div class="actions-row maintenance-actions">
+            <button type="submit" class="danger-btn">Crear respaldo y limpiar ExpoTecnica</button>
+        </div>
+    </form>
+</section>
+
+<section class="card admin-section database-page">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Auditoria</p>
+            <h3>Bitacora de base de datos</h3>
+            <p>Acciones criticas asociadas a respaldos, restauraciones y limpieza anual.</p>
+        </div>
+        <span class="tag muted">{{ database_logs|length }} evento(s)</span>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Usuario</th>
+                    <th>Accion</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in database_logs %}
+                    <tr>
+                        <td>{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ log.actor_name }}</td>
+                        <td><code>{{ log.action }}</code></td>
+                        <td>{{ log.detail }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4">No hay eventos registrados para base de datos.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+{% if restore_job_running %}
+<script>
+    window.setTimeout(function () {
+        window.location.reload();
+    }, 5000);
+</script>
+{% endif %}
+{% endblock %}

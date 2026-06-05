@@ -1655,6 +1655,7 @@ def _create_database_backup(reason: str = "manual") -> dict:
     command = _mysql_base_args("mysqldump", db_config) + [
         "--single-transaction",
         "--quick",
+        "--no-tablespaces",
         "--routines",
         "--triggers",
         "--events",
@@ -1850,6 +1851,7 @@ mysqldump \
   --default-character-set=utf8mb4 \
   --single-transaction \
   --quick \
+  --no-tablespaces \
   --routines \
   --triggers \
   --events \
@@ -3912,6 +3914,9 @@ def _handle_action(action: str):
 
 
 def _base_context(active_page: str, **kwargs):
+    restore_jobs = _list_restore_jobs()
+    restore_job_running = any(job.get("is_running") for job in restore_jobs)
+    restore_safe_mode = active_page == "maintenance" and restore_job_running
     allowed_modules = _allowed_modules_for_current_user()
     admin_menu_items = [
         {"key": key, "endpoint": endpoint, "label": label}
@@ -3935,105 +3940,165 @@ def _base_context(active_page: str, **kwargs):
         if entries:
             admin_menu_groups.append({"label": group_label, "items": entries})
 
-    permission_access_map = _load_department_module_access()
-    permission_modules = [
-        {"key": key, "label": label}
-        for key, _endpoint, label in ADMIN_MENU_ITEMS
-        if key in PERMISSION_MANAGEABLE_MODULES
-    ]
-    permission_matrix = []
-    for dept_code, dept_name in USER_DEPARTMENTS:
-        enabled = set(permission_access_map.get(dept_code, ["overview"]))
-        row = {"code": dept_code, "name": dept_name, "modules": {}}
-        for module in permission_modules:
-            row["modules"][module["key"]] = module["key"] in enabled
-        permission_matrix.append(row)
+    if restore_safe_mode:
+        permission_access_map = {}
+        permission_modules = [
+            {"key": key, "label": label}
+            for key, _endpoint, label in ADMIN_MENU_ITEMS
+            if key in PERMISSION_MANAGEABLE_MODULES
+        ]
+        permission_matrix = []
+        judges = []
+        campaigns = []
+        categories = []
+        levels = []
+        sections = []
+        specialties = []
+        workshops = []
+        projects = []
+        assignments = []
+        evaluation_types = []
+        exposition_evaluation_types = []
+        documentation_evaluation_types = []
+        smtp_settings = {"host": "", "port": "587", "username": "", "from_email": "", "use_tls": True, "use_ssl": False}
+        institution_settings = {
+            "name": "CTP Roberto Gamboa Valverde",
+            "address": "",
+            "phone": "",
+            "email": "",
+            "logo_path": "",
+            "expo_logo_path": "",
+        }
+        maintenance_settings = {
+            "maintenance_enabled": False,
+            "maintenance_message": "Restauracion de base de datos en proceso.",
+            "maintenance_image_path": "",
+        }
+        cleanup_stats = {
+            "projects": 0,
+            "members": 0,
+            "member_changes": 0,
+            "assignments": 0,
+            "users": 0,
+            "evaluations": 0,
+            "evaluation_scores": 0,
+        }
+    else:
+        permission_access_map = _load_department_module_access()
+        permission_modules = [
+            {"key": key, "label": label}
+            for key, _endpoint, label in ADMIN_MENU_ITEMS
+            if key in PERMISSION_MANAGEABLE_MODULES
+        ]
+        permission_matrix = []
+        for dept_code, dept_name in USER_DEPARTMENTS:
+            enabled = set(permission_access_map.get(dept_code, ["overview"]))
+            row = {"code": dept_code, "name": dept_name, "modules": {}}
+            for module in permission_modules:
+                row["modules"][module["key"]] = module["key"] in enabled
+            permission_matrix.append(row)
 
-    judges = Judge.query.order_by(Judge.full_name.asc()).all()
-    campaigns = Campaign.query.order_by(Campaign.start_date.desc(), Campaign.id.desc()).all()
-    categories = Category.query.order_by(Category.sort_order.asc(), Category.name.asc()).all()
-    levels = Level.query.order_by(Level.sort_order.asc()).all()
-    sections = Section.query.options(joinedload(Section.level)).order_by(Section.sort_order.asc(), Section.name.asc()).all()
-    specialties = Specialty.query.order_by(Specialty.sort_order.asc(), Specialty.name.asc()).all()
-    workshops = Workshop.query.order_by(Workshop.sort_order.asc(), Workshop.name.asc()).all()
-    projects = Project.query.options(
-        joinedload(Project.members),
-        joinedload(Project.assignments),
-        joinedload(Project.evaluations),
-        joinedload(Project.section),
-        joinedload(Project.specialty_ref),
-        joinedload(Project.workshop_ref),
-        joinedload(Project.member_changes),
-    ).order_by(Project.created_at.desc()).all()
-    assignments = Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project)).order_by(Assignment.id.desc()).all()
-    evaluation_types = EvaluationType.query.options(joinedload(EvaluationType.rubric_criteria)).order_by(EvaluationType.sort_order.asc(), EvaluationType.name.asc()).all()
-    exposition_evaluation_types = [
-        eval_type
-        for eval_type in evaluation_types
-        if eval_type.code != ENGLISH_EVAL_TYPE_CODE and infer_evaluation_type_kind(eval_type) == "exposicion"
-    ]
-    documentation_evaluation_types = [
-        eval_type
-        for eval_type in evaluation_types
-        if eval_type.code != ENGLISH_EVAL_TYPE_CODE and infer_evaluation_type_kind(eval_type) == "documentacion"
-    ]
+        judges = Judge.query.order_by(Judge.full_name.asc()).all()
+        campaigns = Campaign.query.order_by(Campaign.start_date.desc(), Campaign.id.desc()).all()
+        categories = Category.query.order_by(Category.sort_order.asc(), Category.name.asc()).all()
+        levels = Level.query.order_by(Level.sort_order.asc()).all()
+        sections = Section.query.options(joinedload(Section.level)).order_by(Section.sort_order.asc(), Section.name.asc()).all()
+        specialties = Specialty.query.order_by(Specialty.sort_order.asc(), Specialty.name.asc()).all()
+        workshops = Workshop.query.order_by(Workshop.sort_order.asc(), Workshop.name.asc()).all()
+        projects = Project.query.options(
+            joinedload(Project.members),
+            joinedload(Project.assignments),
+            joinedload(Project.evaluations),
+            joinedload(Project.section),
+            joinedload(Project.specialty_ref),
+            joinedload(Project.workshop_ref),
+            joinedload(Project.member_changes),
+        ).order_by(Project.created_at.desc()).all()
+        assignments = Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project)).order_by(Assignment.id.desc()).all()
+        evaluation_types = EvaluationType.query.options(joinedload(EvaluationType.rubric_criteria)).order_by(EvaluationType.sort_order.asc(), EvaluationType.name.asc()).all()
+        exposition_evaluation_types = [
+            eval_type
+            for eval_type in evaluation_types
+            if eval_type.code != ENGLISH_EVAL_TYPE_CODE and infer_evaluation_type_kind(eval_type) == "exposicion"
+        ]
+        documentation_evaluation_types = [
+            eval_type
+            for eval_type in evaluation_types
+            if eval_type.code != ENGLISH_EVAL_TYPE_CODE and infer_evaluation_type_kind(eval_type) == "documentacion"
+        ]
 
-    smtp_settings = {
-        "host": SystemSetting.get_value("smtp_host", ""),
-        "port": SystemSetting.get_value("smtp_port", "587"),
-        "username": SystemSetting.get_value("smtp_username", ""),
-        "from_email": SystemSetting.get_value("smtp_from_email", ""),
-        "use_tls": SystemSetting.get_value("smtp_use_tls", "1") == "1",
-        "use_ssl": SystemSetting.get_value("smtp_use_ssl", "0") == "1",
-    }
-    institution_settings = {
-        "name": SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde"),
-        "address": SystemSetting.get_value("school_address", ""),
-        "phone": SystemSetting.get_value("school_phone", ""),
-        "email": SystemSetting.get_value("school_email", ""),
-        "logo_path": SystemSetting.get_value("school_logo_path", ""),
-        "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
-    }
-    maintenance_settings = {
-        "maintenance_enabled": SystemSetting.get_value("maintenance_enabled", "0") == "1",
-        "maintenance_message": SystemSetting.get_value(
-            "maintenance_message",
-            "Estamos cargando informacion de proyectos. Vuelve pronto.",
-        ),
-        "maintenance_image_path": SystemSetting.get_value("maintenance_image_path", ""),
-    }
-    cleanup_stats = _cleanup_expotecnica_counts()
+        smtp_settings = {
+            "host": SystemSetting.get_value("smtp_host", ""),
+            "port": SystemSetting.get_value("smtp_port", "587"),
+            "username": SystemSetting.get_value("smtp_username", ""),
+            "from_email": SystemSetting.get_value("smtp_from_email", ""),
+            "use_tls": SystemSetting.get_value("smtp_use_tls", "1") == "1",
+            "use_ssl": SystemSetting.get_value("smtp_use_ssl", "0") == "1",
+        }
+        institution_settings = {
+            "name": SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde"),
+            "address": SystemSetting.get_value("school_address", ""),
+            "phone": SystemSetting.get_value("school_phone", ""),
+            "email": SystemSetting.get_value("school_email", ""),
+            "logo_path": SystemSetting.get_value("school_logo_path", ""),
+            "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
+        }
+        maintenance_settings = {
+            "maintenance_enabled": SystemSetting.get_value("maintenance_enabled", "0") == "1",
+            "maintenance_message": SystemSetting.get_value(
+                "maintenance_message",
+                "Estamos cargando informacion de proyectos. Vuelve pronto.",
+            ),
+            "maintenance_image_path": SystemSetting.get_value("maintenance_image_path", ""),
+        }
+        cleanup_stats = _cleanup_expotecnica_counts()
     database_backups = _list_database_backups()
-    restore_jobs = _list_restore_jobs()
-    restore_job_running = any(job.get("is_running") for job in restore_jobs)
     gitops_status = _git_status_snapshot()
     gitops_service = _gitops_service_status()
-    gitops_last = {
-        "action": SystemSetting.get_value("gitops_last_action", ""),
-        "status": SystemSetting.get_value("gitops_last_status", ""),
-        "output": SystemSetting.get_value("gitops_last_output", ""),
-        "ran_at": SystemSetting.get_value("gitops_last_ran_at", ""),
-    }
-    gitops_remote = {
-        "remote_url": SystemSetting.get_value("gitops_remote_url", "") or (gitops_status.get("remote") or ""),
-        "username": SystemSetting.get_value("gitops_username", "x-access-token"),
-        "has_token": bool(SystemSetting.get_value("gitops_private_token", "")),
-    }
-    gitops_logs = (
-        SystemAuditLog.query.filter(SystemAuditLog.action.ilike("admin.git%"))
-        .order_by(SystemAuditLog.created_at.desc())
-        .limit(40)
-        .all()
-    )
-    judge_form_logs = (
-        SystemAuditLog.query.filter(SystemAuditLog.action.ilike("%forms.judge%"))
-        .order_by(SystemAuditLog.created_at.desc())
-        .limit(20)
-        .all()
-    )
-    judge_form_settings = _judge_form_settings()
+    if restore_safe_mode:
+        gitops_last = {"action": "", "status": "", "output": "", "ran_at": ""}
+        gitops_remote = {
+            "remote_url": gitops_status.get("remote") or "",
+            "username": "x-access-token",
+            "has_token": False,
+        }
+        gitops_logs = []
+        judge_form_logs = []
+        judge_form_settings = {
+            "enabled": False,
+            "auto_create_access": False,
+            "default_password": "",
+            "review_email": "",
+            "webhook_secret": "",
+        }
+    else:
+        gitops_last = {
+            "action": SystemSetting.get_value("gitops_last_action", ""),
+            "status": SystemSetting.get_value("gitops_last_status", ""),
+            "output": SystemSetting.get_value("gitops_last_output", ""),
+            "ran_at": SystemSetting.get_value("gitops_last_ran_at", ""),
+        }
+        gitops_remote = {
+            "remote_url": SystemSetting.get_value("gitops_remote_url", "") or (gitops_status.get("remote") or ""),
+            "username": SystemSetting.get_value("gitops_username", "x-access-token"),
+            "has_token": bool(SystemSetting.get_value("gitops_private_token", "")),
+        }
+        gitops_logs = (
+            SystemAuditLog.query.filter(SystemAuditLog.action.ilike("admin.git%"))
+            .order_by(SystemAuditLog.created_at.desc())
+            .limit(40)
+            .all()
+        )
+        judge_form_logs = (
+            SystemAuditLog.query.filter(SystemAuditLog.action.ilike("%forms.judge%"))
+            .order_by(SystemAuditLog.created_at.desc())
+            .limit(20)
+            .all()
+        )
+        judge_form_settings = _judge_form_settings()
     judge_form_webhook_url = url_for("public.judge_form_webhook", _external=True)
     judge_public_registration_url = url_for("public.judge_registration_short", _external=True)
+    smtp_configured = False if restore_safe_mode else smtp_is_configured()
     overview_metrics = _build_overview_metrics(
         projects,
         assignments,
@@ -4063,7 +4128,7 @@ def _base_context(active_page: str, **kwargs):
         "user_departments": USER_DEPARTMENTS,
         "user_roles": USER_ROLES,
         "smtp_settings": smtp_settings,
-        "smtp_configured": smtp_is_configured(),
+        "smtp_configured": smtp_configured,
         "institution_settings": institution_settings,
         "maintenance_settings": maintenance_settings,
         "cleanup_stats": cleanup_stats,

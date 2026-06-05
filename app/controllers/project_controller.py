@@ -526,29 +526,17 @@ def _render_project_documents_packet(project: Project):
     pdf.line(42, height - 68, width - 42, height - 68)
     y = height - 90
 
-    def clean_table(title, rows, y_position, max_rows=3, include_signature=False):
+    def clean_table(title, rows, y_position, max_rows=3):
         y_position = clean_section(title, y_position)
-        if include_signature:
-            headers = [
-                ("Nombre completo", 118),
-                ("Carrera tecnica", 122),
-                ("Fecha nac.", 62),
-                ("Sexo", 42),
-                ("Cedula", 74),
-                ("Telefono", 72),
-                ("E-mail", 92),
-                ("Firma", 126),
-            ]
-        else:
-            headers = [
-                ("Nombre completo", 150),
-                ("Carrera tecnica", 150),
-                ("Fecha nac.", 78),
-                ("Sexo", 58),
-                ("Cedula", 88),
-                ("Telefono", 86),
-                ("E-mail", 98),
-            ]
+        headers = [
+            ("Nombre completo", 150),
+            ("Carrera tecnica", 150),
+            ("Fecha nac.", 78),
+            ("Sexo", 58),
+            ("Cedula", 88),
+            ("Telefono", 86),
+            ("E-mail", 98),
+        ]
         pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
         pdf.setFillColor(colors.HexColor("#f3f8fd"))
         pdf.roundRect(42, y_position - 2, 708, 20, 5, stroke=1, fill=1)
@@ -592,7 +580,7 @@ def _render_project_documents_packet(project: Project):
         ]
         for member in members
     ]
-    y = clean_table("Datos de las personas estudiantes", student_rows, y, include_signature=True)
+    y = clean_table("Datos de las personas estudiantes", student_rows, y)
     teacher_rows = [[
         project.advisor_name or "",
         project.advisor_specialty or "",
@@ -621,18 +609,20 @@ def _render_project_documents_packet(project: Project):
     y -= 22
     pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
     pdf.setFillColor(colors.HexColor("#f3f8fd"))
-    pdf.roundRect(42, y, 310, 22, 5, stroke=1, fill=1)
+    pdf.roundRect(42, y, 520, 22, 5, stroke=1, fill=1)
     pdf.setFillColor(colors.HexColor("#073d70"))
     pdf.setFont("Helvetica-Bold", 7.3)
     pdf.drawString(50, y + 8, "Nombre del estudiante")
     pdf.drawCentredString(278, y + 8, "Si")
     pdf.drawCentredString(326, y + 8, "No")
+    pdf.drawCentredString(456, y + 8, "Firma")
     y -= 20
     for member in members[:3]:
         pdf.setStrokeColor(colors.HexColor("#d6e2ef"))
-        pdf.rect(42, y, 310, 18, stroke=1, fill=0)
+        pdf.rect(42, y, 520, 18, stroke=1, fill=0)
         pdf.line(260, y, 260, y + 18)
         pdf.line(300, y, 300, y + 18)
+        pdf.line(352, y, 352, y + 18)
         pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.setFont("Helvetica", 7)
         pdf.drawString(50, y + 6, _pdf_text(member.full_name))
@@ -641,9 +631,10 @@ def _render_project_documents_packet(project: Project):
         pdf.drawCentredString(326, y + 5, "" if member.participates_in_english else "X")
         y -= 18
     for _ in range(max(0, 3 - len(members[:3]))):
-        pdf.rect(42, y, 310, 18, stroke=1, fill=0)
+        pdf.rect(42, y, 520, 18, stroke=1, fill=0)
         pdf.line(260, y, 260, y + 18)
         pdf.line(300, y, 300, y + 18)
+        pdf.line(352, y, 352, y + 18)
         y -= 18
 
     declaration = (
@@ -655,15 +646,14 @@ def _render_project_documents_packet(project: Project):
         "de la ExpoTECNICA."
     )
     y -= 14
-    y = _draw_wrapped(pdf, declaration, 42, y, width_chars=138, leading=9, size=7.2)
-    y -= 12
+    declaration_y = y
+    y = _draw_wrapped(pdf, declaration, 42, y, width_chars=95, leading=9, size=7.2)
     pdf.setFont("Helvetica-Bold", 7.5)
-    pdf.drawString(42, y, "Firma de la persona docente tutora:")
-    pdf.line(210, y, 380, y)
-    y -= 18
-    pdf.drawString(42, y, "Firma de la persona mentor:")
-    pdf.line(180, y, 350, y)
-    y -= 16
+    pdf.drawString(520, declaration_y, "Firma docente tutora:")
+    pdf.line(520, declaration_y - 18, 740, declaration_y - 18)
+    pdf.drawString(520, declaration_y - 42, "Firma persona mentor:")
+    pdf.line(520, declaration_y - 60, 740, declaration_y - 60)
+    y -= 12
     pdf.setFont("Helvetica-Bold", 7.5)
     pdf.drawString(42, y, "Nota:")
     pdf.setFont("Helvetica", 7.5)

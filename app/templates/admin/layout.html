@@ -3,10 +3,15 @@
 <div class="admin-shell">
     <aside class="admin-sidebar">
         <div class="admin-sidebar-top">
-            <h2>Admin Hub</h2>
-            <p>ExpoTécnica</p>
+            <div>
+                <h2>Admin Hub</h2>
+                <p>ExpoTécnica</p>
+            </div>
+            <button type="button" class="admin-menu-toggle" data-admin-menu-toggle aria-expanded="false" aria-controls="admin-menu">
+                Menú
+            </button>
         </div>
-        <nav class="admin-menu">
+        <nav class="admin-menu" id="admin-menu" data-admin-menu>
             {% for group in admin_menu_groups %}
                 <p class="admin-menu-group">{{ group["label"] }}</p>
                 {% for item in group["items"] %}
@@ -77,6 +82,15 @@
 
         window.addEventListener("hashchange", syncDialogFromHash);
         syncDialogFromHash();
+
+        const adminMenuToggle = document.querySelector("[data-admin-menu-toggle]");
+        const adminSidebar = document.querySelector(".admin-sidebar");
+        if (adminMenuToggle && adminSidebar) {
+            adminMenuToggle.addEventListener("click", function () {
+                const isOpen = adminSidebar.classList.toggle("is-open");
+                adminMenuToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+            });
+        }
     })();
 </script>
 {% endblock %}

@@ -3252,6 +3252,10 @@ dialog.maintenance-dialog::backdrop {
     color: var(--muted);
 }
 
+.admin-menu-toggle {
+    display: none;
+}
+
 .admin-menu {
     display: grid;
     gap: 0.28rem;
@@ -7118,5 +7122,69 @@ body {
 @media (max-width: 560px) {
     .users-table-wrap .users-table tr[data-user-row] {
         grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
+/* Mobile admin navigation: keep maintenance content reachable without scrolling past the full menu. */
+@media (max-width: 900px) {
+    .admin-shell {
+        gap: 0.65rem !important;
+    }
+
+    .admin-sidebar {
+        position: sticky !important;
+        top: 0.65rem !important;
+        z-index: 120;
+        padding: 0.55rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 26px rgba(13, 63, 107, 0.12);
+    }
+
+    .admin-sidebar-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+
+    .admin-sidebar-top h2 {
+        font-size: 1.05rem;
+        line-height: 1.1;
+    }
+
+    .admin-sidebar-top p {
+        margin: 0.12rem 0 0;
+        font-size: 0.82rem;
+        line-height: 1.15;
+    }
+
+    .admin-menu-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: auto !important;
+        min-width: 86px;
+        min-height: 40px;
+        padding: 0.45rem 0.75rem;
+        border-color: rgba(31, 143, 181, 0.35);
+        background: #ffffff;
+        color: var(--primary);
+        white-space: nowrap;
+    }
+
+    .admin-sidebar .admin-menu {
+        display: none !important;
+        margin-top: 0.55rem;
+        max-height: min(62vh, 520px);
+        overflow-y: auto;
+        padding-right: 0.2rem;
+    }
+
+    .admin-sidebar.is-open .admin-menu {
+        display: grid !important;
+    }
+
+    .admin-menu-group {
+        margin-top: 0.35rem;
     }
 }

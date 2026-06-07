@@ -1,47 +1,50 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section maintenance-page">
-    <div class="page-head">
+<section class="card admin-section maintenance-page admin-overview-page">
+    <div class="page-head overview-hero">
         <div>
             <p class="maintenance-kicker">Centro de operaciones</p>
             <h3>Panel administrativo</h3>
             <p class="table-subtext">Prioriza pendientes reales del sistema, jueces, evaluaciones y logística.</p>
         </div>
-        <div class="page-head-actions">
-            <span class="tag ok">{{ overview_metrics.active_projects }} proyectos activos</span>
+        <div class="overview-hero-status">
+            <strong>{{ overview_metrics.active_projects }}</strong>
+            <span>proyectos activos</span>
         </div>
     </div>
 
-    <div class="quick-links">
-        <a href="{{ url_for('admin.assignments_page') }}">Asignar jueces</a>
-        <a href="{{ url_for('admin.projects_page') }}">Revisar proyectos</a>
-        <a href="{{ url_for('admin.evaluations_page') }}">Ver evaluaciones</a>
-        <a href="{{ url_for('admin.institution_page') }}">Logo e identidad</a>
-        <a href="{{ url_for('admin.campaigns_page') }}">Campañas</a>
+    <div class="overview-action-strip">
+        <a href="{{ url_for('admin.assignments_page') }}"><span>Asignar</span><strong>Jueces</strong></a>
+        <a href="{{ url_for('admin.projects_page') }}"><span>Revisar</span><strong>Proyectos</strong></a>
+        <a href="{{ url_for('admin.evaluations_page') }}"><span>Ver</span><strong>Evaluaciones</strong></a>
+        <a href="{{ url_for('admin.institution_page') }}"><span>Ajustar</span><strong>Identidad</strong></a>
+        <a href="{{ url_for('admin.campaigns_page') }}"><span>Gestionar</span><strong>Campañas</strong></a>
     </div>
 
-    <div class="admin-overview-grid">
-        <section class="admin-overview-block">
-            <h4>Operación crítica</h4>
-            <div class="admin-stats admin-stats-3">
-                <article><strong>{{ overview_metrics.projects_without_judges }}</strong><span>Proyectos sin jueces</span></article>
-                <article><strong>{{ overview_metrics.projects_pending_evaluations }}</strong><span>Con evaluación pendiente</span></article>
+    <div class="overview-metrics-grid">
+        <section class="overview-metric-panel critical">
+            <p class="maintenance-kicker">Operación crítica</p>
+            <h4>Atención inmediata</h4>
+            <div class="overview-metric-list">
+                <article><strong>{{ overview_metrics.projects_without_judges }}</strong><span>Sin jueces</span></article>
+                <article><strong>{{ overview_metrics.projects_pending_evaluations }}</strong><span>Evaluación pendiente</span></article>
                 <article><strong>{{ overview_metrics.projects_pending_review }}</strong><span>Pendientes de revisión</span></article>
             </div>
         </section>
 
-        <section class="admin-overview-block">
-            <h4>Control logístico</h4>
-            <div class="admin-stats admin-stats-4">
-                <article><strong>{{ overview_metrics.members_without_photo }}</strong><span>Estudiantes sin foto</span></article>
-                <article><strong>{{ overview_metrics.projects_without_logo }}</strong><span>Proyectos sin logo real</span></article>
-                <article><strong>{{ overview_metrics.projects_without_document }}</strong><span>Proyectos sin documento</span></article>
+        <section class="overview-metric-panel logistics">
+            <p class="maintenance-kicker">Control logístico</p>
+            <h4>Requisitos por completar</h4>
+            <div class="overview-metric-list compact">
+                <article><strong>{{ overview_metrics.members_without_photo }}</strong><span>Sin foto</span></article>
+                <article><strong>{{ overview_metrics.projects_without_logo }}</strong><span>Sin logo</span></article>
+                <article><strong>{{ overview_metrics.projects_without_document }}</strong><span>Sin documento</span></article>
                 <article><strong>{{ overview_metrics.projects_incomplete_logistics }}</strong><span>Logística incompleta</span></article>
             </div>
         </section>
     </div>
 
-    <div class="admin-overview-grid">
+    <div class="admin-overview-grid overview-work-grid">
         <section class="admin-overview-block">
             <div class="page-head">
                 <div>

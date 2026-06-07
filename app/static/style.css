@@ -2449,6 +2449,10 @@ dialog.maintenance-dialog::backdrop {
     align-items: start;
 }
 
+.judge-register-card-accent.profile .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .judge-commitment-note {
     margin: 0;
     padding: 0.85rem 1rem;
@@ -2565,7 +2569,8 @@ dialog.maintenance-dialog::backdrop {
 }
 
 @media (max-width: 640px) {
-    .judge-register-band .form-grid {
+    .judge-register-band .form-grid,
+    .judge-register-card-accent.profile .form-grid {
         grid-template-columns: minmax(0, 1fr);
     }
 }

@@ -1,150 +1,112 @@
-﻿{% extends "admin/layout.html" %}
+{% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section forms-integration-panel">
-    <div class="page-head">
+{% set ns = namespace(active=0, inactive=0, admins=0, judges_count=0, temp=0) %}
+{% for user in judges %}
+    {% if user.is_active_user %}{% set ns.active = ns.active + 1 %}{% else %}{% set ns.inactive = ns.inactive + 1 %}{% endif %}
+    {% if user.has_admin_access %}{% set ns.admins = ns.admins + 1 %}{% endif %}
+    {% if user.effective_role == 'judge' %}{% set ns.judges_count = ns.judges_count + 1 %}{% endif %}
+    {% if user.must_change_password %}{% set ns.temp = ns.temp + 1 %}{% endif %}
+{% endfor %}
+
+<section class="card admin-section users-admin-hero">
+    <div class="page-head users-admin-head">
         <div>
-            <p class="maintenance-kicker">Formulario publico</p>
-            <h3>Registro de jueces</h3>
-            <p class="table-subtext">Comparte este enlace para que cada juez se registre directamente en Expotecnica.</p>
-        </div>
-        <div class="page-head-actions">
-            <span class="tag {{ 'ok' if judge_form_settings.enabled else 'off' }}">{{ 'Activo' if judge_form_settings.enabled else 'Inactivo' }}</span>
-            <span class="tag {{ 'ok' if judge_form_settings.has_secret else 'off' }}">{{ 'Token listo' if judge_form_settings.has_secret else 'Sin token' }}</span>
-        </div>
-    </div>
-
-    <div class="forms-integration-grid">
-        <div class="compact-form forms-integration-config">
-            <label>Enlace publico para jueces
-                <input type="text" value="{{ judge_public_registration_url }}" readonly>
-            </label>
-            <div class="actions-row">
-                <a class="outline-btn" href="{{ url_for('public.judge_registration_short') }}" target="_blank" rel="noopener">Abrir registro publico</a>
-            </div>
-        </div>
-
-        <form method="post" action="{{ action_url }}" class="compact-form forms-integration-config">
-            <input type="hidden" name="next" value="{{ next_url }}">
-            <input type="hidden" name="action" value="save_judge_form_settings">
-            <label>URL externa opcional
-                <input type="url" name="judge_form_url" value="{{ judge_form_settings.form_url }}" placeholder="https://forms.cloud.microsoft/...">
-            </label>
-            <label>Webhook API opcional
-                <input type="text" value="{{ judge_form_webhook_url }}" readonly>
-            </label>
-            <label>Token secreto
-                <input type="text" name="judge_form_secret" value="{{ judge_form_settings.secret }}" placeholder="Genera o escribe un token privado">
-            </label>
-            <div class="toggle-row">
-                <label><input type="checkbox" name="judge_form_enabled" value="1" {% if judge_form_settings.enabled %}checked{% endif %}> Activar recepcion automatica</label>
-                <label><input type="checkbox" name="judge_form_auto_send_email" value="1" {% if judge_form_settings.auto_send_email %}checked{% endif %}> Enviar credenciales por correo</label>
-            </div>
-            <div class="actions-row">
-                <button type="submit">Guardar integracion</button>
-                {% if judge_form_settings.form_url %}
-                    <a class="outline-btn" href="{{ judge_form_settings.form_url }}" target="_blank" rel="noopener">Abrir formulario</a>
-                {% endif %}
-            </div>
-        </form>
-
-        <div class="forms-integration-help">
-            <div>
-                <h4>Campos del registro publico</h4>
-                <p class="table-subtext">El formulario propio ya solicita estos datos y crea el acceso automaticamente.</p>
-            </div>
-            <div class="forms-required-fields">
-                <strong>Campos recomendados para el formulario 2026</strong>
-                <span>Correo electronico</span>
-                <span>Telefono</span>
-                <span>Cedula o identificacion</span>
-                <span>Profesion o area tecnica</span>
-                <span>Institucion o empresa</span>
-                <span>Modalidad: escrita, exposicion presencial o ambas</span>
-                <span>Puede evaluar exposicion en ingles: Si/No</span>
-                <span>Areas que puede evaluar: STEAM, Emprendimiento, Ingles</span>
-            </div>
-            <pre>{
-  "token": "{{ judge_form_settings.secret or 'TOKEN_SECRETO' }}",
-  "primer_apellido": "Primer apellido",
-  "segundo_apellido": "Segundo apellido",
-  "nombre": "Nombre",
-  "correo": "correo@institucion.com",
-  "telefono": "8888-8888",
-  "cedula": "000000000",
-  "profesion": "Especialidad profesional",
-  "institucion": "Institucion o empresa",
-  "ha_participado": "Si",
-  "acepta_participar": "Si",
-  "modalidad": "Ambas",
-  "areas": "STEAM, Emprendimiento",
-  "ingles": "No",
-  "observaciones": "Respuesta original del formulario"
-}</pre>
-            <form method="post" action="{{ action_url }}" class="inline-form">
-                <input type="hidden" name="next" value="{{ next_url }}">
-                <input type="hidden" name="action" value="rotate_judge_form_secret">
-                <button type="submit" class="secondary-btn" onclick="return confirm('Rotar el token invalida el anterior. Continuar?')">Rotar token</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="forms-log-strip">
-        <h4>Ultimas solicitudes</h4>
-        {% if judge_form_logs %}
-            {% for log in judge_form_logs %}
-                <article>
-                    <strong>{{ log.action }}</strong>
-                    <span>{{ log.created_at.strftime('%Y-%m-%d %H:%M') if log.created_at else '' }}</span>
-                    <p>{{ log.detail }}</p>
-                </article>
-            {% endfor %}
-        {% else %}
-            <p class="muted-empty">Aun no hay solicitudes recibidas desde Forms.</p>
-        {% endif %}
-    </div>
-</section>
-
-<section class="card admin-section">
-    <div class="page-head">
-        <div>
-            <p class="maintenance-kicker">Usuarios</p>
+            <p class="maintenance-kicker">Administraci?n</p>
             <h3>Usuarios del sistema</h3>
-            <p class="table-subtext">Administra cuentas por departamento, datos de contacto, estado y contraseñas.</p>
-            <p class="table-subtext">Departamentos: {% for department_code, department_name in user_departments %}{{ department_name }}{% if not loop.last %} | {% endif %}{% endfor %}</p>
+            <p class="table-subtext">Gestiona cuentas, roles, estado y contrase?as desde una vista limpia.</p>
         </div>
         <div class="page-head-actions">
-            <span class="tag ok">{{ judges|length }} usuarios</span>
             <button type="button" class="secondary-btn" data-dialog-open="create-judge-dialog">Nuevo usuario</button>
         </div>
     </div>
 
-    <div class="table-wrap">
-        <table>
+    <div class="users-summary-grid">
+        <article><strong>{{ judges|length }}</strong><span>Total usuarios</span></article>
+        <article><strong>{{ ns.active }}</strong><span>Activos</span></article>
+        <article><strong>{{ ns.admins }}</strong><span>Administrativos</span></article>
+        <article><strong>{{ ns.judges_count }}</strong><span>Jueces</span></article>
+        <article><strong>{{ ns.temp }}</strong><span>Clave temporal</span></article>
+    </div>
+
+    <div class="users-action-grid">
+        <article class="users-action-card primary">
+            <div>
+                <p class="maintenance-kicker">Acci?n principal</p>
+                <h4>Crear cuenta manual</h4>
+                <p>?salo para administradores, log?stica, datos, dise?o, QA o jueces que deban quedar activos de inmediato.</p>
+            </div>
+            <button type="button" class="secondary-btn" data-dialog-open="create-judge-dialog">Crear usuario</button>
+        </article>
+        <article class="users-action-card">
+            <div>
+                <p class="maintenance-kicker">Registro p?blico propio</p>
+                <h4>Formulario de jueces</h4>
+                <p>Enlace institucional del sistema. No se muestran integraciones externas ni datos t?cnicos en esta vista.</p>
+            </div>
+            <div class="users-public-link">
+                <input type="text" value="{{ judge_public_registration_url }}" readonly>
+                <a class="outline-btn" href="{{ url_for('public.judge_registration_short') }}" target="_blank" rel="noopener">Abrir</a>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section class="card admin-section users-table-section">
+    <div class="page-head">
+        <div>
+            <p class="maintenance-kicker">Cuentas</p>
+            <h3>Listado de usuarios</h3>
+            <p class="table-subtext">Busca por nombre, correo, rol o departamento.</p>
+        </div>
+        <div class="page-head-actions users-search-wrap">
+            <input type="search" id="usersSearchInput" placeholder="Buscar usuario...">
+        </div>
+    </div>
+
+    <div class="users-role-legend">
+        {% for department_code, department_name in user_departments %}
+            <span>{{ department_name }}</span>
+        {% endfor %}
+    </div>
+
+    <div class="table-wrap users-table-wrap">
+        <table class="users-table" id="usersTable">
             <thead>
                 <tr>
-                    <th>Nombre</th>
-                    <th>Correo</th>
-                    <th>Departamento</th>
-                    <th>Cargo</th>
+                    <th>Usuario</th>
+                    <th>Perfil</th>
                     <th>Estado</th>
-                    <th>Acceso</th>
-                    <th>Clave</th>
+                    <th>?ltimo acceso</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
             {% for judge in judges %}
-                <tr>
-                    <td>{{ judge.full_name }}</td>
-                    <td>{{ judge.email }}</td>
-                    <td>{{ judge.department_label }}</td>
-                    <td>{{ judge.job_title or 'N/D' }}</td>
-                    <td><span class="tag {{ 'ok' if judge.is_active_user else 'off' }}">{{ 'Activo' if judge.is_active_user else 'Inactivo' }}</span></td>
-                    <td><span class="tag {{ 'ok' if judge.has_admin_access else 'off' }}">{{ judge.role_label }}</span></td>
-                    <td><span class="tag {{ 'off' if judge.must_change_password else 'ok' }}">{{ 'Temporal' if judge.must_change_password else 'Establecida' }}</span></td>
-                    <td class="actions-cell">
+                <tr data-user-row data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ judge.department_label ~ ' ' ~ judge.role_label ~ ' ' ~ (judge.job_title or ''))|lower }}">
+                    <td>
+                        <div class="user-identity-cell">
+                            <strong>{{ judge.full_name }}</strong>
+                            <span>{{ judge.email }}</span>
+                            {% if judge.phone %}<small>{{ judge.phone }}</small>{% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="user-profile-cell">
+                            <span class="tag {{ 'ok' if judge.has_admin_access else 'neutral' }}">{{ judge.role_label }}</span>
+                            <span>{{ judge.department_label }}</span>
+                            {% if judge.job_title %}<small>{{ judge.job_title }}</small>{% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="user-status-stack">
+                            <span class="tag {{ 'ok' if judge.is_active_user else 'off' }}">{{ 'Activo' if judge.is_active_user else 'Inactivo' }}</span>
+                            <span class="tag {{ 'off' if judge.must_change_password else 'ok' }}">{{ 'Clave temporal' if judge.must_change_password else 'Clave establecida' }}</span>
+                        </div>
+                    </td>
+                    <td>{{ judge.last_login_at.strftime('%Y-%m-%d %H:%M') if judge.last_login_at else 'Sin acceso' }}</td>
+                    <td class="actions-cell users-actions-cell">
                         <button type="button" class="outline-btn" data-dialog-open="edit-judge-{{ judge.id }}">Editar</button>
-                        <button type="button" class="secondary-btn" data-dialog-open="password-judge-{{ judge.id }}">Contraseña</button>
+                        <button type="button" class="secondary-btn" data-dialog-open="password-judge-{{ judge.id }}">Contrase?a</button>
                         <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar usuario?')">
                             <input type="hidden" name="next" value="{{ next_url }}">
                             <input type="hidden" name="action" value="delete_judge">
@@ -154,7 +116,7 @@
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="8">No hay usuarios registrados.</td></tr>
+                <tr><td colspan="5">No hay usuarios registrados.</td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -325,6 +287,17 @@
             syncDepartmentState(form);
             roleSelect.addEventListener("change", () => syncDepartmentState(form));
         });
+
+        const searchInput = document.getElementById("usersSearchInput");
+        const rows = Array.from(document.querySelectorAll("[data-user-row]"));
+        if (searchInput && rows.length) {
+            searchInput.addEventListener("input", () => {
+                const query = searchInput.value.trim().toLowerCase();
+                rows.forEach((row) => {
+                    row.hidden = query && !row.dataset.search.includes(query);
+                });
+            });
+        }
     })();
 </script>
 {% endblock %}

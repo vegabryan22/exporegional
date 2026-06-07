@@ -2246,10 +2246,14 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
     if not smtp_is_configured():
         return
 
+    login_url = url_for("auth.login", _external=True)
     subject = "Credenciales de acceso - ExpoTecnica"
     body = (
         f"Hola {judge.full_name},\n\n"
-        "Se ha creado/actualizado tu acceso a ExpoTecnica.\n"
+        "Gracias por confirmar tu participacion como juez de ExpoTecnica.\n"
+        "Tu colaboracion contempla la evaluacion escrita virtual y la evaluacion presencial de la exposicion de proyectos.\n\n"
+        "Se ha creado/actualizado tu acceso al portal de juez.\n"
+        f"Portal: {login_url}\n"
         f"Usuario: {judge.email}\n"
         f"Contrasena temporal: {plain_password}\n\n"
         "Por seguridad, cambia esta contrasena al ingresar.\n"
@@ -2357,7 +2361,7 @@ def _extract_judge_form_payload(payload: dict):
             "está de acuerdo en participar",
         )
     )
-    modality = _extract_json_value(payload, "modalidad", "participacion", "participación", "tipo de evaluacion")
+    modality = _extract_json_value(payload, "modalidad", "participacion", "participación", "tipo de evaluacion") or "Ambas"
     evaluation_areas = _extract_json_value(payload, "areas", "areas de evaluacion", "categorias", "categorías")
     english_available = _yes_no_value(_extract_json_value(payload, "ingles", "inglés", "evalua ingles", "dominio ingles"))
     notes = _extract_json_value(payload, "notes", "observaciones", "comentarios")
@@ -2404,8 +2408,8 @@ def _create_or_update_judge_from_form(payload: dict):
         return None, None, "Nombre y correo son obligatorios."
     if "@" not in data["email"]:
         return None, None, "El correo recibido no es valido."
-    if data.get("accepts_participation") == "No":
-        return None, None, "La persona indico que no acepta participar."
+    if data.get("accepts_participation") != "Si":
+        return None, None, "La persona no confirmo participacion."
 
     judge = Judge.query.filter_by(email=data["email"]).first()
     created = judge is None
@@ -2427,12 +2431,15 @@ def _create_or_update_judge_from_form(payload: dict):
         db.session.add(judge)
         db.session.flush()
     else:
+        temporary_password = secrets.token_urlsafe(10)
         judge.full_name = data["full_name"]
         judge.job_title = data["job_title"] or judge.job_title
         judge.phone = data["phone"] or judge.phone
         judge.role = Judge.ROLE_JUDGE
         judge.is_admin = False
         judge.is_active_user = True
+        judge.must_change_password = True
+        judge.set_password(temporary_password)
 
     detail = f"Solicitud de juez: {judge.full_name} <{judge.email}>"
     if data["notes"]:
@@ -2440,7 +2447,7 @@ def _create_or_update_judge_from_form(payload: dict):
     log_event("forms.judge_access.created" if created else "forms.judge_access.updated", "judge", entity_id=judge.id, detail=detail)
     db.session.commit()
 
-    if created and SystemSetting.get_value("judge_form_auto_send_email", "1") == "1":
+    if SystemSetting.get_value("judge_form_auto_send_email", "1") == "1":
         _send_judge_credentials_email(judge, temporary_password)
 
     return judge, temporary_password, ""

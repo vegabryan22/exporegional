@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% block body_class %}judge-registration-page{% endblock %}
 {% block content %}
 <section class="judge-register-shell">
-    <div class="judge-register-head">
+    <div class="judge-register-head judge-register-hero">
         <p class="maintenance-kicker">ExpoTécnica 2026</p>
         <h2>Registro de jueces</h2>
-        <p>Completa la información para colaborar en la evaluación de proyectos del CTP Roberto Gamboa Valverde.</p>
+        <p>Completa la información para colaborar como juez en la evaluación integral de proyectos del CTP Roberto Gamboa Valverde.</p>
     </div>
 
     <article class="judge-register-intro">
@@ -26,8 +27,10 @@
 
     <form method="post" class="judge-register-form">
         <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off">
+        <input type="hidden" name="modalidad" value="Ambas">
 
-        <div class="judge-register-band">
+        <div class="judge-register-band judge-register-card-accent personal">
+            <span class="judge-step">1</span>
             <h3>Datos personales</h3>
             <div class="form-grid">
                 <label>Nombre
@@ -51,7 +54,8 @@
             </div>
         </div>
 
-        <div class="judge-register-band">
+        <div class="judge-register-band judge-register-card-accent profile">
+            <span class="judge-step">2</span>
             <h3>Perfil profesional</h3>
             <div class="form-grid">
                 <label>Profesión o área técnica
@@ -60,56 +64,82 @@
                 <label>Institución o empresa
                     <input type="text" name="institucion" value="{{ form_data.get('institucion', '') }}">
                 </label>
-                <label>Ha participado en otras ferias de ExpoTécnica
-                    <select name="ha_participado" required>
-                        <option value="">Seleccione...</option>
-                        <option value="Si" {% if form_data.get('ha_participado') == 'Si' %}selected{% endif %}>Si</option>
-                        <option value="No" {% if form_data.get('ha_participado') == 'No' %}selected{% endif %}>No</option>
-                    </select>
-                </label>
             </div>
+
+            <fieldset class="judge-choice-fieldset">
+                <legend>¿Ha participado en otras ferias de ExpoTécnica?</legend>
+                <div class="judge-choice-grid compact">
+                    <label class="judge-choice-card">
+                        <input type="radio" name="ha_participado" value="Si" {% if form_data.get('ha_participado') == 'Si' %}checked{% endif %} required>
+                        <span>Sí</span>
+                    </label>
+                    <label class="judge-choice-card">
+                        <input type="radio" name="ha_participado" value="No" {% if form_data.get('ha_participado') == 'No' %}checked{% endif %} required>
+                        <span>No</span>
+                    </label>
+                </div>
+            </fieldset>
         </div>
 
-        <div class="judge-register-band">
-            <h3>Disponibilidad de evaluación</h3>
-            <div class="form-grid">
-                <label>Modalidad en la que puede colaborar
-                    <select name="modalidad" required>
-                        <option value="">Seleccione...</option>
-                        <option value="Evaluacion escrita virtual" {% if form_data.get('modalidad') == 'Evaluacion escrita virtual' %}selected{% endif %}>Evaluación escrita virtual</option>
-                        <option value="Exposicion presencial" {% if form_data.get('modalidad') == 'Exposicion presencial' %}selected{% endif %}>Exposición presencial</option>
-                        <option value="Ambas" {% if form_data.get('modalidad') == 'Ambas' %}selected{% endif %}>Ambas</option>
-                    </select>
-                </label>
-                <label>Puede evaluar exposición en inglés
-                    <select name="ingles" required>
-                        <option value="">Seleccione...</option>
-                        <option value="Si" {% if form_data.get('ingles') == 'Si' %}selected{% endif %}>Si</option>
-                        <option value="No" {% if form_data.get('ingles') == 'No' %}selected{% endif %}>No</option>
-                    </select>
-                </label>
-                <label>Áreas que puede evaluar
-                    <select name="areas" required>
-                        <option value="">Seleccione...</option>
-                        <option value="STEAM" {% if form_data.get('areas') == 'STEAM' %}selected{% endif %}>Desafío STEAM</option>
-                        <option value="Emprendimiento" {% if form_data.get('areas') == 'Emprendimiento' %}selected{% endif %}>Emprendimiento e Innovación</option>
-                        <option value="STEAM, Emprendimiento" {% if form_data.get('areas') == 'STEAM, Emprendimiento' %}selected{% endif %}>Ambas categorías</option>
-                    </select>
-                </label>
-            </div>
+        <div class="judge-register-band judge-register-card-accent evaluation">
+            <span class="judge-step">3</span>
+            <h3>Evaluación integral</h3>
+            <p class="judge-commitment-note">Al aceptar participar como juez, se contempla la colaboración en ambas etapas: evaluación escrita virtual y evaluación presencial de la exposición de proyectos.</p>
+
+            <fieldset class="judge-choice-fieldset">
+                <legend>¿Puede evaluar exposición en inglés?</legend>
+                <div class="judge-choice-grid compact">
+                    <label class="judge-choice-card">
+                        <input type="radio" name="ingles" value="Si" {% if form_data.get('ingles') == 'Si' %}checked{% endif %} required>
+                        <span>Sí</span>
+                    </label>
+                    <label class="judge-choice-card">
+                        <input type="radio" name="ingles" value="No" {% if form_data.get('ingles') == 'No' %}checked{% endif %} required>
+                        <span>No</span>
+                    </label>
+                </div>
+            </fieldset>
+
+            <fieldset class="judge-choice-fieldset">
+                <legend>Áreas que puede evaluar</legend>
+                <div class="judge-choice-grid">
+                    <label class="judge-choice-card area-card">
+                        <input type="radio" name="areas" value="STEAM" {% if form_data.get('areas') == 'STEAM' %}checked{% endif %} required>
+                        <span>Desafío STEAM</span>
+                        <small>Solución técnica, prototipo, investigación e innovación.</small>
+                    </label>
+                    <label class="judge-choice-card area-card">
+                        <input type="radio" name="areas" value="Emprendimiento" {% if form_data.get('areas') == 'Emprendimiento' %}checked{% endif %} required>
+                        <span>Emprendimiento e Innovación</span>
+                        <small>Modelo de negocio, propuesta de valor y viabilidad.</small>
+                    </label>
+                    <label class="judge-choice-card area-card">
+                        <input type="radio" name="areas" value="STEAM, Emprendimiento" {% if form_data.get('areas') == 'STEAM, Emprendimiento' %}checked{% endif %} required>
+                        <span>Ambas categorías</span>
+                        <small>Disponibilidad para evaluar proyectos de ambas líneas.</small>
+                    </label>
+                </div>
+            </fieldset>
         </div>
 
-        <div class="judge-register-band">
+        <div class="judge-register-band judge-register-card-accent confirm">
+            <span class="judge-step">4</span>
             <h3>Confirmación</h3>
-            <label>Está de acuerdo en participar como juez
-                <select name="acepta_participar" required>
-                    <option value="">Seleccione...</option>
-                    <option value="Si" {% if form_data.get('acepta_participar') == 'Si' %}selected{% endif %}>Si</option>
-                    <option value="No" {% if form_data.get('acepta_participar') == 'No' %}selected{% endif %}>No</option>
-                </select>
-            </label>
+            <fieldset class="judge-choice-fieldset participation-choice">
+                <legend>¿Está de acuerdo en participar como juez?</legend>
+                <div class="judge-choice-grid compact">
+                    <label class="judge-choice-card yes-card">
+                        <input type="radio" name="acepta_participar" value="Si" {% if form_data.get('acepta_participar') == 'Si' %}checked{% endif %} required>
+                        <span>Sí, acepto participar</span>
+                    </label>
+                    <label class="judge-choice-card no-card">
+                        <input type="radio" name="acepta_participar" value="No" {% if form_data.get('acepta_participar') == 'No' %}checked{% endif %} required>
+                        <span>No puedo participar</span>
+                    </label>
+                </div>
+            </fieldset>
             <label>Observaciones
-                <textarea name="observaciones" rows="4">{{ form_data.get('observaciones', '') }}</textarea>
+                <textarea name="observaciones" rows="4" placeholder="Puede indicar área de experiencia o comentarios adicionales.">{{ form_data.get('observaciones', '') }}</textarea>
             </label>
             <div class="actions-row">
                 <button type="submit">Enviar registro</button>

@@ -1,4 +1,4 @@
-﻿{% extends "admin/layout.html" %}
+{% extends "admin/layout.html" %}
 {% block admin_content %}
 {% set active_projects = projects|selectattr('is_active')|list %}
 {% set active_project_ids = active_projects|map(attribute='id')|list %}

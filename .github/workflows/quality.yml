@@ -1,0 +1,16 @@
+name: Quality checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  text-encoding:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check Spanish text encoding
+        run: python scripts/check_text_encoding.py

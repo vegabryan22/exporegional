@@ -6965,3 +6965,27 @@ body {
         align-items: center !important;
     }
 }
+
+/* Users admin: keep action buttons compact even when generic mobile table rules apply. */
+@media (max-width: 700px) {
+    .users-table .users-actions-cell {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        align-items: center;
+        width: 100%;
+    }
+
+    .users-table .users-actions-cell > *,
+    .users-table .users-actions-cell .inline-form {
+        width: auto;
+        min-width: 0;
+    }
+
+    .users-table .users-actions-cell button {
+        width: auto;
+        min-height: 38px;
+        padding-inline: 0.75rem;
+        white-space: nowrap;
+    }
+}

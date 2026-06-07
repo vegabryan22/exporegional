@@ -11,9 +11,9 @@
 <section class="card admin-section users-admin-hero">
     <div class="page-head users-admin-head">
         <div>
-            <p class="maintenance-kicker">Administraci?n</p>
+            <p class="maintenance-kicker">Administración</p>
             <h3>Usuarios del sistema</h3>
-            <p class="table-subtext">Gestiona cuentas, roles, estado y contrase?as desde una vista limpia.</p>
+            <p class="table-subtext">Gestiona cuentas, roles, estado y contraseñas desde una vista limpia.</p>
         </div>
         <div class="page-head-actions">
             <button type="button" class="secondary-btn" data-dialog-open="create-judge-dialog">Nuevo usuario</button>
@@ -31,17 +31,17 @@
     <div class="users-action-grid">
         <article class="users-action-card primary">
             <div>
-                <p class="maintenance-kicker">Acci?n principal</p>
+                <p class="maintenance-kicker">Acción principal</p>
                 <h4>Crear cuenta manual</h4>
-                <p>?salo para administradores, log?stica, datos, dise?o, QA o jueces que deban quedar activos de inmediato.</p>
+                <p>Úsalo para administradores, logística, datos, diseño, QA o jueces que deban quedar activos de inmediato.</p>
             </div>
             <button type="button" class="secondary-btn" data-dialog-open="create-judge-dialog">Crear usuario</button>
         </article>
         <article class="users-action-card">
             <div>
-                <p class="maintenance-kicker">Registro p?blico propio</p>
+                <p class="maintenance-kicker">Registro público propio</p>
                 <h4>Formulario de jueces</h4>
-                <p>Enlace institucional del sistema. No se muestran integraciones externas ni datos t?cnicos en esta vista.</p>
+                <p>Enlace institucional del sistema. No se muestran integraciones externas ni datos técnicos en esta vista.</p>
             </div>
             <div class="users-public-link">
                 <input type="text" value="{{ judge_public_registration_url }}" readonly>
@@ -76,7 +76,7 @@
                     <th>Usuario</th>
                     <th>Perfil</th>
                     <th>Estado</th>
-                    <th>?ltimo acceso</th>
+                    <th>Último acceso</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -106,7 +106,7 @@
                     <td>{{ judge.last_login_at.strftime('%Y-%m-%d %H:%M') if judge.last_login_at else 'Sin acceso' }}</td>
                     <td class="actions-cell users-actions-cell">
                         <button type="button" class="outline-btn" data-dialog-open="edit-judge-{{ judge.id }}">Editar</button>
-                        <button type="button" class="secondary-btn" data-dialog-open="password-judge-{{ judge.id }}">Contrase?a</button>
+                        <button type="button" class="secondary-btn" data-dialog-open="password-judge-{{ judge.id }}">Contraseña</button>
                         <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar usuario?')">
                             <input type="hidden" name="next" value="{{ next_url }}">
                             <input type="hidden" name="action" value="delete_judge">

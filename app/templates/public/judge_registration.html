@@ -3,9 +3,16 @@
 {% block content %}
 <section class="judge-register-shell">
     <div class="judge-register-head judge-register-hero">
-        <p class="maintenance-kicker">ExpoTécnica 2026</p>
-        <h2>Registro de jueces</h2>
-        <p>Completa la información para colaborar como juez en la evaluación integral de proyectos del CTP Roberto Gamboa Valverde.</p>
+        <div class="judge-hero-copy">
+            <p class="maintenance-kicker">ExpoTécnica 2026</p>
+            <h2>Registro de jueces</h2>
+            <p>Completa la información para colaborar como juez en la evaluación integral de proyectos del CTP Roberto Gamboa Valverde.</p>
+        </div>
+        {% if institution is defined and institution.expo_logo_path %}
+            <div class="judge-hero-logo-card">
+                <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica">
+            </div>
+        {% endif %}
     </div>
 
     <article class="judge-register-intro judge-invitation-card">

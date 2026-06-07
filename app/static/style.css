@@ -2382,6 +2382,71 @@ dialog.maintenance-dialog::backdrop {
     margin: 0.2rem 0;
 }
 
+.judge-invitation-card {
+    border-radius: 20px;
+    border-left: 0;
+    border-top: 5px solid #1f7a54;
+    padding: 1.25rem;
+    box-shadow: 0 16px 34px rgba(18, 63, 107, 0.08);
+}
+
+.judge-intro-eyebrow {
+    width: fit-content;
+    border-radius: 999px;
+    background: #eaf8ef;
+    color: #17613c;
+    padding: 0.28rem 0.65rem;
+    font-size: 0.82rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.judge-invitation-card h3 {
+    margin: 0;
+    color: #0d3f6b;
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.judge-event-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.judge-event-card {
+    display: grid;
+    gap: 0.28rem;
+    min-height: 128px;
+    border: 1px solid #cfe0f1;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #f8fcff 0%, #ffffff 100%);
+    padding: 0.95rem;
+}
+
+.judge-event-card.highlight {
+    border-color: #f5b36a;
+    background: linear-gradient(145deg, #fff7ed 0%, #ffffff 100%);
+}
+
+.judge-event-card span {
+    color: #58708a;
+    font-size: 0.82rem;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.judge-event-card strong {
+    color: #0d3f6b;
+    font-size: 1.25rem;
+}
+
+.judge-event-card small {
+    color: #536b85;
+    line-height: 1.35;
+}
+
 .judge-register-note {
     border-radius: 8px;
     background: #f1f7fd;
@@ -2389,6 +2454,53 @@ dialog.maintenance-dialog::backdrop {
     padding: 0.75rem;
     color: #163f66;
     font-weight: 700;
+}
+
+.judge-intro-confirm {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    border-radius: 16px;
+    background: #f7fbff;
+    border: 1px dashed #b9d2ea;
+    padding: 0.85rem;
+}
+
+.judge-read-confirm {
+    display: flex;
+    grid-template-columns: none;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: min(100%, 560px);
+    color: #123a63;
+    font-weight: 850;
+}
+
+.judge-read-confirm input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: #1f7a54;
+    flex: 0 0 auto;
+}
+
+.judge-intro-button {
+    border-color: #1f7a54;
+    background: linear-gradient(180deg, #2f9d68 0%, #1f7a54 100%);
+    color: #ffffff;
+    font-weight: 900;
+}
+
+.judge-intro-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+    filter: grayscale(0.35);
+}
+
+.judge-form-collapsed {
+    display: none;
 }
 
 .judge-register-band {
@@ -2563,6 +2675,10 @@ dialog.maintenance-dialog::backdrop {
 }
 
 @media (max-width: 980px) {
+    .judge-event-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     .judge-register-band .form-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

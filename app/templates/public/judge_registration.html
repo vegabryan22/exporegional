@@ -8,24 +8,44 @@
         <p>Completa la información para colaborar como juez en la evaluación integral de proyectos del CTP Roberto Gamboa Valverde.</p>
     </div>
 
-    <article class="judge-register-intro">
-        <p>La ExpoTÉCNICA ofrece un espacio para que las personas estudiantes demuestren sus habilidades técnicas y de innovación a través de dos categorías principales:</p>
-        <ul>
-            <li>Desafío STEAM</li>
-            <li>Emprendimiento e Innovación</li>
-        </ul>
+    <article class="judge-register-intro judge-invitation-card">
+        <div class="judge-intro-eyebrow">Antes de completar el formulario</div>
+        <h3>Invitación para jueces ExpoTécnica 2026</h3>
+        <p>La ExpoTÉCNICA ofrece un espacio para que las personas estudiantes demuestren sus habilidades técnicas y de innovación a través de dos categorías principales: <strong>Desafío STEAM</strong> y <strong>Emprendimiento e Innovación</strong>.</p>
         <p>También los estudiantes pueden participar y/o defender su proyecto en inglés mediante la exposición del proyecto con dominio lingüístico en inglés. Esto solo aplica en el momento de exposición, de manera presencial.</p>
-        <p>Cada una de estas categorías responde a enfoques distintos de aplicación del conocimiento, fomentando el pensamiento crítico, la creatividad y la resolución de problemas.</p>
-        <p>Para llevar con éxito la Feria Institucional del CTP Roberto Gamboa Valverde, necesitamos el apoyo de personas profesionales en distintas áreas que puedan brindar su colaboración como jueces para la evaluación de proyectos. Esta actividad se divide en dos partes:</p>
-        <ul>
-            <li>Evaluación de parte escrita, de manera virtual o desde el hogar de cada juez.</li>
-            <li>Evaluación de la exposición de los proyectos, de forma presencial en el CTP Roberto Gamboa Valverde, San Rafael Abajo, Desamparados, San José, el 20 de agosto de 8:30 a.m. a 2:00 p.m.</li>
-        </ul>
+        <p>Cada categoría fomenta el pensamiento crítico, la creatividad y la resolución de problemas. Para llevar con éxito la Feria Institucional del CTP Roberto Gamboa Valverde, necesitamos el apoyo de personas profesionales que colaboren como jueces.</p>
+
+        <div class="judge-event-grid">
+            <div class="judge-event-card">
+                <span>Evaluación escrita</span>
+                <strong>Virtual / desde casa</strong>
+                <small>Revisión de la parte escrita del proyecto.</small>
+            </div>
+            <div class="judge-event-card highlight">
+                <span>Exposición presencial</span>
+                <strong>20 de agosto</strong>
+                <small>8:30 a.m. a 2:00 p.m. en el CTP Roberto Gamboa Valverde, San Rafael Abajo, Desamparados, San José.</small>
+            </div>
+            <div class="judge-event-card">
+                <span>Compromiso</span>
+                <strong>Ambas etapas</strong>
+                <small>Al aceptar, el juez participa en la evaluación escrita y en la exposición presencial.</small>
+            </div>
+        </div>
+
         <p>Por lo que le solicitamos unos minutos de su valioso tiempo para completar la información que se detalla. Agradecemos su colaboración y apoyo a la educación técnica costarricense.</p>
         <p class="judge-register-note">Cuando envíe este formulario, el sistema no recopilará automáticamente sus detalles, como el nombre y la dirección de correo electrónico, a menos que usted los proporcione.</p>
+
+        <div class="judge-intro-confirm">
+            <label class="judge-read-confirm">
+                <input type="checkbox" id="judgeIntroAccepted">
+                <span>He leído la invitación, conozco la fecha y el horario, y deseo continuar con el registro.</span>
+            </label>
+            <button type="button" id="judgeShowForm" class="judge-intro-button" disabled>Acepto y quiero registrarme</button>
+        </div>
     </article>
 
-    <form method="post" class="judge-register-form">
+    <form method="post" id="judgeRegistrationForm" class="judge-register-form {% if not form_data %}judge-form-collapsed{% endif %}">
         <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off">
         <input type="hidden" name="modalidad" value="Ambas">
 
@@ -146,5 +166,24 @@
             </div>
         </div>
     </form>
+
+    <script>
+        (() => {
+            const checkbox = document.getElementById('judgeIntroAccepted');
+            const button = document.getElementById('judgeShowForm');
+            const form = document.getElementById('judgeRegistrationForm');
+            if (!checkbox || !button || !form) return;
+
+            const showForm = () => {
+                form.classList.remove('judge-form-collapsed');
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+
+            checkbox.addEventListener('change', () => {
+                button.disabled = !checkbox.checked;
+            });
+            button.addEventListener('click', showForm);
+        })();
+    </script>
 </section>
 {% endblock %}

@@ -83,28 +83,28 @@
             <tbody>
             {% for judge in judges %}
                 <tr data-user-row data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ judge.department_label ~ ' ' ~ judge.role_label ~ ' ' ~ (judge.job_title or ''))|lower }}">
-                    <td>
+                    <td data-label="Usuario">
                         <div class="user-identity-cell">
                             <strong>{{ judge.full_name }}</strong>
                             <span>{{ judge.email }}</span>
                             {% if judge.phone %}<small>{{ judge.phone }}</small>{% endif %}
                         </div>
                     </td>
-                    <td>
+                    <td data-label="Perfil">
                         <div class="user-profile-cell">
                             <span class="tag {{ 'ok' if judge.has_admin_access else 'neutral' }}">{{ judge.role_label }}</span>
                             <span>{{ judge.department_label }}</span>
                             {% if judge.job_title %}<small>{{ judge.job_title }}</small>{% endif %}
                         </div>
                     </td>
-                    <td>
+                    <td data-label="Estado">
                         <div class="user-status-stack">
                             <span class="tag {{ 'ok' if judge.is_active_user else 'off' }}">{{ 'Activo' if judge.is_active_user else 'Inactivo' }}</span>
                             <span class="tag {{ 'off' if judge.must_change_password else 'ok' }}">{{ 'Clave temporal' if judge.must_change_password else 'Clave establecida' }}</span>
                         </div>
                     </td>
-                    <td>{{ judge.last_login_at.strftime('%Y-%m-%d %H:%M') if judge.last_login_at else 'Sin acceso' }}</td>
-                    <td class="actions-cell users-actions-cell">
+                    <td data-label="Último acceso">{{ judge.last_login_at.strftime('%Y-%m-%d %H:%M') if judge.last_login_at else 'Sin acceso' }}</td>
+                    <td data-label="Acciones" class="actions-cell users-actions-cell">
                         <button type="button" class="outline-btn" data-dialog-open="edit-judge-{{ judge.id }}">Editar</button>
                         <button type="button" class="secondary-btn" data-dialog-open="password-judge-{{ judge.id }}">Contraseña</button>
                         <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar usuario?')">

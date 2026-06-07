@@ -7065,9 +7065,11 @@ body {
     }
 
     .users-table-wrap .users-actions-cell button {
-        width: fit-content;
-        min-width: max-content;
+        width: 42px !important;
+        min-width: 42px !important;
+        height: 42px;
         min-height: 42px;
+        padding: 0;
         white-space: nowrap;
         overflow-wrap: normal;
         word-break: normal;

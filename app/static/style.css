@@ -2676,6 +2676,41 @@ dialog.maintenance-dialog::backdrop {
     background: #fff3f5;
 }
 
+.judge-captcha-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+    gap: 0.8rem;
+    align-items: end;
+    border: 1px solid #cfe0f1;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f7fbff 0%, #ffffff 100%);
+    padding: 0.9rem;
+}
+
+.judge-captcha-prompt {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.judge-captcha-prompt span {
+    color: #58708a;
+    font-size: 0.82rem;
+    font-weight: 850;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.judge-captcha-prompt strong {
+    width: fit-content;
+    border-radius: 14px;
+    background: #eaf8ef;
+    border: 1px solid #bfe2cd;
+    color: #17613c;
+    padding: 0.45rem 0.85rem;
+    font-size: 1.35rem;
+    font-weight: 950;
+}
+
 .judge-register-band .actions-row {
     display: flex;
     justify-content: flex-end;
@@ -2721,6 +2756,10 @@ dialog.maintenance-dialog::backdrop {
 }
 
 @media (max-width: 640px) {
+    .judge-captcha-card {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     .judge-register-band .form-grid,
     .judge-register-card-accent.profile .form-grid {
         grid-template-columns: minmax(0, 1fr);

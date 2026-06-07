@@ -168,6 +168,15 @@
             <label>Observaciones
                 <textarea name="observaciones" rows="4" placeholder="Puede indicar área de experiencia o comentarios adicionales.">{{ form_data.get('observaciones', '') }}</textarea>
             </label>
+            <div class="judge-captcha-card">
+                <div class="judge-captcha-prompt">
+                    <span>Verificación anti-spam</span>
+                    <strong>{{ captcha_question }}</strong>
+                </div>
+                <label>Resultado
+                    <input type="text" name="captcha_answer" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
+                </label>
+            </div>
             <div class="actions-row">
                 <button type="submit">Enviar registro</button>
             </div>

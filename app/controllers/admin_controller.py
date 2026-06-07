@@ -13,7 +13,7 @@ from pathlib import Path
 
 from functools import wraps
 
-from flask import abort, current_app, flash, jsonify, redirect, render_template, request, send_file, url_for
+from flask import abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required
 from sqlalchemy import or_, text
 from sqlalchemy.engine import make_url
@@ -5034,16 +5034,53 @@ def judge_form_webhook():
     )
 
 
+JUDGE_CAPTCHA_QUESTION_KEY = "judge_registration_captcha_question"
+JUDGE_CAPTCHA_ANSWER_KEY = "judge_registration_captcha_answer"
+
+
+def _new_judge_registration_captcha():
+    left = secrets.randbelow(8) + 2
+    right = secrets.randbelow(8) + 2
+    session[JUDGE_CAPTCHA_QUESTION_KEY] = f"{left} + {right}"
+    session[JUDGE_CAPTCHA_ANSWER_KEY] = str(left + right)
+    session.modified = True
+    return session[JUDGE_CAPTCHA_QUESTION_KEY]
+
+
+def _judge_registration_captcha_question():
+    return session.get(JUDGE_CAPTCHA_QUESTION_KEY) or _new_judge_registration_captcha()
+
+
+def _validate_judge_registration_captcha(answer):
+    expected = str(session.get(JUDGE_CAPTCHA_ANSWER_KEY, "")).strip()
+    received = str(answer or "").strip()
+    valid = bool(expected) and received == expected
+    _new_judge_registration_captcha()
+    return valid
+
+
 def public_judge_registration():
     if request.method == "POST":
         if request.form.get("website", "").strip():
             return redirect(url_for("public.judge_registration"))
 
         payload = request.form.to_dict()
+        if not _validate_judge_registration_captcha(payload.get("captcha_answer")):
+            flash("La verificación anti-spam no coincide. Inténtalo de nuevo.", "error")
+            return render_template(
+                "public/judge_registration.html",
+                form_data=payload,
+                captcha_question=_judge_registration_captcha_question(),
+            )
+
         judge, temporary_password, error = _create_or_update_judge_from_form(payload)
         if error:
             flash(error, "error")
-            return render_template("public/judge_registration.html", form_data=payload)
+            return render_template(
+                "public/judge_registration.html",
+                form_data=payload,
+                captcha_question=_judge_registration_captcha_question(),
+            )
 
         email_sent = bool(temporary_password) and smtp_is_configured()
         return render_template(
@@ -5053,4 +5090,8 @@ def public_judge_registration():
             email_sent=email_sent,
         )
 
-    return render_template("public/judge_registration.html", form_data={})
+    return render_template(
+        "public/judge_registration.html",
+        form_data={},
+        captcha_question=_judge_registration_captcha_question(),
+    )

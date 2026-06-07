@@ -7061,17 +7061,16 @@ body {
 
     .users-table-wrap .users-actions-cell > *,
     .users-table-wrap .users-actions-cell .inline-form {
-        flex: 0 0 auto !important;
-        width: auto !important;
-        min-width: 0 !important;
+        flex: 0 0 auto;
     }
 
     .users-table-wrap .users-actions-cell button {
-        width: auto !important;
-        min-width: 42px;
+        width: fit-content;
+        min-width: max-content;
         min-height: 42px;
-        padding-inline: 0.8rem;
         white-space: nowrap;
+        overflow-wrap: normal;
+        word-break: normal;
     }
 }
 
@@ -7111,11 +7110,6 @@ body {
         align-content: start;
         justify-content: flex-start;
         gap: 0.45rem;
-    }
-
-    .users-table-wrap .users-actions-cell button {
-        min-width: 0;
-        padding-inline: 0.7rem;
     }
 }
 

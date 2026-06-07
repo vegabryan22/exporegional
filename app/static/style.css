@@ -2244,24 +2244,29 @@ dialog.maintenance-dialog::backdrop {
 
 .users-action-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.9rem;
     align-items: stretch;
 }
 
 .users-action-card {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 1rem;
     align-items: center;
     border: 1px solid #d7e6f5;
     border-radius: 18px;
     background: #ffffff;
     padding: 1rem;
+    min-width: 0;
 }
 
 .users-action-card.primary {
     background: linear-gradient(135deg, #f6fbff 0%, #ffffff 100%);
+}
+
+.users-action-card:not(.primary) {
+    grid-template-columns: minmax(0, 1fr);
 }
 
 .users-action-card h4,
@@ -2270,13 +2275,16 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .users-public-link {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.55rem;
     align-items: center;
-    min-width: min(100%, 420px);
+    grid-column: 1 / -1;
+    min-width: 0;
 }
 
 .users-public-link input {
+    width: 100%;
     min-width: 0;
 }
 

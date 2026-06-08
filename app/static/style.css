@@ -1349,6 +1349,10 @@ nav a:hover,
 .projects-filter-clear {
     height: 40px;
     padding: 0 0.95rem;
+    min-width: 116px;
+    justify-self: end;
+    white-space: nowrap;
+    line-height: 1;
 }
 
 .projects-filter-count {
@@ -6259,6 +6263,11 @@ dialog.maintenance-dialog::backdrop {
 
     .projects-filter-row {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .projects-filter-clear {
+        grid-column: auto;
+        justify-self: stretch;
     }
 
     .academic-hub {

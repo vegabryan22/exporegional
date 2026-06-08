@@ -8630,6 +8630,13 @@ body {
     gap: 0.75rem;
     width: min(1120px, 100%);
     margin-inline: auto;
+    align-self: start;
+    align-content: start;
+    grid-auto-rows: max-content;
+}
+
+.container > .judge-dashboard-compact {
+    align-self: start;
 }
 
 .judge-dashboard-hero.compact {
@@ -8680,6 +8687,8 @@ body {
 .judge-project-list {
     display: grid;
     gap: 0.6rem;
+    align-content: start;
+    grid-auto-rows: max-content;
 }
 
 .judge-project-row {

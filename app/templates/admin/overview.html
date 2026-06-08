@@ -133,17 +133,17 @@
                     {% for row in overview_metrics.pending_logistics_projects %}
                         {% set project = row.project %}
                         <tr class="pending-logistics-row" data-row-index="{{ loop.index }}">
-                            <td>{{ project.title }}</td>
-                            <td class="table-cell-center"><span class="tag {{ 'ok' if project.has_real_logo else 'off' }}">{{ 'OK' if project.has_real_logo else 'Falta' }}</span></td>
-                            <td class="table-cell-center"><span class="tag {{ 'ok' if project.project_document_path else 'off' }}">{{ 'OK' if project.project_document_path else 'Falta' }}</span></td>
-                            <td class="table-cell-center">
+                            <td data-label="Proyecto">{{ project.title }}</td>
+                            <td data-label="Logo" class="table-cell-center"><span class="tag {{ 'ok' if project.has_real_logo else 'off' }}">{{ 'OK' if project.has_real_logo else 'Falta' }}</span></td>
+                            <td data-label="Documento" class="table-cell-center"><span class="tag {{ 'ok' if project.project_document_path else 'off' }}">{{ 'OK' if project.project_document_path else 'Falta' }}</span></td>
+                            <td data-label="Físicos" class="table-cell-center">
                                 {% set physical_ok = project.logistics_registration_form_signed_ok and project.logistics_student_consents_signed_ok %}
                                 <span class="tag {{ 'ok' if physical_ok else 'off' }}">{{ 'OK' if physical_ok else 'Falta' }}</span>
                             </td>
-                            <td class="table-cell-center"><span class="tag {{ 'ok' if project.logistics_requirements_reviewed_ok else 'off' }}">{{ 'OK' if project.logistics_requirements_reviewed_ok else 'Falta' }}</span></td>
-                            <td class="table-cell-center"><span class="tag {{ 'ok' if row.missing_member_photos == 0 else 'off' }}">{{ row.missing_member_photos if row.missing_member_photos else 'OK' }}</span></td>
-                            <td class="table-cell-center"><span class="tag {{ 'ok' if project.logistics_status == 'completo' else 'off' }}">{{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}</span></td>
-                            <td class="table-cell-center">
+                            <td data-label="Requisitos" class="table-cell-center"><span class="tag {{ 'ok' if project.logistics_requirements_reviewed_ok else 'off' }}">{{ 'OK' if project.logistics_requirements_reviewed_ok else 'Falta' }}</span></td>
+                            <td data-label="Fotos" class="table-cell-center"><span class="tag {{ 'ok' if row.missing_member_photos == 0 else 'off' }}">{{ row.missing_member_photos if row.missing_member_photos else 'OK' }}</span></td>
+                            <td data-label="Revisión" class="table-cell-center"><span class="tag {{ 'ok' if project.logistics_status == 'completo' else 'off' }}">{{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}</span></td>
+                            <td data-label="Control" class="table-cell-center">
                                 <a class="table-link-btn logistics-control-link" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Verificar</a>
                             </td>
                         </tr>

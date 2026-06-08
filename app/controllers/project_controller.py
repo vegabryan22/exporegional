@@ -224,6 +224,30 @@ def _draw_wrapped(pdf, text, x, y, width_chars=95, leading=12, font="Helvetica",
     return y
 
 
+def _pdf_lines_by_width(pdf, text, max_width, font="Helvetica", size=9):
+    words = _pdf_text(text).split()
+    lines = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        if not current or pdf.stringWidth(candidate, font, size) <= max_width:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines or [""]
+
+
+def _draw_wrapped_width(pdf, text, x, y, max_width, leading=12, font="Helvetica", size=9):
+    pdf.setFont(font, size)
+    for line in _pdf_lines_by_width(pdf, text, max_width, font=font, size=size):
+        pdf.drawString(x, y, line)
+        y -= leading
+    return y
+
+
 def _static_pdf_image_path(relative_path: str) -> str:
     if not relative_path or relative_path.startswith("http://") or relative_path.startswith("https://"):
         return ""
@@ -689,7 +713,7 @@ def _render_project_documents_packet(project: Project):
         pdf.setStrokeColor(colors.HexColor("#506a86"))
         pdf.line(x + 170, y_pos, x + w, y_pos)
 
-    def consent_check(text, x, y_pos, width_chars=82):
+    def consent_check(text, x, y_pos, max_width=None):
         pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
         pdf.setFillColor(colors.white)
         pdf.roundRect(x, y_pos - 1, 20, 14, 4, stroke=1, fill=1)
@@ -698,7 +722,9 @@ def _render_project_documents_packet(project: Project):
         pdf.drawCentredString(x + 10, y_pos + 3, "X")
         pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.setFont("Helvetica", 8)
-        return _draw_wrapped(pdf, text, x + 30, y_pos + 8, width_chars=width_chars, leading=9.5, size=8)
+        text_x = x + 30
+        resolved_width = max_width or (width - text_x - 42)
+        return _draw_wrapped_width(pdf, text, text_x, y_pos + 8, resolved_width, leading=9.5, size=8)
 
     pdf.setPageSize(letter)
     width, height = letter
@@ -780,21 +806,23 @@ def _render_project_documents_packet(project: Project):
             "procesos que involucran la observacion, el diseno y desarrollo de prototipos, asi como la experimentacion, "
             "el analisis de informacion y la divulgacion cientifica y tecnologica."
         )
+        info_lines = _pdf_lines_by_width(pdf, info_text, width - 108, font="Helvetica", size=7.8)
+        info_box_height = max(50, (len(info_lines) * 9.2) + 22)
         pdf.setStrokeColor(colors.HexColor("#b9d7b1"))
         pdf.setFillColor(colors.HexColor("#eef8e9"))
-        pdf.roundRect(42, y - 78, width - 84, 82, 7, stroke=1, fill=1)
+        pdf.roundRect(42, y - info_box_height, width - 84, info_box_height + 4, 7, stroke=1, fill=1)
         pdf.setFillColor(colors.HexColor("#0d1f33"))
-        _draw_wrapped(pdf, info_text, 54, y - 12, width_chars=93, leading=9.2, size=7.8)
+        _draw_wrapped_width(pdf, info_text, 54, y - 12, width - 108, leading=9.2, size=7.8)
 
-        y -= 104
-        y = consent_section("Constancias", y + 16)
+        y -= info_box_height + 24
+        y = consent_section("Constancias", y + 12)
         pdf.setFont("Helvetica-Bold", 8.4)
         pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.drawString(42, y, "Para lo cual dejo constancia que:  (escriba una X sobre la linea, segun corresponda).")
-        y -= 30
-        y = consent_check("Recibi informacion sencilla y comprensible respecto a los beneficios y actividades que conlleva esta actividad, por parte del Ministerio de Educacion Publica.", 42, y, width_chars=86) - 12
-        y = consent_check("Se me ha explicado este documento.", 42, y, width_chars=86) - 12
-        y = consent_check("Libero de toda responsabilidad a los y las funcionarias que trabajaran en esta grabacion, en la medida que las imagenes no sean utilizadas para fines comerciales.", 42, y, width_chars=86) - 10
+        y -= 24
+        y = consent_check("Recibi informacion sencilla y comprensible respecto a los beneficios y actividades que conlleva esta actividad, por parte del Ministerio de Educacion Publica.", 42, y) - 8
+        y = consent_check("Se me ha explicado este documento.", 42, y) - 8
+        y = consent_check("Libero de toda responsabilidad a los y las funcionarias que trabajaran en esta grabacion, en la medida que las imagenes no sean utilizadas para fines comerciales.", 42, y) - 8
 
         pdf.setFont("Helvetica", 8)
         pdf.setFillColor(colors.HexColor("#0d1f33"))
@@ -804,13 +832,13 @@ def _render_project_documents_packet(project: Project):
         pdf.drawString(42, y, "Articulo 47")
         y -= 10
         pdf.setFont("Helvetica", 7.3)
-        y = _draw_wrapped(pdf, "La fotografia o la imagen de una persona no puede ser publicada, reproducida, expuesta ni vendida en forma alguna si no es con su consentimiento.", 42, y, width_chars=100, leading=8.4, size=7.3)
+        y = _draw_wrapped_width(pdf, "La fotografia o la imagen de una persona no puede ser publicada, reproducida, expuesta ni vendida en forma alguna si no es con su consentimiento.", 42, y, width - 84, leading=8.4, size=7.3)
         y -= 10
         pdf.setFont("Helvetica-Bold", 8)
         pdf.drawString(42, y, "Articulo 48")
         y -= 10
         pdf.setFont("Helvetica", 7.3)
-        _draw_wrapped(pdf, "Si la imagen o fotografia de una persona se publica sin su consentimiento y no se encuentra dentro de los casos de excepcion previstos en el articulo anterior, procede el reclamo correspondiente.", 42, y, width_chars=100, leading=8.4, size=7.3)
+        _draw_wrapped_width(pdf, "Si la imagen o fotografia de una persona se publica sin su consentimiento y no se encuentra dentro de los casos de excepcion previstos en el articulo anterior, procede el reclamo correspondiente.", 42, y, width - 84, leading=8.4, size=7.3)
 
         y = 74
         consent_signature_line("Firma del padre, madre o encargado legal:", 42, y, 390)

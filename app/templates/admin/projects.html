@@ -57,79 +57,65 @@
         <p id="projects-filter-count" class="filter-count projects-filter-count"></p>
     </div>
 
-    <div class="table-wrap">
-        <table id="projects-table" class="projects-maintenance-table">
-            <thead>
-                <tr>
-                    <th>Proyecto</th>
-                    <th>Categoría</th>
-                    <th>Estado</th>
-                    <th>Estado logístico</th>
-                    <th>Documento</th>
-                    <th>Integrantes</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for project in projects %}
-                <tr
-                    id="project-row-{{ project.id }}"
-                    class="project-row"
-                    data-project-title="{{ project.title|lower }}"
-                    data-project-team="{{ project.team_name|lower }}"
-                    data-project-section="{{ (project.section.name if project.section else 'n/d')|lower }}"
-                    data-project-category="{{ project.category|lower }}"
-                    data-project-status="{{ project.logistics_status|lower }}"
-                    data-project-active="{{ 'activo' if project.is_active else 'inactivo' }}"
-                >
-                    <td class="project-title-cell">
-                        <strong>{{ project.title }}</strong>
-                        <small>{{ project.thematic_axis.name if project.thematic_axis else 'Sin eje temático' }} · {{ project.project_type.name if project.project_type else 'Sin tipo' }}</small>
-                    </td>
-                    <td class="table-cell-center">
+    <div id="projects-list" class="projects-card-list">
+        {% for project in projects %}
+            {% set member_count = project.members|length %}
+            {% set logistics_ok = project.logistics_status == 'completo' and project.logistics_requirements_complete %}
+            <article
+                id="project-row-{{ project.id }}"
+                class="project-row project-maintenance-card"
+                data-project-title="{{ project.title|lower }}"
+                data-project-team="{{ project.team_name|lower }}"
+                data-project-section="{{ (project.section.name if project.section else 'n/d')|lower }}"
+                data-project-category="{{ project.category|lower }}"
+                data-project-status="{{ project.logistics_status|lower }}"
+                data-project-active="{{ 'activo' if project.is_active else 'inactivo' }}"
+            >
+                <div class="project-maintenance-main">
+                    <div class="project-maintenance-title">
                         <span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span>
-                    </td>
-                    <td class="table-cell-center">
-                        <span class="tag {{ 'ok' if project.is_active else 'off' }}">
-                            {{ 'Activo' if project.is_active else 'Inactivo' }}
-                        </span>
-                    </td>
-                    <td class="table-cell-center">
-                        {% set logistics_ok = project.logistics_status == 'completo' and project.logistics_requirements_complete %}
+                        <h3>{{ project.title }}</h3>
+                        <p>{{ project.thematic_axis.name if project.thematic_axis else 'Sin eje tem&aacute;tico' }} &middot; {{ project.project_type.name if project.project_type else 'Sin tipo' }}</p>
+                    </div>
+                    <div class="project-maintenance-statebar" aria-label="Estado del proyecto">
+                        <span class="tag {{ 'ok' if project.is_active else 'off' }}">{{ 'Activo' if project.is_active else 'Inactivo' }}</span>
                         <span class="tag logistics-status-tag {{ 'ok' if logistics_ok else 'off' }}">
                             {{ logistics_status_map.get(project.logistics_status, project.logistics_status) if logistics_ok else 'Pendiente requisitos' }}
                         </span>
-                    </td>
-                    <td class="table-cell-center">
+                        <span class="tag member-count-badge member-count-{{ member_count if member_count < 4 else 3 }}">{{ member_count }} integrante{{ '' if member_count == 1 else 's' }}</span>
+                    </div>
+                </div>
+
+                <div class="project-maintenance-actions">
+                    <div class="project-action-group project-action-group-manage">
+                        <span class="project-action-label">Gestionar</span>
+                        <button type="button" class="project-action-btn action-edit" data-dialog-open="edit-project-{{ project.id }}" data-no-iconify>Editar</button>
+                        <button type="button" class="project-action-btn action-logistics logistics-open-btn" data-dialog-open="logistics-project-{{ project.id }}" data-no-iconify>Log&iacute;stica</button>
+                        <button type="button" class="project-action-btn action-members" data-dialog-open="members-project-{{ project.id }}" data-no-iconify>Integrantes</button>
+                    </div>
+                    <div class="project-action-group project-action-group-docs">
+                        <span class="project-action-label">Documentos</span>
                         {% if project.project_document_path %}
-                            <a href="{{ url_for('static', filename=project.project_document_path) }}" target="_blank" class="table-link-btn">Ver documento</a>
+                            <a href="{{ url_for('static', filename=project.project_document_path) }}" target="_blank" class="project-action-btn action-doc" data-no-iconify>Ver documento</a>
                         {% else %}
-                            <span class="tag off">N/D</span>
+                            <span class="project-action-btn action-disabled">Sin documento</span>
                         {% endif %}
-                    </td>
-                    <td class="table-cell-center">
-                        {% set member_count = project.members|length %}
-                        <span class="tag member-count-badge member-count-{{ member_count if member_count < 4 else 3 }}">{{ member_count }}</span>
-                    </td>
-                    <td class="actions-cell">
-                        <button type="button" class="outline-btn" data-dialog-open="edit-project-{{ project.id }}">Editar</button>
-                        <button type="button" class="secondary-btn logistics-open-btn" data-dialog-open="logistics-project-{{ project.id }}">Logística</button>
-                        <button type="button" class="secondary-btn" data-dialog-open="members-project-{{ project.id }}">Integrantes</button>
-                        <a href="{{ url_for('public.project_documents', project_id=project.id) }}" target="_blank" class="table-link-btn">Documentos</a>
-                        <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" class="table-link-btn secondary">Paquete PDF</a>
+                        <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" target="_blank" class="project-action-btn action-packet" data-no-iconify>Requisitos PDF</a>
+                    </div>
+                    <div class="project-action-group project-action-group-danger">
+                        <span class="project-action-label">Riesgo</span>
                         <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar proyecto completo?')">
                             <input type="hidden" name="next" value="{{ next_url }}">
                             <input type="hidden" name="action" value="delete_project">
                             <input type="hidden" name="project_id" value="{{ project.id }}">
-                            <button type="submit" class="danger-btn">Eliminar</button>
+                            <button type="submit" class="project-action-btn action-delete" data-no-iconify>Eliminar</button>
                         </form>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="7">No hay proyectos registrados.</td></tr>
-            {% endfor %}
-            </tbody>
-        </table>
+                    </div>
+                </div>
+            </article>
+        {% else %}
+            <div class="project-empty-card">No hay proyectos registrados.</div>
+        {% endfor %}
     </div>
 </section>
 
@@ -536,7 +522,7 @@
         var activeRadios = document.querySelectorAll('input[name="projects-filter-active"]');
         var clearBtn = document.getElementById('projects-filter-clear');
         var countLabel = document.getElementById('projects-filter-count');
-        var rows = document.querySelectorAll('#projects-table tbody .project-row');
+        var rows = document.querySelectorAll('#projects-list .project-row');
 
         function applyProjectFilters() {
             if (!rows.length) {

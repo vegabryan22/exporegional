@@ -1699,6 +1699,273 @@ th {
     vertical-align: top;
 }
 
+.judge-dashboard-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.judge-dashboard-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    border: 1px solid #c9dcec;
+    border-radius: 18px;
+    padding: 1rem 1.1rem;
+    background:
+        radial-gradient(circle at 82% 18%, rgba(158, 211, 74, 0.2), transparent 26%),
+        linear-gradient(135deg, #ffffff 0%, #eef9fd 100%);
+    box-shadow: 0 14px 34px rgba(13, 63, 107, 0.08);
+}
+
+.judge-dashboard-hero h2 {
+    margin: 0.1rem 0 0;
+    color: var(--primary);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    line-height: 1;
+}
+
+.judge-dashboard-hero p {
+    max-width: 760px;
+    margin: 0.45rem 0 0;
+    color: #5a7190;
+}
+
+.judge-dashboard-profile {
+    display: grid;
+    justify-items: center;
+    gap: 0.18rem;
+    min-width: 170px;
+    padding: 0.8rem;
+    border: 1px solid #b9ddc0;
+    border-radius: 18px;
+    background: #effbea;
+    color: #1f6a34;
+}
+
+.judge-dashboard-profile span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #ffffff;
+    color: var(--primary);
+    font-size: 1.45rem;
+    font-weight: 900;
+    box-shadow: 0 8px 18px rgba(13, 63, 107, 0.12);
+}
+
+.judge-dashboard-profile strong {
+    color: #12612a;
+}
+
+.judge-dashboard-profile small {
+    color: #5f7d44;
+    font-weight: 700;
+    text-align: center;
+}
+
+.judge-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.7rem;
+}
+
+.judge-metrics-grid article {
+    display: grid;
+    gap: 0.12rem;
+    min-height: 86px;
+    align-content: center;
+    border: 1px solid #d0e0ef;
+    border-radius: 16px;
+    padding: 0.85rem;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(13, 63, 107, 0.06);
+}
+
+.judge-metrics-grid strong {
+    color: var(--primary);
+    font-size: 1.85rem;
+    line-height: 1;
+}
+
+.judge-metrics-grid span {
+    color: #5d728c;
+    font-weight: 800;
+}
+
+.judge-project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+    gap: 0.9rem;
+}
+
+.judge-project-card {
+    display: grid;
+    gap: 0.9rem;
+    border: 1px solid #cbddee;
+    border-radius: 18px;
+    padding: 1rem;
+    background: #ffffff;
+    box-shadow: 0 14px 30px rgba(13, 63, 107, 0.08);
+}
+
+.judge-project-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.8rem;
+    align-items: start;
+}
+
+.judge-project-category {
+    display: inline-flex;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 0.22rem 0.62rem;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: 0.76rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.judge-project-card h3 {
+    margin: 0.45rem 0 0;
+    color: var(--primary);
+    font-size: 1.45rem;
+    line-height: 1.08;
+}
+
+.judge-project-card p {
+    margin: 0.25rem 0 0;
+    color: #607995;
+}
+
+.judge-project-status {
+    display: grid;
+    justify-items: center;
+    min-width: 108px;
+    border-radius: 16px;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #f0c3c9;
+    background: #fff2f4;
+    color: #8c2030;
+}
+
+.judge-project-status.complete {
+    border-color: #b9ddc0;
+    background: #effbea;
+    color: #1f6a34;
+}
+
+.judge-project-status strong {
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+.judge-project-status span {
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.judge-project-tools {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.judge-tool-link,
+.judge-tool-missing {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 13px;
+    padding: 0.62rem 0.8rem;
+    font-weight: 900;
+    text-align: center;
+    text-decoration: none;
+}
+
+.judge-tool-link.document {
+    border: 1px solid #2c7264;
+    background: linear-gradient(135deg, #2f9c84 0%, #1f6f7c 100%);
+    color: #ffffff;
+    box-shadow: 0 10px 20px rgba(24, 106, 119, 0.18);
+}
+
+.judge-tool-link.document:hover {
+    transform: translateY(-1px);
+    color: #ffffff;
+}
+
+.judge-tool-missing {
+    border: 1px dashed #d9a5ae;
+    background: #fff8f9;
+    color: #8c2030;
+}
+
+.judge-evaluation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.judge-eval-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    border-radius: 999px;
+    padding: 0.44rem 0.8rem;
+    border: 1px solid #cbd9ea;
+    background: #f6faff;
+    color: var(--primary);
+    font-weight: 900;
+    line-height: 1.15;
+    text-decoration: none;
+}
+
+.judge-eval-chip.action {
+    border-color: #d79026;
+    background: linear-gradient(180deg, #ffb333 0%, #f0a11b 100%);
+    color: #15395e;
+}
+
+.judge-eval-chip.action:hover {
+    transform: translateY(-1px);
+    color: #15395e;
+}
+
+.judge-eval-chip.done {
+    border-color: #b9ddc0;
+    background: #effbea;
+    color: #1f6a34;
+}
+
+.judge-eval-chip.missing {
+    border-color: #f0c3c9;
+    background: #fff2f4;
+    color: #8c2030;
+}
+
+.judge-empty-state {
+    border: 1px dashed #b8cde4;
+    border-radius: 18px;
+    padding: 1.2rem;
+    background: #ffffff;
+    text-align: center;
+}
+
+.judge-empty-state h3 {
+    margin: 0;
+    color: var(--primary);
+}
+
 .maintenance-head {
     display: flex;
     justify-content: space-between;
@@ -6192,6 +6459,41 @@ dialog.maintenance-dialog::backdrop {
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.04em;
+    }
+
+    .judge-dashboard-hero {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 0.85rem;
+        border-radius: 14px;
+    }
+
+    .judge-dashboard-profile {
+        justify-items: start;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        min-width: 0;
+    }
+
+    .judge-dashboard-profile small {
+        grid-column: 2;
+        text-align: left;
+    }
+
+    .judge-metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .judge-project-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .judge-project-main {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .judge-project-status {
+        justify-items: start;
+        width: 100%;
     }
 }
 

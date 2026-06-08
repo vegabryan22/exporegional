@@ -1,66 +1,107 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="card">
-    <h2>Panel del usuario</h2>
-    <p>Departamento: {{ current_user.department_label if current_user.is_authenticated else 'N/D' }}</p>
+{% set metrics = namespace(projects=assignments|length, expected=0, completed=0, pending=0, docs=0) %}
+{% for assignment in assignments %}
+    {% set project = assignment.project %}
+    {% set available_eval_types = project_eval_types.get(project.id, []) %}
+    {% if project.project_document_path %}{% set metrics.docs = metrics.docs + 1 %}{% endif %}
+    {% for eval_type in available_eval_types %}
+        {% set metrics.expected = metrics.expected + 1 %}
+        {% if evaluation_map.get((project.id, eval_type.code)) %}
+            {% set metrics.completed = metrics.completed + 1 %}
+        {% else %}
+            {% set metrics.pending = metrics.pending + 1 %}
+        {% endif %}
+    {% endfor %}
+{% endfor %}
+<section class="judge-dashboard-page">
+    <div class="judge-dashboard-hero">
+        <div>
+            <p class="maintenance-kicker">Panel de evaluaci&oacute;n</p>
+            <h2>Bienvenido, {{ current_user.full_name or 'Juez' }}</h2>
+            <p>Revisa los documentos asignados y completa las evaluaciones pendientes desde un solo lugar.</p>
+        </div>
+        <div class="judge-dashboard-profile">
+            <span>{{ (current_user.full_name or current_user.email or 'J')[:1]|upper }}</span>
+            <strong>{{ current_user.role_label }}</strong>
+            <small>{{ current_user.department_label if current_user.is_authenticated else 'Sin departamento' }}</small>
+        </div>
+    </div>
+
+    <div class="judge-metrics-grid">
+        <article><strong>{{ metrics.projects }}</strong><span>Proyectos asignados</span></article>
+        <article><strong>{{ metrics.pending }}</strong><span>Evaluaciones pendientes</span></article>
+        <article><strong>{{ metrics.completed }}</strong><span>Evaluaciones completadas</span></article>
+        <article><strong>{{ metrics.docs }}/{{ metrics.projects }}</strong><span>Documentos disponibles</span></article>
+    </div>
+
     {% if assignments %}
-        <table class="judge-assignments-table">
-            <thead>
-                <tr>
-                    <th>Proyecto</th>
-                    <th>Categoría</th>
-                    <th>Documento</th>
-                    <th>Evaluaciones</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div class="judge-project-grid">
             {% for assignment in assignments %}
                 {% set project = assignment.project %}
                 {% set available_eval_types = project_eval_types.get(project.id, []) %}
-                <tr>
-                    <td data-label="Proyecto">{{ project.title }}</td>
-                    <td data-label="Categoría">{{ category_map.get(project.category, project.category) }}</td>
-                    <td data-label="Documento">
+                {% set row = namespace(done=0, pending=0) %}
+                {% for eval_type in available_eval_types %}
+                    {% if evaluation_map.get((project.id, eval_type.code)) %}
+                        {% set row.done = row.done + 1 %}
+                    {% else %}
+                        {% set row.pending = row.pending + 1 %}
+                    {% endif %}
+                {% endfor %}
+                <article class="judge-project-card">
+                    <div class="judge-project-main">
+                        <div>
+                            <span class="judge-project-category">{{ category_map.get(project.category, project.category) }}</span>
+                            <h3>{{ project.title }}</h3>
+                            <p>{{ project.team_name or 'Equipo ExpoTEC' }}</p>
+                        </div>
+                        <div class="judge-project-status {{ 'complete' if row.pending == 0 and available_eval_types else 'pending' }}">
+                            <strong>{{ row.done }}/{{ available_eval_types|length }}</strong>
+                            <span>{{ 'completado' if row.pending == 0 and available_eval_types else 'pendiente' }}</span>
+                        </div>
+                    </div>
+
+                    <div class="judge-project-tools">
                         {% if project.project_document_path %}
                             <a
                                 href="{{ url_for('judge.project_document', project_id=project.id) }}"
                                 target="_blank"
                                 rel="noopener"
-                                class="table-link-btn judge-document-link"
+                                class="judge-tool-link document"
                                 data-no-iconify
                             >
-                                Documento del proyecto
+                                Ver documento del proyecto
                             </a>
                         {% else %}
-                            <span class="tag off">Sin documento</span>
+                            <span class="judge-tool-missing">Documento no disponible</span>
                         {% endif %}
-                    </td>
-                    <td data-label="Evaluaciones">
-                        <div class="actions-cell">
-                            {% for eval_type in available_eval_types %}
-                                {% if evaluation_map.get((project.id, eval_type.code)) %}
-                                    <span class="tag ok">{{ eval_type.short_name }}: Completado</span>
-                                {% else %}
-                                    <a
-                                        href="{{ url_for('judge.evaluate', project_id=project.id, type=eval_type.code) }}"
-                                        class="table-link-btn judge-eval-link"
-                                    >
-                                        {{ eval_type.short_name }}
-                                    </a>
-                                {% endif %}
+                    </div>
+
+                    <div class="judge-evaluation-actions">
+                        {% for eval_type in available_eval_types %}
+                            {% if evaluation_map.get((project.id, eval_type.code)) %}
+                                <span class="judge-eval-chip done">{{ eval_type.short_name }} completado</span>
                             {% else %}
-                                <span class="tag off">Sin rúbricas asignadas</span>
-                            {% endfor %}
-                        </div>
-                    </td>
-                </tr>
+                                <a
+                                    href="{{ url_for('judge.evaluate', project_id=project.id, type=eval_type.code) }}"
+                                    class="judge-eval-chip action"
+                                    data-no-iconify
+                                >
+                                    Evaluar {{ eval_type.short_name }}
+                                </a>
+                            {% endif %}
+                        {% else %}
+                            <span class="judge-eval-chip missing">Sin r&uacute;bricas asignadas</span>
+                        {% endfor %}
+                    </div>
+                </article>
             {% endfor %}
-            </tbody>
-        </table>
+        </div>
     {% else %}
-        <p>No tienes proyectos asignados.</p>
+        <div class="judge-empty-state">
+            <h3>No tienes proyectos asignados</h3>
+            <p>Cuando el comit&eacute; te asigne proyectos, aparecer&aacute;n aqu&iacute; con sus documentos y evaluaciones.</p>
+        </div>
     {% endif %}
 </section>
 {% endblock %}
-
-

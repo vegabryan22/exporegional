@@ -4660,7 +4660,7 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .projects-showcase-page .container {
-    padding-top: 0;
+    padding-top: 1rem;
 }
 
 .projects-showcase-page .showcase-layout {
@@ -4668,7 +4668,7 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .projects-showcase-page .project-sidebar {
-    top: 0;
+    top: calc(var(--fixed-header-height, 96px) + 1rem);
 }
 
 .project-sidebar {
@@ -8020,5 +8020,20 @@ body {
         width: 100%;
         justify-content: center;
         min-height: 36px;
+    }
+}
+
+/* Public projects page keeps the same breathing room below the fixed header as the rest of the site. */
+.projects-showcase-page .container {
+    padding-top: 1rem !important;
+}
+
+.projects-showcase-page .project-sidebar {
+    top: calc(var(--fixed-header-height, 96px) + 1rem) !important;
+}
+
+@media (max-width: 820px) {
+    .projects-showcase-page .container {
+        padding-top: 0.75rem !important;
     }
 }

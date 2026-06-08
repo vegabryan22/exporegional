@@ -716,15 +716,20 @@ def _render_project_documents_packet(project: Project):
     def consent_check(text, x, y_pos, max_width=None):
         pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
         pdf.setFillColor(colors.white)
-        pdf.roundRect(x, y_pos - 1, 20, 14, 4, stroke=1, fill=1)
+        pdf.roundRect(x, y_pos - 2, 17, 13, 4, stroke=1, fill=1)
         pdf.setFillColor(colors.HexColor("#506a86"))
-        pdf.setFont("Helvetica-Bold", 6.5)
-        pdf.drawCentredString(x + 10, y_pos + 3, "X")
+        pdf.setFont("Helvetica-Bold", 6.2)
+        pdf.drawCentredString(x + 8.5, y_pos + 2, "X")
         pdf.setFillColor(colors.HexColor("#0d1f33"))
-        pdf.setFont("Helvetica", 8)
-        text_x = x + 30
+        pdf.setFont("Helvetica", 7.8)
+        text_x = x + 26
         resolved_width = max_width or (width - text_x - 42)
-        return _draw_wrapped_width(pdf, text, text_x, y_pos + 8, resolved_width, leading=9.5, size=8)
+        lines = _pdf_lines_by_width(pdf, text, resolved_width, size=7.8)
+        text_y = y_pos + 7
+        for line in lines:
+            pdf.drawString(text_x, text_y, _pdf_text(line))
+            text_y -= 9.2
+        return y_pos - max(24, (len(lines) * 9.2) + 9)
 
     pdf.setPageSize(letter)
     width, height = letter
@@ -820,9 +825,9 @@ def _render_project_documents_packet(project: Project):
         pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.drawString(42, y, "Para lo cual dejo constancia que:  (escriba una X sobre la linea, segun corresponda).")
         y -= 24
-        y = consent_check("Recibi informacion sencilla y comprensible respecto a los beneficios y actividades que conlleva esta actividad, por parte del Ministerio de Educacion Publica.", 42, y) - 8
-        y = consent_check("Se me ha explicado este documento.", 42, y) - 8
-        y = consent_check("Libero de toda responsabilidad a los y las funcionarias que trabajaran en esta grabacion, en la medida que las imagenes no sean utilizadas para fines comerciales.", 42, y) - 8
+        y = consent_check("Recibi informacion sencilla y comprensible respecto a los beneficios y actividades que conlleva esta actividad, por parte del Ministerio de Educacion Publica.", 42, y)
+        y = consent_check("Se me ha explicado este documento.", 42, y)
+        y = consent_check("Libero de toda responsabilidad a los y las funcionarias que trabajaran en esta grabacion, en la medida que las imagenes no sean utilizadas para fines comerciales.", 42, y)
 
         pdf.setFont("Helvetica", 8)
         pdf.setFillColor(colors.HexColor("#0d1f33"))

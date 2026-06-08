@@ -14,29 +14,23 @@
         {% endif %}
     {% endfor %}
 {% endfor %}
-<section class="judge-dashboard-page">
-    <div class="judge-dashboard-hero">
-        <div>
+<section class="judge-dashboard-page judge-dashboard-compact">
+    <div class="judge-dashboard-hero compact">
+        <div class="judge-hero-copy">
             <p class="maintenance-kicker">Panel de evaluaci&oacute;n</p>
-            <h2>Bienvenido, {{ current_user.full_name or 'Juez' }}</h2>
-            <p>Revisa los documentos asignados y completa las evaluaciones pendientes desde un solo lugar.</p>
+            <h2>{{ current_user.full_name or 'Juez' }}</h2>
+            <p>Documentos y evaluaciones asignadas.</p>
         </div>
-        <div class="judge-dashboard-profile">
-            <span>{{ (current_user.full_name or current_user.email or 'J')[:1]|upper }}</span>
-            <strong>{{ current_user.role_label }}</strong>
-            <small>{{ current_user.department_label if current_user.is_authenticated else 'Sin departamento' }}</small>
+        <div class="judge-summary-strip" aria-label="Resumen de evaluaciones">
+            <article><strong>{{ metrics.projects }}</strong><span>Proyectos</span></article>
+            <article><strong>{{ metrics.pending }}</strong><span>Pendientes</span></article>
+            <article><strong>{{ metrics.completed }}</strong><span>Completadas</span></article>
+            <article><strong>{{ metrics.docs }}/{{ metrics.projects }}</strong><span>Documentos</span></article>
         </div>
-    </div>
-
-    <div class="judge-metrics-grid">
-        <article><strong>{{ metrics.projects }}</strong><span>Proyectos asignados</span></article>
-        <article><strong>{{ metrics.pending }}</strong><span>Evaluaciones pendientes</span></article>
-        <article><strong>{{ metrics.completed }}</strong><span>Evaluaciones completadas</span></article>
-        <article><strong>{{ metrics.docs }}/{{ metrics.projects }}</strong><span>Documentos disponibles</span></article>
     </div>
 
     {% if assignments %}
-        <div class="judge-project-grid">
+        <div class="judge-project-list">
             {% for assignment in assignments %}
                 {% set project = assignment.project %}
                 {% set available_eval_types = project_eval_types.get(project.id, []) %}
@@ -48,59 +42,53 @@
                         {% set row.pending = row.pending + 1 %}
                     {% endif %}
                 {% endfor %}
-                <article class="judge-project-card">
-                    <div class="judge-project-main">
-                        <div>
-                            <span class="judge-project-category">{{ category_map.get(project.category, project.category) }}</span>
-                            <h3>{{ project.title }}</h3>
-                            <p>{{ project.team_name or 'Equipo ExpoTEC' }}</p>
-                        </div>
-                        <div class="judge-project-status {{ 'complete' if row.pending == 0 and available_eval_types else 'pending' }}">
-                            <strong>{{ row.done }}/{{ available_eval_types|length }}</strong>
-                            <span>{{ 'completado' if row.pending == 0 and available_eval_types else 'pendiente' }}</span>
-                        </div>
+                <article class="judge-project-row">
+                    <div class="judge-project-info">
+                        <span class="judge-project-category">{{ category_map.get(project.category, project.category) }}</span>
+                        <h3>{{ project.title }}</h3>
+                        <p>{{ project.team_name or 'Equipo ExpoTEC' }}</p>
                     </div>
-
-                    <div class="judge-project-tools">
+                    <div class="judge-project-progress {{ 'complete' if row.pending == 0 and available_eval_types else 'pending' }}">
+                        <strong>{{ row.done }}/{{ available_eval_types|length }}</strong>
+                        <span>{{ 'Listo' if row.pending == 0 and available_eval_types else 'Pendiente' }}</span>
+                    </div>
+                    <div class="judge-project-actions">
                         {% if project.project_document_path %}
                             <a
                                 href="{{ url_for('judge.project_document', project_id=project.id) }}"
                                 target="_blank"
                                 rel="noopener"
-                                class="judge-tool-link document"
+                                class="judge-action-link document"
                                 data-no-iconify
                             >
-                                Ver documento del proyecto
+                                Documento
                             </a>
                         {% else %}
-                            <span class="judge-tool-missing">Documento no disponible</span>
+                            <span class="judge-action-link missing">Sin documento</span>
                         {% endif %}
-                    </div>
-
-                    <div class="judge-evaluation-actions">
                         {% for eval_type in available_eval_types %}
                             {% if evaluation_map.get((project.id, eval_type.code)) %}
-                                <span class="judge-eval-chip done">{{ eval_type.short_name }} completado</span>
+                                <span class="judge-action-link done">{{ eval_type.short_name }} listo</span>
                             {% else %}
                                 <a
                                     href="{{ url_for('judge.evaluate', project_id=project.id, type=eval_type.code) }}"
-                                    class="judge-eval-chip action"
+                                    class="judge-action-link evaluate"
                                     data-no-iconify
                                 >
                                     Evaluar {{ eval_type.short_name }}
                                 </a>
                             {% endif %}
                         {% else %}
-                            <span class="judge-eval-chip missing">Sin r&uacute;bricas asignadas</span>
+                            <span class="judge-action-link missing">Sin r&uacute;bricas</span>
                         {% endfor %}
                     </div>
                 </article>
             {% endfor %}
         </div>
     {% else %}
-        <div class="judge-empty-state">
+        <div class="judge-empty-state compact">
             <h3>No tienes proyectos asignados</h3>
-            <p>Cuando el comit&eacute; te asigne proyectos, aparecer&aacute;n aqu&iacute; con sus documentos y evaluaciones.</p>
+            <p>Cuando el comit&eacute; te asigne proyectos, aparecer&aacute;n aqu&iacute;.</p>
         </div>
     {% endif %}
 </section>

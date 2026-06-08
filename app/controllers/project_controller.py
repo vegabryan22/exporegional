@@ -519,12 +519,12 @@ def _render_project_documents_packet(project: Project):
 
     y = clean_section("Datos del proyecto", y - 16)
     clean_field("Nombre del proyecto", project.title, 42, y - 26, 708)
-    y -= 54
+    y -= 64
     clean_field("Categoria", _project_category_label(project), 42, y, 206)
     clean_field("Eje tematico", _project_thematic_axis_label(project), 266, y, 250)
     clean_field("Tipo de proyecto", _project_type_label(project), 534, y, 216)
 
-    y = clean_section("Requerimientos y calendario", y - 30)
+    y = clean_section("Requerimientos y calendario", y - 36)
     req_y = y - 24
     clean_checkbox("Corriente", bool(_requirements_value(project, "corriente")), 42, req_y)
     clean_checkbox("Salidas", bool(_requirements_value(project, "salidas")), 170, req_y)

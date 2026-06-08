@@ -1,23 +1,42 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section maintenance-page">
-    <div class="maintenance-banner">
+<section class="card admin-section maintenance-page audit-page">
+    <div class="audit-hero">
         <div>
-            <p class="maintenance-kicker">Auditoria</p>
+            <p class="maintenance-kicker">Auditoría</p>
             <h3>Bitácora del sistema</h3>
-            <p>Registro de acciones importantes (ultimos 500 eventos).</p>
+            <p class="table-subtext">Consulta acciones críticas, cambios administrativos y operaciones técnicas recientes.</p>
         </div>
-        <span class="tag ok">{{ logs|length }} eventos</span>
+        <div class="audit-hero-count">
+            <strong>{{ logs|length }}</strong>
+            <span>eventos visibles</span>
+            <small>máximo 500</small>
+        </div>
     </div>
 
-    <form method="get" class="compact-form">
-        <div class="grid-3">
+    <div class="audit-summary-grid">
+        <article>
+            <span>Acciones</span>
+            <strong>{{ audit_actions|length }}</strong>
+        </article>
+        <article>
+            <span>Entidades</span>
+            <strong>{{ audit_entities|length }}</strong>
+        </article>
+        <article class="{{ 'ok' if not filter_q and not filter_action and not filter_entity else 'warn' }}">
+            <span>Filtro activo</span>
+            <strong>{{ 'No' if not filter_q and not filter_action and not filter_entity else 'Sí' }}</strong>
+        </article>
+    </div>
+
+    <form method="get" class="audit-filter-panel">
+        <div class="audit-filter-grid">
             <label>Buscar
                 <input type="text" name="q" value="{{ filter_q }}" placeholder="Actor, correo o detalle">
             </label>
-            <label>Accion
+            <label>Acción
                 <select name="action">
-                    <option value="">Todas</option>
+                    <option value="">Todas las acciones</option>
                     {% for item in audit_actions %}
                         <option value="{{ item }}" {% if filter_action == item %}selected{% endif %}>{{ item }}</option>
                     {% endfor %}
@@ -25,50 +44,43 @@
             </label>
             <label>Entidad
                 <select name="entity">
-                    <option value="">Todas</option>
+                    <option value="">Todas las entidades</option>
                     {% for item in audit_entities %}
                         <option value="{{ item }}" {% if filter_entity == item %}selected{% endif %}>{{ item }}</option>
                     {% endfor %}
                 </select>
             </label>
-        </div>
-        <div class="actions-row">
-            <button type="submit">Filtrar</button>
-            <a class="btn-link" href="{{ url_for('admin.logs_page') }}">Limpiar</a>
+            <div class="audit-filter-actions">
+                <button type="submit">Filtrar</button>
+                <a class="outline-btn" href="{{ url_for('admin.logs_page') }}">Limpiar</a>
+            </div>
         </div>
     </form>
 
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Actor</th>
-                    <th>Rol</th>
-                    <th>Accion</th>
-                    <th>Entidad</th>
-                    <th>ID</th>
-                    <th>Detalle</th>
-                    <th>IP</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in logs %}
-                    <tr>
-                        <td>{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                        <td>{{ item.actor_name }}{% if item.actor_email %}<br><small>{{ item.actor_email }}</small>{% endif %}</td>
-                        <td>{{ item.actor_role or 'N/D' }}</td>
-                        <td>{{ item.action }}</td>
-                        <td>{{ item.entity }}</td>
-                        <td>{{ item.entity_id if item.entity_id else 'N/D' }}</td>
-                        <td>{{ item.detail or '' }}</td>
-                        <td>{{ item.ip_address or 'N/D' }}</td>
-                    </tr>
-                {% else %}
-                    <tr><td colspan="8">No hay eventos registrados.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="audit-list">
+        {% for item in logs %}
+            <article class="audit-event-card">
+                <div class="audit-event-main">
+                    <span class="audit-event-dot"></span>
+                    <div>
+                        <strong>{{ item.action }}</strong>
+                        <p>{{ item.detail or 'Sin detalle registrado.' }}</p>
+                    </div>
+                </div>
+                <div class="audit-event-meta">
+                    <span data-label="Fecha">{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else 'N/D' }}</span>
+                    <span data-label="Actor">{{ item.actor_name or 'Sistema' }}{% if item.actor_email %}<small>{{ item.actor_email }}</small>{% endif %}</span>
+                    <span data-label="Rol">{{ item.actor_role or 'N/D' }}</span>
+                    <span data-label="Entidad">{{ item.entity or 'N/D' }}{% if item.entity_id %}<small>ID {{ item.entity_id }}</small>{% endif %}</span>
+                    <span data-label="IP">{{ item.ip_address or 'N/D' }}</span>
+                </div>
+            </article>
+        {% else %}
+            <article class="audit-empty-state">
+                <h4>No hay eventos registrados</h4>
+                <p>Prueba limpiando los filtros o revisa nuevamente después de ejecutar alguna acción.</p>
+            </article>
+        {% endfor %}
     </div>
 </section>
 {% endblock %}

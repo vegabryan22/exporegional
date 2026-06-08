@@ -75,7 +75,7 @@
                     <div class="project-maintenance-title">
                         <span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span>
                         <h3>{{ project.title }}</h3>
-                        <p>{{ project.thematic_axis.name if project.thematic_axis else 'Sin eje tem&aacute;tico' }} &middot; {{ project.project_type.name if project.project_type else 'Sin tipo' }}</p>
+                        <p>{{ project.thematic_axis.name if project.thematic_axis else 'Sin eje temático' }} &middot; {{ project.project_type.name if project.project_type else 'Sin tipo' }}</p>
                     </div>
                     <div class="project-maintenance-statebar" aria-label="Estado del proyecto">
                         <span class="tag {{ 'ok' if project.is_active else 'off' }}">{{ 'Activo' if project.is_active else 'Inactivo' }}</span>

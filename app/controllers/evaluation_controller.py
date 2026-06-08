@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import abort, current_app, flash, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
 
 from app.extensions import db
@@ -60,6 +60,21 @@ def dashboard():
         project_eval_types=project_eval_types,
         project_summaries=project_summaries,
     )
+
+
+@login_required
+def project_document(project_id: int):
+    project = Project.query.get_or_404(project_id)
+    assignment = Assignment.query.filter_by(judge_id=current_user.id, project_id=project_id).first()
+    if not assignment:
+        abort(403, "No tienes permiso para ver este documento.")
+    if not project.project_document_path:
+        abort(404, "Este proyecto no tiene documento adjunto.")
+
+    document_path = project.project_document_path.strip().lstrip("/\\").replace("\\", "/")
+    if not document_path:
+        abort(404, "Este proyecto no tiene documento adjunto.")
+    return send_from_directory(current_app.static_folder, document_path, as_attachment=False)
 
 
 @login_required

@@ -9,6 +9,7 @@
                 <tr>
                     <th>Proyecto</th>
                     <th>Categoría</th>
+                    <th>Documento</th>
                     <th>Evaluaciones</th>
                 </tr>
             </thead>
@@ -19,6 +20,21 @@
                 <tr>
                     <td data-label="Proyecto">{{ project.title }}</td>
                     <td data-label="Categoría">{{ category_map.get(project.category, project.category) }}</td>
+                    <td data-label="Documento">
+                        {% if project.project_document_path %}
+                            <a
+                                href="{{ url_for('judge.project_document', project_id=project.id) }}"
+                                target="_blank"
+                                rel="noopener"
+                                class="table-link-btn judge-document-link"
+                                data-no-iconify
+                            >
+                                Documento del proyecto
+                            </a>
+                        {% else %}
+                            <span class="tag off">Sin documento</span>
+                        {% endif %}
+                    </td>
                     <td data-label="Evaluaciones">
                         <div class="actions-cell">
                             {% for eval_type in available_eval_types %}

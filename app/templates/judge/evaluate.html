@@ -10,6 +10,17 @@
                 {{ score_value }} = {{ score_labels.get(score_value, score_value) }}{% if not loop.last %}, {% endif %}
             {% endfor %}
         </p>
+        {% if project.project_document_path %}
+            <a
+                href="{{ url_for('judge.project_document', project_id=project.id) }}"
+                target="_blank"
+                rel="noopener"
+                class="table-link-btn judge-document-link"
+                data-no-iconify
+            >
+                Documento del proyecto
+            </a>
+        {% endif %}
     </div>
 
     <form method="post" class="form-grid evaluation-form">

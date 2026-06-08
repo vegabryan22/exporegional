@@ -14,22 +14,31 @@
         </div>
     </div>
 
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr><th>Host</th><th>Puerto</th><th>Usuario</th><th>Remitente</th><th>TLS</th><th>SSL</th></tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ smtp_settings.host or 'N/D' }}</td>
-                    <td>{{ smtp_settings.port }}</td>
-                    <td>{{ smtp_settings.username or 'N/D' }}</td>
-                    <td>{{ smtp_settings.from_email or 'N/D' }}</td>
-                    <td>{{ 'Si' if smtp_settings.use_tls else 'No' }}</td>
-                    <td>{{ 'Si' if smtp_settings.use_ssl else 'No' }}</td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="settings-summary-grid smtp-summary-grid">
+        <article>
+            <span>Host</span>
+            <strong>{{ smtp_settings.host or 'N/D' }}</strong>
+        </article>
+        <article>
+            <span>Puerto</span>
+            <strong>{{ smtp_settings.port }}</strong>
+        </article>
+        <article>
+            <span>Usuario</span>
+            <strong>{{ smtp_settings.username or 'N/D' }}</strong>
+        </article>
+        <article>
+            <span>Remitente</span>
+            <strong>{{ smtp_settings.from_email or 'N/D' }}</strong>
+        </article>
+        <article class="{{ 'ok' if smtp_settings.use_tls else 'warn' }}">
+            <span>TLS</span>
+            <strong>{{ 'Si' if smtp_settings.use_tls else 'No' }}</strong>
+        </article>
+        <article class="{{ 'ok' if smtp_settings.use_ssl else 'warn' }}">
+            <span>SSL</span>
+            <strong>{{ 'Si' if smtp_settings.use_ssl else 'No' }}</strong>
+        </article>
     </div>
 </section>
 

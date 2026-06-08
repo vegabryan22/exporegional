@@ -37,31 +37,21 @@
 
     <section class="project-documents-card">
         <h3>Estudiantes incluidos</h3>
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nombre</th>
-                        <th>Identificación</th>
-                        <th>Sección</th>
-                        <th>Especialidad tecnica</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for member in project.members|sort(attribute='student_number') %}
-                    <tr>
-                        <td>{{ member.student_number }}</td>
-                        <td>{{ member.full_name }}</td>
-                        <td>{{ member.identity_number or 'N/D' }}</td>
-                        <td>{{ member.section_name or 'N/D' }}</td>
-                        <td>{{ member.specialty or 'N/D' }}</td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="5">No hay estudiantes registrados.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="project-documents-members">
+            {% for member in project.members|sort(attribute='student_number') %}
+                <article class="project-documents-member-card">
+                    <span class="project-documents-member-number">{{ member.student_number }}</span>
+                    <div>
+                        <strong>{{ member.full_name }}</strong>
+                        <p>{{ member.section_name or 'N/D' }} &middot; {{ member.specialty or 'N/D' }}</p>
+                    </div>
+                    <dl>
+                        <div><dt>Identificaci&oacute;n</dt><dd>{{ member.identity_number or 'N/D' }}</dd></div>
+                    </dl>
+                </article>
+            {% else %}
+                <p class="muted-empty">No hay estudiantes registrados.</p>
+            {% endfor %}
         </div>
     </section>
 </section>

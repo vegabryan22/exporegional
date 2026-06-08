@@ -8628,10 +8628,12 @@ body {
 /* Compact judge panel: designed for a small set of assigned projects. */
 .judge-dashboard-compact {
     gap: 0.75rem;
+    width: min(1120px, 100%);
+    margin-inline: auto;
 }
 
 .judge-dashboard-hero.compact {
-    grid-template-columns: minmax(260px, 0.9fr) minmax(360px, 1.1fr);
+    grid-template-columns: minmax(240px, 0.78fr) minmax(420px, 1.22fr);
     min-height: auto;
     padding: 0.85rem 1rem;
     border-radius: 16px;
@@ -8682,12 +8684,12 @@ body {
 
 .judge-project-row {
     display: grid;
-    grid-template-columns: minmax(220px, 0.85fr) auto minmax(360px, 1.2fr);
+    grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.15fr);
     gap: 0.75rem;
     align-items: center;
     border: 1px solid #cbddee;
     border-radius: 16px;
-    padding: 0.75rem;
+    padding: 0.85rem;
     background: #ffffff;
     box-shadow: 0 10px 24px rgba(13, 63, 107, 0.06);
 }
@@ -8705,12 +8707,19 @@ body {
     font-size: 0.9rem;
 }
 
+.judge-project-info .judge-project-progress {
+    margin-top: 0.55rem;
+}
+
 .judge-project-progress {
     display: grid;
-    justify-items: center;
-    min-width: 86px;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    align-items: baseline;
+    gap: 0.35rem;
+    width: fit-content;
     border-radius: 13px;
-    padding: 0.45rem 0.6rem;
+    padding: 0.32rem 0.6rem;
     border: 1px solid #f0c3c9;
     background: #fff2f4;
     color: #8c2030;
@@ -8737,6 +8746,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
+    align-items: center;
     gap: 0.38rem;
 }
 
@@ -8800,7 +8810,6 @@ body {
     }
 
     .judge-project-actions {
-        grid-column: 1 / -1;
         justify-content: flex-start;
     }
 }

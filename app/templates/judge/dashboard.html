@@ -47,10 +47,10 @@
                         <span class="judge-project-category">{{ category_map.get(project.category, project.category) }}</span>
                         <h3>{{ project.title }}</h3>
                         <p>{{ project.team_name or 'Equipo ExpoTEC' }}</p>
-                    </div>
-                    <div class="judge-project-progress {{ 'complete' if row.pending == 0 and available_eval_types else 'pending' }}">
-                        <strong>{{ row.done }}/{{ available_eval_types|length }}</strong>
-                        <span>{{ 'Listo' if row.pending == 0 and available_eval_types else 'Pendiente' }}</span>
+                        <div class="judge-project-progress {{ 'complete' if row.pending == 0 and available_eval_types else 'pending' }}">
+                            <strong>{{ row.done }}/{{ available_eval_types|length }}</strong>
+                            <span>{{ 'Listo' if row.pending == 0 and available_eval_types else 'Pendiente' }}</span>
+                        </div>
                     </div>
                     <div class="judge-project-actions">
                         {% if project.project_document_path %}

@@ -232,6 +232,7 @@ ACTION_MODULE_MAP = {
     "gitops_fetch": "gitops",
     "gitops_pull_ff": "gitops",
     "gitops_pull_apply": "gitops",
+    "gitops_revert_commit": "gitops",
     "gitops_refresh": "gitops",
     "gitops_service_reload": "gitops",
     "gitops_service_restart": "gitops",
@@ -465,7 +466,7 @@ def _git_status_snapshot() -> dict:
     head = _run_git_command(["git", "rev-parse", "--short", "HEAD"], timeout=20)
     remote = _run_git_command(["git", "config", "--get", "remote.origin.url"], timeout=20)
     status = _run_git_command(["git", "status", "--porcelain"], timeout=20)
-    last = _run_git_command(["git", "log", "--oneline", "-5"], timeout=20)
+    last = _run_git_command(["git", "log", "--pretty=format:%h%x09%s%x09%cr", "-8"], timeout=20)
     ahead = 0
     behind = 0
     upstream = _run_git_command(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], timeout=20)
@@ -495,6 +496,15 @@ def _git_status_snapshot() -> dict:
             label = "Cambio"
         changed_files.append({"code": code.strip(), "label": label, "path": path})
 
+    revision_rows = []
+    for line in (last["out"] or "").splitlines():
+        parts = line.split("\t")
+        if len(parts) >= 3:
+            revision_rows.append({"hash": parts[0], "subject": parts[1], "relative": parts[2]})
+        elif line.strip():
+            raw_parts = line.split(" ", 1)
+            revision_rows.append({"hash": raw_parts[0], "subject": raw_parts[1] if len(raw_parts) > 1 else "", "relative": ""})
+
     return {
         "repo_path": str(_git_repo_path()),
         "branch": branch["out"] if branch["ok"] else "N/D",
@@ -505,6 +515,7 @@ def _git_status_snapshot() -> dict:
         "ahead": ahead,
         "behind": behind,
         "last_commits": [line for line in (last["out"] or "").splitlines() if line.strip()],
+        "revisions": revision_rows,
     }
 
 
@@ -2247,10 +2258,10 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
         return
 
     login_url = url_for("auth.login", _external=True)
-    subject = "Credenciales de acceso - ExpoTecnica"
+    subject = "Credenciales de acceso - ExpoTécnica"
     body = (
         f"Hola {judge.full_name},\n\n"
-        "Gracias por confirmar tu participacion como juez de ExpoTecnica.\n"
+        "Gracias por confirmar tu participacion como juez de ExpoTécnica.\n"
         "Tu colaboracion contempla la evaluacion escrita virtual y la evaluacion presencial de la exposicion de proyectos.\n\n"
         "Se ha creado/actualizado tu acceso al portal de juez.\n"
         f"Portal: {login_url}\n"
@@ -2457,7 +2468,7 @@ def _send_assignment_email(judge: Judge, project: Project):
     if not smtp_is_configured():
         return
 
-    subject = "Nuevo proyecto asignado - ExpoTecnica"
+    subject = "Nuevo proyecto asignado - ExpoTécnica"
     body = (
         f"Hola {judge.full_name},\n\n"
         "Tienes un nuevo proyecto asignado para evaluacion:\n"
@@ -2550,7 +2561,7 @@ def _resolve_member_academic_fields(form_data):
 
     level_code = (section.level.code or "").strip() if section.level else ""
     if level_code not in {"10", "11", "12"}:
-        return None, None, "La ExpoTecnica solo permite estudiantes de especialidad tecnica (niveles 10, 11 y 12)."
+        return None, None, "La ExpoTécnica solo permite estudiantes de especialidad tecnica (niveles 10, 11 y 12)."
 
     specialty = Specialty.query.get(form_data.get("member_specialty_id", type=int))
     if not specialty:
@@ -3981,7 +3992,7 @@ def _handle_action(action: str):
         if not target_email:
             flash("Ingresa un correo destino para prueba SMTP.", "error")
         else:
-            ok, error = send_email(target_email, "Prueba SMTP - ExpoTecnica", "Este es un correo de prueba del modulo SMTP de ExpoTecnica.")
+            ok, error = send_email(target_email, "Prueba SMTP - ExpoTécnica", "Este es un correo de prueba del modulo SMTP de ExpoTécnica.")
             if ok:
                 log_event("admin.smtp.test", "smtp", detail=f"Prueba enviada a {target_email}")
                 flash("Correo de prueba enviado.", "success")
@@ -4068,7 +4079,7 @@ def _handle_action(action: str):
     elif action == "cleanup_expotecnica":
         confirmation = (request.form.get("cleanup_confirmation", "") or "").strip().upper()
         if confirmation != "LIMPIAR EXPOTECNICA":
-            flash("Para limpiar ExpoTecnica debes escribir exactamente: LIMPIAR EXPOTECNICA.", "error")
+            flash("Para limpiar ExpoTécnica debes escribir exactamente: LIMPIAR EXPOTECNICA.", "error")
             return
 
         try:
@@ -4083,7 +4094,7 @@ def _handle_action(action: str):
             "admin.maintenance.cleanup_expotecnica",
             "system",
             detail=(
-                "Limpieza anual ExpoTecnica ejecutada: "
+                "Limpieza anual ExpoTécnica ejecutada: "
                 f"projects={before['projects']}, members={before['members']}, "
                 f"assignments={before['assignments']}, users={before['users']}, "
                 f"evaluations_preserved={before['evaluations']}, "
@@ -4094,7 +4105,7 @@ def _handle_action(action: str):
         )
         db.session.commit()
         flash(
-            f"Respaldo creado: {backup['filename']}. ExpoTecnica limpiada. Se eliminaron "
+            f"Respaldo creado: {backup['filename']}. ExpoTécnica limpiada. Se eliminaron "
             f"{before['projects']} proyectos, {before['members']} integrantes, "
             f"{before['assignments']} asignaciones, {before['users']} usuarios no admin "
             f"y {deleted_files} archivo(s). Evaluaciones y rubricas se conservaron. "
@@ -4245,6 +4256,61 @@ def _handle_action(action: str):
             _save_gitops_result("pull_apply_reload", pull_result)
             log_event("admin.git.apply.fail", "system", detail=pull_result.get("err") or "Error en pull")
             flash(f"No se pudieron aplicar cambios: {pull_result.get('err') or 'sin detalle'}", "error")
+        db.session.commit()
+
+    elif action == "gitops_revert_commit":
+        target_commit = (request.form.get("gitops_target_commit", "") or "").strip()
+        confirmation = (request.form.get("gitops_revert_confirm", "") or "").strip().upper()
+        reload_after = _str_to_bool(request.form.get("gitops_revert_reload"))
+        if confirmation != "REVERTIR":
+            flash("Escribe REVERTIR para confirmar el regreso a una versión previa.", "error")
+            return
+        if not re.fullmatch(r"[0-9a-fA-F]{6,40}", target_commit):
+            flash("Indica un commit válido para revertir.", "error")
+            return
+        status_result = _run_git_command(["git", "status", "--porcelain"], timeout=20)
+        if status_result["ok"] and (status_result.get("out") or "").strip():
+            result = {
+                "ok": False,
+                "code": -10,
+                "out": "",
+                "err": "Hay cambios locales. Limpia o respalda esos cambios antes de revertir.",
+            }
+            _save_gitops_result("revert_blocked_dirty", result)
+            log_event("admin.git.revert.blocked", "system", detail=result["err"])
+            db.session.commit()
+            flash(result["err"], "error")
+            return
+        validate_result = _run_git_command(["git", "cat-file", "-e", f"{target_commit}^{{commit}}"], timeout=20)
+        if not validate_result["ok"]:
+            _save_gitops_result("revert_invalid_commit", validate_result)
+            log_event("admin.git.revert.invalid", "system", detail=validate_result.get("err") or target_commit)
+            db.session.commit()
+            flash("El commit indicado no existe en este repositorio.", "error")
+            return
+        reset_result = _run_git_command(["git", "reset", "--hard", target_commit], timeout=120)
+        if reset_result["ok"] and reload_after:
+            reload_result = _gitops_reload_service()
+            result = {
+                "ok": reload_result["ok"],
+                "code": reload_result["code"],
+                "out": "\n\n".join(
+                    [
+                        f"Reset:\n{reset_result.get('out') or '(sin salida)'}",
+                        f"Servicio:\n{reload_result.get('out') or reload_result.get('err') or '(sin salida)'}",
+                    ]
+                ),
+                "err": reload_result.get("err", ""),
+            }
+        else:
+            result = reset_result
+        _save_gitops_result("revert_commit", result)
+        if result["ok"]:
+            log_event("admin.git.revert", "system", detail=f"Repositorio regresado al commit {target_commit}")
+            flash("Repositorio revertido a la versión seleccionada." + (" Servicio recargado." if reload_after else ""), "success")
+        else:
+            log_event("admin.git.revert.fail", "system", detail=result.get("err") or "Error en reset")
+            flash(f"No se pudo revertir: {result.get('err') or 'sin detalle'}", "error")
         db.session.commit()
 
     elif action == "gitops_service_check":

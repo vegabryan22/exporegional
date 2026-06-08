@@ -1,14 +1,129 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section gitops-page">
-    <div class="section-head">
-        <h3>Mantenimiento Git</h3>
-        <p>Gestiona sincronización de versiones con control operativo y trazabilidad.</p>
+<section class="card admin-section gitops-page gitops-console">
+    <div class="gitops-hero">
+        <div>
+            <p class="maintenance-kicker">Despliegue controlado</p>
+            <h3>Mantenimiento Git</h3>
+            <p class="table-subtext">Descarga, aplica y valida nuevas versiones desde el repositorio remoto.</p>
+        </div>
+        <div class="gitops-health-card {{ 'ok' if gitops_service.health_ok else 'warn' }}">
+            <span>Servicio</span>
+            <strong>{{ gitops_service.status_label }}</strong>
+            <small>HTTP {{ gitops_service.http_code }} &middot; {{ gitops_service.health_path }}</small>
+        </div>
     </div>
 
-    <div class="inline-card gitops-card">
-        <h4>Configuración remota</h4>
-        <form method="post" action="{{ action_url }}" class="form-grid inline-grid-3">
+    <div class="gitops-status-strip">
+        <article>
+            <span>Rama actual</span>
+            <strong>{{ gitops_status.branch }}</strong>
+            <small>{{ gitops_status.head }}</small>
+        </article>
+        <article>
+            <span>Remoto</span>
+            <strong>{{ 'Actualizado' if gitops_status.behind == 0 else gitops_status.behind ~ ' pendiente(s)' }}</strong>
+            <small>Ahead {{ gitops_status.ahead }} &middot; Behind {{ gitops_status.behind }}</small>
+        </article>
+        <article class="{{ 'warn' if gitops_status.dirty_count else 'ok' }}">
+            <span>Cambios locales</span>
+            <strong>{{ gitops_status.dirty_count }}</strong>
+            <small>{{ 'Revisar antes de aplicar' if gitops_status.dirty_count else 'Sin cambios locales' }}</small>
+        </article>
+    </div>
+
+    <div class="gitops-primary-actions">
+        <form method="post" action="{{ action_url }}">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="gitops_fetch">
+            <button type="submit" class="gitops-action-card fetch">
+                <span>1</span>
+                <strong>Descargar</strong>
+                <small>Trae novedades del remoto sin aplicarlas.</small>
+            </button>
+        </form>
+        <form method="post" action="{{ action_url }}">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="gitops_pull_apply">
+            <button type="submit" class="gitops-action-card deploy">
+                <span>2</span>
+                <strong>Aplicar versión</strong>
+                <small>Pull seguro y recarga del servicio.</small>
+            </button>
+        </form>
+        <form method="post" action="{{ action_url }}">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="gitops_service_check">
+            <button type="submit" class="gitops-action-card check">
+                <span>3</span>
+                <strong>Validar servicio</strong>
+                <small>Comprueba proceso y respuesta HTTP.</small>
+            </button>
+        </form>
+    </div>
+
+    <div class="gitops-main-grid">
+        <section class="gitops-panel gitops-panel-highlight">
+            <div class="gitops-panel-head">
+                <div>
+                    <p class="maintenance-kicker">Versión previa</p>
+                    <h4>Revertir despliegue</h4>
+                    <p>Regresa el código a un commit anterior. Se bloquea si hay cambios locales para evitar pérdida accidental.</p>
+                </div>
+            </div>
+            <form method="post" action="{{ action_url }}" class="gitops-revert-form" onsubmit="return confirm('Esta acción ejecuta git reset --hard al commit seleccionado. Continuar?')">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="gitops_revert_commit">
+                <label>Commit destino
+                    <select name="gitops_target_commit" required>
+                        <option value="">Seleccione una versión...</option>
+                        {% for commit in gitops_status.revisions %}
+                            <option value="{{ commit.hash }}">{{ commit.hash }} &middot; {{ commit.subject }}{% if commit.relative %} &middot; {{ commit.relative }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>Confirmación
+                    <input type="text" name="gitops_revert_confirm" placeholder="Escribe REVERTIR" autocomplete="off" required>
+                </label>
+                <label class="toggle-row compact-toggle">
+                    <input type="checkbox" name="gitops_revert_reload" value="1" checked>
+                    Recargar servicio al finalizar
+                </label>
+                <button type="submit" class="gitops-btn gitops-btn-danger">Revertir a versión seleccionada</button>
+            </form>
+        </section>
+
+        <section class="gitops-panel">
+            <div class="gitops-panel-head">
+                <div>
+                    <p class="maintenance-kicker">Servicio</p>
+                    <h4>Control rápido</h4>
+                    <p>{{ gitops_service.bind }} &middot; PID {{ gitops_service.pid or 'N/D' }}</p>
+                </div>
+            </div>
+            <div class="gitops-compact-actions">
+                <form method="post" action="{{ action_url }}">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="action" value="gitops_refresh">
+                    <button type="submit" class="gitops-btn gitops-btn-neutral">Actualizar estado</button>
+                </form>
+                <form method="post" action="{{ action_url }}">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="action" value="gitops_service_reload">
+                    <button type="submit" class="gitops-btn gitops-btn-info">Recargar servicio</button>
+                </form>
+                <form method="post" action="{{ action_url }}" onsubmit="return confirm('Reiniciar el servicio Python de ExpoTécnica?')">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="action" value="gitops_service_restart">
+                    <button type="submit" class="gitops-btn gitops-btn-danger">Reiniciar completo</button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <details class="gitops-details-card">
+        <summary>Configuración del repositorio</summary>
+        <form method="post" action="{{ action_url }}" class="form-grid inline-grid-3 gitops-config-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="save_gitops_remote">
             <label>Remote URL (origin)
@@ -17,170 +132,83 @@
             <label>Usuario HTTPS
                 <input type="text" name="gitops_username" value="{{ gitops_remote.username or 'x-access-token' }}" placeholder="x-access-token">
             </label>
-            <label>Token privado (opcional)
+            <label>Token privado
                 <input type="password" name="gitops_private_token" placeholder="{% if gitops_remote.has_token %}Token ya configurado{% else %}Pega PAT aquí{% endif %}">
             </label>
-            <label>
+            <label class="toggle-row compact-toggle">
                 <input type="checkbox" name="gitops_persist_token" value="1">
-                Guardar token en configuración del sistema
+                Guardar token
             </label>
             <button type="submit" class="gitops-btn gitops-btn-primary">Guardar remoto</button>
         </form>
-        <form method="post" action="{{ action_url }}" class="inline-form">
+        <form method="post" action="{{ action_url }}" class="inline-form gitops-test-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="gitops_test_remote">
             <button type="submit" class="gitops-btn gitops-btn-info">Probar conexión remota</button>
         </form>
-    </div>
+    </details>
 
-    <div class="admin-overview-grid">
-        <article class="mini-stat">
-            <span>Repositorio</span>
-            <strong>{{ gitops_status.repo_path }}</strong>
-        </article>
-        <article class="mini-stat">
-            <span>Rama / Commit</span>
-            <strong>{{ gitops_status.branch }} · {{ gitops_status.head }}</strong>
-        </article>
-        <article class="mini-stat">
-            <span>Sincronización</span>
-            <strong>Ahead {{ gitops_status.ahead }} · Behind {{ gitops_status.behind }}</strong>
-        </article>
-        <article class="mini-stat">
-            <span>Cambios locales</span>
-            <strong>{{ gitops_status.dirty_count }} archivo(s)</strong>
-        </article>
-        <article class="mini-stat gitops-service-stat {{ 'ok' if gitops_service.health_ok else 'warn' }}">
-            <span>Servicio Python</span>
-            <strong>{{ gitops_service.status_label }}</strong>
-        </article>
-        <article class="mini-stat">
-            <span>PID / Puerto</span>
-            <strong>{{ gitops_service.pid or 'N/D' }} · {{ gitops_service.bind }}</strong>
-        </article>
-        <article class="mini-stat">
-            <span>Prueba HTTP</span>
-            <strong>{{ gitops_service.http_code }} · {{ gitops_service.health_path }}</strong>
-        </article>
-    </div>
-
-    <div class="inline-card gitops-card gitops-actions">
-        <form method="post" action="{{ action_url }}" class="inline-form">
-            <input type="hidden" name="next" value="{{ next_url }}">
-            <input type="hidden" name="action" value="gitops_refresh">
-            <button type="submit" class="gitops-btn gitops-btn-neutral">Actualizar estado</button>
-        </form>
-        <form method="post" action="{{ action_url }}" class="inline-form">
-            <input type="hidden" name="next" value="{{ next_url }}">
-            <input type="hidden" name="action" value="gitops_fetch">
-            <button type="submit" class="gitops-btn gitops-btn-warn">Descargar cambios (fetch)</button>
-        </form>
-        <form method="post" action="{{ action_url }}" class="inline-form">
-            <input type="hidden" name="next" value="{{ next_url }}">
-            <input type="hidden" name="action" value="gitops_pull_ff">
-            <button type="submit" class="gitops-btn gitops-btn-success">Aplicar cambios (pull ff-only)</button>
-        </form>
-        <form method="post" action="{{ action_url }}" class="inline-form">
-            <input type="hidden" name="next" value="{{ next_url }}">
-            <input type="hidden" name="action" value="gitops_pull_apply">
-            <button type="submit" class="gitops-btn gitops-btn-deploy">Aplicar cambios y recargar servicio</button>
-        </form>
-    </div>
-
-    <div class="inline-card gitops-card gitops-service-panel">
-        <div>
-            <h4>Servicio de aplicacion</h4>
-            <p>
-                <strong>Estado:</strong> {{ gitops_service.status_label }}<br>
-                <strong>PID:</strong> {{ gitops_service.pid or 'N/D' }}<br>
-                <strong>Bind:</strong> {{ gitops_service.bind }}<br>
-                <strong>Health:</strong> {{ gitops_service.health_url or 'N/D' }}<br>
-                <strong>HTTP:</strong> {{ gitops_service.http_code }}
-            </p>
-        </div>
-        <div class="gitops-actions">
-            <form method="post" action="{{ action_url }}" class="inline-form">
-                <input type="hidden" name="next" value="{{ next_url }}">
-                <input type="hidden" name="action" value="gitops_service_check">
-                <button type="submit" class="gitops-btn gitops-btn-neutral">Verificar servicio</button>
-            </form>
-            <form method="post" action="{{ action_url }}" class="inline-form">
-                <input type="hidden" name="next" value="{{ next_url }}">
-                <input type="hidden" name="action" value="gitops_service_reload">
-                <button type="submit" class="gitops-btn gitops-btn-info">Recargar servicio (HUP)</button>
-            </form>
-            <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Reiniciar el servicio Python de Expotecnica?')">
-                <input type="hidden" name="next" value="{{ next_url }}">
-                <input type="hidden" name="action" value="gitops_service_restart">
-                <button type="submit" class="gitops-btn gitops-btn-danger">Reiniciar servicio completo</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="inline-card gitops-card">
-        <h4>Archivos locales con cambios</h4>
-        {% if gitops_status.changed_files %}
-            <div class="gitops-file-list">
-                {% for item in gitops_status.changed_files %}
-                    <div class="gitops-file-row">
-                        <span class="gitops-badge gitops-badge-{{ item.label|lower }}">{{ item.label }}</span>
-                        <code>{{ item.path }}</code>
+    <details class="gitops-details-card">
+        <summary>Archivos locales y commits recientes</summary>
+        <div class="gitops-detail-grid">
+            <section>
+                <h4>Archivos locales con cambios</h4>
+                {% if gitops_status.changed_files %}
+                    <div class="gitops-file-list compact">
+                        {% for item in gitops_status.changed_files %}
+                            <div class="gitops-file-row">
+                                <span class="gitops-badge gitops-badge-{{ item.label|lower }}">{{ item.label }}</span>
+                                <code>{{ item.path }}</code>
+                            </div>
+                        {% endfor %}
                     </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p>Sin cambios locales.</p>
-        {% endif %}
-    </div>
-
-    <div class="inline-card gitops-card">
-        <h4>Última ejecución</h4>
-        <p>
-            <strong>Acción:</strong> {{ gitops_last.action or 'N/D' }}<br>
-            <strong>Estado:</strong> {{ gitops_last.status or 'N/D' }}<br>
-            <strong>Fecha:</strong> {{ gitops_last.ran_at or 'N/D' }}
-        </p>
-        <label>Salida técnica</label>
-        <textarea rows="12" readonly>{{ gitops_last.output or 'Sin resultados aún.' }}</textarea>
-    </div>
-
-    <div class="inline-card gitops-card">
-        <h4>Commits recientes</h4>
-        {% if gitops_status.last_commits %}
-            <ul>
-                {% for line in gitops_status.last_commits %}
-                    <li><code>{{ line }}</code></li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>Sin datos.</p>
-        {% endif %}
-    </div>
-
-    <div class="inline-card gitops-card">
-        <h4>Bitácora Git (panel)</h4>
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Acción</th>
-                    <th>Usuario</th>
-                    <th>Detalle</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in gitops_logs %}
-                <tr>
-                    <td>{{ row.created_at.strftime('%Y-%m-%d %H:%M:%S') if row.created_at else 'N/D' }}</td>
-                    <td>{{ row.action }}</td>
-                    <td>{{ row.actor_name or row.actor_email or 'N/D' }}</td>
-                    <td>{{ row.detail or '-' }}</td>
-                </tr>
                 {% else %}
-                <tr><td colspan="4">Sin registros de operaciones Git.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                    <p>Sin cambios locales.</p>
+                {% endif %}
+            </section>
+            <section>
+                <h4>Versiones recientes</h4>
+                {% if gitops_status.revisions %}
+                    <div class="gitops-revision-list">
+                        {% for commit in gitops_status.revisions %}
+                            <div>
+                                <code>{{ commit.hash }}</code>
+                                <span>{{ commit.subject }}</span>
+                                {% if commit.relative %}<small>{{ commit.relative }}</small>{% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>Sin datos.</p>
+                {% endif %}
+            </section>
+        </div>
+    </details>
+
+    <details class="gitops-details-card">
+        <summary>Resultado técnico y bitácora</summary>
+        <div class="gitops-detail-grid">
+            <section>
+                <h4>Última ejecución</h4>
+                <p><strong>{{ gitops_last.action or 'N/D' }}</strong> &middot; {{ gitops_last.status or 'N/D' }} &middot; {{ gitops_last.ran_at or 'N/D' }}</p>
+                <textarea rows="9" readonly>{{ gitops_last.output or 'Sin resultados aún.' }}</textarea>
+            </section>
+            <section>
+                <h4>Bitácora Git</h4>
+                <div class="gitops-log-list">
+                    {% for row in gitops_logs[:8] %}
+                        <article>
+                            <strong>{{ row.action }}</strong>
+                            <span>{{ row.created_at.strftime('%Y-%m-%d %H:%M:%S') if row.created_at else 'N/D' }}</span>
+                            <small>{{ row.actor_name or row.actor_email or 'N/D' }}</small>
+                            <p>{{ row.detail or '-' }}</p>
+                        </article>
+                    {% else %}
+                        <p>Sin registros de operaciones Git.</p>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </details>
 </section>
 {% endblock %}

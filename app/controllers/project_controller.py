@@ -660,28 +660,45 @@ def _render_project_documents_packet(project: Project):
     pdf.drawString(68, y, "Adjuntar las fotocopias de las cedulas del estudiantado, docente tutor y mentor.")
     pdf.showPage()
 
-    def consent_field(label, value, x, y_pos, w):
-        pdf.setFillColor(colors.black)
-        pdf.setFont("Helvetica-Bold", 8)
-        pdf.drawString(x, y_pos + 18, _pdf_text(label))
-        pdf.setStrokeColor(colors.black)
-        pdf.rect(x, y_pos, w, 15, stroke=1, fill=0)
-        if value:
-            pdf.setFont("Helvetica", 8)
-            pdf.drawString(x + 4, y_pos + 4, _pdf_text(value))
+    def consent_section(title, y_pos):
+        pdf.setFillColor(colors.HexColor("#eaf3fb"))
+        pdf.roundRect(36, y_pos - 20, width - 72, 22, 7, stroke=0, fill=1)
+        pdf.setFillColor(colors.HexColor("#073d70"))
+        pdf.setFont("Helvetica-Bold", 9.5)
+        pdf.drawString(48, y_pos - 13, _pdf_text(title))
+        return y_pos - 34
+
+    def consent_field(label, value, x, y_pos, w, h=29):
+        pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
+        pdf.setFillColor(colors.white)
+        pdf.roundRect(x, y_pos, w, h, 5, stroke=1, fill=1)
+        pdf.setFillColor(colors.HexColor("#506a86"))
+        pdf.setFont("Helvetica-Bold", 6.8)
+        pdf.drawString(x + 8, y_pos + h - 10, _pdf_text(label.upper()))
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
+        pdf.setFont("Helvetica", 8.2)
+        text_y = y_pos + h - 20
+        for line in _pdf_lines(value or "", max(12, int(w / 4.4)))[:2]:
+            pdf.drawString(x + 8, text_y, _pdf_text(line))
+            text_y -= 10
 
     def consent_signature_line(label, x, y_pos, w):
-        pdf.setFillColor(colors.black)
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.setFont("Helvetica-Bold", 8)
         pdf.drawString(x, y_pos, _pdf_text(label))
+        pdf.setStrokeColor(colors.HexColor("#506a86"))
         pdf.line(x + 170, y_pos, x + w, y_pos)
 
     def consent_check(text, x, y_pos, width_chars=82):
-        pdf.setStrokeColor(colors.black)
-        pdf.line(x, y_pos + 4, x + 62, y_pos + 4)
-        pdf.setFillColor(colors.black)
+        pdf.setStrokeColor(colors.HexColor("#bfd0e2"))
+        pdf.setFillColor(colors.white)
+        pdf.roundRect(x, y_pos - 1, 20, 14, 4, stroke=1, fill=1)
+        pdf.setFillColor(colors.HexColor("#506a86"))
+        pdf.setFont("Helvetica-Bold", 6.5)
+        pdf.drawCentredString(x + 10, y_pos + 3, "X")
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.setFont("Helvetica", 8)
-        return _draw_wrapped(pdf, text, x + 78, y_pos + 8, width_chars=width_chars, leading=9.5, size=8)
+        return _draw_wrapped(pdf, text, x + 30, y_pos + 8, width_chars=width_chars, leading=9.5, size=8)
 
     pdf.setPageSize(letter)
     width, height = letter
@@ -719,17 +736,38 @@ def _render_project_documents_packet(project: Project):
         pdf.setStrokeColor(colors.HexColor("#c8d6e6"))
         pdf.line(42, height - 104, width - 42, height - 104)
 
-        y = height - 132
-        pdf.setFillColor(colors.black)
+        y = height - 128
+        y = consent_section("Datos de consentimiento", y)
+        pdf.setStrokeColor(colors.HexColor("#d6e2ef"))
+        pdf.setFillColor(colors.HexColor("#f8fbff"))
+        pdf.roundRect(42, y - 116, width - 84, 120, 7, stroke=1, fill=1)
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.setFont("Helvetica", 8.4)
-        pdf.drawString(42, y, "El suscrito, en mi condicion de padre, madre o encargado legal, doy mi consentimiento para que")
-        y -= 28
-        consent_field("Nombre del padre, madre o encargado legal", "", 42, y, 250)
-        consent_field("Cedula", "", 314, y, 120)
-        y -= 52
-        consent_field("Persona estudiante", member.full_name, 42, y, 250)
-        consent_field("Numero de identidad", member.identity_number or "", 314, y, 150)
-        y -= 32
+        _draw_wrapped(
+            pdf,
+            "El suscrito, en mi condicion de padre, madre o encargado legal:",
+            54,
+            y - 16,
+            width_chars=78,
+            leading=10,
+            size=8.4,
+        )
+        consent_field("Nombre del padre, madre o encargado legal", "", 54, y - 52, 330)
+        consent_field("Cedula", "", 402, y - 52, 156)
+        pdf.setFont("Helvetica", 8.4)
+        _draw_wrapped(
+            pdf,
+            "doy mi consentimiento para que la persona estudiante indicada a continuacion:",
+            54,
+            y - 76,
+            width_chars=78,
+            leading=10,
+            size=8.4,
+        )
+        consent_field("Persona estudiante", member.full_name, 54, y - 112, 330)
+        consent_field("Numero de identidad", member.identity_number or "", 402, y - 112, 156)
+        y -= 138
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.setFont("Helvetica", 8.4)
         pdf.drawString(42, y, "realice lo que a continuacion se detalla:")
 
@@ -742,21 +780,24 @@ def _render_project_documents_packet(project: Project):
             "procesos que involucran la observacion, el diseno y desarrollo de prototipos, asi como la experimentacion, "
             "el analisis de informacion y la divulgacion cientifica y tecnologica."
         )
-        pdf.setStrokeColor(colors.HexColor("#4c8a41"))
-        pdf.setFillColor(colors.HexColor("#e6f4df"))
-        pdf.rect(42, y - 78, width - 84, 82, stroke=1, fill=1)
-        pdf.setFillColor(colors.black)
-        _draw_wrapped(pdf, info_text, 52, y - 12, width_chars=96, leading=9.2, size=7.8)
+        pdf.setStrokeColor(colors.HexColor("#b9d7b1"))
+        pdf.setFillColor(colors.HexColor("#eef8e9"))
+        pdf.roundRect(42, y - 78, width - 84, 82, 7, stroke=1, fill=1)
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
+        _draw_wrapped(pdf, info_text, 54, y - 12, width_chars=93, leading=9.2, size=7.8)
 
         y -= 104
+        y = consent_section("Constancias", y + 16)
         pdf.setFont("Helvetica-Bold", 8.4)
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.drawString(42, y, "Para lo cual dejo constancia que:  (escriba una X sobre la linea, segun corresponda).")
         y -= 30
-        y = consent_check("Recibi informacion sencilla y comprensible respecto a los beneficios y actividades que conlleva esta actividad, por parte del Ministerio de Educacion Publica.", 42, y, width_chars=80) - 12
-        y = consent_check("Se me ha explicado este documento.", 42, y, width_chars=80) - 12
-        y = consent_check("Libero de toda responsabilidad a los y las funcionarias que trabajaran en esta grabacion, en la medida que las imagenes no sean utilizadas para fines comerciales.", 42, y, width_chars=80) - 10
+        y = consent_check("Recibi informacion sencilla y comprensible respecto a los beneficios y actividades que conlleva esta actividad, por parte del Ministerio de Educacion Publica.", 42, y, width_chars=86) - 12
+        y = consent_check("Se me ha explicado este documento.", 42, y, width_chars=86) - 12
+        y = consent_check("Libero de toda responsabilidad a los y las funcionarias que trabajaran en esta grabacion, en la medida que las imagenes no sean utilizadas para fines comerciales.", 42, y, width_chars=86) - 10
 
         pdf.setFont("Helvetica", 8)
+        pdf.setFillColor(colors.HexColor("#0d1f33"))
         pdf.drawString(42, y, "Lo anterior, se respalda en los Articulos 47 y 48 del Codigo Civil que rezan:")
         y -= 18
         pdf.setFont("Helvetica-Bold", 8)

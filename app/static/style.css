@@ -3412,9 +3412,12 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .overview-action-strip a {
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     gap: 0.05rem;
     min-height: 58px;
+    min-width: 0;
     padding: 0.55rem 0.7rem;
     border: 1px solid #c7d7eb;
     border-radius: 13px;
@@ -3422,6 +3425,8 @@ dialog.maintenance-dialog::backdrop {
     color: var(--primary);
     text-decoration: none;
     box-shadow: 0 8px 20px rgba(13, 63, 107, 0.06);
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .overview-action-strip a:hover {
@@ -3436,10 +3441,20 @@ dialog.maintenance-dialog::backdrop {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.06em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .overview-action-strip strong {
     font-size: 0.98rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .overview-metrics-grid {
@@ -5405,6 +5420,29 @@ dialog.maintenance-dialog::backdrop {
 .audit-filter-actions .outline-btn {
     min-height: 40px;
     white-space: nowrap;
+}
+
+.audit-filter-actions .outline-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0.52rem 0.9rem;
+    border: 1px solid rgba(31, 143, 181, 0.35);
+    border-radius: 8px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-weight: 800;
+    line-height: 1;
+    text-decoration: none;
+    box-shadow: none;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.audit-filter-actions button {
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .audit-list {

@@ -5988,17 +5988,31 @@ dialog.maintenance-dialog::backdrop {
 .gitops-file-list {
     display: grid;
     gap: 0.45rem;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 0.15rem;
 }
 
 .gitops-file-row {
     display: grid;
-    grid-template-columns: 130px minmax(0, 1fr);
+    grid-template-columns: 108px minmax(0, 1fr);
     gap: 0.6rem;
     align-items: center;
     border: 1px solid #d8e4f2;
-    border-radius: 8px;
-    background: #f8fbff;
-    padding: 0.45rem 0.6rem;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 0.45rem 0.55rem;
+    min-width: 0;
+}
+
+.gitops-file-row code {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #244765;
+    font-size: 0.86rem;
 }
 
 .gitops-badge {
@@ -6016,6 +6030,66 @@ dialog.maintenance-dialog::backdrop {
 .gitops-badge-eliminado { background: #ffe1e5; color: #8c1d2d; }
 .gitops-badge-renombrado { background: #e1e9ff; color: #2047a6; }
 .gitops-badge-cambio { background: #e9edf2; color: #3e4b5b; }
+
+.gitops-changes-card {
+    padding: 1rem;
+}
+
+.gitops-changes-card summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-radius: 12px;
+    background: #eef7fd;
+    padding: 0.7rem 0.85rem;
+}
+
+.gitops-changes-card summary::after {
+    float: none;
+}
+
+.gitops-changes-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 1rem;
+    margin-top: 0.9rem;
+}
+
+.gitops-changes-panel {
+    display: grid;
+    align-content: start;
+    gap: 0.65rem;
+    min-width: 0;
+    border: 1px solid #d8e4f2;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: 0.85rem;
+}
+
+.gitops-list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.gitops-list-head h4 {
+    margin: 0;
+}
+
+.gitops-list-head span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #eaf3fb;
+    color: #123f6b;
+    padding: 0.28rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 900;
+    white-space: nowrap;
+}
 
 .gitops-console {
     gap: 1rem;
@@ -6273,8 +6347,28 @@ dialog.maintenance-dialog::backdrop {
     padding: 0.55rem 0.65rem;
 }
 
+.gitops-changes-panel .gitops-revision-list {
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 0.15rem;
+}
+
+.gitops-changes-panel .gitops-revision-list div {
+    display: grid;
+    grid-template-columns: 78px minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.52rem 0.6rem;
+}
+
 .gitops-revision-list code {
     margin-right: 0.4rem;
+}
+
+.gitops-changes-panel .gitops-revision-list code {
+    margin: 0;
+    color: #123f6b;
+    font-weight: 900;
 }
 
 .gitops-revision-list span,
@@ -6282,11 +6376,22 @@ dialog.maintenance-dialog::backdrop {
     color: #344b62;
 }
 
+.gitops-changes-panel .gitops-revision-list span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .gitops-revision-list small,
 .gitops-log-list span,
 .gitops-log-list small {
     display: block;
     color: var(--muted);
+}
+
+.gitops-changes-panel .gitops-revision-list small {
+    white-space: nowrap;
 }
 
 .audit-page {
@@ -8908,6 +9013,18 @@ body {
 
     .gitops-revert-form {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gitops-changes-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gitops-changes-panel .gitops-revision-list div {
+        grid-template-columns: 70px minmax(0, 1fr);
+    }
+
+    .gitops-changes-panel .gitops-revision-list small {
+        grid-column: 2;
     }
 
     .audit-hero,

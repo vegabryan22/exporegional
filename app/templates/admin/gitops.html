@@ -148,11 +148,14 @@
         </form>
     </details>
 
-    <details class="gitops-details-card">
-        <summary>Archivos locales y commits recientes</summary>
-        <div class="gitops-detail-grid">
-            <section>
-                <h4>Archivos locales con cambios</h4>
+    <details class="gitops-details-card gitops-changes-card" open>
+        <summary>Archivos locales y versiones recientes</summary>
+        <div class="gitops-changes-grid">
+            <section class="gitops-changes-panel">
+                <div class="gitops-list-head">
+                    <h4>Archivos locales</h4>
+                    <span>{{ gitops_status.changed_files|length if gitops_status.changed_files else 0 }} cambio(s)</span>
+                </div>
                 {% if gitops_status.changed_files %}
                     <div class="gitops-file-list compact">
                         {% for item in gitops_status.changed_files %}
@@ -166,8 +169,11 @@
                     <p>Sin cambios locales.</p>
                 {% endif %}
             </section>
-            <section>
-                <h4>Versiones recientes</h4>
+            <section class="gitops-changes-panel">
+                <div class="gitops-list-head">
+                    <h4>Versiones recientes</h4>
+                    <span>{{ gitops_status.revisions|length if gitops_status.revisions else 0 }} commit(s)</span>
+                </div>
                 {% if gitops_status.revisions %}
                     <div class="gitops-revision-list">
                         {% for commit in gitops_status.revisions %}

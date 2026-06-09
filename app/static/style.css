@@ -5169,6 +5169,16 @@ dialog.maintenance-dialog::backdrop {
     font-weight: 850;
 }
 
+.project-requirements-detail-row {
+    grid-template-columns: minmax(180px, 0.85fr) minmax(260px, 1fr) minmax(320px, 1.25fr);
+    align-items: end;
+}
+
+.project-requirements-detail-row input[type="file"] {
+    min-height: 42px;
+    padding: 0.42rem;
+}
+
 .project-submit-row {
     display: flex;
     justify-content: flex-end;
@@ -5317,6 +5327,7 @@ dialog.maintenance-dialog::backdrop {
     .register-form.project-register-form .inline-grid-2,
     .register-form.project-register-form .inline-grid-3,
     .register-form.project-register-form .inline-grid-4,
+    .register-form.project-register-form .project-requirements-detail-row,
     .register-form.project-register-form .final-stages-grid,
     .register-form.project-register-form .focus-grid {
         grid-template-columns: minmax(0, 1fr);

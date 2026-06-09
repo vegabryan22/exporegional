@@ -91,17 +91,17 @@
                 {% endfor %}
                 </div>
             </div>
-            <div class="form-grid inline-grid-2">
+            <div class="form-grid project-requirements-detail-row">
                 <label id="req-otros-wrapper">Otros:
                     <input type="text" name="requirements_other" value="{{ form_data.get('requirements_other', '') }}">
                 </label>
                 <label>Detalle adicional de requerimientos
                     <input type="text" name="required_resources" value="{{ form_data.get('required_resources', '') }}">
                 </label>
+                <label>Documentación del proyecto *
+                    <input type="file" name="project_document" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar" {% if not temp_document_path %}required{% endif %}>
+                </label>
             </div>
-            <label>Documentación del proyecto *
-                <input type="file" name="project_document" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar" {% if not temp_document_path %}required{% endif %}>
-            </label>
             {% if temp_document_path %}
                 <p class="upload-retained-note">
                     Documento conservado temporalmente: <strong>{{ temp_document_name }}</strong>.

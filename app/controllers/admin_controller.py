@@ -2624,19 +2624,156 @@ def _send_assignment_email(judge: Judge, project: Project, assignment: Assignmen
         return
 
     scope_label = assignment.scope_label if assignment else "Documento y exposición"
+    panel_url = url_for("judge.dashboard", _external=True)
+    school_name = SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+    school_logo = SystemSetting.get_value("school_logo_path", "")
+    expo_logo = SystemSetting.get_value("expo_logo_path", "")
+    school_logo_url = url_for("static", filename=school_logo, _external=True) if school_logo else ""
+    expo_logo_url = url_for("static", filename=expo_logo, _external=True) if expo_logo else ""
+    category_label = (project.category or "").strip().title()
+    axis_label = project.thematic_axis.name if project.thematic_axis else ""
+    project_type_label = project.project_type.name if project.project_type else ""
     subject = "Nuevo proyecto asignado - ExpoTécnica"
     body = (
         f"Hola {judge.full_name},\n\n"
-        "Tienes un nuevo proyecto asignado para evaluacion:\n"
+        "Tienes un nuevo proyecto asignado para evaluación:\n"
         f"Proyecto: {project.title}\n"
-        f"Categoria: {project.category}\n"
+        f"Categoría: {category_label}\n"
+        f"Eje temático: {axis_label or 'No definido'}\n"
+        f"Tipo de proyecto: {project_type_label or 'No definido'}\n"
         f"Equipo: {project.team_name}\n"
         f"Alcance: {scope_label}\n\n"
-        "Ingresa al panel de juez para completar la evaluacion.\n"
+        f"Panel de juez: {panel_url}\n\n"
+        "Ingresa al panel de juez para completar la evaluación.\n"
     )
-    ok, error = send_email(judge.email, subject, body)
+    html_body = _build_assignment_email_html(
+        judge=judge,
+        project=project,
+        scope_label=scope_label,
+        panel_url=panel_url,
+        school_name=school_name,
+        school_logo_url=school_logo_url,
+        expo_logo_url=expo_logo_url,
+        category_label=category_label,
+        axis_label=axis_label,
+        project_type_label=project_type_label,
+    )
+    ok, error = send_email(judge.email, subject, body, html_body=html_body)
     if not ok:
-        flash(f"No se pudo enviar correo de asignacion: {error}", "error")
+        flash(f"No se pudo enviar correo de asignación: {error}", "error")
+
+
+def _build_assignment_email_html(
+    *,
+    judge: Judge,
+    project: Project,
+    scope_label: str,
+    panel_url: str,
+    school_name: str,
+    school_logo_url: str = "",
+    expo_logo_url: str = "",
+    category_label: str = "",
+    axis_label: str = "",
+    project_type_label: str = "",
+) -> str:
+    logo_cells = ""
+    if school_logo_url:
+        logo_cells += (
+            f'<img src="{escape(school_logo_url)}" alt="{escape(school_name)}" '
+            'style="height:64px;max-width:86px;object-fit:contain;margin-right:14px;">'
+        )
+    if expo_logo_url:
+        logo_cells += (
+            f'<img src="{escape(expo_logo_url)}" alt="ExpoTécnica" '
+            'style="height:64px;max-width:150px;object-fit:contain;">'
+        )
+    if not logo_cells:
+        logo_cells = '<strong style="font-size:22px;color:#ffffff;">ExpoTécnica</strong>'
+
+    axis_html = (
+        f"""
+                    <tr>
+                      <td style="padding:10px 0;color:#607998;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Eje temático</td>
+                      <td style="padding:10px 0;color:#123f6b;font-size:15px;font-weight:700;text-align:right;">{escape(axis_label)}</td>
+                    </tr>"""
+        if axis_label
+        else ""
+    )
+    project_type_html = (
+        f"""
+                    <tr>
+                      <td style="padding:10px 0;color:#607998;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Tipo</td>
+                      <td style="padding:10px 0;color:#123f6b;font-size:15px;font-weight:700;text-align:right;">{escape(project_type_label)}</td>
+                    </tr>"""
+        if project_type_label
+        else ""
+    )
+
+    return f"""\
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nuevo proyecto asignado</title>
+</head>
+<body style="margin:0;padding:0;background:#eef5fb;font-family:Arial,Helvetica,sans-serif;color:#123f6b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef5fb;padding:28px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:700px;background:#ffffff;border:1px solid #cfe0f1;border-radius:22px;overflow:hidden;box-shadow:0 18px 38px rgba(18,63,107,.12);">
+          <tr>
+            <td style="background:#123f6b;padding:22px 26px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="vertical-align:middle;">{logo_cells}</td>
+                  <td align="right" style="vertical-align:middle;color:#ffffff;">
+                    <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">ExpoTécnica 2026</div>
+                    <div style="font-size:18px;font-weight:800;margin-top:4px;">Nueva asignación</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px;">
+              <p style="margin:0 0 8px;font-size:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#1f8fb5;">Panel de evaluación</p>
+              <h1 style="margin:0 0 12px;font-size:30px;line-height:1.15;color:#123f6b;">Hola, {escape(judge.full_name)}</h1>
+              <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#4f6680;">Se te asignó un nuevo proyecto para evaluar en el sistema de ExpoTécnica de {escape(school_name)}.</p>
+
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7fbff;border:1px solid #cfe0f1;border-radius:16px;margin:0 0 22px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <div style="display:inline-block;background:#eaf6ff;border:1px solid #c9dff4;border-radius:999px;color:#123f6b;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;margin-bottom:12px;">{escape(category_label or 'Proyecto')}</div>
+                    <h2 style="margin:0 0 6px;font-size:25px;color:#123f6b;line-height:1.15;">{escape(project.title)}</h2>
+                    <p style="margin:0 0 18px;color:#5b7189;font-size:15px;">{escape(project.team_name or 'Equipo ExpoTEC')}</p>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-top:1px solid #dce8f5;">
+                      <tr>
+                        <td style="padding:12px 0;color:#607998;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">Alcance asignado</td>
+                        <td style="padding:12px 0;color:#8b1024;font-size:15px;font-weight:900;text-align:right;">{escape(scope_label)}</td>
+                      </tr>{axis_html}{project_type_html}
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#4f6680;">Ingresa al panel de juez para revisar el documento del proyecto y completar las evaluaciones que correspondan.</p>
+              <p style="margin:0;text-align:center;">
+                <a href="{escape(panel_url)}" style="display:inline-block;background:#f5a11a;color:#123f6b;text-decoration:none;font-size:16px;font-weight:900;padding:14px 28px;border-radius:999px;border:1px solid #da8a0d;">Abrir panel de juez</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#eaf4fb;border-top:1px solid #cfe0f1;padding:16px 30px;color:#58708a;font-size:13px;line-height:1.45;">
+              Si esta asignación no corresponde, comunícate con la organización de ExpoTécnica.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
 
 
 def _delete_project_member_photos(project: Project):

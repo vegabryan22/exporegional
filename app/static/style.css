@@ -6036,17 +6036,7 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .gitops-changes-card summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    border-radius: 12px;
     background: #eef7fd;
-    padding: 0.7rem 0.85rem;
-}
-
-.gitops-changes-card summary::after {
-    float: none;
 }
 
 .gitops-changes-grid {
@@ -6294,10 +6284,40 @@ dialog.maintenance-dialog::backdrop {
 
 .gitops-compact-actions .gitops-btn,
 .gitops-revert-form .gitops-btn,
-.gitops-config-form .gitops-btn,
-.gitops-test-form .gitops-btn {
+.gitops-config-form .gitops-btn {
     width: 100%;
     justify-content: center;
+}
+
+.gitops-config-form {
+    align-items: end;
+    margin-top: 0.85rem;
+}
+
+.gitops-config-actions {
+    display: flex;
+    grid-column: 1 / -1;
+    gap: 0.65rem;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.gitops-config-actions .compact-toggle {
+    min-width: 180px;
+}
+
+.gitops-config-actions .gitops-btn,
+.gitops-test-form .gitops-btn {
+    width: auto;
+    min-width: 220px;
+    justify-content: center;
+}
+
+.gitops-test-form {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.65rem;
 }
 
 .gitops-details-card {
@@ -6305,10 +6325,26 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .gitops-details-card summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
     cursor: pointer;
     color: var(--primary);
     font-weight: 900;
     list-style: none;
+    border-radius: 12px;
+    background: #eef7fd;
+    padding: 0.7rem 0.85rem;
+}
+
+.gitops-details-card summary:focus {
+    outline: 2px solid rgba(31, 143, 181, 0.35);
+    outline-offset: 2px;
+}
+
+.gitops-details-card summary:focus:not(:focus-visible) {
+    outline: none;
 }
 
 .gitops-details-card summary::-webkit-details-marker {
@@ -6317,7 +6353,6 @@ dialog.maintenance-dialog::backdrop {
 
 .gitops-details-card summary::after {
     content: "+";
-    float: right;
     color: var(--primary-2);
     font-weight: 900;
 }
@@ -9013,6 +9048,18 @@ body {
 
     .gitops-revert-form {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .gitops-config-actions,
+    .gitops-test-form {
+        justify-content: stretch;
+    }
+
+    .gitops-config-actions .compact-toggle,
+    .gitops-config-actions .gitops-btn,
+    .gitops-test-form .gitops-btn {
+        width: 100%;
+        min-width: 0;
     }
 
     .gitops-changes-grid {

@@ -135,11 +135,13 @@
             <label>Token privado
                 <input type="password" name="gitops_private_token" placeholder="{% if gitops_remote.has_token %}Token ya configurado{% else %}Pega PAT aquí{% endif %}">
             </label>
-            <label class="toggle-row compact-toggle">
-                <input type="checkbox" name="gitops_persist_token" value="1">
-                Guardar token
-            </label>
-            <button type="submit" class="gitops-btn gitops-btn-primary">Guardar remoto</button>
+            <div class="gitops-config-actions">
+                <label class="toggle-row compact-toggle">
+                    <input type="checkbox" name="gitops_persist_token" value="1">
+                    Guardar token
+                </label>
+                <button type="submit" class="gitops-btn gitops-btn-primary">Guardar remoto</button>
+            </div>
         </form>
         <form method="post" action="{{ action_url }}" class="inline-form gitops-test-form">
             <input type="hidden" name="next" value="{{ next_url }}">

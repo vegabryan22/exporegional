@@ -2279,7 +2279,7 @@ def _run_expotecnica_cleanup():
 
 def _send_judge_credentials_email(judge: Judge, plain_password: str):
     if not smtp_is_configured():
-        return
+        return False
 
     login_url = url_for("auth.login", _external=True)
     subject = "Credenciales de acceso - ExpoTécnica"
@@ -2297,6 +2297,8 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
     ok, error = send_email(judge.email, subject, body)
     if not ok:
         flash(f"No se pudo enviar correo de credenciales: {error}", "error")
+        return False
+    return True
 
 
 def _get_judge_form_secret():
@@ -2511,8 +2513,10 @@ def _create_or_update_judge_from_form(payload: dict):
     log_event("forms.judge_access.created" if created else "forms.judge_access.updated", "judge", entity_id=judge.id, detail=detail)
     db.session.commit()
 
+    credentials_email_sent = False
     if SystemSetting.get_value("judge_form_auto_send_email", "1") == "1":
-        _send_judge_credentials_email(judge, temporary_password)
+        credentials_email_sent = _send_judge_credentials_email(judge, temporary_password)
+    judge._credentials_email_sent = credentials_email_sent
 
     return judge, temporary_password, ""
 
@@ -5227,10 +5231,11 @@ def public_judge_registration():
                 captcha_question=_judge_registration_captcha_question(),
             )
 
-        email_sent = bool(temporary_password) and smtp_is_configured()
+        email_sent = bool(temporary_password) and bool(getattr(judge, "_credentials_email_sent", False))
         return render_template(
             "public/judge_registration_success.html",
             judge=judge,
+            credentials_generated=bool(temporary_password),
             temporary_password=temporary_password if not email_sent else "",
             email_sent=email_sent,
         )

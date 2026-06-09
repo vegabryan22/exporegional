@@ -4,21 +4,23 @@
     <div class="judge-register-head">
         <p class="maintenance-kicker">Registro recibido</p>
         <h2>Gracias, {{ judge.full_name }}</h2>
-        <p>Tu acceso como juez quedo registrado en el sistema de ExpoTecnica.</p>
+        <p>Tu acceso como juez quedó registrado en el sistema de ExpoTécnica.</p>
     </div>
 
     <div class="judge-register-band">
         <h3>Datos de acceso</h3>
         <p><strong>Usuario:</strong> {{ judge.email }}</p>
-        {% if temporary_password %}
-            <p>Conserva esta contrasena temporal para ingresar por primera vez:</p>
+        {% if email_sent %}
+            <p>Se enviaron las credenciales de acceso al correo registrado.</p>
+            <p>Revisa tu bandeja de entrada o correo no deseado. El sistema solicitará cambiar la contraseña temporal al iniciar sesión.</p>
+        {% elif temporary_password %}
+            <p>Conserva esta contraseña temporal para ingresar por primera vez:</p>
             <p class="temporary-password">{{ temporary_password }}</p>
-            <p>El sistema solicitara cambiarla al iniciar sesion.</p>
-            {% if email_sent %}
-                <p>Tambien se enviaron las credenciales al correo registrado.</p>
-            {% endif %}
+            <p>El sistema solicitará cambiarla al iniciar sesión.</p>
+        {% elif credentials_generated %}
+            <p>Se generó una contraseña temporal, pero no se pudo mostrar en pantalla. Solicita apoyo administrativo para restablecer el acceso.</p>
         {% else %}
-            <p>Ya existia un acceso para este correo. Puedes ingresar con tu contrasena actual o solicitar apoyo administrativo.</p>
+            <p>Ya existía un acceso para este correo. Puedes ingresar con tu contraseña actual o solicitar apoyo administrativo.</p>
         {% endif %}
         <div class="actions-row">
             <a class="outline-btn" href="{{ url_for('auth.login') }}">Ir al ingreso</a>

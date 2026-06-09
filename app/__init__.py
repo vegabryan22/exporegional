@@ -1,5 +1,7 @@
 import json
 import time
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from flask import Flask, render_template
 from sqlalchemy import inspect, text
@@ -17,6 +19,7 @@ DEFAULT_DEPARTMENT_PERMISSIONS = {
     "qa": ["logs", "maintenance", "overview"],
 }
 PERMISSIONS_SETTING_KEY = "permissions_department_modules"
+LOCAL_TIMEZONE = ZoneInfo("America/Costa_Rica")
 
 
 def create_app():
@@ -42,9 +45,35 @@ def create_app():
         _initialize_database()
 
     register_cli(app)
+    register_template_filters(app)
     register_context_processors(app)
     register_error_handlers(app)
     return app
+
+
+def _to_local_datetime(value):
+    if not value:
+        return None
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value)
+        except ValueError:
+            return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(LOCAL_TIMEZONE)
+
+
+def register_template_filters(app):
+    @app.template_filter("local_datetime")
+    def local_datetime(value, fmt="%Y-%m-%d %H:%M"):
+        local_value = _to_local_datetime(value)
+        return local_value.strftime(fmt) if local_value else "N/D"
+
+    @app.template_filter("local_date")
+    def local_date(value, fmt="%Y-%m-%d"):
+        local_value = _to_local_datetime(value)
+        return local_value.strftime(fmt) if local_value else "N/D"
 
 
 def _is_retryable_schema_error(error: OperationalError) -> bool:

@@ -334,7 +334,7 @@
                     <tbody>
                         {% for change in project.member_changes|sort(attribute='created_at', reverse=True) %}
                             <tr>
-                                <td>{{ change.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>{{ change.created_at|local_datetime }}</td>
                                 <td>{{ change.action }}</td>
                                 <td>{{ change.details }}</td>
                             </tr>

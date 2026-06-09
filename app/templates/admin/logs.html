@@ -68,7 +68,7 @@
                     </div>
                 </div>
                 <div class="audit-event-meta">
-                    <span data-label="Fecha">{{ item.created_at.strftime('%Y-%m-%d %H:%M:%S') if item.created_at else 'N/D' }}</span>
+                    <span data-label="Fecha">{{ item.created_at|local_datetime('%Y-%m-%d %H:%M:%S') if item.created_at else 'N/D' }}</span>
                     <span data-label="Actor">{{ item.actor_name or 'Sistema' }}{% if item.actor_email %}<small>{{ item.actor_email }}</small>{% endif %}</span>
                     <span data-label="Rol">{{ item.actor_role or 'N/D' }}</span>
                     <span data-label="Entidad">{{ item.entity or 'N/D' }}{% if item.entity_id %}<small>ID {{ item.entity_id }}</small>{% endif %}</span>

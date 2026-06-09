@@ -103,7 +103,7 @@
                             <span class="tag {{ 'off' if judge.must_change_password else 'ok' }}">{{ 'Clave temporal' if judge.must_change_password else 'Clave establecida' }}</span>
                         </div>
                     </td>
-                    <td data-label="Último acceso">{{ judge.last_login_at.strftime('%Y-%m-%d %H:%M') if judge.last_login_at else 'Sin acceso' }}</td>
+                    <td data-label="Último acceso">{{ judge.last_login_at|local_datetime if judge.last_login_at else 'Sin acceso' }}</td>
                     <td data-label="Acciones" class="actions-cell users-actions-cell">
                         <button type="button" class="outline-btn" data-dialog-open="edit-judge-{{ judge.id }}">Editar</button>
                         <button type="button" class="secondary-btn" data-dialog-open="password-judge-{{ judge.id }}">Contraseña</button>
@@ -205,7 +205,7 @@
                     </select>
                 </label>
                 <label>Ultimo acceso
-                    <input type="text" value="{{ judge.last_login_at.strftime('%Y-%m-%d %H:%M') if judge.last_login_at else 'Sin acceso' }}" disabled>
+                    <input type="text" value="{{ judge.last_login_at|local_datetime if judge.last_login_at else 'Sin acceso' }}" disabled>
                 </label>
             </div>
             <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>

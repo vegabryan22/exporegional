@@ -79,6 +79,26 @@ def get_project_available_evaluation_types(project):
     return result
 
 
+def assignment_allows_evaluation_type(assignment, evaluation_type) -> bool:
+    rubric_kind = infer_evaluation_type_kind(evaluation_type)
+    if rubric_kind == "documentacion":
+        return bool(getattr(assignment, "can_evaluate_documentation", True))
+    if rubric_kind == "exposicion":
+        return bool(getattr(assignment, "can_evaluate_exposition", True))
+    return bool(
+        getattr(assignment, "can_evaluate_documentation", True)
+        or getattr(assignment, "can_evaluate_exposition", True)
+    )
+
+
+def get_assignment_available_evaluation_types(assignment):
+    return [
+        eval_type
+        for eval_type in get_project_available_evaluation_types(assignment.project)
+        if assignment_allows_evaluation_type(assignment, eval_type)
+    ]
+
+
 def get_project_evaluations_summary(project):
     category = get_project_category(project)
     if not category:
@@ -191,7 +211,16 @@ def build_admin_evaluation_overview():
         available_type_codes = [item.code for item in available_types]
         assigned_judges = len(project.assignments)
         completed_evaluations = len(project.evaluations)
-        expected_evaluations = assigned_judges * len(available_type_codes)
+        expected_evaluations = sum(
+            len(
+                [
+                    eval_type
+                    for eval_type in available_types
+                    if assignment_allows_evaluation_type(assignment, eval_type)
+                ]
+            )
+            for assignment in project.assignments
+        )
         total_expected_evaluations += expected_evaluations
         total_completed_evaluations += completed_evaluations
 
@@ -206,7 +235,13 @@ def build_admin_evaluation_overview():
         progress_by_type = []
         for eval_type in available_types:
             completed_for_type = eval_counts.get(eval_type.code, 0)
-            expected_for_type = assigned_judges
+            expected_for_type = len(
+                [
+                    assignment
+                    for assignment in project.assignments
+                    if assignment_allows_evaluation_type(assignment, eval_type)
+                ]
+            )
             average_score = _average_percentage(project.evaluations, eval_type.code)
             progress_by_type.append(
                 {

@@ -4754,6 +4754,7 @@ dialog.maintenance-dialog::backdrop {
 
 .assignment-summary-pill {
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
     padding: 0.22rem 0.55rem;
     border-radius: 999px;
@@ -4761,6 +4762,13 @@ dialog.maintenance-dialog::backdrop {
     color: #1f4f82;
     font-size: 0.85rem;
     font-weight: 700;
+}
+
+.assignment-summary-pill small {
+    color: #607798;
+    font-size: 0.68rem;
+    font-weight: 900;
+    line-height: 1.1;
 }
 
 .assignment-manage-grid {
@@ -4798,7 +4806,7 @@ dialog.maintenance-dialog::backdrop {
 
 .assignment-manage-item {
     display: grid;
-    grid-template-columns: minmax(180px, 240px) minmax(280px, 1fr) auto auto;
+    grid-template-columns: minmax(180px, 240px) minmax(360px, 1fr) auto;
     gap: 0.55rem;
     align-items: center;
     padding: 0.55rem 0.7rem;
@@ -4824,7 +4832,7 @@ dialog.maintenance-dialog::backdrop {
 
 .assignment-manage-form {
     display: grid;
-    grid-template-columns: minmax(280px, 1fr) auto;
+    grid-template-columns: minmax(210px, 1fr) minmax(260px, 0.9fr) auto;
     gap: 0.5rem;
     align-items: center;
 }
@@ -4836,9 +4844,46 @@ dialog.maintenance-dialog::backdrop {
 
 .assignment-inline-add {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 0.85fr) auto;
     gap: 0.6rem;
     align-items: end;
+}
+
+.assignment-scope-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    align-items: center;
+}
+
+.assignment-scope-group-wide {
+    padding: 0.65rem;
+    border: 1px solid #d7e2ef;
+    border-radius: 12px;
+    background: #f8fbff;
+}
+
+.assignment-scope-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 38px;
+    margin: 0;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid #bdd3e8;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #173e6a;
+    font-size: 0.85rem;
+    font-weight: 900;
+    line-height: 1.1;
+}
+
+.assignment-scope-group input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #238f7e;
 }
 
 .assignment-inline-add label,
@@ -4860,7 +4905,7 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .assignment-inline-create-compact {
-    grid-template-columns: minmax(220px, 1.2fr) minmax(220px, 1fr) minmax(180px, 0.9fr) auto;
+    grid-template-columns: minmax(200px, 1.2fr) minmax(200px, 1fr) minmax(160px, 0.8fr) minmax(250px, 0.9fr) auto;
 }
 
 .assignment-inline-create .secondary-btn {

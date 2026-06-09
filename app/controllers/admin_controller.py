@@ -43,6 +43,7 @@ from app.models.workshop import Workshop
 from app.services.audit_service import log_event
 from app.services.evaluation_service import (
     ENGLISH_EVAL_TYPE_CODE,
+    assignment_allows_evaluation_type,
     build_admin_evaluation_overview,
     get_project_available_evaluation_types,
     infer_evaluation_type_kind,
@@ -268,6 +269,26 @@ def _valid_role(value: str):
     role = (value or "").strip().lower()
     valid_roles = {code for code, _ in USER_ROLES}
     return role if role in valid_roles else Judge.ROLE_JUDGE
+
+
+def _assignment_scope_from_form(prefix: str = "assignment_scope"):
+    scopes = set(request.form.getlist(prefix))
+    if not scopes:
+        if request.form.get(f"{prefix}_present") == "1":
+            return False, False
+        return True, True
+    can_documentation = "documentacion" in scopes
+    can_exposition = "exposicion" in scopes
+    return can_documentation, can_exposition
+
+
+def _assignment_scope_valid(can_documentation: bool, can_exposition: bool) -> bool:
+    return bool(can_documentation or can_exposition)
+
+
+def _apply_assignment_scope(assignment: Assignment, can_documentation: bool, can_exposition: bool):
+    assignment.can_evaluate_documentation = bool(can_documentation)
+    assignment.can_evaluate_exposition = bool(can_exposition)
 
 
 def _build_default_department_access():
@@ -731,9 +752,12 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     total_completed_evaluations = 0
 
     for project in active_projects:
-        assigned_count = len(project.assignments)
         available_types = get_project_available_evaluation_types(project)
-        expected_evaluations = assigned_count * len(available_types)
+        assigned_count = len(project.assignments)
+        expected_evaluations = sum(
+            len([eval_type for eval_type in available_types if assignment_allows_evaluation_type(assignment, eval_type)])
+            for assignment in project.assignments
+        )
         completed_evaluations = len(project.evaluations)
 
         total_expected_evaluations += expected_evaluations
@@ -2464,17 +2488,19 @@ def _create_or_update_judge_from_form(payload: dict):
     return judge, temporary_password, ""
 
 
-def _send_assignment_email(judge: Judge, project: Project):
+def _send_assignment_email(judge: Judge, project: Project, assignment: Assignment | None = None):
     if not smtp_is_configured():
         return
 
+    scope_label = assignment.scope_label if assignment else "Documento y exposición"
     subject = "Nuevo proyecto asignado - ExpoTécnica"
     body = (
         f"Hola {judge.full_name},\n\n"
         "Tienes un nuevo proyecto asignado para evaluacion:\n"
         f"Proyecto: {project.title}\n"
         f"Categoria: {project.category}\n"
-        f"Equipo: {project.team_name}\n\n"
+        f"Equipo: {project.team_name}\n"
+        f"Alcance: {scope_label}\n\n"
         "Ingresa al panel de juez para completar la evaluacion.\n"
     )
     ok, error = send_email(judge.email, subject, body)
@@ -2663,6 +2689,7 @@ def _handle_action(action: str):
     elif action == "create_assignment":
         judge_id = request.form.get("judge_id", type=int)
         project_ids = request.form.getlist("project_ids")
+        can_documentation, can_exposition = _assignment_scope_from_form()
         if not project_ids:
             single_project_id = request.form.get("project_id", type=int)
             if single_project_id:
@@ -2683,10 +2710,12 @@ def _handle_action(action: str):
 
         if not judge or not selected_project_ids:
             flash("Debes seleccionar un juez y al menos un proyecto.", "error")
+        elif not _assignment_scope_valid(can_documentation, can_exposition):
+            flash("Selecciona si el juez evaluará documento, exposición o ambos.", "error")
         elif len(project_map) != len(selected_project_ids):
-            flash("Hay proyectos invalidos en la seleccion.", "error")
+            flash("Hay proyectos inválidos en la selección.", "error")
         else:
-            created_projects = []
+            created_assignments = []
             skipped_projects = []
             for project_id in selected_project_ids:
                 project = project_map[project_id]
@@ -2694,22 +2723,24 @@ def _handle_action(action: str):
                     skipped_projects.append(project.title)
                     continue
 
-                db.session.add(Assignment(judge_id=judge_id, project_id=project_id))
-                created_projects.append(project)
+                assignment = Assignment(judge_id=judge_id, project_id=project_id)
+                _apply_assignment_scope(assignment, can_documentation, can_exposition)
+                db.session.add(assignment)
+                created_assignments.append(assignment)
                 log_event(
                     "admin.assignment.create",
                     "assignment",
                     detail=(
                         f"Asignacion creada: juez={judge.full_name} <{judge.email}> "
-                        f"=> proyecto=#{project.id} '{project.title}'"
+                        f"=> proyecto=#{project.id} '{project.title}', alcance={assignment.scope_label}"
                     ),
                 )
 
-            if created_projects:
+            if created_assignments:
                 db.session.commit()
-                for project in created_projects:
-                    _send_assignment_email(judge, project)
-                flash(f"Asignaciones creadas: {len(created_projects)}.", "success")
+                for assignment in created_assignments:
+                    _send_assignment_email(judge, assignment.project, assignment)
+                flash(f"Asignaciones creadas: {len(created_assignments)}.", "success")
             elif skipped_projects:
                 flash("Las asignaciones seleccionadas ya existian.", "error")
 
@@ -2738,31 +2769,37 @@ def _handle_action(action: str):
     elif action == "replace_assignment":
         assignment_id = request.form.get("assignment_id", type=int)
         new_judge_id = request.form.get("judge_id", type=int)
+        can_documentation, can_exposition = _assignment_scope_from_form()
         assignment = Assignment.query.options(joinedload(Assignment.project), joinedload(Assignment.judge)).get(assignment_id) if assignment_id else None
         judge = Judge.query.get(new_judge_id) if new_judge_id else None
         if not assignment:
             flash("Asignacion no encontrada.", "error")
-        elif not judge:
+        elif not _assignment_scope_valid(can_documentation, can_exposition):
+            flash("Selecciona si el juez evaluará documento, exposición o ambos.", "error")
+        elif new_judge_id and not judge:
             flash("Debes seleccionar un juez valido.", "error")
-        elif assignment.judge_id == judge.id:
-            flash("Ese juez ya esta asignado a este proyecto.", "error")
-        elif Assignment.query.filter_by(project_id=assignment.project_id, judge_id=judge.id).first():
+        elif judge and assignment.judge_id != judge.id and Assignment.query.filter_by(project_id=assignment.project_id, judge_id=judge.id).first():
             flash("El juez seleccionado ya esta asignado a este proyecto.", "error")
         else:
             previous_judge = assignment.judge
-            assignment.judge_id = judge.id
+            target_judge = judge if judge else previous_judge
+            if judge and assignment.judge_id != judge.id:
+                assignment.judge_id = judge.id
+            _apply_assignment_scope(assignment, can_documentation, can_exposition)
             log_event(
                 "admin.assignment.replace",
                 "assignment",
                 entity_id=assignment.id,
                 detail=(
                     f"Asignacion reasignada: proyecto=#{assignment.project.id} '{assignment.project.title}' "
-                    f"{previous_judge.full_name} <{previous_judge.email}> => {judge.full_name} <{judge.email}>"
+                    f"{previous_judge.full_name} <{previous_judge.email}> => {target_judge.full_name} <{target_judge.email}>, "
+                    f"alcance={assignment.scope_label}"
                 ),
             )
             db.session.commit()
-            _send_assignment_email(judge, assignment.project)
-            flash("Juez reasignado correctamente.", "success")
+            if judge and previous_judge.id != judge.id:
+                _send_assignment_email(judge, assignment.project, assignment)
+            flash("Asignacion actualizada correctamente.", "success")
 
     elif action == "quick_create_assignment_judge":
         full_name = request.form.get("quick_judge_full_name", "").strip()
@@ -2770,10 +2807,13 @@ def _handle_action(action: str):
         phone = request.form.get("quick_judge_phone", "").strip()
         manual_password = request.form.get("quick_judge_password", "")
         project_id = request.form.get("project_id", type=int)
+        can_documentation, can_exposition = _assignment_scope_from_form()
         project = Project.query.get(project_id) if project_id else None
 
         if not project:
             flash("Proyecto no encontrado para la asignacion.", "error")
+        elif not _assignment_scope_valid(can_documentation, can_exposition):
+            flash("Selecciona si el juez evaluará documento, exposición o ambos.", "error")
         elif not full_name or not email:
             flash("Nombre y correo son obligatorios para crear el juez.", "error")
         elif Judge.query.filter_by(email=email).first():
@@ -2796,7 +2836,9 @@ def _handle_action(action: str):
             judge.set_password(password_value)
             db.session.add(judge)
             db.session.flush()
-            db.session.add(Assignment(judge_id=judge.id, project_id=project.id))
+            assignment = Assignment(judge_id=judge.id, project_id=project.id)
+            _apply_assignment_scope(assignment, can_documentation, can_exposition)
+            db.session.add(assignment)
             log_event(
                 "admin.user.create_and_assign",
                 "judge",
@@ -2811,12 +2853,12 @@ def _handle_action(action: str):
                 "assignment",
                 detail=(
                     f"Asignacion creada: juez={judge.full_name} <{judge.email}> "
-                    f"=> proyecto=#{project.id} '{project.title}'"
+                    f"=> proyecto=#{project.id} '{project.title}', alcance={assignment.scope_label}"
                 ),
             )
             db.session.commit()
             _send_judge_credentials_email(judge, password_value)
-            _send_assignment_email(judge, project)
+            _send_assignment_email(judge, project, assignment)
             flash("Juez creado y asignado correctamente.", "success")
 
     elif action == "create_judge":

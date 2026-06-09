@@ -278,6 +278,27 @@ def ensure_schema_updates():
         )
 
         system_tables = set(inspector.get_table_names())
+        if "assignments" in system_tables:
+            assignment_columns = {column["name"] for column in inspector.get_columns("assignments")}
+            if "can_evaluate_documentation" not in assignment_columns:
+                connection.execute(
+                    text("ALTER TABLE assignments ADD COLUMN can_evaluate_documentation BOOLEAN NOT NULL DEFAULT 1")
+                )
+            if "can_evaluate_exposition" not in assignment_columns:
+                connection.execute(
+                    text("ALTER TABLE assignments ADD COLUMN can_evaluate_exposition BOOLEAN NOT NULL DEFAULT 1")
+                )
+            connection.execute(
+                text(
+                    """
+                    UPDATE assignments
+                    SET
+                        can_evaluate_documentation = COALESCE(can_evaluate_documentation, 1),
+                        can_evaluate_exposition = COALESCE(can_evaluate_exposition, 1)
+                    """
+                )
+            )
+
         if "system_settings" in system_tables:
             existing_permissions = connection.execute(
                 text("SELECT `key` FROM system_settings WHERE `key` = :key LIMIT 1"),

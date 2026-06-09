@@ -10,7 +10,12 @@ from app.models.evaluation import Evaluation
 from app.models.evaluation_score import EvaluationScore
 from app.models.project import Project
 from app.services.audit_service import log_event
-from app.services.evaluation_service import get_project_available_evaluation_types, get_project_evaluations_summary
+from app.services.evaluation_service import (
+    assignment_allows_evaluation_type,
+    get_assignment_available_evaluation_types,
+    get_project_available_evaluation_types,
+    get_project_evaluations_summary,
+)
 from app.services.parameter_service import get_active_evaluation_types, get_active_rubrics_map
 
 
@@ -50,7 +55,7 @@ def dashboard():
     project_eval_types = {}
     project_summaries = {}
     for assignment in assignments:
-        project_eval_types[assignment.project_id] = get_project_available_evaluation_types(assignment.project)
+        project_eval_types[assignment.project_id] = get_assignment_available_evaluation_types(assignment)
         project_summaries[assignment.project_id] = get_project_evaluations_summary(assignment.project)
     return render_template(
         "judge/dashboard.html",
@@ -87,6 +92,12 @@ def evaluate(project_id: int):
     if eval_type not in eval_type_map:
         abort(400, "Tipo de evaluacion invalido.")
 
+    assignment = Assignment.query.filter_by(judge_id=current_user.id, project_id=project_id).first()
+    if not assignment:
+        abort(403, "No tienes permiso para evaluar este proyecto.")
+    if not assignment_allows_evaluation_type(assignment, eval_type_map[eval_type]):
+        abort(403, "No tienes permiso para registrar este tipo de evaluacion.")
+
     rubric_map = get_active_rubrics_map()
     criteria = rubric_map.get(eval_type, [])
     if not criteria:
@@ -97,9 +108,6 @@ def evaluate(project_id: int):
         section_name = criterion.section_name or "General"
         criteria_sections.setdefault(section_name, []).append(criterion)
 
-    assignment = Assignment.query.filter_by(judge_id=current_user.id, project_id=project_id).first()
-    if not assignment:
-        abort(403, "No tienes permiso para evaluar este proyecto.")
     existing = Evaluation.query.filter_by(
         judge_id=current_user.id,
         project_id=project_id,

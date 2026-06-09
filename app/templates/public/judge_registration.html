@@ -6,7 +6,7 @@
         <div class="judge-hero-copy">
             <p class="maintenance-kicker">ExpoTécnica 2026</p>
             <h2>Registro de jueces</h2>
-            <p>Completa la información para colaborar como juez en la evaluación integral de proyectos del CTP Roberto Gamboa Valverde.</p>
+            <p>Completa la información para colaborar como juez según tu disponibilidad: documento escrito, exposición presencial o ambas etapas.</p>
         </div>
         {% if institution is defined and institution.expo_logo_path %}
             <div class="judge-hero-logo-card">
@@ -35,8 +35,8 @@
             </div>
             <div class="judge-event-card">
                 <span>Compromiso</span>
-                <strong>Ambas etapas</strong>
-                <small>Al aceptar, el juez participa en la evaluación escrita y en la exposición presencial.</small>
+                <strong>Según disponibilidad</strong>
+                <small>La organización podrá asignar evaluación escrita, exposición presencial o ambas etapas.</small>
             </div>
         </div>
 
@@ -54,7 +54,6 @@
 
     <form method="post" id="judgeRegistrationForm" class="judge-register-form {% if not form_data %}judge-form-collapsed{% endif %}">
         <input type="text" name="website" class="hp-field" tabindex="-1" autocomplete="off">
-        <input type="hidden" name="modalidad" value="Ambas">
 
         <div class="judge-register-band judge-register-card-accent personal">
             <span class="judge-step">1</span>
@@ -110,8 +109,29 @@
 
         <div class="judge-register-band judge-register-card-accent evaluation">
             <span class="judge-step">3</span>
-            <h3>Evaluación integral</h3>
-            <p class="judge-commitment-note">Al aceptar participar como juez, se contempla la colaboración en ambas etapas: evaluación escrita virtual y evaluación presencial de la exposición de proyectos.</p>
+            <h3>Disponibilidad de evaluación</h3>
+            <p class="judge-commitment-note">Indica en qué etapa puedes colaborar. Esta información ayudará a asignar correctamente los proyectos.</p>
+
+            <fieldset class="judge-choice-fieldset">
+                <legend>¿En qué etapa puede colaborar?</legend>
+                <div class="judge-choice-grid">
+                    <label class="judge-choice-card area-card">
+                        <input type="radio" name="alcance_evaluacion" value="documento" {% if form_data.get('alcance_evaluacion') == 'documento' %}checked{% endif %} required>
+                        <span>Documento escrito</span>
+                        <small>Revisión virtual de la parte escrita del proyecto.</small>
+                    </label>
+                    <label class="judge-choice-card area-card">
+                        <input type="radio" name="alcance_evaluacion" value="exposicion" {% if form_data.get('alcance_evaluacion') == 'exposicion' %}checked{% endif %} required>
+                        <span>Exposición presencial</span>
+                        <small>Evaluación presencial del proyecto el día de la feria.</small>
+                    </label>
+                    <label class="judge-choice-card area-card">
+                        <input type="radio" name="alcance_evaluacion" value="ambas" {% if form_data.get('alcance_evaluacion') == 'ambas' %}checked{% endif %} required>
+                        <span>Ambas etapas</span>
+                        <small>Disponibilidad para documento escrito y exposición presencial.</small>
+                    </label>
+                </div>
+            </fieldset>
 
             <fieldset class="judge-choice-fieldset">
                 <legend>¿Puede evaluar exposición en inglés?</legend>

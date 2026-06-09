@@ -108,7 +108,7 @@
                                         <option value="">Mantener juez actual</option>
                                         {% for judge in judges %}
                                             {% if judge.is_active_user %}
-                                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }})</option>
+                                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.evaluation_scope_label }}</option>
                                             {% endif %}
                                         {% endfor %}
                                     </select>
@@ -151,7 +151,7 @@
                                 <option value="">Seleccione...</option>
                                 {% for judge in judges %}
                                     {% if judge.is_active_user %}
-                                        <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }})</option>
+                                        <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.evaluation_scope_label }}</option>
                                     {% endif %}
                                 {% endfor %}
                             </select>
@@ -229,7 +229,7 @@
                         <option value="">Seleccione...</option>
                         {% for judge in judges %}
                             {% if judge.is_active_user %}
-                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }})</option>
+                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.evaluation_scope_label }}</option>
                             {% endif %}
                         {% endfor %}
                     </select>

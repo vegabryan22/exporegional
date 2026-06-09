@@ -94,6 +94,9 @@
                         <div class="user-profile-cell">
                             <span class="tag {{ 'ok' if judge.has_admin_access else 'neutral' }}">{{ judge.role_label }}</span>
                             <span>{{ judge.department_label }}</span>
+                            {% if judge.effective_role == 'judge' %}
+                                <small>Disponibilidad: {{ judge.evaluation_scope_label }}</small>
+                            {% endif %}
                             {% if judge.job_title %}<small>{{ judge.job_title }}</small>{% endif %}
                         </div>
                     </td>
@@ -155,6 +158,14 @@
                 </label>
             </div>
             <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
+            <label>Disponibilidad como juez
+                <select name="judge_evaluation_scope">
+                    <option value="ambas">Documento y exposición</option>
+                    <option value="documento">Solo documento</option>
+                    <option value="exposicion">Solo exposición</option>
+                </select>
+                <small>Se usa como referencia para asignar evaluaciones.</small>
+            </label>
             <label>Contraseña inicial
                 <input type="password" name="judge_password" minlength="8">
                 <small>Si la dejas vacia, el sistema genera una temporal por reset.</small>
@@ -208,6 +219,14 @@
                     <input type="text" value="{{ judge.last_login_at|local_datetime if judge.last_login_at else 'Sin acceso' }}" disabled>
                 </label>
             </div>
+            <label>Disponibilidad como juez
+                <select name="judge_evaluation_scope">
+                    <option value="ambas" {% if judge.can_evaluate_documentation and judge.can_evaluate_exposition %}selected{% endif %}>Documento y exposición</option>
+                    <option value="documento" {% if judge.can_evaluate_documentation and not judge.can_evaluate_exposition %}selected{% endif %}>Solo documento</option>
+                    <option value="exposicion" {% if judge.can_evaluate_exposition and not judge.can_evaluate_documentation %}selected{% endif %}>Solo exposición</option>
+                </select>
+                <small>Se usa como referencia para asignar evaluaciones.</small>
+            </label>
             <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
             <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar usuario</button></div>
         </form>
@@ -301,4 +320,3 @@
     })();
 </script>
 {% endblock %}
-

@@ -22,6 +22,8 @@ class Judge(UserMixin, db.Model):
     department = db.Column(db.String(40), nullable=True, index=True)
     job_title = db.Column(db.String(120), nullable=True)
     phone = db.Column(db.String(40), nullable=True)
+    can_evaluate_documentation = db.Column(db.Boolean, default=True, nullable=False)
+    can_evaluate_exposition = db.Column(db.Boolean, default=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_active_user = db.Column(db.Boolean, default=True, nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
@@ -74,6 +76,16 @@ class Judge(UserMixin, db.Model):
             "qa": "QA",
         }
         return labels.get((self.department or "").strip().lower(), "Sin departamento")
+
+    @property
+    def evaluation_scope_label(self) -> str:
+        if self.can_evaluate_documentation and self.can_evaluate_exposition:
+            return "Documento y exposición"
+        if self.can_evaluate_documentation:
+            return "Solo documento"
+        if self.can_evaluate_exposition:
+            return "Solo exposición"
+        return "Sin disponibilidad"
 
     def mark_login(self) -> None:
         self.last_login_at = datetime.utcnow()

@@ -249,6 +249,10 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE judges ADD COLUMN job_title VARCHAR(120) NULL"))
         if "phone" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN phone VARCHAR(40) NULL"))
+        if "can_evaluate_documentation" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN can_evaluate_documentation BOOLEAN NOT NULL DEFAULT 1"))
+        if "can_evaluate_exposition" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN can_evaluate_exposition BOOLEAN NOT NULL DEFAULT 1"))
         if "must_change_password" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"))
         if "last_login_at" not in judge_columns:
@@ -273,6 +277,16 @@ def ensure_schema_updates():
                     WHEN is_admin = 1 THEN 'admin'
                     ELSE 'judge'
                 END
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE judges
+                SET
+                    can_evaluate_documentation = COALESCE(can_evaluate_documentation, 1),
+                    can_evaluate_exposition = COALESCE(can_evaluate_exposition, 1)
                 """
             )
         )

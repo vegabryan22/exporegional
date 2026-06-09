@@ -2285,13 +2285,14 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
     subject = "Credenciales de acceso - ExpoTécnica"
     body = (
         f"Hola {judge.full_name},\n\n"
-        "Gracias por confirmar tu participacion como juez de ExpoTécnica.\n"
-        "Tu colaboracion contempla la evaluacion escrita virtual y la evaluacion presencial de la exposicion de proyectos.\n\n"
+        "Gracias por confirmar tu participación como juez de ExpoTécnica.\n"
+        f"Disponibilidad registrada: {judge.evaluation_scope_label}.\n"
+        "La organización usará esta información para asignarte evaluaciones según la necesidad de cada proyecto.\n\n"
         "Se ha creado/actualizado tu acceso al portal de juez.\n"
         f"Portal: {login_url}\n"
         f"Usuario: {judge.email}\n"
-        f"Contrasena temporal: {plain_password}\n\n"
-        "Por seguridad, cambia esta contrasena al ingresar.\n"
+        f"Contraseña temporal: {plain_password}\n\n"
+        "Por seguridad, cambia esta contraseña al ingresar.\n"
     )
     ok, error = send_email(judge.email, subject, body)
     if not ok:
@@ -2335,6 +2336,15 @@ def _yes_no_value(value: str) -> str:
     if normalized in {"no", "n", "false", "0"}:
         return "No"
     return value.strip()
+
+
+def _judge_scope_from_value(value: str) -> tuple[bool, bool, str]:
+    normalized = re.sub(r"[^a-z0-9]", "", (value or "").strip().lower())
+    if normalized in {"documento", "documentacionescrita", "documentoescrito", "escrita", "virtual"}:
+        return True, False, "Solo documento"
+    if normalized in {"exposicion", "exposicionpresencial", "oral", "presencial"}:
+        return False, True, "Solo exposición"
+    return True, True, "Documento y exposición"
 
 
 def _join_payload_values(*values: str) -> str:
@@ -2396,7 +2406,19 @@ def _extract_judge_form_payload(payload: dict):
             "está de acuerdo en participar",
         )
     )
-    modality = _extract_json_value(payload, "modalidad", "participacion", "participación", "tipo de evaluacion") or "Ambas"
+    modality = (
+        _extract_json_value(
+            payload,
+            "modalidad",
+            "alcance_evaluacion",
+            "disponibilidad_evaluacion",
+            "participacion",
+            "participación",
+            "tipo de evaluacion",
+        )
+        or "ambas"
+    )
+    can_documentation, can_exposition, scope_label = _judge_scope_from_value(modality)
     evaluation_areas = _extract_json_value(payload, "areas", "areas de evaluacion", "categorias", "categorías")
     english_available = _yes_no_value(_extract_json_value(payload, "ingles", "inglés", "evalua ingles", "dominio ingles"))
     notes = _extract_json_value(payload, "notes", "observaciones", "comentarios")
@@ -2410,7 +2432,7 @@ def _extract_judge_form_payload(payload: dict):
     if accepts_participation:
         detail_parts.append(f"acepta_participar={accepts_participation}")
     if modality:
-        detail_parts.append(f"modalidad={modality}")
+        detail_parts.append(f"disponibilidad={scope_label}")
     if evaluation_areas:
         detail_parts.append(f"areas={evaluation_areas}")
     if english_available:
@@ -2424,6 +2446,9 @@ def _extract_judge_form_payload(payload: dict):
         "job_title": _join_payload_values(job_title, institution),
         "notes": "; ".join(detail_parts),
         "accepts_participation": accepts_participation,
+        "can_evaluate_documentation": can_documentation,
+        "can_evaluate_exposition": can_exposition,
+        "scope_label": scope_label,
     }
 
 
@@ -2457,6 +2482,8 @@ def _create_or_update_judge_from_form(payload: dict):
             department="",
             job_title=data["job_title"],
             phone=data["phone"],
+            can_evaluate_documentation=data["can_evaluate_documentation"],
+            can_evaluate_exposition=data["can_evaluate_exposition"],
             role=Judge.ROLE_JUDGE,
             is_admin=False,
             is_active_user=True,
@@ -2470,6 +2497,8 @@ def _create_or_update_judge_from_form(payload: dict):
         judge.full_name = data["full_name"]
         judge.job_title = data["job_title"] or judge.job_title
         judge.phone = data["phone"] or judge.phone
+        judge.can_evaluate_documentation = data["can_evaluate_documentation"]
+        judge.can_evaluate_exposition = data["can_evaluate_exposition"]
         judge.role = Judge.ROLE_JUDGE
         judge.is_admin = False
         judge.is_active_user = True
@@ -2828,6 +2857,8 @@ def _handle_action(action: str):
                 department="",
                 job_title="",
                 phone=phone,
+                can_evaluate_documentation=can_documentation,
+                can_evaluate_exposition=can_exposition,
                 role=Judge.ROLE_JUDGE,
                 is_admin=False,
                 is_active_user=True,
@@ -2871,6 +2902,7 @@ def _handle_action(action: str):
         )
         job_title = request.form.get("judge_job_title", "").strip()
         phone = request.form.get("judge_phone", "").strip()
+        can_documentation, can_exposition, _scope_label = _judge_scope_from_value(request.form.get("judge_evaluation_scope", "ambas"))
         manual_password = request.form.get("judge_password", "")
         if not full_name or not email:
             flash("Nombre y correo son obligatorios.", "error")
@@ -2892,6 +2924,8 @@ def _handle_action(action: str):
                 department=department,
                 job_title=job_title,
                 phone=phone,
+                can_evaluate_documentation=can_documentation,
+                can_evaluate_exposition=can_exposition,
                 role=role,
                 is_admin=role in Judge.ADMIN_ROLES,
                 is_active_user=True,
@@ -2924,6 +2958,7 @@ def _handle_action(action: str):
             )
             job_title = request.form.get("judge_job_title", "").strip()
             phone = request.form.get("judge_phone", "").strip()
+            can_documentation, can_exposition, _scope_label = _judge_scope_from_value(request.form.get("judge_evaluation_scope", "ambas"))
             is_active_user = _str_to_bool(request.form.get("judge_is_active_user", "1"))
             duplicate = Judge.query.filter(Judge.email == email, Judge.id != judge.id).first()
             if not full_name or not email:
@@ -2948,6 +2983,8 @@ def _handle_action(action: str):
                 judge.department = department
                 judge.job_title = job_title
                 judge.phone = phone
+                judge.can_evaluate_documentation = can_documentation
+                judge.can_evaluate_exposition = can_exposition
                 judge.role = role
                 judge.is_admin = role in Judge.ADMIN_ROLES
                 judge.is_active_user = is_active_user

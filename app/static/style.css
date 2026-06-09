@@ -5065,6 +5065,121 @@ dialog.maintenance-dialog::backdrop {
     font-size: 0.92rem;
 }
 
+.project-registration-page {
+    background:
+        radial-gradient(circle at top left, rgba(31, 143, 181, 0.14), transparent 34rem),
+        linear-gradient(180deg, #f6fbff 0%, #eef6fb 100%);
+}
+
+.project-register-shell {
+    display: grid;
+    gap: 1rem;
+    max-width: 1360px;
+    margin: 0 auto;
+}
+
+.project-register-hero {
+    margin-top: 0.8rem;
+}
+
+.project-hero-logo-card {
+    width: clamp(190px, 24vw, 320px);
+}
+
+.project-hero-logo-card img {
+    max-height: 112px;
+}
+
+.project-register-form {
+    display: grid;
+    gap: 1rem;
+}
+
+.project-register-form .stage-block {
+    padding: 1.05rem;
+}
+
+.project-register-card-accent.project {
+    --judge-accent: #1f8fb5;
+}
+
+.project-register-card-accent.student {
+    --judge-accent: #75a928;
+}
+
+.project-register-card-accent.advisor {
+    --judge-accent: #0f6f95;
+}
+
+.project-register-card-accent.confirm {
+    --judge-accent: #b83d53;
+}
+
+.project-section-kicker {
+    width: fit-content;
+    margin: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--judge-accent, #1f8fb5) 13%, #ffffff);
+    color: var(--judge-accent, #1f8fb5);
+    padding: 0.22rem 0.58rem;
+    font-size: 0.76rem;
+    font-weight: 950;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.project-register-form .stage-block h3 {
+    margin: 0;
+    color: #123a63;
+    font-size: clamp(1.25rem, 2vw, 1.65rem);
+}
+
+.project-register-form label,
+.project-register-form .register-fieldset > span {
+    color: #33475f;
+    font-weight: 800;
+}
+
+.project-register-form input,
+.project-register-form select,
+.project-register-form textarea {
+    margin-top: 0.25rem;
+}
+
+.project-register-form .register-fieldset {
+    align-content: start;
+}
+
+.project-register-form .requirements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.45rem;
+}
+
+.project-register-form .requirement-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 38px;
+    border: 1px solid #c9d9ed;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+    padding: 0.45rem 0.65rem;
+    color: #123a63;
+    font-weight: 850;
+}
+
+.project-submit-row {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.4rem 0 1rem;
+}
+
+.project-submit-row button {
+    min-width: min(100%, 260px);
+    font-weight: 950;
+}
+
 .register-form {
     gap: 0.6rem;
 }
@@ -5150,6 +5265,70 @@ dialog.maintenance-dialog::backdrop {
 
 .final-stages-grid .register-fieldset {
     align-self: end;
+}
+
+.register-form.project-register-form {
+    gap: 1rem;
+}
+
+.register-form.project-register-form .stage-block {
+    padding: 1.05rem;
+}
+
+.register-form.project-register-form .stage-block h3 {
+    margin: 0;
+}
+
+.register-form.project-register-form .form-grid {
+    gap: 0.75rem 0.9rem;
+}
+
+.register-form.project-register-form .inline-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.register-form.project-register-form .inline-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.register-form.project-register-form .final-stages-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+@media (max-width: 1180px) {
+    .register-form.project-register-form .inline-grid-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 900px) {
+    .project-register-hero {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .project-hero-logo-card {
+        justify-self: start;
+        width: min(100%, 280px);
+    }
+
+    .register-form.project-register-form .inline-grid-2,
+    .register-form.project-register-form .inline-grid-3,
+    .register-form.project-register-form .inline-grid-4,
+    .register-form.project-register-form .final-stages-grid,
+    .register-form.project-register-form .focus-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .project-submit-row {
+        justify-content: stretch;
+    }
+
+    .project-submit-row button {
+        width: 100%;
+    }
 }
 
 .upload-error-page {

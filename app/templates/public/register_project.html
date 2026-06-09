@@ -1,14 +1,16 @@
 {% extends "base.html" %}
+{% block body_class %}project-registration-page{% endblock %}
 {% block content %}
-<section class="card">
-    <div class="register-header">
-        <div class="register-header-copy">
-            <h2>Sección 1 de 6 - ExpoTEC-1 Inscripción del Proyecto</h2>
-            <p>Etapa Institucional del CTP Roberto Gamboa Valverde.</p>
+<section class="project-register-shell">
+    <div class="judge-register-head judge-register-hero project-register-hero">
+        <div class="judge-hero-copy">
+            <p class="maintenance-kicker">ExpoTEC-1</p>
+            <h2>Inscripción del proyecto</h2>
+            <p>Completa los datos oficiales del proyecto, integrantes, tutor, mentor y documentación requerida para la ExpoTécnica institucional.</p>
         </div>
-        <div class="register-header-brand">
+        <div class="judge-hero-logo-card project-hero-logo-card">
             {% if institution.expo_logo_path %}
-                <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica" class="register-header-logo">
+                <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica">
             {% else %}
                 <div class="register-header-fallback">EXPO<br>TEC</div>
             {% endif %}
@@ -18,13 +20,15 @@
         <p class="campaign-badge register-campaign-badge">Campaña activa: <strong>{{ active_campaign.name }}</strong> ({{ active_campaign.start_date.strftime('%Y-%m-%d') }} a {{ active_campaign.end_date.strftime('%Y-%m-%d') }})</p>
     {% endif %}
 
-    <form method="post" enctype="multipart/form-data" class="form-grid register-form" id="expotec-form">
+    <form method="post" enctype="multipart/form-data" class="judge-register-form register-form project-register-form" id="expotec-form">
         <input type="hidden" name="team_name" value="Equipo ExpoTEC">
         <input type="hidden" name="description" value="Proyecto registrado por formulario ExpoTEC-1.">
         <input type="hidden" name="temp_document_path" value="{{ temp_document_path }}">
 
-        <section class="inline-card stage-block stage-1">
-            <h3>Sección 1 de 6 - Datos del proyecto</h3>
+        <section class="judge-register-band judge-register-card-accent project-register-card-accent project stage-block stage-1">
+            <span class="judge-step">1</span>
+            <p class="project-section-kicker">ExpoTEC-1</p>
+            <h3>Datos del proyecto</h3>
             <div class="form-grid inline-grid-3">
                 <label>Fecha *
                     <input type="date" name="registration_date" value="{{ form_data.get('registration_date', '') }}" required>
@@ -127,8 +131,10 @@
             {% endif %}
         </section>
 
-        <section class="inline-card stage-block stage-2" id="student-1">
-            <h3>Sección 2 de 6 - Datos del estudiante N.1</h3>
+        <section class="judge-register-band judge-register-card-accent project-register-card-accent student stage-block stage-2" id="student-1">
+            <span class="judge-step">2</span>
+            <p class="project-section-kicker">Integrante obligatorio</p>
+            <h3>Datos del estudiante N.1</h3>
             <div class="form-grid inline-grid-4">
                 <label>Nombre completo *<input type="text" name="student_1_full_name" value="{{ form_data.get('student_1_full_name', '') }}" required></label>
                 <label>Carrera técnica / especialidad *
@@ -180,8 +186,10 @@
             </div>
         </section>
 
-        <section class="inline-card stage-block stage-3" id="student-2">
-            <h3>Sección 3 de 6 - Datos del estudiante N.2</h3>
+        <section class="judge-register-band judge-register-card-accent project-register-card-accent student stage-block stage-3" id="student-2">
+            <span class="judge-step">3</span>
+            <p class="project-section-kicker">Integrante opcional</p>
+            <h3>Datos del estudiante N.2</h3>
             <div class="form-grid inline-grid-4">
                 <label>Nombre completo *<input type="text" name="student_2_full_name" value="{{ form_data.get('student_2_full_name', '') }}"></label>
                 <label>Carrera técnica / especialidad *
@@ -233,8 +241,10 @@
             </div>
         </section>
 
-        <section class="inline-card stage-block stage-4" id="student-3">
-            <h3>Sección 4 de 6 - Datos del estudiante N.3</h3>
+        <section class="judge-register-band judge-register-card-accent project-register-card-accent student stage-block stage-4" id="student-3">
+            <span class="judge-step">4</span>
+            <p class="project-section-kicker">Integrante opcional</p>
+            <h3>Datos del estudiante N.3</h3>
             <div class="form-grid inline-grid-4">
                 <label>Nombre completo *<input type="text" name="student_3_full_name" value="{{ form_data.get('student_3_full_name', '') }}"></label>
                 <label>Carrera técnica / especialidad *
@@ -280,8 +290,10 @@
         </section>
 
         <div class="final-stages-grid">
-            <section class="inline-card stage-block stage-5">
-                <h3>Sección 5 de 6 - Datos del docente tutor(a)</h3>
+            <section class="judge-register-band judge-register-card-accent project-register-card-accent advisor stage-block stage-5">
+                <span class="judge-step">5</span>
+                <p class="project-section-kicker">Acompañamiento</p>
+                <h3>Datos del docente tutor(a)</h3>
                 <div class="form-grid inline-grid-2">
                     <label>Nombre completo del docente *<input type="text" name="advisor_name" value="{{ form_data.get('advisor_name', '') }}" required></label>
                     <label>Cédula de identidad del docente *
@@ -301,8 +313,10 @@
                 </div>
             </section>
 
-            <section class="inline-card stage-block stage-6">
-                <h3>Sección 6 de 6 - Mentor y declaración</h3>
+            <section class="judge-register-band judge-register-card-accent project-register-card-accent confirm stage-block stage-6">
+                <span class="judge-step">6</span>
+                <p class="project-section-kicker">Cierre de inscripción</p>
+                <h3>Mentor y declaración</h3>
                 <p>Si el proyecto cuenta con persona mentora externa o especialista, completa sus datos. Si no aplica, deja esta parte en blanco.</p>
                 <div class="form-grid inline-grid-2">
                     <label>Nombre completo de la persona mentora<input type="text" name="mentor_name" value="{{ form_data.get('mentor_name', '') }}"></label>
@@ -334,7 +348,9 @@
             </section>
         </div>
 
-        <button type="submit">Enviar</button>
+        <div class="actions-row project-submit-row">
+            <button type="submit">Enviar inscripción</button>
+        </div>
     </form>
 </section>
 

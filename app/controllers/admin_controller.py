@@ -7,6 +7,7 @@ import subprocess
 import base64
 import hmac
 import shutil
+from html import escape
 from io import BytesIO
 from datetime import datetime
 from pathlib import Path
@@ -2282,6 +2283,11 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
         return False
 
     login_url = url_for("auth.login", _external=True)
+    school_name = SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+    school_logo = SystemSetting.get_value("school_logo_path", "")
+    expo_logo = SystemSetting.get_value("expo_logo_path", "")
+    school_logo_url = url_for("static", filename=school_logo, _external=True) if school_logo else ""
+    expo_logo_url = url_for("static", filename=expo_logo, _external=True) if expo_logo else ""
     subject = "Credenciales de acceso - ExpoTécnica"
     body = (
         f"Hola {judge.full_name},\n\n"
@@ -2294,11 +2300,103 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
         f"Contraseña temporal: {plain_password}\n\n"
         "Por seguridad, cambia esta contraseña al ingresar.\n"
     )
-    ok, error = send_email(judge.email, subject, body)
+    html_body = _build_judge_credentials_email_html(
+        judge=judge,
+        plain_password=plain_password,
+        login_url=login_url,
+        school_name=school_name,
+        school_logo_url=school_logo_url,
+        expo_logo_url=expo_logo_url,
+    )
+    ok, error = send_email(judge.email, subject, body, html_body=html_body)
     if not ok:
         flash(f"No se pudo enviar correo de credenciales: {error}", "error")
         return False
     return True
+
+
+def _build_judge_credentials_email_html(
+    *,
+    judge: Judge,
+    plain_password: str,
+    login_url: str,
+    school_name: str,
+    school_logo_url: str = "",
+    expo_logo_url: str = "",
+) -> str:
+    logo_cells = ""
+    if school_logo_url:
+        logo_cells += (
+            f'<img src="{escape(school_logo_url)}" alt="{escape(school_name)}" '
+            'style="height:70px;max-width:90px;object-fit:contain;margin-right:14px;">'
+        )
+    if expo_logo_url:
+        logo_cells += (
+            f'<img src="{escape(expo_logo_url)}" alt="ExpoTécnica" '
+            'style="height:70px;max-width:150px;object-fit:contain;">'
+        )
+    if not logo_cells:
+        logo_cells = '<strong style="font-size:22px;color:#ffffff;">ExpoTécnica</strong>'
+
+    return f"""\
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Credenciales ExpoTécnica</title>
+</head>
+<body style="margin:0;padding:0;background:#eef5fb;font-family:Arial,Helvetica,sans-serif;color:#123f6b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef5fb;padding:28px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border:1px solid #cfe0f1;border-radius:22px;overflow:hidden;box-shadow:0 18px 38px rgba(18,63,107,.12);">
+          <tr>
+            <td style="background:#123f6b;padding:22px 26px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="vertical-align:middle;">{logo_cells}</td>
+                  <td align="right" style="vertical-align:middle;color:#ffffff;">
+                    <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">ExpoTécnica 2026</div>
+                    <div style="font-size:18px;font-weight:800;margin-top:4px;">Acceso de juez</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px 30px 18px;">
+              <p style="margin:0 0 8px;font-size:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#1f8fb5;">Registro confirmado</p>
+              <h1 style="margin:0 0 14px;font-size:30px;line-height:1.15;color:#123f6b;">Gracias, {escape(judge.full_name)}</h1>
+              <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#4f6680;">Tu acceso como juez quedó registrado en el sistema de ExpoTécnica de {escape(school_name)}.</p>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7fbff;border:1px solid #cfe0f1;border-radius:16px;margin:0 0 22px;">
+                <tr>
+                  <td style="padding:18px 20px;">
+                    <p style="margin:0 0 10px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#607998;">Datos de acceso</p>
+                    <p style="margin:0 0 8px;font-size:16px;color:#123f6b;"><strong>Usuario:</strong> {escape(judge.email)}</p>
+                    <p style="margin:0 0 8px;font-size:16px;color:#123f6b;"><strong>Contraseña temporal:</strong></p>
+                    <div style="display:inline-block;background:#effaf3;border:1px solid #b7d7c4;border-radius:12px;padding:12px 16px;font-family:Consolas,Monaco,monospace;font-size:20px;font-weight:800;color:#135d37;">{escape(plain_password)}</div>
+                    <p style="margin:14px 0 0;font-size:14px;line-height:1.45;color:#5b7189;">Por seguridad, el sistema solicitará cambiar esta contraseña al iniciar sesión.</p>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.55;color:#4f6680;">Disponibilidad registrada: <strong>{escape(judge.evaluation_scope_label)}</strong>. La organización usará esta información para asignarte evaluaciones según la necesidad de cada proyecto.</p>
+              <p style="margin:0 0 26px;text-align:center;">
+                <a href="{escape(login_url)}" style="display:inline-block;background:#f5a11a;color:#123f6b;text-decoration:none;font-size:16px;font-weight:900;padding:14px 26px;border-radius:999px;border:1px solid #da8a0d;">Ingresar al portal</a>
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#eaf4fb;border-top:1px solid #cfe0f1;padding:16px 30px;color:#58708a;font-size:13px;line-height:1.45;">
+              Si no solicitaste este acceso, comunícate con la organización de ExpoTécnica.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
 
 
 def _get_judge_form_secret():

@@ -1,29 +1,53 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="judge-register-shell judge-register-success">
-    <div class="judge-register-head">
-        <p class="maintenance-kicker">Registro recibido</p>
-        <h2>Gracias, {{ judge.full_name }}</h2>
-        <p>Tu acceso como juez quedó registrado en el sistema de ExpoTécnica.</p>
+    <div class="judge-register-head judge-success-hero">
+        <div>
+            <p class="maintenance-kicker">Registro recibido</p>
+            <h2>Gracias, {{ judge.full_name }}</h2>
+            <p>Tu acceso como juez quedó registrado en el sistema de ExpoTécnica.</p>
+        </div>
+        <div class="judge-success-logos" aria-hidden="true">
+            {% if institution.logo_path %}
+                <img src="{{ url_for('static', filename=institution.logo_path) }}" alt="">
+            {% endif %}
+            {% if institution.expo_logo_path %}
+                <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="">
+            {% endif %}
+        </div>
     </div>
 
-    <div class="judge-register-band">
-        <h3>Datos de acceso</h3>
-        <p><strong>Usuario:</strong> {{ judge.email }}</p>
-        {% if email_sent %}
-            <p>Se enviaron las credenciales de acceso al correo registrado.</p>
-            <p>Revisa tu bandeja de entrada o correo no deseado. El sistema solicitará cambiar la contraseña temporal al iniciar sesión.</p>
-        {% elif temporary_password %}
-            <p>Conserva esta contraseña temporal para ingresar por primera vez:</p>
-            <p class="temporary-password">{{ temporary_password }}</p>
-            <p>El sistema solicitará cambiarla al iniciar sesión.</p>
-        {% elif credentials_generated %}
-            <p>Se generó una contraseña temporal, pero no se pudo mostrar en pantalla. Solicita apoyo administrativo para restablecer el acceso.</p>
-        {% else %}
-            <p>Ya existía un acceso para este correo. Puedes ingresar con tu contraseña actual o solicitar apoyo administrativo.</p>
-        {% endif %}
-        <div class="actions-row">
-            <a class="outline-btn" href="{{ url_for('auth.login') }}">Ir al ingreso</a>
+    <div class="judge-register-band judge-success-card">
+        <div class="judge-success-access">
+            <div>
+                <p class="maintenance-kicker">Datos de acceso</p>
+                <h3>{{ judge.email }}</h3>
+            </div>
+            <span class="tag ok">{{ judge.evaluation_scope_label }}</span>
+        </div>
+
+        <div class="judge-success-message">
+            {% if email_sent %}
+                <p><strong>Credenciales enviadas.</strong> Revisa tu correo registrado, incluyendo la bandeja de no deseado.</p>
+                <p>El sistema solicitará cambiar la contraseña temporal al iniciar sesión.</p>
+            {% elif temporary_password %}
+                <p>Conserva esta contraseña temporal para ingresar por primera vez:</p>
+                <p class="temporary-password">{{ temporary_password }}</p>
+                <p>El sistema solicitará cambiarla al iniciar sesión.</p>
+            {% elif credentials_generated %}
+                <p>Se generó una contraseña temporal, pero no se pudo mostrar en pantalla. Solicita apoyo administrativo para restablecer el acceso.</p>
+            {% else %}
+                <p>Ya existía un acceso para este correo. Puedes ingresar con tu contraseña actual o solicitar apoyo administrativo.</p>
+            {% endif %}
+        </div>
+
+        <div class="actions-row judge-success-actions">
+            <a class="judge-login-button" href="{{ url_for('auth.login') }}">
+                {% if institution.expo_logo_path %}
+                    <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="">
+                {% endif %}
+                <span>Ir al ingreso</span>
+            </a>
         </div>
     </div>
 </section>

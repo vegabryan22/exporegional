@@ -21,7 +21,7 @@ def smtp_is_configured():
     return bool(config["host"] and config["port"] and config["from_email"])
 
 
-def send_email(to_email: str, subject: str, body: str):
+def send_email(to_email: str, subject: str, body: str, html_body: str | None = None):
     config = get_smtp_config()
     if not smtp_is_configured():
         return False, "SMTP no configurado."
@@ -31,6 +31,8 @@ def send_email(to_email: str, subject: str, body: str):
     message["From"] = config["from_email"]
     message["To"] = to_email
     message.set_content(body)
+    if html_body:
+        message.add_alternative(html_body, subtype="html")
 
     try:
         if config["use_ssl"]:

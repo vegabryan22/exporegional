@@ -904,7 +904,10 @@ def _normalize_person_gender(form_data, field_name):
     return (form_data.get(f"{field_name}_other") or "").strip()
 
 
-def _build_student(form_data, index, section_name, default_specialty_name, specialties_by_id):
+def _build_student(form_data, index, sections_by_id, specialties_by_id):
+    section_id_raw = (form_data.get(f"student_{index}_section_id") or "").strip()
+    section_id = int(section_id_raw) if section_id_raw.isdigit() else None
+    section = sections_by_id.get(section_id)
     specialty_id_raw = (form_data.get(f"student_{index}_specialty_id") or "").strip()
     specialty_id = int(specialty_id_raw) if specialty_id_raw.isdigit() else None
     specialty = specialties_by_id.get(specialty_id)
@@ -915,8 +918,9 @@ def _build_student(form_data, index, section_name, default_specialty_name, speci
         "birth_date": _parse_date(form_data.get(f"student_{index}_birth_date")),
         "gender": _normalize_gender(form_data, index),
         "specialty_id": specialty_id,
-        "specialty": specialty.name if specialty else default_specialty_name,
-        "section_name": section_name,
+        "specialty": specialty.name if specialty else "",
+        "section_name": section.name if section else "",
+        "section_level_code": section.level.code if section and section.level else "",
         "has_dining_scholarship": (form_data.get(f"student_{index}_scholarship") or "").strip().lower() == "si",
         "participates_in_english": (form_data.get(f"student_{index}_english") or "").strip().lower() == "si",
         "phone": _normalize_phone(form_data.get(f"student_{index}_phone")),
@@ -937,11 +941,14 @@ def _validate_students(students, required_numbers):
             student["phone"],
             student["email"],
             student["section_name"],
+            student["section_level_code"],
             student["specialty_id"],
             student["specialty"],
         ]
         if not all(required):
             return f"Completa todos los datos obligatorios del estudiante N.{number}."
+        if student["section_level_code"] not in {"10", "11", "12"}:
+            return f"La sección del estudiante N.{number} debe pertenecer a especialidad técnica (niveles 10, 11 o 12)."
         identity_error = _identity_error(student["identity_number"], f"La cedula/documento del estudiante N.{number}")
         if identity_error:
             return identity_error
@@ -1100,8 +1107,6 @@ def register_project():
         project_start_date = _parse_date(_draft_form_value(form_data, "project_start_date"))
         project_end_date = _parse_date(_draft_form_value(form_data, "project_end_date"))
         category = (_draft_form_value(form_data, "category") or "").strip()
-        section_id = request.form.get("section_id", type=int)
-        specialty_id = request.form.get("specialty_id", type=int)
         thematic_axis_id = request.form.get("thematic_axis_id", type=int)
         project_type_id = request.form.get("project_type_id", type=int)
 
@@ -1109,16 +1114,24 @@ def register_project():
         requirements_other = (_draft_form_value(form_data, "requirements_other") or "").strip()
         required_students = _required_student_numbers(form_data)
 
-        section = Section.query.get(section_id) if section_id else None
-        specialty = Specialty.query.get(specialty_id) if specialty_id else None
         thematic_axis = ThematicAxis.query.get(thematic_axis_id) if thematic_axis_id else None
         project_type = ProjectType.query.get(project_type_id) if project_type_id else None
-        level_code = section.level.code if section and section.level else ""
 
-        focus_name = specialty.name if specialty else ""
-        section_name = section.name if section else ""
+        sections_by_id = {
+            item.id: item
+            for item in Section.query.join(Level, Level.id == Section.level_id)
+            .filter(Section.is_active.is_(True), Level.is_active.is_(True), Level.code.in_(["10", "11", "12"]))
+            .all()
+        }
         specialties_by_id = {item.id: item for item in Specialty.query.filter_by(is_active=True).all()}
-        students = [_build_student(form_data, i, section_name, focus_name, specialties_by_id) for i in [1, 2, 3]]
+        students = [_build_student(form_data, i, sections_by_id, specialties_by_id) for i in [1, 2, 3]]
+        required_student_records = [student for student in students if student["student_number"] in required_students]
+        project_sections_summary = ", ".join(
+            sorted({student["section_name"] for student in required_student_records if student["section_name"]})
+        )
+        project_specialties_summary = ", ".join(
+            sorted({student["specialty"] for student in required_student_records if student["specialty"]})
+        )
         advisor_identity = _normalize_identity(_draft_form_value(form_data, "advisor_identity"))
         mentor_identity = _normalize_identity(_draft_form_value(form_data, "mentor_identity"))
 
@@ -1130,10 +1143,10 @@ def register_project():
             representative_email=(_draft_form_value(form_data, "student_1_email") or "").strip().lower(),
             representative_phone=_normalize_phone(_draft_form_value(form_data, "student_1_phone")),
             institution_name="CTP Roberto Gamboa Valverde",
-            grade_level=level_code,
-            specialty=focus_name,
-            section_id=section_id,
-            specialty_id=specialty_id,
+            grade_level=project_sections_summary,
+            specialty=project_specialties_summary,
+            section_id=None,
+            specialty_id=None,
             thematic_axis_id=thematic_axis_id,
             project_type_id=project_type_id,
             workshop_id=None,
@@ -1179,18 +1192,9 @@ def register_project():
         if category not in valid_categories:
             flash("Categoria invalida.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-        if not section:
-            flash("Debes seleccionar una seccion valida.", "error")
-            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
         if category not in {"emprendimiento", "steam"}:
             flash("Categoria invalida para este formulario.", "error")
-            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-        if level_code not in {"10", "11", "12"}:
-            flash("La ExpoTecnica institucional solo permite secciones de especialidad tecnica (niveles 10, 11 y 12).", "error")
-            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-        if not specialty:
-            flash("Debes indicar la especialidad tecnica del proyecto.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
         if not thematic_axis or not thematic_axis.is_active:
             flash("Debes seleccionar un eje tematico valido.", "error")
@@ -1278,7 +1282,8 @@ def register_project():
         db.session.flush()
         for number in required_students:
             student = next(item for item in students if item["student_number"] == number)
-            db.session.add(ProjectMember(project_id=project.id, **student))
+            student_payload = {key: value for key, value in student.items() if key != "section_level_code"}
+            db.session.add(ProjectMember(project_id=project.id, **student_payload))
 
         log_event(
             "public.project.create",

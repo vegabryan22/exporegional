@@ -74,27 +74,6 @@
                 </label>
             </div>
 
-            <div class="form-grid focus-grid">
-                <label>Sección *
-                    <select name="section_id" required>
-                        <option value="">Seleccione...</option>
-                        {% for section in sections %}
-                            <option value="{{ section.id }}" {% if form_data.get('section_id') == section.id|string %}selected{% endif %}>
-                                {{ section.name }} (Nivel {{ section.level.code }})
-                            </option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label id="specialty-wrapper">Especialidad tecnica *
-                    <select name="specialty_id" id="specialty-id" required>
-                        <option value="">Seleccione...</option>
-                        {% for specialty in specialties %}
-                            <option value="{{ specialty.id }}" {% if form_data.get('specialty_id') == specialty.id|string %}selected{% endif %}>{{ specialty.name }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-            </div>
-
             <div class="register-fieldset">
                 <span>Requerimientos del proyecto *</span>
                 <div class="requirements-grid">
@@ -137,6 +116,16 @@
             <h3>Datos del estudiante N.1</h3>
             <div class="form-grid inline-grid-4">
                 <label>Nombre completo *<input type="text" name="student_1_full_name" value="{{ form_data.get('student_1_full_name', '') }}" required></label>
+                <label>Sección *
+                    <select name="student_1_section_id" required>
+                        <option value="">Seleccione...</option>
+                        {% for section in sections %}
+                            <option value="{{ section.id }}" {% if form_data.get('student_1_section_id') == section.id|string or (not form_data.get('student_1_section_id') and form_data.get('section_id') == section.id|string) %}selected{% endif %}>
+                                {{ section.name }} (Nivel {{ section.level.code }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
                 <label>Carrera técnica / especialidad *
                     <select name="student_1_specialty_id" required>
                         <option value="">Seleccione...</option>
@@ -192,6 +181,16 @@
             <h3>Datos del estudiante N.2</h3>
             <div class="form-grid inline-grid-4">
                 <label>Nombre completo *<input type="text" name="student_2_full_name" value="{{ form_data.get('student_2_full_name', '') }}"></label>
+                <label>Sección *
+                    <select name="student_2_section_id">
+                        <option value="">Seleccione...</option>
+                        {% for section in sections %}
+                            <option value="{{ section.id }}" {% if form_data.get('student_2_section_id') == section.id|string or (not form_data.get('student_2_section_id') and form_data.get('section_id') == section.id|string) %}selected{% endif %}>
+                                {{ section.name }} (Nivel {{ section.level.code }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
                 <label>Carrera técnica / especialidad *
                     <select name="student_2_specialty_id">
                         <option value="">Seleccione...</option>
@@ -247,6 +246,16 @@
             <h3>Datos del estudiante N.3</h3>
             <div class="form-grid inline-grid-4">
                 <label>Nombre completo *<input type="text" name="student_3_full_name" value="{{ form_data.get('student_3_full_name', '') }}"></label>
+                <label>Sección *
+                    <select name="student_3_section_id">
+                        <option value="">Seleccione...</option>
+                        {% for section in sections %}
+                            <option value="{{ section.id }}" {% if form_data.get('student_3_section_id') == section.id|string or (not form_data.get('student_3_section_id') and form_data.get('section_id') == section.id|string) %}selected{% endif %}>
+                                {{ section.name }} (Nivel {{ section.level.code }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
                 <label>Carrera técnica / especialidad *
                     <select name="student_3_specialty_id">
                         <option value="">Seleccione...</option>
@@ -362,9 +371,6 @@
     var student3Section = document.getElementById('student-3');
     var reqOtros = document.getElementById('req-otros');
     var reqOtrosWrapper = document.getElementById('req-otros-wrapper');
-    var category = document.getElementById('category');
-    var specialtyWrapper = document.getElementById('specialty-wrapper');
-    var specialtySelect = document.getElementById('specialty-id');
     var form = document.getElementById('expotec-form');
     var identityInputs = Array.prototype.slice.call(document.querySelectorAll('[data-identity-input]'));
     var phoneInputs = Array.prototype.slice.call(document.querySelectorAll('[data-phone-input]'));
@@ -437,32 +443,12 @@
         reqOtrosWrapper.style.display = reqOtros.checked ? 'block' : 'none';
     }
 
-    function toggleFocusFields() {
-        var mode = category.value;
-        var requiresSpecialty = mode === 'steam' || mode === 'emprendimiento';
-
-        specialtyWrapper.style.display = requiresSpecialty ? 'grid' : 'none';
-        specialtySelect.required = requiresSpecialty;
-
-        if (!requiresSpecialty) {
-            specialtySelect.value = '';
-        }
-    }
-
     document.querySelectorAll('input[name="student_1_more"], input[name="student_2_more"]').forEach(function (input) {
         input.addEventListener('change', toggleStudentSections);
     });
     if (reqOtros) {
         reqOtros.addEventListener('change', toggleOtros);
     }
-    category.addEventListener('change', toggleFocusFields);
-    specialtySelect.addEventListener('change', function () {
-        document.querySelectorAll('[name$="_specialty_id"]').forEach(function (select) {
-            if (!select.value) {
-                select.value = specialtySelect.value;
-            }
-        });
-    });
     identityInputs.forEach(function (input) {
         input.addEventListener('input', function () {
             input.value = normalizeIdentity(input.value).slice(0, 12);
@@ -480,7 +466,6 @@
 
     toggleStudentSections();
     toggleOtros();
-    toggleFocusFields();
     validateIdentityInputs();
 })();
 </script>

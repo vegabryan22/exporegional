@@ -83,7 +83,7 @@
                     {% set principal_is_logo = true %}
                 {% endif %}
 
-                <article class="project-detail card {% if ns.first_id == project.id|string %}active{% endif %}" data-project-panel="{{ project.id }}">
+                <article class="project-detail card {% if project.members|length > 1 %}has-many-members{% endif %} {% if ns.first_id == project.id|string %}active{% endif %}" data-project-panel="{{ project.id }}">
                     <div class="project-main">
                         <div class="project-visual">
                             {% if principal_photo %}

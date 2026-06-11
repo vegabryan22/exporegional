@@ -6023,6 +6023,35 @@ dialog.maintenance-dialog::backdrop {
     align-items: center;
 }
 
+.project-detail.has-three-members .project-main {
+    grid-template-columns: minmax(300px, 0.82fr) minmax(520px, 1.18fr);
+    grid-template-areas:
+        "visual members"
+        "content members";
+    align-items: start;
+    gap: 0.9rem;
+}
+
+.project-detail.has-three-members .project-visual {
+    grid-area: visual;
+    min-height: auto;
+    padding: 0.75rem;
+}
+
+.project-detail.has-three-members .project-content {
+    grid-area: content;
+    align-self: start;
+    padding: 0.15rem 0.2rem 0;
+}
+
+.project-detail.has-three-members .project-members-panel {
+    grid-area: members;
+}
+
+.project-detail.has-three-members .integrants-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .project-visual {
     display: grid;
     place-items: center;
@@ -6047,6 +6076,11 @@ dialog.maintenance-dialog::backdrop {
 .project-detail.has-many-members .project-main-image,
 .project-detail.has-many-members .project-main-placeholder {
     max-width: 170px;
+}
+
+.project-detail.has-three-members .project-main-image,
+.project-detail.has-three-members .project-main-placeholder {
+    max-width: 150px;
 }
 
 .project-main-logo {
@@ -6076,6 +6110,11 @@ dialog.maintenance-dialog::backdrop {
     gap: 0.45rem;
     margin: 0.45rem 0 0;
     color: #31587f;
+}
+
+.project-detail.has-three-members .project-main-meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
 }
 
 .project-main-meta div {
@@ -6946,6 +6985,18 @@ dialog.maintenance-dialog::backdrop {
 
     .project-detail.has-many-members .project-main {
         grid-template-columns: 1fr;
+    }
+
+    .project-detail.has-three-members .project-main {
+        grid-template-areas:
+            "visual"
+            "content"
+            "members";
+    }
+
+    .project-detail.has-three-members .project-main-meta,
+    .project-detail.has-three-members .integrants-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
 
     .project-detail.has-many-members .project-visual {

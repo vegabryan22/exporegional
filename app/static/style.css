@@ -6013,22 +6013,27 @@ dialog.maintenance-dialog::backdrop {
 
 .project-main {
     display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 1rem;
-    align-items: center;
+    grid-template-columns: minmax(180px, 260px) minmax(260px, 0.85fr) minmax(300px, 1fr);
+    gap: 0.95rem;
+    align-items: stretch;
 }
 
 .project-visual {
     display: grid;
     place-items: center;
+    min-height: 100%;
+    border: 1px solid #d5e2f0;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f5f9fe 100%);
+    padding: 0.85rem;
 }
 
 .project-main-image,
 .project-main-placeholder {
     width: 100%;
-    max-width: 340px;
+    max-width: 220px;
     aspect-ratio: 1 / 1;
-    border-radius: 10px;
+    border-radius: 14px;
     border: 1px solid #c8d6ea;
     object-fit: cover;
     background: #f4f8ff;
@@ -6048,13 +6053,44 @@ dialog.maintenance-dialog::backdrop {
     color: #4a678a;
 }
 
+.project-content {
+    align-self: center;
+}
+
+.project-content h2 {
+    margin-top: 0;
+}
+
 .project-main-meta {
+    display: grid;
+    gap: 0.45rem;
+    margin: 0.45rem 0 0;
     color: #31587f;
+}
+
+.project-main-meta div {
+    display: grid;
+    gap: 0.08rem;
+}
+
+.project-main-meta dt {
+    color: #607998;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.project-main-meta dd {
+    margin: 0;
+    color: #123f6b;
+    font-weight: 700;
 }
 
 .project-main-description {
     font-size: 1.05rem;
     color: #162231;
+    margin-bottom: 0;
 }
 
 .project-main-actions {
@@ -6796,39 +6832,68 @@ dialog.maintenance-dialog::backdrop {
     margin: 0 0 0.7rem;
 }
 
+.project-members-panel {
+    border: 1px solid #d5e2f0;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+    padding: 0.85rem;
+}
+
+.project-members-panel h3 {
+    margin: 0 0 0.7rem;
+    color: #123f6b;
+    font-size: 1rem;
+}
+
+.project-members-empty {
+    margin: 0;
+    color: #607998;
+}
+
 .integrants-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 220px));
-    gap: 1rem 1.2rem;
-    justify-content: center;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.65rem;
+    justify-content: stretch;
     align-items: start;
 }
 
 .integrant-card {
-    text-align: center;
-    padding: 0.35rem;
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 0.65rem;
+    align-items: center;
+    text-align: left;
+    padding: 0.55rem;
+    border: 1px solid #d5e2f0;
+    border-radius: 14px;
+    background: #ffffff;
 }
 
 .integrant-card h4 {
-    color: #ffffff;
-    margin: 0.5rem 0 0.35rem;
+    color: #123f6b;
+    margin: 0 0 0.25rem;
+    font-size: 0.92rem;
+    line-height: 1.15;
 }
 
 .integrant-card p {
-    color: #dbe9ff;
-    margin: 0.22rem 0;
+    color: #607998;
+    margin: 0.16rem 0;
+    font-size: 0.82rem;
+    line-height: 1.25;
 }
 
 .integrant-photo {
-    width: 180px;
-    height: 220px;
+    width: 76px;
+    height: 92px;
     object-fit: cover;
     object-position: center;
     background: transparent;
-    border: 3px solid #dbe9ff;
-    outline: 2px solid #9fb7e0;
-    border-radius: 14px;
-    box-shadow: 0 10px 22px rgba(7, 36, 74, 0.28);
+    border: 2px solid #dbe9ff;
+    outline: 1px solid #9fb7e0;
+    border-radius: 12px;
+    box-shadow: 0 8px 18px rgba(7, 36, 74, 0.14);
 }
 
 .integrant-placeholder {
@@ -8909,9 +8974,17 @@ body {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
 
+    .project-members-panel .integrants-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .project-members-panel .integrant-card {
+        grid-template-columns: 68px minmax(0, 1fr);
+    }
+
     .integrant-photo {
-        width: 150px;
-        height: 185px;
+        width: 68px;
+        height: 84px;
     }
 }
 

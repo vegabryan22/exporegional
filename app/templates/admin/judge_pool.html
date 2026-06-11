@@ -7,9 +7,9 @@
             <h3>Jueces evaluadores</h3>
             <p class="table-subtext">Administra disponibilidad, áreas, inglés y carga de asignaciones sin mezclarlo con usuarios del sistema.</p>
         </div>
-        <div class="page-head-actions">
-            <a class="outline-btn" href="{{ url_for('admin.assignments_page') }}">Asignar proyectos</a>
-            <a class="secondary-btn" href="{{ url_for('admin.judges_page') }}">Gestionar cuentas</a>
+        <div class="page-head-actions judge-pool-actions">
+            <a class="action-btn outline-btn" href="{{ url_for('admin.assignments_page') }}">Asignar proyectos</a>
+            <a class="action-btn secondary-btn" href="{{ url_for('admin.judges_page') }}">Gestionar cuentas</a>
         </div>
     </div>
 
@@ -116,6 +116,7 @@
                 {% else %}
                     <p>Sin alertas</p>
                 {% endif %}
+                <button type="button" class="outline-btn" data-dialog-open="judge-availability-{{ judge.id }}">Editar</button>
             </div>
 
             {% if row.assignments %}
@@ -137,6 +138,64 @@
                 </div>
             {% endif %}
         </article>
+
+        <dialog id="judge-availability-{{ judge.id }}" class="maintenance-dialog">
+            <div class="dialog-card">
+                <div class="dialog-head">
+                    <h4>Editar juez</h4>
+                    <button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button>
+                </div>
+                <form method="post" action="{{ action_url }}" class="compact-form">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="action" value="update_judge">
+                    <input type="hidden" name="judge_id" value="{{ judge.id }}">
+                    <input type="hidden" name="judge_role" value="judge">
+                    <input type="hidden" name="judge_department" value="">
+                    <input type="hidden" name="judge_is_active_user" value="{{ 1 if judge.is_active_user else 0 }}">
+
+                    <div class="grid-2">
+                        <label>Nombre completo<input type="text" name="judge_full_name" value="{{ judge.full_name }}" required></label>
+                        <label>Correo<input type="email" name="judge_email" value="{{ judge.email }}" required></label>
+                    </div>
+                    <div class="grid-3">
+                        <label>C&eacute;dula<input type="text" name="judge_identity" value="{{ judge.identity or '' }}"></label>
+                        <label>Tel&eacute;fono<input type="text" name="judge_phone" value="{{ judge.phone or '' }}"></label>
+                        <label>Particip&oacute; antes
+                            <select name="judge_previous_expo">
+                                <option value="" {% if not judge.previous_expo %}selected{% endif %}>No indicado</option>
+                                <option value="Si" {% if judge.previous_expo == 'Si' %}selected{% endif %}>S&iacute;</option>
+                                <option value="No" {% if judge.previous_expo == 'No' %}selected{% endif %}>No</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="grid-2">
+                        <label>Profesi&oacute;n o &aacute;rea t&eacute;cnica<input type="text" name="judge_job_title" value="{{ judge.job_title or '' }}"></label>
+                        <label>Instituci&oacute;n o empresa<input type="text" name="judge_institution" value="{{ judge.institution or '' }}"></label>
+                    </div>
+                    <div class="grid-2">
+                        <label>Categor&iacute;a que puede evaluar
+                            <select name="judge_category_scope">
+                                <option value="ambas" {% if judge.category_scope_normalized == 'ambas' %}selected{% endif %}>Ambas categor&iacute;as</option>
+                                <option value="steam" {% if judge.category_scope_normalized == 'steam' %}selected{% endif %}>STEAM</option>
+                                <option value="emprendimiento" {% if judge.category_scope_normalized == 'emprendimiento' %}selected{% endif %}>Emprendimiento</option>
+                            </select>
+                        </label>
+                        <label>Evaluaciones que puede realizar
+                            <select name="judge_evaluation_scope">
+                                <option value="ambas" {% if judge.can_evaluate_documentation and judge.can_evaluate_exposition %}selected{% endif %}>Documento escrito y exposici&oacute;n oral</option>
+                                <option value="documento" {% if judge.can_evaluate_documentation and not judge.can_evaluate_exposition %}selected{% endif %}>Solo documento escrito</option>
+                                <option value="exposicion" {% if judge.can_evaluate_exposition and not judge.can_evaluate_documentation %}selected{% endif %}>Solo exposici&oacute;n oral</option>
+                            </select>
+                        </label>
+                    </div>
+                    <label class="checkbox-card"><input type="checkbox" name="judge_can_evaluate_english" value="1" {% if judge.can_evaluate_english %}checked{% endif %}> Puede evaluar exposici&oacute;n en ingl&eacute;s</label>
+                    <div class="actions-row">
+                        <button type="button" class="ghost-btn" data-dialog-close>Cancelar</button>
+                        <button type="submit" class="secondary-btn">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </dialog>
     {% else %}
         <section class="card admin-section">
             <p class="muted-empty">No hay jueces registrados todavía.</p>

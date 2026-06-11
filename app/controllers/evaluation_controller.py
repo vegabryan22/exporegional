@@ -19,6 +19,26 @@ from app.services.evaluation_service import (
 from app.services.parameter_service import get_active_evaluation_types, get_active_rubrics_map
 
 
+def _str_to_bool(value) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "si", "sí", "on"}
+
+
+def _scope_from_form(value: str) -> tuple[bool, bool]:
+    normalized = (value or "ambas").strip().lower()
+    if normalized == "documento":
+        return True, False
+    if normalized == "exposicion":
+        return False, True
+    return True, True
+
+
+def _category_scope_from_form(value: str) -> str:
+    normalized = (value or "ambas").strip().lower()
+    if normalized in {"steam", "emprendimiento", "ambas"}:
+        return normalized
+    return "ambas"
+
+
 def _validate_score(raw_value, min_score: int, max_score: int):
     try:
         number = int(raw_value)
@@ -65,6 +85,33 @@ def dashboard():
         project_eval_types=project_eval_types,
         project_summaries=project_summaries,
     )
+
+
+@login_required
+def profile():
+    if request.method != "POST":
+        return redirect(url_for("judge.dashboard"))
+
+    current_user.can_evaluate_documentation, current_user.can_evaluate_exposition = _scope_from_form(
+        request.form.get("judge_evaluation_scope")
+    )
+    current_user.can_evaluate_english = _str_to_bool(request.form.get("judge_can_evaluate_english"))
+    current_user.category_scope = _category_scope_from_form(request.form.get("judge_category_scope"))
+    current_user.job_title = request.form.get("judge_job_title", "").strip()
+    current_user.institution = request.form.get("judge_institution", "").strip()
+    current_user.phone = request.form.get("judge_phone", "").strip()
+    db.session.commit()
+    log_event(
+        "judge.profile.update",
+        "judge",
+        entity_id=current_user.id,
+        detail=(
+            f"Disponibilidad actualizada por juez: categoria={current_user.category_scope}, "
+            f"ingles={current_user.can_evaluate_english}, alcance={current_user.evaluation_scope_label}"
+        ),
+    )
+    flash("Disponibilidad actualizada correctamente.", "success")
+    return redirect(url_for("judge.dashboard"))
 
 
 @login_required

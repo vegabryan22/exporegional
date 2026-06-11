@@ -1493,6 +1493,39 @@ button {
 
 button:hover { filter: brightness(1.05); }
 
+.action-btn,
+a.secondary-btn,
+a.outline-btn,
+a.ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    min-height: 40px;
+    padding: 0.52rem 0.9rem;
+    border-radius: 6px;
+    border: 1px solid var(--primary-2);
+    background: linear-gradient(180deg, var(--primary-2) 0%, var(--primary) 100%);
+    color: #ffffff;
+    font-weight: 800;
+    line-height: 1.1;
+    text-decoration: none;
+}
+
+.action-btn:hover,
+a.secondary-btn:hover,
+a.outline-btn:hover,
+a.ghost-btn:hover {
+    filter: brightness(1.04);
+    text-decoration: none;
+}
+
+.page-head-actions .action-btn,
+.judge-pool-actions .action-btn {
+    min-width: 150px;
+    border-radius: 14px;
+}
+
 .secondary-btn {
     border-color: #7ab12e;
     background: linear-gradient(180deg, #a8d950 0%, #7cad33 100%);
@@ -3046,12 +3079,17 @@ dialog.maintenance-dialog::backdrop {
     display: grid;
     align-content: center;
     text-align: center;
+    justify-items: center;
 }
 
 .judge-pool-load strong {
     color: var(--primary);
     font-size: 2.1rem;
     line-height: 1;
+}
+
+.judge-pool-load .outline-btn {
+    margin-top: 0.4rem;
 }
 
 .judge-warning {
@@ -9888,6 +9926,70 @@ body {
     font-weight: 900;
 }
 
+.judge-availability-card {
+    border: 1px solid #cbddee;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f6fbff 100%);
+    padding: 0.82rem;
+    box-shadow: 0 10px 24px rgba(13, 63, 107, 0.05);
+}
+
+.judge-availability-card summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.judge-availability-card summary::-webkit-details-marker {
+    display: none;
+}
+
+.judge-availability-card summary strong {
+    color: var(--primary);
+    font-size: 1.04rem;
+}
+
+.judge-availability-card summary small {
+    display: block;
+    margin-top: 0.16rem;
+    color: #607995;
+    font-size: 0.84rem;
+}
+
+.judge-availability-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.7rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid #d9e7f5;
+}
+
+.judge-availability-form label {
+    display: grid;
+    gap: 0.32rem;
+    color: #405a76;
+    font-weight: 800;
+}
+
+.judge-availability-form input,
+.judge-availability-form select {
+    min-height: 42px;
+}
+
+.judge-availability-check {
+    align-self: end;
+    min-height: 42px;
+}
+
+.judge-availability-form .actions-row {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+}
+
 .judge-project-list {
     display: grid;
     gap: 0.6rem;
@@ -10025,6 +10127,10 @@ body {
     .judge-project-actions {
         justify-content: flex-start;
     }
+
+    .judge-availability-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 560px) {
@@ -10057,6 +10163,25 @@ body {
 
     .judge-summary-strip span {
         font-size: 0.72rem;
+    }
+
+    .judge-availability-card {
+        padding: 0.7rem;
+        border-radius: 13px;
+    }
+
+    .judge-availability-card summary {
+        align-items: flex-start;
+    }
+
+    .judge-availability-form {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.55rem;
+    }
+
+    .judge-availability-form .actions-row,
+    .judge-availability-form .secondary-btn {
+        width: 100%;
     }
 
     .judge-project-row {

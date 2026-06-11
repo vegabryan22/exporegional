@@ -29,6 +29,48 @@
         </div>
     </div>
 
+    <details class="judge-availability-card">
+        <summary>
+            <span>
+                <strong>Mi disponibilidad</strong>
+                <small>{{ current_user.category_scope_label }} &middot; {{ current_user.english_scope_label }} &middot; {{ current_user.evaluation_scope_label }}</small>
+            </span>
+            <span class="tag neutral">Editar</span>
+        </summary>
+        <form method="post" action="{{ url_for('judge.profile') }}" class="judge-availability-form">
+            <label>Profesi&oacute;n o &aacute;rea t&eacute;cnica
+                <input type="text" name="judge_job_title" value="{{ current_user.job_title or '' }}">
+            </label>
+            <label>Instituci&oacute;n o empresa
+                <input type="text" name="judge_institution" value="{{ current_user.institution or '' }}">
+            </label>
+            <label>Tel&eacute;fono
+                <input type="text" name="judge_phone" value="{{ current_user.phone or '' }}">
+            </label>
+            <label>Categor&iacute;a que puede evaluar
+                <select name="judge_category_scope">
+                    <option value="ambas" {% if current_user.category_scope_normalized == 'ambas' %}selected{% endif %}>Ambas categor&iacute;as</option>
+                    <option value="steam" {% if current_user.category_scope_normalized == 'steam' %}selected{% endif %}>STEAM</option>
+                    <option value="emprendimiento" {% if current_user.category_scope_normalized == 'emprendimiento' %}selected{% endif %}>Emprendimiento</option>
+                </select>
+            </label>
+            <label>Evaluaciones que puede realizar
+                <select name="judge_evaluation_scope">
+                    <option value="ambas" {% if current_user.can_evaluate_documentation and current_user.can_evaluate_exposition %}selected{% endif %}>Documento escrito y exposici&oacute;n oral</option>
+                    <option value="documento" {% if current_user.can_evaluate_documentation and not current_user.can_evaluate_exposition %}selected{% endif %}>Solo documento escrito</option>
+                    <option value="exposicion" {% if current_user.can_evaluate_exposition and not current_user.can_evaluate_documentation %}selected{% endif %}>Solo exposici&oacute;n oral</option>
+                </select>
+            </label>
+            <label class="checkbox-card judge-availability-check">
+                <input type="checkbox" name="judge_can_evaluate_english" value="1" {% if current_user.can_evaluate_english %}checked{% endif %}>
+                Puede evaluar exposici&oacute;n en ingl&eacute;s
+            </label>
+            <div class="actions-row">
+                <button type="submit" class="secondary-btn">Guardar disponibilidad</button>
+            </div>
+        </form>
+    </details>
+
     {% if assignments %}
         <div class="judge-project-list">
             {% for assignment in assignments %}

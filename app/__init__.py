@@ -335,6 +335,78 @@ def ensure_schema_updates():
         )
 
         system_tables = set(inspector.get_table_names())
+        if "system_audit_logs" in system_tables:
+            connection.execute(
+                text(
+                    """
+                    UPDATE judges
+                    SET can_evaluate_english = 1
+                    WHERE EXISTS (
+                        SELECT 1
+                        FROM system_audit_logs
+                        WHERE system_audit_logs.entity = 'judge'
+                          AND system_audit_logs.entity_id = judges.id
+                          AND LOWER(COALESCE(system_audit_logs.detail, '')) LIKE '%ingles=si%'
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    UPDATE judges
+                    SET category_scope = 'ambas'
+                    WHERE EXISTS (
+                        SELECT 1
+                        FROM system_audit_logs
+                        WHERE system_audit_logs.entity = 'judge'
+                          AND system_audit_logs.entity_id = judges.id
+                          AND LOWER(COALESCE(system_audit_logs.detail, '')) LIKE '%areas=%steam%emprend%'
+                    )
+                    OR EXISTS (
+                        SELECT 1
+                        FROM system_audit_logs
+                        WHERE system_audit_logs.entity = 'judge'
+                          AND system_audit_logs.entity_id = judges.id
+                          AND LOWER(COALESCE(system_audit_logs.detail, '')) LIKE '%areas=%emprend%steam%'
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    UPDATE judges
+                    SET category_scope = 'steam'
+                    WHERE category_scope = 'ambas'
+                      AND EXISTS (
+                        SELECT 1
+                        FROM system_audit_logs
+                        WHERE system_audit_logs.entity = 'judge'
+                          AND system_audit_logs.entity_id = judges.id
+                          AND LOWER(COALESCE(system_audit_logs.detail, '')) LIKE '%areas=%steam%'
+                          AND LOWER(COALESCE(system_audit_logs.detail, '')) NOT LIKE '%emprend%'
+                      )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    UPDATE judges
+                    SET category_scope = 'emprendimiento'
+                    WHERE category_scope = 'ambas'
+                      AND EXISTS (
+                        SELECT 1
+                        FROM system_audit_logs
+                        WHERE system_audit_logs.entity = 'judge'
+                          AND system_audit_logs.entity_id = judges.id
+                          AND LOWER(COALESCE(system_audit_logs.detail, '')) LIKE '%areas=%emprend%'
+                          AND LOWER(COALESCE(system_audit_logs.detail, '')) NOT LIKE '%steam%'
+                      )
+                    """
+                )
+            )
         if "assignments" in system_tables:
             assignment_columns = {column["name"] for column in inspector.get_columns("assignments")}
             if "can_evaluate_documentation" not in assignment_columns:

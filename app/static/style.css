@@ -6904,11 +6904,12 @@ dialog.maintenance-dialog::backdrop {
     grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 0.65rem;
     justify-content: stretch;
-    align-items: start;
+    align-items: stretch;
 }
 
 .integrant-card {
     display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     justify-items: center;
     gap: 0.45rem;
     text-align: center;
@@ -6916,6 +6917,15 @@ dialog.maintenance-dialog::backdrop {
     border: 1px solid #d5e2f0;
     border-radius: 14px;
     background: #ffffff;
+    min-height: 185px;
+}
+
+.integrant-card > div {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    align-content: start;
+    justify-items: center;
+    width: 100%;
 }
 
 .integrant-card h4 {
@@ -6925,6 +6935,11 @@ dialog.maintenance-dialog::backdrop {
     line-height: 1.15;
     overflow-wrap: normal;
     word-break: normal;
+    min-height: 2.1em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .integrant-card p {
@@ -6934,6 +6949,13 @@ dialog.maintenance-dialog::backdrop {
     line-height: 1.25;
     overflow-wrap: normal;
     word-break: normal;
+}
+
+.integrant-card p:last-child {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .integrant-photo {

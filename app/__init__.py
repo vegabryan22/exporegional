@@ -310,32 +310,41 @@ def ensure_schema_updates():
                 """
             )
         )
-        connection.execute(
-            text(
-                """
-                UPDATE judges
-                SET
-                    can_evaluate_english = CASE
-                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%ingles=si%'
-                        THEN 1
-                        ELSE COALESCE(can_evaluate_english, 0)
-                    END,
-                    category_scope = CASE
-                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%steam%emprend%' THEN 'ambas'
-                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%emprend%steam%' THEN 'ambas'
-                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%steam%' THEN 'steam'
-                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%emprend%' THEN 'emprendimiento'
-                        WHEN category_scope IN ('steam', 'emprendimiento', 'ambas') THEN category_scope
-                        ELSE 'ambas'
-                    END
-                WHERE registered_from_public_form = 1
-                   OR registration_notes IS NOT NULL
-                """
-            )
-        )
-
         system_tables = set(inspector.get_table_names())
-        if "system_audit_logs" in system_tables:
+        judge_availability_backfill_done = False
+        if "system_settings" in system_tables:
+            judge_availability_backfill_done = bool(
+                connection.execute(
+                    text("SELECT value FROM system_settings WHERE `key` = 'judge_availability_backfill_20260611'")
+                ).scalar()
+            )
+
+        if not judge_availability_backfill_done:
+            connection.execute(
+                text(
+                    """
+                    UPDATE judges
+                    SET
+                        can_evaluate_english = CASE
+                            WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%ingles=si%'
+                            THEN 1
+                            ELSE COALESCE(can_evaluate_english, 0)
+                        END,
+                        category_scope = CASE
+                            WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%steam%emprend%' THEN 'ambas'
+                            WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%emprend%steam%' THEN 'ambas'
+                            WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%steam%' THEN 'steam'
+                            WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%emprend%' THEN 'emprendimiento'
+                            WHEN category_scope IN ('steam', 'emprendimiento', 'ambas') THEN category_scope
+                            ELSE 'ambas'
+                        END
+                    WHERE registered_from_public_form = 1
+                       OR registration_notes IS NOT NULL
+                    """
+                )
+            )
+
+        if not judge_availability_backfill_done and "system_audit_logs" in system_tables:
             connection.execute(
                 text(
                     """
@@ -407,6 +416,25 @@ def ensure_schema_updates():
                     """
                 )
             )
+        if not judge_availability_backfill_done and "system_settings" in system_tables:
+            updated_settings = connection.execute(
+                text(
+                    """
+                    UPDATE system_settings
+                    SET value = '1', updated_at = CURRENT_TIMESTAMP
+                    WHERE `key` = 'judge_availability_backfill_20260611'
+                    """
+                )
+            ).rowcount
+            if not updated_settings:
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO system_settings (`key`, value, updated_at)
+                        VALUES ('judge_availability_backfill_20260611', '1', CURRENT_TIMESTAMP)
+                        """
+                    )
+                )
         if "assignments" in system_tables:
             assignment_columns = {column["name"] for column in inspector.get_columns("assignments")}
             if "can_evaluate_documentation" not in assignment_columns:

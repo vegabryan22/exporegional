@@ -1020,6 +1020,7 @@ def _build_judge_acta_context(judge_id: int):
         for evaluation in judge.evaluations
         if evaluation.project and evaluation.project.is_active
     ]
+    active_judge_users = [judge for judge in judge_users if judge.is_active_user]
     active_evaluations.sort(
         key=lambda item: (
             (item.project.title if item.project else "").lower(),
@@ -5191,14 +5192,14 @@ def _build_judge_pool_context(context: dict) -> dict:
 
     stats = {
         "total": len(judge_users),
-        "active": sum(1 for judge in judge_users if judge.is_active_user),
-        "english": sum(1 for judge in judge_users if judge.can_evaluate_english),
-        "steam": sum(1 for judge in judge_users if judge.category_scope_normalized == "steam"),
-        "entrepreneurship": sum(1 for judge in judge_users if judge.category_scope_normalized == "emprendimiento"),
-        "both_categories": sum(1 for judge in judge_users if judge.category_scope_normalized == "ambas"),
-        "documentation_only": sum(1 for judge in judge_users if judge.can_evaluate_documentation and not judge.can_evaluate_exposition),
-        "exposition_only": sum(1 for judge in judge_users if judge.can_evaluate_exposition and not judge.can_evaluate_documentation),
-        "both_scopes": sum(1 for judge in judge_users if judge.can_evaluate_documentation and judge.can_evaluate_exposition),
+        "active": len(active_judge_users),
+        "english": sum(1 for judge in active_judge_users if judge.can_evaluate_english),
+        "steam": sum(1 for judge in active_judge_users if judge.category_scope_normalized == "steam"),
+        "entrepreneurship": sum(1 for judge in active_judge_users if judge.category_scope_normalized == "emprendimiento"),
+        "both_categories": sum(1 for judge in active_judge_users if judge.category_scope_normalized == "ambas"),
+        "documentation_only": sum(1 for judge in active_judge_users if judge.can_evaluate_documentation and not judge.can_evaluate_exposition),
+        "exposition_only": sum(1 for judge in active_judge_users if judge.can_evaluate_exposition and not judge.can_evaluate_documentation),
+        "both_scopes": sum(1 for judge in active_judge_users if judge.can_evaluate_documentation and judge.can_evaluate_exposition),
     }
     return {
         "judge_pool_rows": rows,

@@ -5774,7 +5774,7 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .projects-showcase-page .container {
-    padding-top: 1rem;
+    padding-top: calc(var(--fixed-header-height, 96px) + 1rem);
 }
 
 .projects-showcase-page .showcase-layout {
@@ -6013,7 +6013,7 @@ dialog.maintenance-dialog::backdrop {
 
 .project-main {
     display: grid;
-    grid-template-columns: minmax(180px, 260px) minmax(260px, 0.85fr) minmax(300px, 1fr);
+    grid-template-columns: minmax(170px, 240px) minmax(260px, 340px) minmax(430px, 1fr);
     gap: 0.95rem;
     align-items: stretch;
 }
@@ -6852,7 +6852,7 @@ dialog.maintenance-dialog::backdrop {
 
 .integrants-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
     gap: 0.65rem;
     justify-content: stretch;
     align-items: start;
@@ -6860,11 +6860,10 @@ dialog.maintenance-dialog::backdrop {
 
 .integrant-card {
     display: grid;
-    grid-template-columns: 76px minmax(0, 1fr);
-    gap: 0.65rem;
-    align-items: center;
-    text-align: left;
-    padding: 0.55rem;
+    justify-items: center;
+    gap: 0.45rem;
+    text-align: center;
+    padding: 0.65rem;
     border: 1px solid #d5e2f0;
     border-radius: 14px;
     background: #ffffff;
@@ -6875,6 +6874,8 @@ dialog.maintenance-dialog::backdrop {
     margin: 0 0 0.25rem;
     font-size: 0.92rem;
     line-height: 1.15;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .integrant-card p {
@@ -6882,11 +6883,13 @@ dialog.maintenance-dialog::backdrop {
     margin: 0.16rem 0;
     font-size: 0.82rem;
     line-height: 1.25;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .integrant-photo {
-    width: 76px;
-    height: 92px;
+    width: 86px;
+    height: 86px;
     object-fit: cover;
     object-position: center;
     background: transparent;
@@ -8975,16 +8978,16 @@ body {
     }
 
     .project-members-panel .integrants-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     }
 
     .project-members-panel .integrant-card {
-        grid-template-columns: 68px minmax(0, 1fr);
+        grid-template-columns: 1fr;
     }
 
     .integrant-photo {
-        width: 68px;
-        height: 84px;
+        width: 72px;
+        height: 72px;
     }
 }
 
@@ -9473,7 +9476,7 @@ body {
 
 /* Public projects page keeps the same breathing room below the fixed header as the rest of the site. */
 .projects-showcase-page .container {
-    padding-top: 1rem !important;
+    padding-top: calc(var(--fixed-header-height, 96px) + 1rem) !important;
 }
 
 .projects-showcase-page .project-sidebar {
@@ -9482,7 +9485,7 @@ body {
 
 @media (max-width: 820px) {
     .projects-showcase-page .container {
-        padding-top: 0.75rem !important;
+        padding-top: calc(var(--fixed-header-height, 68px) + 0.75rem) !important;
     }
 }
 

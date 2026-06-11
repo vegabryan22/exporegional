@@ -310,6 +310,29 @@ def ensure_schema_updates():
                 """
             )
         )
+        connection.execute(
+            text(
+                """
+                UPDATE judges
+                SET
+                    can_evaluate_english = CASE
+                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%ingles=si%'
+                        THEN 1
+                        ELSE COALESCE(can_evaluate_english, 0)
+                    END,
+                    category_scope = CASE
+                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%steam%emprend%' THEN 'ambas'
+                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%emprend%steam%' THEN 'ambas'
+                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%steam%' THEN 'steam'
+                        WHEN LOWER(COALESCE(registration_notes, '')) LIKE '%areas=%emprend%' THEN 'emprendimiento'
+                        WHEN category_scope IN ('steam', 'emprendimiento', 'ambas') THEN category_scope
+                        ELSE 'ambas'
+                    END
+                WHERE registered_from_public_form = 1
+                   OR registration_notes IS NOT NULL
+                """
+            )
+        )
 
         system_tables = set(inspector.get_table_names())
         if "assignments" in system_tables:

@@ -146,7 +146,7 @@
             </div>
             <div class="grid-3">
                 <label>Cargo<input type="text" name="judge_job_title"></label>
-                <label>Telefono<input type="text" name="judge_phone"></label>
+                <label>Tel&eacute;fono<input type="text" name="judge_phone"></label>
                 <label>Rol
                     <select name="judge_role" data-role-select>
                         {% for role_code, role_name in user_roles %}
@@ -158,17 +158,37 @@
                 </label>
             </div>
             <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
-            <label>Disponibilidad como juez
-                <select name="judge_evaluation_scope">
-                    <option value="ambas">Documento y exposición</option>
-                    <option value="documento">Solo documento</option>
-                    <option value="exposicion">Solo exposición</option>
-                </select>
-                <small>Se usa como referencia para asignar evaluaciones.</small>
-            </label>
+            <div class="grid-3">
+                <label>C&eacute;dula o identificaci&oacute;n<input type="text" name="judge_identity" maxlength="40"></label>
+                <label>Instituci&oacute;n o empresa<input type="text" name="judge_institution"></label>
+                <label>Particip&oacute; antes
+                    <select name="judge_previous_expo">
+                        <option value="">No indicado</option>
+                        <option value="Si">S&iacute;</option>
+                        <option value="No">No</option>
+                    </select>
+                </label>
+            </div>
+            <div class="grid-2">
+                <label>Categor&iacute;a que puede evaluar
+                    <select name="judge_category_scope">
+                        <option value="ambas">Ambas categor&iacute;as</option>
+                        <option value="steam">STEAM</option>
+                        <option value="emprendimiento">Emprendimiento</option>
+                    </select>
+                </label>
+                <label>Disponibilidad como juez
+                    <select name="judge_evaluation_scope">
+                        <option value="ambas">Documento y exposici&oacute;n</option>
+                        <option value="documento">Solo documento</option>
+                        <option value="exposicion">Solo exposici&oacute;n</option>
+                    </select>
+                </label>
+            </div>
+            <label class="checkbox-card"><input type="checkbox" name="judge_can_evaluate_english" value="1"> Puede evaluar exposici&oacute;n en ingl&eacute;s</label>
             <label>Contraseña inicial
                 <input type="password" name="judge_password" minlength="8">
-                <small>Si la dejas vacia, el sistema genera una temporal por reset.</small>
+                <small>Si la dejas vac&iacute;a, el sistema genera una temporal por reset.</small>
             </label>
             <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear usuario</button></div>
         </form>
@@ -197,7 +217,7 @@
             </div>
             <div class="grid-3">
                 <label>Cargo<input type="text" name="judge_job_title" value="{{ judge.job_title or '' }}"></label>
-                <label>Telefono<input type="text" name="judge_phone" value="{{ judge.phone or '' }}"></label>
+                <label>Tel&eacute;fono<input type="text" name="judge_phone" value="{{ judge.phone or '' }}"></label>
                 <label>Estado
                     <select name="judge_is_active_user">
                         <option value="1" {% if judge.is_active_user %}selected{% endif %}>Activo</option>
@@ -215,18 +235,38 @@
                         {% endfor %}
                     </select>
                 </label>
-                <label>Ultimo acceso
+                <label>&Uacute;ltimo acceso
                     <input type="text" value="{{ judge.last_login_at|local_datetime if judge.last_login_at else 'Sin acceso' }}" disabled>
                 </label>
             </div>
-            <label>Disponibilidad como juez
-                <select name="judge_evaluation_scope">
-                    <option value="ambas" {% if judge.can_evaluate_documentation and judge.can_evaluate_exposition %}selected{% endif %}>Documento y exposición</option>
-                    <option value="documento" {% if judge.can_evaluate_documentation and not judge.can_evaluate_exposition %}selected{% endif %}>Solo documento</option>
-                    <option value="exposicion" {% if judge.can_evaluate_exposition and not judge.can_evaluate_documentation %}selected{% endif %}>Solo exposición</option>
-                </select>
-                <small>Se usa como referencia para asignar evaluaciones.</small>
-            </label>
+            <div class="grid-3">
+                <label>C&eacute;dula o identificaci&oacute;n<input type="text" name="judge_identity" value="{{ judge.identity or '' }}" maxlength="40"></label>
+                <label>Instituci&oacute;n o empresa<input type="text" name="judge_institution" value="{{ judge.institution or '' }}"></label>
+                <label>Particip&oacute; antes
+                    <select name="judge_previous_expo">
+                        <option value="" {% if not judge.previous_expo %}selected{% endif %}>No indicado</option>
+                        <option value="Si" {% if judge.previous_expo == 'Si' %}selected{% endif %}>S&iacute;</option>
+                        <option value="No" {% if judge.previous_expo == 'No' %}selected{% endif %}>No</option>
+                    </select>
+                </label>
+            </div>
+            <div class="grid-2">
+                <label>Categor&iacute;a que puede evaluar
+                    <select name="judge_category_scope">
+                        <option value="ambas" {% if judge.category_scope_normalized == 'ambas' %}selected{% endif %}>Ambas categor&iacute;as</option>
+                        <option value="steam" {% if judge.category_scope_normalized == 'steam' %}selected{% endif %}>STEAM</option>
+                        <option value="emprendimiento" {% if judge.category_scope_normalized == 'emprendimiento' %}selected{% endif %}>Emprendimiento</option>
+                    </select>
+                </label>
+                <label>Disponibilidad como juez
+                    <select name="judge_evaluation_scope">
+                        <option value="ambas" {% if judge.can_evaluate_documentation and judge.can_evaluate_exposition %}selected{% endif %}>Documento y exposici&oacute;n</option>
+                        <option value="documento" {% if judge.can_evaluate_documentation and not judge.can_evaluate_exposition %}selected{% endif %}>Solo documento</option>
+                        <option value="exposicion" {% if judge.can_evaluate_exposition and not judge.can_evaluate_documentation %}selected{% endif %}>Solo exposici&oacute;n</option>
+                    </select>
+                </label>
+            </div>
+            <label class="checkbox-card"><input type="checkbox" name="judge_can_evaluate_english" value="1" {% if judge.can_evaluate_english %}checked{% endif %}> Puede evaluar exposici&oacute;n en ingl&eacute;s</label>
             <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
             <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar usuario</button></div>
         </form>

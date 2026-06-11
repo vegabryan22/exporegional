@@ -84,6 +84,7 @@ USER_ROLES = [
 ADMIN_MENU_ITEMS = [
     ("overview", "admin.overview", "Resumen"),
     ("assignments", "admin.assignments_page", "Asignaciones"),
+    ("judge_pool", "admin.judge_pool_page", "Jueces"),
     ("judges", "admin.judges_page", "Usuarios"),
     ("permissions", "admin.permissions_page", "Permisos"),
     ("campaigns", "admin.campaigns_page", "Campañas"),
@@ -103,7 +104,7 @@ ADMIN_MENU_ITEMS = [
 
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
-    ("Operación", ["assignments", "projects", "evaluations"]),
+    ("Operación", ["assignments", "judge_pool", "projects", "evaluations"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "logs"]),
 ]
@@ -111,6 +112,7 @@ ADMIN_MENU_GROUPS = [
 ADMIN_MENU_ICONS = {
     "overview": "settings",
     "assignments": "users",
+    "judge_pool": "users",
     "judges": "users",
     "permissions": "settings",
     "campaigns": "doc",
@@ -132,6 +134,7 @@ ADMIN_MENU_ICONS = {
 ADMIN_MENU_ITEMS = [
     ("overview", "admin.overview", "Resumen"),
     ("assignments", "admin.assignments_page", "Asignaciones"),
+    ("judge_pool", "admin.judge_pool_page", "Jueces"),
     ("judges", "admin.judges_page", "Usuarios"),
     ("permissions", "admin.permissions_page", "Permisos"),
     ("campaigns", "admin.campaigns_page", "Campañas"),
@@ -152,13 +155,13 @@ ADMIN_MENU_ITEMS = [
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Documentos", ["documents"]),
-    ("Operación", ["assignments", "projects", "evaluations"]),
+    ("Operación", ["assignments", "judge_pool", "projects", "evaluations"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
-    "logistica": {"overview", "assignments", "projects", "documents"},
+    "logistica": {"overview", "assignments", "judge_pool", "projects", "documents"},
     "datos": {"overview", "evaluations", "documents"},
     "diseno": {"overview", "campaigns", "categories", "academic", "rubrics", "institution"},
     "qa": {"overview", "logs", "maintenance", "database", "gitops"},
@@ -290,6 +293,35 @@ def _assignment_scope_valid(can_documentation: bool, can_exposition: bool) -> bo
 def _apply_assignment_scope(assignment: Assignment, can_documentation: bool, can_exposition: bool):
     assignment.can_evaluate_documentation = bool(can_documentation)
     assignment.can_evaluate_exposition = bool(can_exposition)
+
+
+def _project_requires_english(project: Project) -> bool:
+    if not project:
+        return False
+    return bool(getattr(project, "requires_english_evaluation", False))
+
+
+def _assignment_compatibility_error(
+    judge: Judge,
+    project: Project,
+    can_documentation: bool,
+    can_exposition: bool,
+) -> str:
+    if not judge:
+        return "Debes seleccionar un juez válido."
+    if not project:
+        return "Debes seleccionar un proyecto válido."
+    if not judge.is_active_user:
+        return f"{judge.full_name} está inactivo y no puede recibir asignaciones."
+    if can_documentation and not judge.can_evaluate_documentation:
+        return f"{judge.full_name} no indicó disponibilidad para evaluar documento escrito."
+    if can_exposition and not judge.can_evaluate_exposition:
+        return f"{judge.full_name} no indicó disponibilidad para evaluar exposición oral."
+    if _project_requires_english(project) and not judge.can_evaluate_english:
+        return f"{project.title} requiere evaluación en inglés y {judge.full_name} indicó que no evalúa inglés."
+    if not judge.can_evaluate_category(project.category):
+        return f"{judge.full_name} no está clasificado para la categoría {project.category}."
+    return ""
 
 
 def _build_default_department_access():
@@ -2447,6 +2479,19 @@ def _judge_scope_from_value(value: str) -> tuple[bool, bool, str]:
     return True, True, "Documento y exposición"
 
 
+def _judge_category_scope_from_value(value: str) -> str:
+    normalized = re.sub(r"[^a-z0-9]", "", (value or "").strip().lower())
+    has_steam = "steam" in normalized
+    has_entrepreneurship = "emprend" in normalized or "innovacion" in normalized
+    if "ambas" in normalized or (has_steam and has_entrepreneurship):
+        return "ambas"
+    if has_steam:
+        return "steam"
+    if has_entrepreneurship:
+        return "emprendimiento"
+    return "ambas"
+
+
 def _join_payload_values(*values: str) -> str:
     return " ".join(value.strip() for value in values if value and value.strip())
 
@@ -2521,6 +2566,8 @@ def _extract_judge_form_payload(payload: dict):
     can_documentation, can_exposition, scope_label = _judge_scope_from_value(modality)
     evaluation_areas = _extract_json_value(payload, "areas", "areas de evaluacion", "categorias", "categorías")
     english_available = _yes_no_value(_extract_json_value(payload, "ingles", "inglés", "evalua ingles", "dominio ingles"))
+    can_evaluate_english = english_available == "Si"
+    category_scope = _judge_category_scope_from_value(evaluation_areas)
     notes = _extract_json_value(payload, "notes", "observaciones", "comentarios")
     detail_parts = []
     if identity:
@@ -2543,11 +2590,16 @@ def _extract_judge_form_payload(payload: dict):
         "full_name": full_name,
         "email": email.lower(),
         "phone": phone,
-        "job_title": _join_payload_values(job_title, institution),
+        "identity": identity,
+        "job_title": job_title,
+        "institution": institution,
+        "previous_expo": previous_expo,
         "notes": "; ".join(detail_parts),
         "accepts_participation": accepts_participation,
         "can_evaluate_documentation": can_documentation,
         "can_evaluate_exposition": can_exposition,
+        "can_evaluate_english": can_evaluate_english,
+        "category_scope": category_scope,
         "scope_label": scope_label,
     }
 
@@ -2581,9 +2633,16 @@ def _create_or_update_judge_from_form(payload: dict):
             email=data["email"],
             department="",
             job_title=data["job_title"],
+            identity=data["identity"],
+            institution=data["institution"],
+            previous_expo=data["previous_expo"],
             phone=data["phone"],
             can_evaluate_documentation=data["can_evaluate_documentation"],
             can_evaluate_exposition=data["can_evaluate_exposition"],
+            can_evaluate_english=data["can_evaluate_english"],
+            category_scope=data["category_scope"],
+            registration_notes=data["notes"],
+            registered_from_public_form=True,
             role=Judge.ROLE_JUDGE,
             is_admin=False,
             is_active_user=True,
@@ -2596,9 +2655,16 @@ def _create_or_update_judge_from_form(payload: dict):
         temporary_password = secrets.token_urlsafe(10)
         judge.full_name = data["full_name"]
         judge.job_title = data["job_title"] or judge.job_title
+        judge.identity = data["identity"] or judge.identity
+        judge.institution = data["institution"] or judge.institution
+        judge.previous_expo = data["previous_expo"] or judge.previous_expo
         judge.phone = data["phone"] or judge.phone
         judge.can_evaluate_documentation = data["can_evaluate_documentation"]
         judge.can_evaluate_exposition = data["can_evaluate_exposition"]
+        judge.can_evaluate_english = data["can_evaluate_english"]
+        judge.category_scope = data["category_scope"]
+        judge.registration_notes = data["notes"] or judge.registration_notes
+        judge.registered_from_public_form = True
         judge.role = Judge.ROLE_JUDGE
         judge.is_admin = False
         judge.is_active_user = True
@@ -2973,7 +3039,13 @@ def _handle_action(action: str):
             if project_id not in selected_project_ids:
                 selected_project_ids.append(project_id)
 
-        projects = Project.query.filter(Project.id.in_(selected_project_ids)).all() if selected_project_ids else []
+        projects = (
+            Project.query.options(joinedload(Project.members))
+            .filter(Project.id.in_(selected_project_ids))
+            .all()
+            if selected_project_ids
+            else []
+        )
         project_map = {project.id: project for project in projects}
 
         if not judge or not selected_project_ids:
@@ -2983,6 +3055,20 @@ def _handle_action(action: str):
         elif len(project_map) != len(selected_project_ids):
             flash("Hay proyectos inválidos en la selección.", "error")
         else:
+            compatibility_errors = []
+            for project_id in selected_project_ids:
+                error = _assignment_compatibility_error(
+                    judge,
+                    project_map[project_id],
+                    can_documentation,
+                    can_exposition,
+                )
+                if error:
+                    compatibility_errors.append(error)
+            if compatibility_errors:
+                flash(compatibility_errors[0], "error")
+                return
+
             created_assignments = []
             skipped_projects = []
             for project_id in selected_project_ids:
@@ -3038,7 +3124,14 @@ def _handle_action(action: str):
         assignment_id = request.form.get("assignment_id", type=int)
         new_judge_id = request.form.get("judge_id", type=int)
         can_documentation, can_exposition = _assignment_scope_from_form()
-        assignment = Assignment.query.options(joinedload(Assignment.project), joinedload(Assignment.judge)).get(assignment_id) if assignment_id else None
+        assignment = (
+            Assignment.query.options(
+                joinedload(Assignment.project).joinedload(Project.members),
+                joinedload(Assignment.judge),
+            ).get(assignment_id)
+            if assignment_id
+            else None
+        )
         judge = Judge.query.get(new_judge_id) if new_judge_id else None
         if not assignment:
             flash("Asignacion no encontrada.", "error")
@@ -3048,6 +3141,16 @@ def _handle_action(action: str):
             flash("Debes seleccionar un juez valido.", "error")
         elif judge and assignment.judge_id != judge.id and Assignment.query.filter_by(project_id=assignment.project_id, judge_id=judge.id).first():
             flash("El juez seleccionado ya esta asignado a este proyecto.", "error")
+        elif _assignment_compatibility_error(judge if judge else assignment.judge, assignment.project, can_documentation, can_exposition):
+            flash(
+                _assignment_compatibility_error(
+                    judge if judge else assignment.judge,
+                    assignment.project,
+                    can_documentation,
+                    can_exposition,
+                ),
+                "error",
+            )
         else:
             previous_judge = assignment.judge
             target_judge = judge if judge else previous_judge
@@ -3074,9 +3177,11 @@ def _handle_action(action: str):
         email = request.form.get("quick_judge_email", "").strip().lower()
         phone = request.form.get("quick_judge_phone", "").strip()
         manual_password = request.form.get("quick_judge_password", "")
+        category_scope = _judge_category_scope_from_value(request.form.get("quick_judge_category_scope", "ambas"))
+        can_evaluate_english = _str_to_bool(request.form.get("quick_judge_can_english"))
         project_id = request.form.get("project_id", type=int)
         can_documentation, can_exposition = _assignment_scope_from_form()
-        project = Project.query.get(project_id) if project_id else None
+        project = Project.query.options(joinedload(Project.members)).get(project_id) if project_id else None
 
         if not project:
             flash("Proyecto no encontrado para la asignacion.", "error")
@@ -3098,11 +3203,17 @@ def _handle_action(action: str):
                 phone=phone,
                 can_evaluate_documentation=can_documentation,
                 can_evaluate_exposition=can_exposition,
+                can_evaluate_english=can_evaluate_english,
+                category_scope=category_scope,
                 role=Judge.ROLE_JUDGE,
                 is_admin=False,
                 is_active_user=True,
                 must_change_password=not bool(manual_password),
             )
+            compatibility_error = _assignment_compatibility_error(judge, project, can_documentation, can_exposition)
+            if compatibility_error:
+                flash(compatibility_error, "error")
+                return
             judge.set_password(password_value)
             db.session.add(judge)
             db.session.flush()
@@ -3141,6 +3252,11 @@ def _handle_action(action: str):
         )
         job_title = request.form.get("judge_job_title", "").strip()
         phone = request.form.get("judge_phone", "").strip()
+        institution = request.form.get("judge_institution", "").strip()
+        identity = request.form.get("judge_identity", "").strip()
+        previous_expo = _yes_no_value(request.form.get("judge_previous_expo", "")).strip()
+        category_scope = _judge_category_scope_from_value(request.form.get("judge_category_scope", "ambas"))
+        can_evaluate_english = _str_to_bool(request.form.get("judge_can_evaluate_english"))
         can_documentation, can_exposition, _scope_label = _judge_scope_from_value(request.form.get("judge_evaluation_scope", "ambas"))
         manual_password = request.form.get("judge_password", "")
         if not full_name or not email:
@@ -3162,9 +3278,14 @@ def _handle_action(action: str):
                 email=email,
                 department=department,
                 job_title=job_title,
+                identity=identity,
+                institution=institution,
+                previous_expo=previous_expo,
                 phone=phone,
                 can_evaluate_documentation=can_documentation,
                 can_evaluate_exposition=can_exposition,
+                can_evaluate_english=can_evaluate_english,
+                category_scope=category_scope,
                 role=role,
                 is_admin=role in Judge.ADMIN_ROLES,
                 is_active_user=True,
@@ -3197,6 +3318,11 @@ def _handle_action(action: str):
             )
             job_title = request.form.get("judge_job_title", "").strip()
             phone = request.form.get("judge_phone", "").strip()
+            institution = request.form.get("judge_institution", "").strip()
+            identity = request.form.get("judge_identity", "").strip()
+            previous_expo = _yes_no_value(request.form.get("judge_previous_expo", "")).strip()
+            category_scope = _judge_category_scope_from_value(request.form.get("judge_category_scope", "ambas"))
+            can_evaluate_english = _str_to_bool(request.form.get("judge_can_evaluate_english"))
             can_documentation, can_exposition, _scope_label = _judge_scope_from_value(request.form.get("judge_evaluation_scope", "ambas"))
             is_active_user = _str_to_bool(request.form.get("judge_is_active_user", "1"))
             duplicate = Judge.query.filter(Judge.email == email, Judge.id != judge.id).first()
@@ -3221,9 +3347,14 @@ def _handle_action(action: str):
                 judge.email = email
                 judge.department = department
                 judge.job_title = job_title
+                judge.identity = identity
+                judge.institution = institution
+                judge.previous_expo = previous_expo
                 judge.phone = phone
                 judge.can_evaluate_documentation = can_documentation
                 judge.can_evaluate_exposition = can_exposition
+                judge.can_evaluate_english = can_evaluate_english
+                judge.category_scope = category_scope
                 judge.role = role
                 judge.is_admin = role in Judge.ADMIN_ROLES
                 judge.is_active_user = is_active_user
@@ -5018,6 +5149,63 @@ def _render(page_template: str, active_page: str, **kwargs):
     return render_template(page_template, **_base_context(active_page, **kwargs))
 
 
+def _build_judge_pool_context(context: dict) -> dict:
+    judge_users = [
+        judge
+        for judge in context.get("judges", [])
+        if judge.effective_role == Judge.ROLE_JUDGE
+    ]
+    project_map = {project.id: project for project in context.get("projects", [])}
+    rows = []
+    for judge in judge_users:
+        judge_assignments = [
+            assignment
+            for assignment in context.get("assignments", [])
+            if assignment.judge_id == judge.id
+        ]
+        active_assignments = [
+            assignment
+            for assignment in judge_assignments
+            if project_map.get(assignment.project_id) and project_map[assignment.project_id].is_active
+        ]
+        warnings = []
+        for assignment in active_assignments:
+            project = project_map.get(assignment.project_id)
+            warning = _assignment_compatibility_error(
+                judge,
+                project,
+                assignment.can_evaluate_documentation,
+                assignment.can_evaluate_exposition,
+            )
+            if warning:
+                warnings.append(warning)
+        rows.append(
+            {
+                "judge": judge,
+                "assignments": active_assignments,
+                "assignment_count": len(active_assignments),
+                "warning_count": len(warnings),
+                "warnings": warnings[:2],
+            }
+        )
+
+    stats = {
+        "total": len(judge_users),
+        "active": sum(1 for judge in judge_users if judge.is_active_user),
+        "english": sum(1 for judge in judge_users if judge.can_evaluate_english),
+        "steam": sum(1 for judge in judge_users if judge.category_scope_normalized == "steam"),
+        "entrepreneurship": sum(1 for judge in judge_users if judge.category_scope_normalized == "emprendimiento"),
+        "both_categories": sum(1 for judge in judge_users if judge.category_scope_normalized == "ambas"),
+        "documentation_only": sum(1 for judge in judge_users if judge.can_evaluate_documentation and not judge.can_evaluate_exposition),
+        "exposition_only": sum(1 for judge in judge_users if judge.can_evaluate_exposition and not judge.can_evaluate_documentation),
+        "both_scopes": sum(1 for judge in judge_users if judge.can_evaluate_documentation and judge.can_evaluate_exposition),
+    }
+    return {
+        "judge_pool_rows": rows,
+        "judge_pool_stats": stats,
+    }
+
+
 @admin_required
 def perform_action():
     action = request.form.get("action", "").strip()
@@ -5037,6 +5225,13 @@ def overview():
 @admin_module_required("assignments")
 def assignments_page():
     return _render("admin/assignments.html", "assignments")
+
+
+@admin_module_required("judge_pool")
+def judge_pool_page():
+    context = _base_context("judge_pool")
+    context.update(_build_judge_pool_context(context))
+    return render_template("admin/judge_pool.html", **context)
 
 
 @admin_module_required("judges")

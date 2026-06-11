@@ -6,15 +6,15 @@
 <section class="card admin-section maintenance-page">
     <div class="page-head">
         <div>
-            <p class="maintenance-kicker">Asignacion</p>
+            <p class="maintenance-kicker">Asignaci&oacute;n</p>
             <h3>Asignaciones de jueces</h3>
-            <p class="table-subtext">Vista resumida por proyecto para resolver cambios rapidos desde un modal.</p>
+            <p class="table-subtext">Vista resumida por proyecto para resolver cambios r&aacute;pidos desde un modal.</p>
         </div>
         <div class="page-head-actions">
             <span class="tag ok">{{ active_assignments|length }} asignaciones</span>
             <span class="tag">{{ active_projects|length }} proyectos</span>
-            <button type="button" class="secondary-btn" data-dialog-open="quick-judge-dialog">Juez nuevo rapido</button>
-            <button type="button" class="outline-btn" data-dialog-open="create-assignment-dialog">Asignacion masiva</button>
+            <button type="button" class="secondary-btn" data-dialog-open="quick-judge-dialog">Juez nuevo r&aacute;pido</button>
+            <button type="button" class="outline-btn" data-dialog-open="create-assignment-dialog">Asignaci&oacute;n masiva</button>
         </div>
     </div>
 
@@ -61,7 +61,10 @@
                         {% endif %}
                     </td>
                     <td class="table-cell-center">
-                        <span class="tag {{ 'ok' if ns.project_assignments else 'off' }}">{{ ns.project_assignments|length }} juez(es)</span>
+                        <div class="assignment-summary-list">
+                            <span class="tag {{ 'ok' if ns.project_assignments else 'off' }}">{{ ns.project_assignments|length }} juez(es)</span>
+                            {% if project.requires_english_evaluation %}<span class="tag warning">Ingl&eacute;s</span>{% endif %}
+                        </div>
                     </td>
                     <td class="table-cell-center">
                         <button type="button" class="secondary-btn" data-dialog-open="manage-project-{{ project.id }}">Gestionar</button>
@@ -107,8 +110,8 @@
                                     <select name="judge_id">
                                         <option value="">Mantener juez actual</option>
                                         {% for judge in judges %}
-                                            {% if judge.is_active_user %}
-                                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.evaluation_scope_label }}</option>
+                                            {% if judge.is_active_user and judge.effective_role == 'judge' %}
+                                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
                                             {% endif %}
                                         {% endfor %}
                                     </select>
@@ -125,7 +128,7 @@
                                     </div>
                                     <button type="submit" class="secondary-btn">Guardar</button>
                                 </form>
-                                <form method="post" action="{{ action_url }}" class="inline-form assignment-inline-delete" onsubmit="return confirm('Eliminar asignacion?')">
+                                <form method="post" action="{{ action_url }}" class="inline-form assignment-inline-delete" onsubmit="return confirm('Eliminar asignaci&oacute;n?')">
                                     <input type="hidden" name="next" value="{{ next_url }}">
                                     <input type="hidden" name="action" value="delete_assignment">
                                     <input type="hidden" name="assignment_id" value="{{ assignment.id }}">
@@ -150,8 +153,8 @@
                             <select name="judge_id" required>
                                 <option value="">Seleccione...</option>
                                 {% for judge in judges %}
-                                    {% if judge.is_active_user %}
-                                        <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.evaluation_scope_label }}</option>
+                                    {% if judge.is_active_user and judge.effective_role == 'judge' %}
+                                        <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
                                     {% endif %}
                                 {% endfor %}
                             </select>
@@ -172,11 +175,19 @@
                     <div class="assignment-inline-create assignment-inline-create-compact">
                         <label>Nombre completo<input type="text" name="quick_judge_full_name" required></label>
                         <label>Correo<input type="email" name="quick_judge_email" required></label>
-                        <label>Contraseña inicial<input type="password" name="quick_judge_password" minlength="8"></label>
+                        <label>Contrase&ntilde;a inicial<input type="password" name="quick_judge_password" minlength="8"></label>
+                        <label>&Aacute;rea que puede evaluar
+                            <select name="quick_judge_category_scope">
+                                <option value="ambas">Ambas categor&iacute;as</option>
+                                <option value="steam">STEAM</option>
+                                <option value="emprendimiento">Emprendimiento</option>
+                            </select>
+                        </label>
                         <input type="hidden" name="assignment_scope_present" value="1">
                         <div class="assignment-scope-group">
                             <label><input type="checkbox" name="assignment_scope" value="documentacion" checked> Documento escrito</label>
                             <label><input type="checkbox" name="assignment_scope" value="exposicion" checked> Exposici&oacute;n oral</label>
+                            <label><input type="checkbox" name="quick_judge_can_english" value="1"> Eval&uacute;a ingl&eacute;s</label>
                         </div>
                         <button type="submit" class="secondary-btn">Crear y asignar</button>
                     </div>
@@ -188,7 +199,7 @@
 
 <dialog id="quick-judge-dialog" class="maintenance-dialog assignment-manage-dialog">
     <div class="dialog-card dialog-card-wide">
-        <div class="dialog-head"><h4>Juez nuevo rapido</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+        <div class="dialog-head"><h4>Juez nuevo r&aacute;pido</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
         <form method="post" action="{{ action_url }}" class="compact-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="quick_create_assignment_judge">
@@ -199,16 +210,24 @@
                 <label>Correo<input type="email" name="quick_judge_email" required></label>
             </div>
             <label>Contraseña inicial<input type="password" name="quick_judge_password" minlength="8"></label>
+            <label>Área que puede evaluar
+                <select name="quick_judge_category_scope">
+                    <option value="ambas">Ambas categorías</option>
+                    <option value="steam">STEAM</option>
+                    <option value="emprendimiento">Emprendimiento</option>
+                </select>
+            </label>
             <input type="hidden" name="assignment_scope_present" value="1">
             <div class="assignment-scope-group assignment-scope-group-wide">
                 <label><input type="checkbox" name="assignment_scope" value="documentacion" checked> Documento escrito</label>
                 <label><input type="checkbox" name="assignment_scope" value="exposicion" checked> Exposici&oacute;n oral</label>
+                <label><input type="checkbox" name="quick_judge_can_english" value="1"> Evalúa inglés</label>
             </div>
             <label>Proyecto
                 <select id="quick-judge-project-fallback">
                     <option value="">Seleccione...</option>
                     {% for project in active_projects|sort(attribute='title') %}
-                        <option value="{{ project.id }}">{{ project.title }} ({{ category_map.get(project.category, project.category) }})</option>
+                        <option value="{{ project.id }}">{{ project.title }} ({{ category_map.get(project.category, project.category) }}{% if project.requires_english_evaluation %} &middot; Ingl&eacute;s{% endif %})</option>
                     {% endfor %}
                 </select>
             </label>
@@ -219,7 +238,7 @@
 
 <dialog id="create-assignment-dialog" class="maintenance-dialog">
     <div class="dialog-card">
-        <div class="dialog-head"><h4>Asignacion masiva</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+        <div class="dialog-head"><h4>Asignaci&oacute;n masiva</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
         <form method="post" action="{{ action_url }}" class="compact-form">
             <input type="hidden" name="next" value="{{ next_url }}#create-assignment-dialog">
             <input type="hidden" name="action" value="create_assignment">
@@ -228,8 +247,8 @@
                     <select name="judge_id" id="assignment-judge-id" required>
                         <option value="">Seleccione...</option>
                         {% for judge in judges %}
-                            {% if judge.is_active_user %}
-                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.evaluation_scope_label }}</option>
+                            {% if judge.is_active_user and judge.effective_role == 'judge' %}
+                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
                             {% endif %}
                         {% endfor %}
                     </select>
@@ -245,14 +264,14 @@
                     <h5>Proyectos</h5>
                     <p>Selecciona uno o varios proyectos para el mismo juez.</p>
                 </div>
-                <p class="assignment-selected-summary" id="assignment-selected-summary">Selecciona un juez para ver que proyectos ya tiene asignados.</p>
+                <p class="assignment-selected-summary" id="assignment-selected-summary">Selecciona un juez para ver qu&eacute; proyectos ya tiene asignados.</p>
                 <div class="assignment-project-list">
                     {% for project in active_projects|sort(attribute='title') %}
                         <label class="assignment-project-option" data-project-option data-project-id="{{ project.id }}">
                             <input type="checkbox" name="project_ids" value="{{ project.id }}">
                             <span>
                                 <strong>{{ project.title }}</strong>
-                                <small>{{ category_map.get(project.category, project.category) }} | {{ project.team_name }}</small>
+                                <small>{{ category_map.get(project.category, project.category) }} | {{ project.team_name }}{% if project.requires_english_evaluation %} | Requiere ingl&eacute;s{% endif %}</small>
                             </span>
                             <em class="assignment-project-badge" data-assigned-badge hidden>Ya asignado</em>
                         </label>
@@ -309,7 +328,7 @@
         });
 
         if (!judgeId) {
-            summary.textContent = 'Selecciona un juez para ver que proyectos ya tiene asignados.';
+            summary.textContent = 'Selecciona un juez para ver qu&eacute; proyectos ya tiene asignados.';
             return;
         }
 

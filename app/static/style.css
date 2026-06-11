@@ -2919,6 +2919,178 @@ dialog.maintenance-dialog::backdrop {
     gap: 1rem;
 }
 
+.judge-pool-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.judge-pool-summary,
+.judge-pool-split {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.judge-pool-summary {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.judge-pool-summary article,
+.judge-pool-stat-card {
+    border: 1px solid #d7e5f5;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f5faff 100%);
+    padding: 0.9rem;
+}
+
+.judge-pool-summary strong,
+.judge-pool-stat-card strong {
+    display: block;
+    color: var(--primary);
+    font-size: clamp(1.55rem, 3vw, 2.35rem);
+    line-height: 1;
+}
+
+.judge-pool-summary span,
+.judge-pool-stat-card span,
+.judge-pool-card span {
+    color: #5d7897;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.judge-pool-split {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.judge-filter-panel {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, 1fr));
+    gap: 0.75rem;
+    align-items: end;
+    border: 1px solid #d7e5f5;
+    border-radius: 18px;
+    background: #f8fbff;
+    padding: 0.9rem;
+}
+
+.judge-filter-panel label {
+    display: grid;
+    gap: 0.35rem;
+    color: #5d7897;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.judge-pool-list {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.judge-pool-card {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.9fr) minmax(260px, 1.35fr) minmax(150px, 0.45fr);
+    gap: 0.85rem;
+    align-items: stretch;
+}
+
+.judge-pool-card[hidden] {
+    display: none;
+}
+
+.judge-pool-identity,
+.judge-pool-profile,
+.judge-pool-load {
+    border: 1px solid #d7e5f5;
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 0.9rem;
+}
+
+.judge-pool-identity h4,
+.judge-pool-identity p,
+.judge-pool-profile p,
+.judge-pool-load p {
+    margin: 0;
+}
+
+.judge-pool-identity h4 {
+    color: var(--primary);
+    font-size: 1.25rem;
+}
+
+.judge-pool-identity {
+    display: grid;
+    gap: 0.28rem;
+}
+
+.judge-pool-profile {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.judge-pool-profile strong {
+    color: #153a63;
+}
+
+.judge-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.judge-pool-load {
+    display: grid;
+    align-content: center;
+    text-align: center;
+}
+
+.judge-pool-load strong {
+    color: var(--primary);
+    font-size: 2.1rem;
+    line-height: 1;
+}
+
+.judge-warning {
+    color: #9b263a;
+    font-weight: 800;
+}
+
+.judge-assignment-strip,
+.judge-warning-list {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.judge-assignment-strip span {
+    border: 1px solid #cddced;
+    border-radius: 999px;
+    background: #f2f7fd;
+    color: #224c77;
+    padding: 0.32rem 0.65rem;
+    font-size: 0.78rem;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.judge-warning-list {
+    border: 1px solid #f0bec8;
+    border-radius: 14px;
+    background: #fff3f5;
+    padding: 0.65rem;
+}
+
+.judge-warning-list p {
+    margin: 0;
+    color: #8f1f35;
+    font-weight: 800;
+}
+
 .users-search-wrap input {
     min-width: min(360px, 100%);
 }
@@ -3732,6 +3904,15 @@ dialog.maintenance-dialog::backdrop {
         grid-template-columns: 1fr;
     }
 
+    .judge-pool-summary {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .judge-filter-panel,
+    .judge-pool-card {
+        grid-template-columns: 1fr;
+    }
+
     .project-documents-grid {
         grid-template-columns: 1fr;
     }
@@ -3740,6 +3921,15 @@ dialog.maintenance-dialog::backdrop {
 @media (max-width: 640px) {
     .users-summary-grid {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .judge-pool-summary,
+    .judge-pool-split {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .judge-filter-panel {
+        gap: 0.55rem;
     }
 }
 

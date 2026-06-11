@@ -247,12 +247,26 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE judges ADD COLUMN department VARCHAR(40) NULL"))
         if "job_title" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN job_title VARCHAR(120) NULL"))
+        if "identity" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN identity VARCHAR(40) NULL"))
+        if "institution" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN institution VARCHAR(160) NULL"))
+        if "previous_expo" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN previous_expo VARCHAR(10) NULL"))
         if "phone" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN phone VARCHAR(40) NULL"))
         if "can_evaluate_documentation" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN can_evaluate_documentation BOOLEAN NOT NULL DEFAULT 1"))
         if "can_evaluate_exposition" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN can_evaluate_exposition BOOLEAN NOT NULL DEFAULT 1"))
+        if "can_evaluate_english" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN can_evaluate_english BOOLEAN NOT NULL DEFAULT 0"))
+        if "category_scope" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN category_scope VARCHAR(40) NOT NULL DEFAULT 'ambas'"))
+        if "registration_notes" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN registration_notes TEXT NULL"))
+        if "registered_from_public_form" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN registered_from_public_form BOOLEAN NOT NULL DEFAULT 0"))
         if "must_change_password" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"))
         if "last_login_at" not in judge_columns:
@@ -286,7 +300,13 @@ def ensure_schema_updates():
                 UPDATE judges
                 SET
                     can_evaluate_documentation = COALESCE(can_evaluate_documentation, 1),
-                    can_evaluate_exposition = COALESCE(can_evaluate_exposition, 1)
+                    can_evaluate_exposition = COALESCE(can_evaluate_exposition, 1),
+                    can_evaluate_english = COALESCE(can_evaluate_english, 0),
+                    category_scope = CASE
+                        WHEN category_scope IN ('steam', 'emprendimiento', 'ambas') THEN category_scope
+                        ELSE 'ambas'
+                    END,
+                    registered_from_public_form = COALESCE(registered_from_public_form, 0)
                 """
             )
         )

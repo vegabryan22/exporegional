@@ -21,9 +21,16 @@ class Judge(UserMixin, db.Model):
     role = db.Column(db.String(20), nullable=False, default=ROLE_JUDGE)
     department = db.Column(db.String(40), nullable=True, index=True)
     job_title = db.Column(db.String(120), nullable=True)
+    identity = db.Column(db.String(40), nullable=True)
+    institution = db.Column(db.String(160), nullable=True)
+    previous_expo = db.Column(db.String(10), nullable=True)
     phone = db.Column(db.String(40), nullable=True)
     can_evaluate_documentation = db.Column(db.Boolean, default=True, nullable=False)
     can_evaluate_exposition = db.Column(db.Boolean, default=True, nullable=False)
+    can_evaluate_english = db.Column(db.Boolean, default=False, nullable=False)
+    category_scope = db.Column(db.String(40), default="ambas", nullable=False)
+    registration_notes = db.Column(db.Text, nullable=True)
+    registered_from_public_form = db.Column(db.Boolean, default=False, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_active_user = db.Column(db.Boolean, default=True, nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
@@ -86,6 +93,37 @@ class Judge(UserMixin, db.Model):
         if self.can_evaluate_exposition:
             return "Solo exposición"
         return "Sin disponibilidad"
+
+    @property
+    def category_scope_normalized(self) -> str:
+        value = (self.category_scope or "ambas").strip().lower()
+        if value in {"steam", "emprendimiento", "ambas"}:
+            return value
+        return "ambas"
+
+    @property
+    def category_scope_label(self) -> str:
+        labels = {
+            "steam": "STEAM",
+            "emprendimiento": "Emprendimiento",
+            "ambas": "Ambas categorías",
+        }
+        return labels.get(self.category_scope_normalized, "Ambas categorías")
+
+    @property
+    def english_scope_label(self) -> str:
+        return "Evalúa inglés" if self.can_evaluate_english else "No evalúa inglés"
+
+    def can_evaluate_category(self, category: str) -> bool:
+        normalized = (category or "").strip().lower()
+        scope = self.category_scope_normalized
+        if scope == "ambas":
+            return True
+        if scope == "steam":
+            return normalized == "steam"
+        if scope == "emprendimiento":
+            return normalized.startswith("emprend")
+        return True
 
     def mark_login(self) -> None:
         self.last_login_at = datetime.utcnow()

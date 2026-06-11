@@ -80,6 +80,10 @@ class Project(db.Model):
         return self.project_logo_path if self.has_real_logo else self.GENERIC_LOGO_PATH
 
     @property
+    def requires_english_evaluation(self) -> bool:
+        return any(bool(member.participates_in_english) for member in self.members)
+
+    @property
     def logistics_requirements_complete(self) -> bool:
         return all(
             [

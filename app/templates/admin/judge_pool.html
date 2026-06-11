@@ -1,0 +1,181 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section judge-pool-page">
+    <div class="page-head judge-pool-head">
+        <div>
+            <p class="maintenance-kicker">Evaluación</p>
+            <h3>Jueces evaluadores</h3>
+            <p class="table-subtext">Administra disponibilidad, áreas, inglés y carga de asignaciones sin mezclarlo con usuarios del sistema.</p>
+        </div>
+        <div class="page-head-actions">
+            <a class="outline-btn" href="{{ url_for('admin.assignments_page') }}">Asignar proyectos</a>
+            <a class="secondary-btn" href="{{ url_for('admin.judges_page') }}">Gestionar cuentas</a>
+        </div>
+    </div>
+
+    <div class="judge-pool-summary">
+        <article><strong>{{ judge_pool_stats.total }}</strong><span>Total jueces</span></article>
+        <article><strong>{{ judge_pool_stats.active }}</strong><span>Activos</span></article>
+        <article><strong>{{ judge_pool_stats.english }}</strong><span>Evalúan inglés</span></article>
+        <article><strong>{{ judge_pool_stats.both_scopes }}</strong><span>Documento y expo</span></article>
+        <article><strong>{{ judge_pool_stats.documentation_only }}</strong><span>Solo documento</span></article>
+        <article><strong>{{ judge_pool_stats.exposition_only }}</strong><span>Solo exposición</span></article>
+    </div>
+
+    <div class="judge-pool-split">
+        <article class="judge-pool-stat-card">
+            <span>STEAM</span>
+            <strong>{{ judge_pool_stats.steam }}</strong>
+        </article>
+        <article class="judge-pool-stat-card">
+            <span>Emprendimiento</span>
+            <strong>{{ judge_pool_stats.entrepreneurship }}</strong>
+        </article>
+        <article class="judge-pool-stat-card">
+            <span>Ambas categorías</span>
+            <strong>{{ judge_pool_stats.both_categories }}</strong>
+        </article>
+    </div>
+
+    <div class="judge-filter-panel">
+        <label>Buscar
+            <input type="search" data-judge-filter-search placeholder="Nombre, correo, profesión o institución">
+        </label>
+        <label>Categoría
+            <select data-judge-filter-category>
+                <option value="">Todas</option>
+                <option value="steam">STEAM</option>
+                <option value="emprendimiento">Emprendimiento</option>
+                <option value="ambas">Ambas categorías</option>
+            </select>
+        </label>
+        <label>Inglés
+            <select data-judge-filter-english>
+                <option value="">Todos</option>
+                <option value="1">Evalúa inglés</option>
+                <option value="0">No evalúa inglés</option>
+            </select>
+        </label>
+        <label>Alcance
+            <select data-judge-filter-scope>
+                <option value="">Todos</option>
+                <option value="ambas">Documento y exposición</option>
+                <option value="documento">Solo documento</option>
+                <option value="exposicion">Solo exposición</option>
+            </select>
+        </label>
+        <label>Estado
+            <select data-judge-filter-active>
+                <option value="">Todos</option>
+                <option value="1">Activos</option>
+                <option value="0">Inactivos</option>
+            </select>
+        </label>
+    </div>
+</section>
+
+<section class="judge-pool-list" data-judge-list>
+    {% for row in judge_pool_rows %}
+        {% set judge = row.judge %}
+        {% set scope_key = 'ambas' if judge.can_evaluate_documentation and judge.can_evaluate_exposition else ('documento' if judge.can_evaluate_documentation else ('exposicion' if judge.can_evaluate_exposition else 'ninguno')) %}
+        <article class="card judge-pool-card"
+            data-judge-card
+            data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ (judge.job_title or '') ~ ' ' ~ (judge.institution or '') ~ ' ' ~ (judge.identity or ''))|lower }}"
+            data-category="{{ judge.category_scope_normalized }}"
+            data-english="{{ 1 if judge.can_evaluate_english else 0 }}"
+            data-scope="{{ scope_key }}"
+            data-active="{{ 1 if judge.is_active_user else 0 }}">
+            <div class="judge-pool-identity">
+                <p class="maintenance-kicker">Juez</p>
+                <h4>{{ judge.full_name }}</h4>
+                <p>{{ judge.email }}</p>
+                {% if judge.phone %}<p>{{ judge.phone }}</p>{% endif %}
+                {% if judge.identity %}<small>Cédula: {{ judge.identity }}</small>{% endif %}
+            </div>
+
+            <div class="judge-pool-profile">
+                <div>
+                    <span>Perfil profesional</span>
+                    <strong>{{ judge.job_title or "Sin profesión registrada" }}</strong>
+                    <p>{{ judge.institution or "Sin institución registrada" }}</p>
+                </div>
+                <div class="judge-chip-row">
+                    <span class="tag {{ 'ok' if judge.is_active_user else 'off' }}">{{ 'Activo' if judge.is_active_user else 'Inactivo' }}</span>
+                    <span class="tag neutral">{{ judge.category_scope_label }}</span>
+                    <span class="tag {{ 'ok' if judge.can_evaluate_english else 'off' }}">{{ judge.english_scope_label }}</span>
+                    <span class="tag">{{ judge.evaluation_scope_label }}</span>
+                    {% if judge.previous_expo %}<span class="tag neutral">Expo previa: {{ judge.previous_expo }}</span>{% endif %}
+                </div>
+            </div>
+
+            <div class="judge-pool-load">
+                <span>Asignaciones</span>
+                <strong>{{ row.assignment_count }}</strong>
+                {% if row.warning_count %}
+                    <p class="judge-warning">{{ row.warning_count }} alerta(s) de compatibilidad</p>
+                {% else %}
+                    <p>Sin alertas</p>
+                {% endif %}
+            </div>
+
+            {% if row.assignments %}
+                <div class="judge-assignment-strip">
+                    {% for assignment in row.assignments[:4] %}
+                        <span>{{ assignment.project.title }} · {{ assignment.scope_label }}</span>
+                    {% endfor %}
+                    {% if row.assignment_count > 4 %}
+                        <span>+{{ row.assignment_count - 4 }} más</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if row.warnings %}
+                <div class="judge-warning-list">
+                    {% for warning in row.warnings %}
+                        <p>{{ warning }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </article>
+    {% else %}
+        <section class="card admin-section">
+            <p class="muted-empty">No hay jueces registrados todavía.</p>
+        </section>
+    {% endfor %}
+</section>
+
+<script>
+(() => {
+    const cards = Array.from(document.querySelectorAll("[data-judge-card]"));
+    const search = document.querySelector("[data-judge-filter-search]");
+    const category = document.querySelector("[data-judge-filter-category]");
+    const english = document.querySelector("[data-judge-filter-english]");
+    const scope = document.querySelector("[data-judge-filter-scope]");
+    const active = document.querySelector("[data-judge-filter-active]");
+
+    const applyFilters = () => {
+        const query = (search?.value || "").trim().toLowerCase();
+        const categoryValue = category?.value || "";
+        const englishValue = english?.value || "";
+        const scopeValue = scope?.value || "";
+        const activeValue = active?.value || "";
+
+        cards.forEach((card) => {
+            const matchesSearch = !query || card.dataset.search.includes(query);
+            const matchesCategory = !categoryValue || card.dataset.category === categoryValue;
+            const matchesEnglish = !englishValue || card.dataset.english === englishValue;
+            const matchesScope = !scopeValue || card.dataset.scope === scopeValue;
+            const matchesActive = !activeValue || card.dataset.active === activeValue;
+            card.hidden = !(matchesSearch && matchesCategory && matchesEnglish && matchesScope && matchesActive);
+        });
+    };
+
+    [search, category, english, scope, active].forEach((control) => {
+        if (control) {
+            control.addEventListener("input", applyFilters);
+            control.addEventListener("change", applyFilters);
+        }
+    });
+})();
+</script>
+{% endblock %}

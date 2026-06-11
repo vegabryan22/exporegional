@@ -6019,28 +6019,8 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .project-detail.has-many-members .project-main {
-    grid-template-columns: minmax(0, 0.95fr) minmax(430px, 1.05fr);
-    align-items: stretch;
-}
-
-.project-detail.has-many-members .project-visual {
-    grid-column: 1;
-    grid-row: 1;
-    min-height: 0;
-    place-items: center start;
-}
-
-.project-detail.has-many-members .project-content {
-    grid-column: 1;
-    grid-row: 1;
-    align-self: center;
-    margin-left: min(240px, 36%);
-    padding-left: 1rem;
-}
-
-.project-detail.has-many-members .project-members-panel {
-    grid-column: 2;
-    grid-row: 1;
+    grid-template-columns: minmax(140px, 190px) minmax(240px, 0.8fr) minmax(470px, 1.2fr);
+    align-items: center;
 }
 
 .project-visual {
@@ -6066,7 +6046,7 @@ dialog.maintenance-dialog::backdrop {
 
 .project-detail.has-many-members .project-main-image,
 .project-detail.has-many-members .project-main-placeholder {
-    max-width: 180px;
+    max-width: 170px;
 }
 
 .project-main-logo {
@@ -6966,18 +6946,6 @@ dialog.maintenance-dialog::backdrop {
 
     .project-detail.has-many-members .project-main {
         grid-template-columns: 1fr;
-    }
-
-    .project-detail.has-many-members .project-visual,
-    .project-detail.has-many-members .project-content,
-    .project-detail.has-many-members .project-members-panel {
-        grid-column: auto;
-        grid-row: auto;
-    }
-
-    .project-detail.has-many-members .project-content {
-        margin-left: 0;
-        padding-left: 0;
     }
 
     .project-detail.has-many-members .project-visual {

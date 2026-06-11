@@ -5156,6 +5156,7 @@ def _build_judge_pool_context(context: dict) -> dict:
         for judge in context.get("judges", [])
         if judge.effective_role == Judge.ROLE_JUDGE
     ]
+    active_judge_users = [judge for judge in judge_users if judge.is_active_user]
     project_map = {project.id: project for project in context.get("projects", [])}
     rows = []
     for judge in judge_users:

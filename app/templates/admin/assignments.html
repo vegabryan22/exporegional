@@ -63,7 +63,7 @@
                     <td class="table-cell-center">
                         <div class="assignment-summary-list">
                             <span class="tag {{ 'ok' if ns.project_assignments else 'off' }}">{{ ns.project_assignments|length }} juez(es)</span>
-                            {% if project.requires_english_evaluation %}<span class="tag warning">Ingl&eacute;s</span>{% endif %}
+                                    {% if project.requires_english_evaluation %}<span class="tag warning">Ingl&eacute;s · {{ project.english_members_count }}</span>{% endif %}
                         </div>
                     </td>
                     <td class="table-cell-center">
@@ -110,11 +110,12 @@
                                     <select name="judge_id" data-judge-scope-select>
                                         <option value="">Mantener juez actual</option>
                                         {% for judge in judges %}
-                                            {% if judge.is_active_user and judge.effective_role == 'judge' %}
+                                            {% if judge.is_active_user and judge.effective_role == 'judge' and (not project.requires_english_evaluation or judge.can_evaluate_english) %}
                                                 <option
                                                     value="{{ judge.id }}"
                                                     data-can-documentation="{{ 1 if judge.can_evaluate_documentation else 0 }}"
                                                     data-can-exposition="{{ 1 if judge.can_evaluate_exposition else 0 }}"
+                                                    data-can-english="{{ 1 if judge.can_evaluate_english else 0 }}"
                                                 >{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
                                             {% endif %}
                                         {% endfor %}
@@ -157,11 +158,12 @@
                             <select name="judge_id" required data-judge-scope-select>
                                 <option value="">Seleccione...</option>
                                 {% for judge in judges %}
-                                    {% if judge.is_active_user and judge.effective_role == 'judge' %}
+                                    {% if judge.is_active_user and judge.effective_role == 'judge' and (not project.requires_english_evaluation or judge.can_evaluate_english) %}
                                         <option
                                             value="{{ judge.id }}"
                                             data-can-documentation="{{ 1 if judge.can_evaluate_documentation else 0 }}"
                                             data-can-exposition="{{ 1 if judge.can_evaluate_exposition else 0 }}"
+                                            data-can-english="{{ 1 if judge.can_evaluate_english else 0 }}"
                                         >{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
                                     {% endif %}
                                 {% endfor %}
@@ -260,6 +262,7 @@
                                     value="{{ judge.id }}"
                                     data-can-documentation="{{ 1 if judge.can_evaluate_documentation else 0 }}"
                                     data-can-exposition="{{ 1 if judge.can_evaluate_exposition else 0 }}"
+                                    data-can-english="{{ 1 if judge.can_evaluate_english else 0 }}"
                                 >{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
                             {% endif %}
                         {% endfor %}
@@ -279,11 +282,11 @@
                 <p class="assignment-selected-summary" id="assignment-selected-summary">Selecciona un juez para ver qu&eacute; proyectos ya tiene asignados.</p>
                 <div class="assignment-project-list">
                     {% for project in active_projects|sort(attribute='title') %}
-                        <label class="assignment-project-option" data-project-option data-project-id="{{ project.id }}">
+                        <label class="assignment-project-option" data-project-option data-project-id="{{ project.id }}" data-requires-english="{{ 1 if project.requires_english_evaluation else 0 }}">
                             <input type="checkbox" name="project_ids" value="{{ project.id }}">
                             <span>
                                 <strong>{{ project.title }}</strong>
-                                <small>{{ category_map.get(project.category, project.category) }} | {{ project.team_name }}{% if project.requires_english_evaluation %} | Requiere ingl&eacute;s{% endif %}</small>
+                                <small>{{ category_map.get(project.category, project.category) }} | {{ project.team_name }}{% if project.requires_english_evaluation %} | Ingl&eacute;s: {{ project.english_members_count }} estudiante(s){% endif %}</small>
                             </span>
                             <em class="assignment-project-badge" data-assigned-badge hidden>Ya asignado</em>
                         </label>
@@ -345,20 +348,31 @@
         var judgeId = judgeSelect ? judgeSelect.value : '';
         var assignedProjects = assignmentMap[judgeId] || [];
         var assignedSet = new Set(assignedProjects.map(String));
+        var selectedJudge = judgeSelect && judgeSelect.selectedIndex >= 0 ? judgeSelect.options[judgeSelect.selectedIndex] : null;
+        var canEnglish = !selectedJudge || selectedJudge.dataset.canEnglish === '1';
 
         projectOptions.forEach(function (option) {
             var projectId = option.getAttribute('data-project-id');
             var checkbox = option.querySelector('input[type="checkbox"]');
             var badge = option.querySelector('[data-assigned-badge]');
             var isAssigned = assignedSet.has(projectId);
+            var requiresEnglish = option.dataset.requiresEnglish === '1';
+            var isEnglishBlocked = Boolean(judgeId) && requiresEnglish && !canEnglish;
 
             option.classList.toggle('is-assigned', isAssigned);
+            option.classList.toggle('is-incompatible', isEnglishBlocked);
             if (badge) {
                 badge.hidden = !isAssigned;
+                if (isEnglishBlocked) {
+                    badge.hidden = false;
+                    badge.textContent = 'Requiere inglés';
+                } else {
+                    badge.textContent = 'Ya asignado';
+                }
             }
             if (checkbox) {
-                checkbox.disabled = isAssigned;
-                if (isAssigned) {
+                checkbox.disabled = isAssigned || isEnglishBlocked;
+                if (isAssigned || isEnglishBlocked) {
                     checkbox.checked = false;
                 }
             }

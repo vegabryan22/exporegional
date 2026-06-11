@@ -653,6 +653,64 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE evaluations ADD COLUMN max_score INT NULL"))
         if "percentage" not in evaluation_columns:
             connection.execute(text("ALTER TABLE evaluations ADD COLUMN percentage FLOAT NULL"))
+        if "project_member_id" not in evaluation_columns:
+            connection.execute(text("ALTER TABLE evaluations ADD COLUMN project_member_id INT NULL"))
+            evaluation_columns.add("project_member_id")
+
+        evaluation_fks = inspector.get_foreign_keys("evaluations")
+        member_fk = next(
+            (
+                item
+                for item in evaluation_fks
+                if item.get("referred_table") == "project_members"
+                and item.get("constrained_columns") == ["project_member_id"]
+            ),
+            None,
+        )
+        if member_fk is None and "project_member_id" in evaluation_columns:
+            connection.execute(
+                text(
+                    """
+                    ALTER TABLE evaluations
+                    ADD CONSTRAINT fk_evaluations_project_member_set_null
+                    FOREIGN KEY (project_member_id) REFERENCES project_members (id)
+                    ON DELETE SET NULL
+                    """
+                )
+            )
+
+        evaluation_unique_constraints = inspector.get_unique_constraints("evaluations")
+        legacy_eval_unique = next(
+            (
+                item
+                for item in evaluation_unique_constraints
+                if item.get("name") == "uq_eval_type_per_judge_project"
+                or item.get("column_names") == ["judge_id", "project_id", "evaluation_type"]
+            ),
+            None,
+        )
+        member_eval_unique = next(
+            (
+                item
+                for item in evaluation_unique_constraints
+                if item.get("name") == "uq_eval_type_per_judge_project_member"
+                or item.get("column_names")
+                == ["judge_id", "project_id", "evaluation_type", "project_member_id"]
+            ),
+            None,
+        )
+        if legacy_eval_unique:
+            connection.execute(text(f"ALTER TABLE evaluations DROP INDEX {legacy_eval_unique['name']}"))
+        if member_eval_unique is None and "project_member_id" in evaluation_columns:
+            connection.execute(
+                text(
+                    """
+                    ALTER TABLE evaluations
+                    ADD CONSTRAINT uq_eval_type_per_judge_project_member
+                    UNIQUE (judge_id, project_id, evaluation_type, project_member_id)
+                    """
+                )
+            )
 
         if "project_members" in inspector.get_table_names():
             member_columns = {column["name"] for column in inspector.get_columns("project_members")}

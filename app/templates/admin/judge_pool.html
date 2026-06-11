@@ -37,6 +37,45 @@
         </article>
     </div>
 
+    <div class="judge-capability-board">
+        <article class="judge-capability-card">
+            <div>
+                <span>Documento escrito</span>
+                <strong>{{ judge_pool_stats.matrix.documentacion.steam + judge_pool_stats.matrix.documentacion.emprendimiento + judge_pool_stats.matrix.documentacion.ambas }}</strong>
+            </div>
+            <dl>
+                <dt>STEAM</dt><dd>{{ judge_pool_stats.matrix.documentacion.steam }}</dd>
+                <dt>Emprendimiento</dt><dd>{{ judge_pool_stats.matrix.documentacion.emprendimiento }}</dd>
+                <dt>Cualquiera</dt><dd>{{ judge_pool_stats.matrix.documentacion.ambas }}</dd>
+            </dl>
+        </article>
+        <article class="judge-capability-card">
+            <div>
+                <span>Exposición oral</span>
+                <strong>{{ judge_pool_stats.matrix.exposicion.steam + judge_pool_stats.matrix.exposicion.emprendimiento + judge_pool_stats.matrix.exposicion.ambas }}</strong>
+            </div>
+            <dl>
+                <dt>STEAM</dt><dd>{{ judge_pool_stats.matrix.exposicion.steam }}</dd>
+                <dt>Emprendimiento</dt><dd>{{ judge_pool_stats.matrix.exposicion.emprendimiento }}</dd>
+                <dt>Cualquiera</dt><dd>{{ judge_pool_stats.matrix.exposicion.ambas }}</dd>
+            </dl>
+        </article>
+        <article class="judge-capability-card english">
+            <div>
+                <span>Inglés por área</span>
+                <strong>{{ judge_pool_stats.english }}</strong>
+            </div>
+            <dl>
+                <dt>Doc. STEAM</dt><dd>{{ judge_pool_stats.english_matrix.documentacion.steam }}</dd>
+                <dt>Doc. Empr.</dt><dd>{{ judge_pool_stats.english_matrix.documentacion.emprendimiento }}</dd>
+                <dt>Doc. Cualquiera</dt><dd>{{ judge_pool_stats.english_matrix.documentacion.ambas }}</dd>
+                <dt>Expo STEAM</dt><dd>{{ judge_pool_stats.english_matrix.exposicion.steam }}</dd>
+                <dt>Expo Empr.</dt><dd>{{ judge_pool_stats.english_matrix.exposicion.emprendimiento }}</dd>
+                <dt>Expo Cualquiera</dt><dd>{{ judge_pool_stats.english_matrix.exposicion.ambas }}</dd>
+            </dl>
+        </article>
+    </div>
+
     <div class="judge-filter-panel">
         <label>Buscar
             <input type="search" data-judge-filter-search placeholder="Nombre, correo, profesión o institución">

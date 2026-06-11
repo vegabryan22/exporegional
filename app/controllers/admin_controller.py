@@ -5191,6 +5191,44 @@ def _build_judge_pool_context(context: dict) -> dict:
             }
         )
 
+    def _capability_matrix(judges_subset):
+        return {
+            "documentacion": {
+                "steam": sum(
+                    1
+                    for judge in judges_subset
+                    if judge.can_evaluate_documentation and judge.category_scope_normalized == "steam"
+                ),
+                "emprendimiento": sum(
+                    1
+                    for judge in judges_subset
+                    if judge.can_evaluate_documentation and judge.category_scope_normalized == "emprendimiento"
+                ),
+                "ambas": sum(
+                    1
+                    for judge in judges_subset
+                    if judge.can_evaluate_documentation and judge.category_scope_normalized == "ambas"
+                ),
+            },
+            "exposicion": {
+                "steam": sum(
+                    1
+                    for judge in judges_subset
+                    if judge.can_evaluate_exposition and judge.category_scope_normalized == "steam"
+                ),
+                "emprendimiento": sum(
+                    1
+                    for judge in judges_subset
+                    if judge.can_evaluate_exposition and judge.category_scope_normalized == "emprendimiento"
+                ),
+                "ambas": sum(
+                    1
+                    for judge in judges_subset
+                    if judge.can_evaluate_exposition and judge.category_scope_normalized == "ambas"
+                ),
+            },
+        }
+
     stats = {
         "total": len(judge_users),
         "active": len(active_judge_users),
@@ -5202,6 +5240,8 @@ def _build_judge_pool_context(context: dict) -> dict:
         "exposition_only": sum(1 for judge in active_judge_users if judge.can_evaluate_exposition and not judge.can_evaluate_documentation),
         "both_scopes": sum(1 for judge in active_judge_users if judge.can_evaluate_documentation and judge.can_evaluate_exposition),
     }
+    stats["matrix"] = _capability_matrix(active_judge_users)
+    stats["english_matrix"] = _capability_matrix([judge for judge in active_judge_users if judge.can_evaluate_english])
     return {
         "judge_pool_rows": rows,
         "judge_pool_stats": stats,

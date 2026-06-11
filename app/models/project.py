@@ -84,6 +84,14 @@ class Project(db.Model):
         return any(bool(member.participates_in_english) for member in self.members)
 
     @property
+    def english_members(self):
+        return [member for member in self.members if bool(member.participates_in_english)]
+
+    @property
+    def english_members_count(self) -> int:
+        return len(self.english_members)
+
+    @property
     def logistics_requirements_complete(self) -> bool:
         return all(
             [

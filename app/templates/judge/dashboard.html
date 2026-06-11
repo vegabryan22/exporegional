@@ -3,11 +3,11 @@
 {% set metrics = namespace(projects=assignments|length, expected=0, completed=0, pending=0, docs=0) %}
 {% for assignment in assignments %}
     {% set project = assignment.project %}
-    {% set available_eval_types = project_eval_types.get(project.id, []) %}
+    {% set available_eval_entries = project_eval_entries.get(project.id, []) %}
     {% if project.project_document_path %}{% set metrics.docs = metrics.docs + 1 %}{% endif %}
-    {% for eval_type in available_eval_types %}
+    {% for eval_entry in available_eval_entries %}
         {% set metrics.expected = metrics.expected + 1 %}
-        {% if evaluation_map.get((project.id, eval_type.code)) %}
+        {% if evaluation_map.get((project.id, eval_entry.code, eval_entry.project_member_id or 0)) %}
             {% set metrics.completed = metrics.completed + 1 %}
         {% else %}
             {% set metrics.pending = metrics.pending + 1 %}
@@ -75,10 +75,10 @@
         <div class="judge-project-list">
             {% for assignment in assignments %}
                 {% set project = assignment.project %}
-                {% set available_eval_types = project_eval_types.get(project.id, []) %}
+                {% set available_eval_entries = project_eval_entries.get(project.id, []) %}
                 {% set row = namespace(done=0, pending=0) %}
-                {% for eval_type in available_eval_types %}
-                    {% if evaluation_map.get((project.id, eval_type.code)) %}
+                {% for eval_entry in available_eval_entries %}
+                    {% if evaluation_map.get((project.id, eval_entry.code, eval_entry.project_member_id or 0)) %}
                         {% set row.done = row.done + 1 %}
                     {% else %}
                         {% set row.pending = row.pending + 1 %}
@@ -89,9 +89,12 @@
                         <span class="judge-project-category">{{ category_map.get(project.category, project.category) }}</span>
                         <h3>{{ project.title }}</h3>
                         <p>{{ project.team_name or 'Equipo ExpoTEC' }}</p>
-                        <div class="judge-project-progress {{ 'complete' if row.pending == 0 and available_eval_types else 'pending' }}">
-                            <strong>{{ row.done }}/{{ available_eval_types|length }}</strong>
-                            <span>{{ 'Listo' if row.pending == 0 and available_eval_types else 'Pendiente' }}</span>
+                        {% if project.english_members_count %}
+                            <small class="judge-project-english-note">{{ project.english_members_count }} estudiante(s) en exposición en inglés</small>
+                        {% endif %}
+                        <div class="judge-project-progress {{ 'complete' if row.pending == 0 and available_eval_entries else 'pending' }}">
+                            <strong>{{ row.done }}/{{ available_eval_entries|length }}</strong>
+                            <span>{{ 'Listo' if row.pending == 0 and available_eval_entries else 'Pendiente' }}</span>
                         </div>
                     </div>
                     <div class="judge-project-actions">
@@ -108,16 +111,16 @@
                         {% else %}
                             <span class="judge-action-link missing">Sin documento</span>
                         {% endif %}
-                        {% for eval_type in available_eval_types %}
-                            {% if evaluation_map.get((project.id, eval_type.code)) %}
-                                <span class="judge-action-link done">{{ eval_type.short_name }} listo</span>
+                        {% for eval_entry in available_eval_entries %}
+                            {% if evaluation_map.get((project.id, eval_entry.code, eval_entry.project_member_id or 0)) %}
+                                <span class="judge-action-link done">{{ eval_entry.label }} listo</span>
                             {% else %}
                                 <a
-                                    href="{{ url_for('judge.evaluate', project_id=project.id, type=eval_type.code) }}"
+                                    href="{{ url_for('judge.evaluate', project_id=project.id, type=eval_entry.code, member_id=eval_entry.project_member_id) }}"
                                     class="judge-action-link evaluate"
                                     data-no-iconify
                                 >
-                                    Evaluar {{ eval_type.short_name }}
+                                    Evaluar {{ eval_entry.label }}
                                 </a>
                             {% endif %}
                         {% else %}

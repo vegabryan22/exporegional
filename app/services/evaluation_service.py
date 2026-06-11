@@ -99,6 +99,55 @@ def get_assignment_available_evaluation_types(assignment):
     ]
 
 
+def get_project_english_members(project):
+    return [
+        member
+        for member in getattr(project, "members", [])
+        if getattr(member, "participates_in_english", False)
+    ]
+
+
+def build_evaluation_entry(evaluation_type, project_member=None):
+    member_id = getattr(project_member, "id", None)
+    member_name = getattr(project_member, "full_name", None)
+    key = f"{evaluation_type.code}:{member_id or 0}"
+    label = evaluation_type.short_name
+    if evaluation_type.code == ENGLISH_EVAL_TYPE_CODE and member_name:
+        label = f"{evaluation_type.short_name} - {member_name}"
+    return {
+        "key": key,
+        "code": evaluation_type.code,
+        "type": evaluation_type,
+        "label": label,
+        "short_name": evaluation_type.short_name,
+        "project_member": project_member,
+        "project_member_id": member_id,
+        "project_member_name": member_name,
+    }
+
+
+def get_assignment_evaluation_entries(assignment):
+    entries = []
+    for eval_type in get_assignment_available_evaluation_types(assignment):
+        if eval_type.code == ENGLISH_EVAL_TYPE_CODE:
+            for member in get_project_english_members(assignment.project):
+                entries.append(build_evaluation_entry(eval_type, member))
+        else:
+            entries.append(build_evaluation_entry(eval_type))
+    return entries
+
+
+def get_project_available_evaluation_entries(project):
+    entries = []
+    for eval_type in get_project_available_evaluation_types(project):
+        if eval_type.code == ENGLISH_EVAL_TYPE_CODE:
+            for member in get_project_english_members(project):
+                entries.append(build_evaluation_entry(eval_type, member))
+        else:
+            entries.append(build_evaluation_entry(eval_type))
+    return entries
+
+
 def get_project_evaluations_summary(project):
     category = get_project_category(project)
     if not category:
@@ -192,6 +241,7 @@ def build_admin_evaluation_overview():
             joinedload(Project.members),
             joinedload(Project.assignments).joinedload(Assignment.judge),
             joinedload(Project.evaluations).joinedload(Evaluation.judge),
+            joinedload(Project.evaluations).joinedload(Evaluation.project_member),
         )
         .filter(Project.is_active.is_(True))
         .order_by(Project.created_at.desc())
@@ -208,19 +258,9 @@ def build_admin_evaluation_overview():
     for project in projects:
         category = category_map.get((project.category or "").strip().lower())
         available_types = get_project_available_evaluation_types(project)
-        available_type_codes = [item.code for item in available_types]
         assigned_judges = len(project.assignments)
         completed_evaluations = len(project.evaluations)
-        expected_evaluations = sum(
-            len(
-                [
-                    eval_type
-                    for eval_type in available_types
-                    if assignment_allows_evaluation_type(assignment, eval_type)
-                ]
-            )
-            for assignment in project.assignments
-        )
+        expected_evaluations = sum(len(get_assignment_evaluation_entries(assignment)) for assignment in project.assignments)
         total_expected_evaluations += expected_evaluations
         total_completed_evaluations += completed_evaluations
 
@@ -235,13 +275,21 @@ def build_admin_evaluation_overview():
         progress_by_type = []
         for eval_type in available_types:
             completed_for_type = eval_counts.get(eval_type.code, 0)
-            expected_for_type = len(
-                [
-                    assignment
+            if eval_type.code == ENGLISH_EVAL_TYPE_CODE:
+                english_member_count = len(get_project_english_members(project))
+                expected_for_type = sum(
+                    english_member_count
                     for assignment in project.assignments
                     if assignment_allows_evaluation_type(assignment, eval_type)
-                ]
-            )
+                )
+            else:
+                expected_for_type = len(
+                    [
+                        assignment
+                        for assignment in project.assignments
+                        if assignment_allows_evaluation_type(assignment, eval_type)
+                    ]
+                )
             average_score = _average_percentage(project.evaluations, eval_type.code)
             progress_by_type.append(
                 {
@@ -250,6 +298,9 @@ def build_admin_evaluation_overview():
                     "completed": completed_for_type,
                     "expected": expected_for_type,
                     "average_score": average_score,
+                    "english_member_count": len(get_project_english_members(project))
+                    if eval_type.code == ENGLISH_EVAL_TYPE_CODE
+                    else None,
                 }
             )
 
@@ -262,6 +313,7 @@ def build_admin_evaluation_overview():
                         (item.name for item in available_types if item.code == evaluation.evaluation_type),
                         evaluation.evaluation_type,
                     ),
+                    "project_member_name": evaluation.project_member.full_name if evaluation.project_member else None,
                     "percentage": evaluation.percentage,
                     "created_at": evaluation.created_at,
                 }
@@ -286,6 +338,8 @@ def build_admin_evaluation_overview():
             "available_types": available_types,
             "progress_by_type": progress_by_type,
             "evaluation_records": evaluation_records,
+            "english_member_count": len(get_project_english_members(project)),
+            "english_members": get_project_english_members(project),
             **summary,
         }
         project_rows.append(row)
@@ -293,8 +347,33 @@ def build_admin_evaluation_overview():
         if category and summary["final_grade"] is not None:
             winner_candidates[category.code].append(row)
 
-        if summary["english_score"] is not None:
-            english_ranking.append(row)
+        english_type = next((item for item in available_types if item.code == ENGLISH_EVAL_TYPE_CODE), None)
+        if english_type:
+            for member in get_project_english_members(project):
+                member_values = [
+                    evaluation.percentage
+                    for evaluation in project.evaluations
+                    if evaluation.evaluation_type == ENGLISH_EVAL_TYPE_CODE
+                    and evaluation.project_member_id == member.id
+                    and evaluation.percentage is not None
+                ]
+                if member_values:
+                    english_ranking.append(
+                        {
+                            "project": project,
+                            "category": category,
+                            "member": member,
+                            "english_score": round(sum(member_values) / len(member_values), 2),
+                            "completed_evaluations": len(member_values),
+                            "expected_evaluations": len(
+                                [
+                                    assignment
+                                    for assignment in project.assignments
+                                    if assignment_allows_evaluation_type(assignment, english_type)
+                                ]
+                            ),
+                        }
+                    )
 
     category_winners = []
     for category in categories:
@@ -320,7 +399,8 @@ def build_admin_evaluation_overview():
     english_ranking.sort(
         key=lambda item: (
             -(item["english_score"] or -1),
-            -(item["completion_percentage"] or 0),
+            -(item["completed_evaluations"] or 0),
+            (getattr(item.get("member"), "full_name", "") or "").lower(),
             item["project"].title.lower(),
         )
     )

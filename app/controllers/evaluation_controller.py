@@ -9,9 +9,12 @@ from app.models.category import Category
 from app.models.evaluation import Evaluation
 from app.models.evaluation_score import EvaluationScore
 from app.models.project import Project
+from app.models.project_member import ProjectMember
 from app.services.audit_service import log_event
 from app.services.evaluation_service import (
+    ENGLISH_EVAL_TYPE_CODE,
     assignment_allows_evaluation_type,
+    get_assignment_evaluation_entries,
     get_assignment_available_evaluation_types,
     get_project_available_evaluation_types,
     get_project_evaluations_summary,
@@ -68,14 +71,16 @@ def dashboard():
         .all()
     )
     evaluation_map = {
-        (e.project_id, e.evaluation_type): e
+        (e.project_id, e.evaluation_type, e.project_member_id or 0): e
         for e in Evaluation.query.filter_by(judge_id=current_user.id).all()
     }
     category_map = {category.code: category.name for category in Category.query.all()}
     project_eval_types = {}
+    project_eval_entries = {}
     project_summaries = {}
     for assignment in assignments:
         project_eval_types[assignment.project_id] = get_assignment_available_evaluation_types(assignment)
+        project_eval_entries[assignment.project_id] = get_assignment_evaluation_entries(assignment)
         project_summaries[assignment.project_id] = get_project_evaluations_summary(assignment.project)
     return render_template(
         "judge/dashboard.html",
@@ -83,6 +88,7 @@ def dashboard():
         evaluation_map=evaluation_map,
         category_map=category_map,
         project_eval_types=project_eval_types,
+        project_eval_entries=project_eval_entries,
         project_summaries=project_summaries,
     )
 
@@ -132,6 +138,7 @@ def project_document(project_id: int):
 @login_required
 def evaluate(project_id: int):
     eval_type = request.args.get("type", "").strip()
+    project_member_id = request.args.get("member_id", default=0, type=int) or None
     project = Project.query.get_or_404(project_id)
     evaluation_types = get_project_available_evaluation_types(project)
     eval_type_map = {item.code: item for item in evaluation_types}
@@ -144,6 +151,16 @@ def evaluate(project_id: int):
         abort(403, "No tienes permiso para evaluar este proyecto.")
     if not assignment_allows_evaluation_type(assignment, eval_type_map[eval_type]):
         abort(403, "No tienes permiso para registrar este tipo de evaluacion.")
+
+    project_member = None
+    if eval_type == ENGLISH_EVAL_TYPE_CODE:
+        if not current_user.can_evaluate_english:
+            abort(403, "No tienes permiso para evaluar exposicion en ingles.")
+        if not project_member_id:
+            abort(400, "Selecciona el estudiante que expone en ingles.")
+        project_member = ProjectMember.query.filter_by(id=project_member_id, project_id=project.id).first_or_404()
+        if not project_member.participates_in_english:
+            abort(400, "Este estudiante no esta marcado para exposicion en ingles.")
 
     rubric_map = get_active_rubrics_map()
     criteria = rubric_map.get(eval_type, [])
@@ -159,6 +176,7 @@ def evaluate(project_id: int):
         judge_id=current_user.id,
         project_id=project_id,
         evaluation_type=eval_type,
+        project_member_id=project_member.id if project_member else None,
     ).first()
 
     if existing:
@@ -187,6 +205,7 @@ def evaluate(project_id: int):
                     criteria_sections=criteria_sections,
                     score_labels=score_labels,
                     scale_options=scale_options,
+                    project_member=project_member,
                 )
             total_score += score
             max_score += criterion.max_score
@@ -205,6 +224,7 @@ def evaluate(project_id: int):
         evaluation = Evaluation(
             judge_id=current_user.id,
             project_id=project.id,
+            project_member_id=project_member.id if project_member else None,
             evaluation_type=eval_type,
             criteria_1=scores[0].score if len(scores) > 0 else None,
             criteria_2=scores[1].score if len(scores) > 1 else None,
@@ -226,7 +246,8 @@ def evaluate(project_id: int):
             entity_id=evaluation.id,
             detail=(
                 f"Evaluacion registrada: proyecto=#{project.id} '{project.title}', "
-                f"juez={current_user.full_name}, tipo={eval_type}, porcentaje={percentage}"
+                f"juez={current_user.full_name}, tipo={eval_type}, "
+                f"integrante={project_member.full_name if project_member else 'proyecto'}, porcentaje={percentage}"
             ),
         )
         db.session.commit()
@@ -242,4 +263,5 @@ def evaluate(project_id: int):
         criteria_sections=criteria_sections,
         score_labels=score_labels,
         scale_options=scale_options,
+        project_member=project_member,
     )

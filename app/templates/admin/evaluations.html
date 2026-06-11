@@ -58,7 +58,7 @@
         <div>
             <p class="maintenance-kicker">Inglés</p>
             <h3>Top 5 de exposición en inglés</h3>
-            <p>Este ranking es independiente y muestra los 5 mejores puntajes para reconocimiento especial.</p>
+            <p>Este ranking es independiente y compara estudiantes, no proyectos completos.</p>
         </div>
     </div>
 
@@ -67,6 +67,7 @@
             <thead>
                 <tr>
                     <th>#</th>
+                    <th>Estudiante</th>
                     <th>Proyecto</th>
                     <th>Categoría</th>
                     <th>Equipo</th>
@@ -78,6 +79,7 @@
             {% for row in english_ranking[:5] %}
                 <tr>
                     <td class="table-cell-center">{{ loop.index }}</td>
+                    <td class="table-cell-center">{{ row.member.full_name if row.member else 'N/D' }}</td>
                     <td class="table-cell-center">{{ row.project.title }}</td>
                     <td class="table-cell-center">
                         <span class="tag category-badge">{{ row.category.name if row.category else 'N/D' }}</span>
@@ -179,6 +181,9 @@
                     <div class="tracking-metric">
                         <small>Inglés</small>
                         <strong>{{ "%.2f"|format(row.english_score) if row.english_score is not none else 'N/D' }}</strong>
+                        {% if row.english_member_count %}
+                            <span>{{ row.english_member_count }} estudiante(s)</span>
+                        {% endif %}
                     </div>
                     <div class="tracking-metric tracking-metric-final">
                         <small>Nota final</small>
@@ -201,6 +206,9 @@
                                 <span>{{ progress.name }}</span>
                                 <strong>{{ progress.completed }}/{{ progress.expected }}</strong>
                                 <em>{{ "%.2f"|format(progress.average_score) if progress.average_score is not none else 'N/D' }}</em>
+                                {% if progress.english_member_count %}
+                                    <small>{{ progress.english_member_count }} estudiante(s) en ingl&eacute;s</small>
+                                {% endif %}
                             </div>
                         {% else %}
                             <span class="muted-empty">Sin rúbricas asignadas</span>
@@ -215,6 +223,9 @@
                             <div class="evaluation-record-item">
                                 <div>
                                     <strong>{{ record.evaluation_type }}</strong>
+                                    {% if record.project_member_name %}
+                                        <small>{{ record.project_member_name }}</small>
+                                    {% endif %}
                                     <span>{{ record.judge_name }}</span>
                                     <em>{{ "%.2f"|format(record.percentage) if record.percentage is not none else 'N/D' }}</em>
                                 </div>
@@ -340,6 +351,3 @@
     })();
 </script>
 {% endblock %}
-
-
-

@@ -4,6 +4,9 @@
     <h2>Evaluar proyecto: {{ project.title }}</h2>
     <div class="evaluation-meta">
         <p>Tipo de evaluación: <strong>{{ eval_type_name }}</strong></p>
+        {% if project_member %}
+            <p>Estudiante evaluado: <strong>{{ project_member.full_name }}</strong></p>
+        {% endif %}
         <p>
             Escala:
             {% for score_value in scale_options %}
@@ -80,4 +83,3 @@
     </form>
 </section>
 {% endblock %}
-

@@ -6,12 +6,19 @@ from app.extensions import db
 class Evaluation(db.Model):
     __tablename__ = "evaluations"
     __table_args__ = (
-        db.UniqueConstraint("judge_id", "project_id", "evaluation_type", name="uq_eval_type_per_judge_project"),
+        db.UniqueConstraint(
+            "judge_id",
+            "project_id",
+            "evaluation_type",
+            "project_member_id",
+            name="uq_eval_type_per_judge_project_member",
+        ),
     )
 
     id = db.Column(db.Integer, primary_key=True)
     judge_id = db.Column(db.Integer, db.ForeignKey("judges.id", ondelete="SET NULL"), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
+    project_member_id = db.Column(db.Integer, db.ForeignKey("project_members.id", ondelete="SET NULL"), nullable=True)
     evaluation_type = db.Column(db.String(60), nullable=False, index=True)
     criteria_1 = db.Column(db.Integer, nullable=True)
     criteria_2 = db.Column(db.Integer, nullable=True)
@@ -25,6 +32,7 @@ class Evaluation(db.Model):
 
     judge = db.relationship("Judge", back_populates="evaluations")
     project = db.relationship("Project", back_populates="evaluations")
+    project_member = db.relationship("ProjectMember")
     scores = db.relationship("EvaluationScore", back_populates="evaluation", cascade="all, delete-orphan")
 
     @property

@@ -2997,6 +2997,60 @@ dialog.maintenance-dialog::backdrop {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.judge-capability-board {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.judge-capability-card {
+    display: grid;
+    gap: 0.75rem;
+    border: 1px solid #d7e5f5;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #ffffff 0%, #f2f9ff 100%);
+    padding: 0.9rem;
+}
+
+.judge-capability-card.english {
+    background: linear-gradient(135deg, #ffffff 0%, #eefbea 100%);
+}
+
+.judge-capability-card > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.8rem;
+}
+
+.judge-capability-card > div span,
+.judge-capability-card dt {
+    color: #5d7897;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.judge-capability-card > div strong {
+    color: var(--primary);
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.judge-capability-card dl {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.45rem 0.7rem;
+    margin: 0;
+}
+
+.judge-capability-card dd {
+    margin: 0;
+    color: #0d3f6b;
+    font-weight: 900;
+}
+
 .judge-filter-panel {
     display: grid;
     grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, 1fr));
@@ -3946,6 +4000,10 @@ dialog.maintenance-dialog::backdrop {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .judge-capability-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .judge-filter-panel,
     .judge-pool-card {
         grid-template-columns: 1fr;
@@ -3964,6 +4022,10 @@ dialog.maintenance-dialog::backdrop {
     .judge-pool-summary,
     .judge-pool-split {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .judge-capability-board {
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .judge-filter-panel {
@@ -5064,6 +5126,12 @@ dialog.maintenance-dialog::backdrop {
     border-color: #e5c0c6;
     background: #fff3f5;
     opacity: 0.9;
+}
+
+.assignment-project-option.is-incompatible {
+    border-color: #f0c078;
+    background: #fff8eb;
+    opacity: 0.95;
 }
 
 .assignment-project-badge {
@@ -10020,6 +10088,14 @@ body {
     margin: 0.18rem 0 0;
     color: #607995;
     font-size: 0.9rem;
+}
+
+.judge-project-english-note {
+    display: inline-block;
+    margin-top: 0.28rem;
+    color: #157a8c;
+    font-size: 0.82rem;
+    font-weight: 900;
 }
 
 .judge-project-info .judge-project-progress {

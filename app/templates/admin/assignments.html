@@ -107,16 +107,20 @@
                                     <input type="hidden" name="next" value="{{ next_url }}">
                                     <input type="hidden" name="action" value="replace_assignment">
                                     <input type="hidden" name="assignment_id" value="{{ assignment.id }}">
-                                    <select name="judge_id">
+                                    <select name="judge_id" data-judge-scope-select>
                                         <option value="">Mantener juez actual</option>
                                         {% for judge in judges %}
                                             {% if judge.is_active_user and judge.effective_role == 'judge' %}
-                                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
+                                                <option
+                                                    value="{{ judge.id }}"
+                                                    data-can-documentation="{{ 1 if judge.can_evaluate_documentation else 0 }}"
+                                                    data-can-exposition="{{ 1 if judge.can_evaluate_exposition else 0 }}"
+                                                >{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
                                             {% endif %}
                                         {% endfor %}
                                     </select>
                                     <input type="hidden" name="assignment_scope_present" value="1">
-                                    <div class="assignment-scope-group">
+                                    <div class="assignment-scope-group" data-assignment-scope-group>
                                         <label>
                                             <input type="checkbox" name="assignment_scope" value="documentacion" {% if assignment.can_evaluate_documentation %}checked{% endif %}>
                                             Documento escrito
@@ -150,17 +154,21 @@
                     <h5>Agregar juez existente</h5>
                     <div class="assignment-inline-add">
                         <label>
-                            <select name="judge_id" required>
+                            <select name="judge_id" required data-judge-scope-select>
                                 <option value="">Seleccione...</option>
                                 {% for judge in judges %}
                                     {% if judge.is_active_user and judge.effective_role == 'judge' %}
-                                        <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
+                                        <option
+                                            value="{{ judge.id }}"
+                                            data-can-documentation="{{ 1 if judge.can_evaluate_documentation else 0 }}"
+                                            data-can-exposition="{{ 1 if judge.can_evaluate_exposition else 0 }}"
+                                        >{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
                                     {% endif %}
                                 {% endfor %}
                             </select>
                         </label>
                         <input type="hidden" name="assignment_scope_present" value="1">
-                        <div class="assignment-scope-group">
+                        <div class="assignment-scope-group" data-assignment-scope-group>
                             <label><input type="checkbox" name="assignment_scope" value="documentacion" checked> Documento escrito</label>
                             <label><input type="checkbox" name="assignment_scope" value="exposicion" checked> Exposici&oacute;n oral</label>
                         </div>
@@ -244,18 +252,22 @@
             <input type="hidden" name="action" value="create_assignment">
             <div class="grid-2">
                 <label>Juez
-                    <select name="judge_id" id="assignment-judge-id" required>
+                    <select name="judge_id" id="assignment-judge-id" required data-judge-scope-select>
                         <option value="">Seleccione...</option>
                         {% for judge in judges %}
                             {% if judge.is_active_user and judge.effective_role == 'judge' %}
-                                <option value="{{ judge.id }}">{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
+                                <option
+                                    value="{{ judge.id }}"
+                                    data-can-documentation="{{ 1 if judge.can_evaluate_documentation else 0 }}"
+                                    data-can-exposition="{{ 1 if judge.can_evaluate_exposition else 0 }}"
+                                >{{ judge.full_name }} ({{ judge.email }}) - {{ judge.category_scope_label }} - {{ judge.english_scope_label }} - {{ judge.evaluation_scope_label }}</option>
                             {% endif %}
                         {% endfor %}
                     </select>
                 </label>
             </div>
             <input type="hidden" name="assignment_scope_present" value="1">
-            <div class="assignment-scope-group assignment-scope-group-wide">
+            <div class="assignment-scope-group assignment-scope-group-wide" data-assignment-scope-group>
                 <label><input type="checkbox" name="assignment_scope" value="documentacion" checked> Documento escrito</label>
                 <label><input type="checkbox" name="assignment_scope" value="exposicion" checked> Exposici&oacute;n oral</label>
             </div>
@@ -303,6 +315,31 @@
     var quickJudgeProjectId = document.getElementById('quick-judge-project-id');
     var quickJudgeProjectLabel = document.getElementById('quick-judge-project-label');
     var quickJudgeProjectFallback = document.getElementById('quick-judge-project-fallback');
+
+    function syncScopeFromJudge(select) {
+        if (!select || !select.value) {
+            return;
+        }
+
+        var form = select.closest('form');
+        var group = form ? form.querySelector('[data-assignment-scope-group]') : null;
+        var option = select.options[select.selectedIndex];
+        if (!group || !option) {
+            return;
+        }
+
+        var documentation = option.dataset.canDocumentation === '1';
+        var exposition = option.dataset.canExposition === '1';
+        var docInput = group.querySelector('input[value="documentacion"]');
+        var expoInput = group.querySelector('input[value="exposicion"]');
+
+        if (docInput) {
+            docInput.checked = documentation;
+        }
+        if (expoInput) {
+            expoInput.checked = exposition;
+        }
+    }
 
     function updateAssignedProjects() {
         var judgeId = judgeSelect ? judgeSelect.value : '';
@@ -355,9 +392,21 @@
     }
 
     if (judgeSelect) {
-        judgeSelect.addEventListener('change', updateAssignedProjects);
+        judgeSelect.addEventListener('change', function () {
+            syncScopeFromJudge(judgeSelect);
+            updateAssignedProjects();
+        });
         updateAssignedProjects();
     }
+
+    document.querySelectorAll('[data-judge-scope-select]').forEach(function (select) {
+        if (select === judgeSelect) {
+            return;
+        }
+        select.addEventListener('change', function () {
+            syncScopeFromJudge(select);
+        });
+    });
 
     if (quickJudgeProjectFallback) {
         quickJudgeProjectFallback.addEventListener('change', function () {

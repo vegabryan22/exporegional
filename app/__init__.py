@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from flask import Flask, render_template
 from sqlalchemy import inspect, text
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from config import Config
 from app.extensions import db, login_manager
@@ -20,6 +20,15 @@ DEFAULT_DEPARTMENT_PERMISSIONS = {
 }
 PERMISSIONS_SETTING_KEY = "permissions_department_modules"
 LOCAL_TIMEZONE = ZoneInfo("America/Costa_Rica")
+
+
+def _run_optional_schema_statement(connection, statement: str, label: str) -> bool:
+    try:
+        connection.execute(text(statement))
+        return True
+    except SQLAlchemyError as error:
+        print(f"[schema] No se pudo aplicar {label}: {error}")
+        return False
 
 
 def create_app():
@@ -668,15 +677,15 @@ def ensure_schema_updates():
             None,
         )
         if member_fk is None and "project_member_id" in evaluation_columns:
-            connection.execute(
-                text(
-                    """
-                    ALTER TABLE evaluations
-                    ADD CONSTRAINT fk_evaluations_project_member_set_null
-                    FOREIGN KEY (project_member_id) REFERENCES project_members (id)
-                    ON DELETE SET NULL
-                    """
-                )
+            _run_optional_schema_statement(
+                connection,
+                """
+                ALTER TABLE evaluations
+                ADD CONSTRAINT fk_evaluations_project_member_set_null
+                FOREIGN KEY (project_member_id) REFERENCES project_members (id)
+                ON DELETE SET NULL
+                """,
+                "fk evaluations.project_member_id",
             )
 
         evaluation_unique_constraints = inspector.get_unique_constraints("evaluations")
@@ -700,16 +709,20 @@ def ensure_schema_updates():
             None,
         )
         if legacy_eval_unique:
-            connection.execute(text(f"ALTER TABLE evaluations DROP INDEX {legacy_eval_unique['name']}"))
+            _run_optional_schema_statement(
+                connection,
+                f"ALTER TABLE evaluations DROP INDEX `{legacy_eval_unique['name']}`",
+                "indice unico anterior de evaluaciones",
+            )
         if member_eval_unique is None and "project_member_id" in evaluation_columns:
-            connection.execute(
-                text(
-                    """
-                    ALTER TABLE evaluations
-                    ADD CONSTRAINT uq_eval_type_per_judge_project_member
-                    UNIQUE (judge_id, project_id, evaluation_type, project_member_id)
-                    """
-                )
+            _run_optional_schema_statement(
+                connection,
+                """
+                ALTER TABLE evaluations
+                ADD CONSTRAINT uq_eval_type_per_judge_project_member
+                UNIQUE (judge_id, project_id, evaluation_type, project_member_id)
+                """,
+                "indice unico por integrante evaluado",
             )
 
         if "project_members" in inspector.get_table_names():

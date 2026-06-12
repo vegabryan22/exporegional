@@ -126,13 +126,13 @@
                         <p>{{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}</p>
                     </div>
                     <div class="pending-logistics-checks" aria-label="Estado log&iacute;stico">
-                        <span class="logistics-mini-check {{ 'is-ok' if project.has_real_logo else 'is-missing' }}">
+                        <span class="logistics-mini-check {{ 'is-ok' if project.logistics_logo_ok else 'is-missing' }}">
                             <strong>Logo</strong>
-                            <em>{{ 'OK' if project.has_real_logo else 'Falta' }}</em>
+                            <em>{{ 'OK' if project.logistics_logo_ok else 'Falta' }}</em>
                         </span>
-                        <span class="logistics-mini-check {{ 'is-ok' if project.project_document_path else 'is-missing' }}">
+                        <span class="logistics-mini-check {{ 'is-ok' if project.logistics_document_ok else 'is-missing' }}">
                             <strong>Documento</strong>
-                            <em>{{ 'OK' if project.project_document_path else 'Falta' }}</em>
+                            <em>{{ 'OK' if project.logistics_document_ok else 'Falta' }}</em>
                         </span>
                         <span class="logistics-mini-check {{ 'is-ok' if physical_ok else 'is-missing' }}">
                             <strong>F&iacute;sicos</strong>
@@ -142,9 +142,9 @@
                             <strong>Requisitos</strong>
                             <em>{{ 'OK' if project.logistics_requirements_reviewed_ok else 'Falta' }}</em>
                         </span>
-                        <span class="logistics-mini-check {{ 'is-ok' if row.missing_member_photos == 0 else 'is-warning' }}">
+                        <span class="logistics-mini-check {{ 'is-ok' if project.logistics_photos_ok else 'is-warning' }}">
                             <strong>Fotos</strong>
-                            <em>{{ row.missing_member_photos if row.missing_member_photos else 'OK' }}</em>
+                            <em>{{ 'OK' if project.logistics_photos_ok else row.missing_member_photos }}</em>
                         </span>
                     </div>
                     <a class="table-link-btn logistics-control-link pending-logistics-action" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Verificar</a>

@@ -3212,6 +3212,14 @@ dialog.maintenance-dialog::backdrop {
     line-height: 1;
 }
 
+.judge-capability-note {
+    margin: 0.2rem 0 0.45rem;
+    color: #5d7693;
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
 .judge-capability-card dl {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;

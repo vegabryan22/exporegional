@@ -5293,10 +5293,16 @@ def _build_judge_pool_context(context: dict) -> dict:
             },
         }
 
+    english_exposition_judges = [
+        judge
+        for judge in active_judge_users
+        if judge.can_evaluate_english and judge.can_evaluate_exposition
+    ]
+
     stats = {
         "total": len(judge_users),
         "active": len(active_judge_users),
-        "english": sum(1 for judge in active_judge_users if judge.can_evaluate_english),
+        "english": len(english_exposition_judges),
         "steam": sum(1 for judge in active_judge_users if judge.category_scope_normalized == "steam"),
         "entrepreneurship": sum(1 for judge in active_judge_users if judge.category_scope_normalized == "emprendimiento"),
         "both_categories": sum(1 for judge in active_judge_users if judge.category_scope_normalized == "ambas"),
@@ -5305,7 +5311,7 @@ def _build_judge_pool_context(context: dict) -> dict:
         "both_scopes": sum(1 for judge in active_judge_users if judge.can_evaluate_documentation and judge.can_evaluate_exposition),
     }
     stats["matrix"] = _capability_matrix(active_judge_users)
-    stats["english_matrix"] = _capability_matrix([judge for judge in active_judge_users if judge.can_evaluate_english])
+    stats["english_matrix"] = _capability_matrix(english_exposition_judges)
     return {
         "judge_pool_rows": rows,
         "judge_pool_stats": stats,

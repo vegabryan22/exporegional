@@ -16,7 +16,7 @@
     <div class="judge-pool-summary">
         <article><strong>{{ judge_pool_stats.total }}</strong><span>Total jueces</span></article>
         <article><strong>{{ judge_pool_stats.active }}</strong><span>Activos</span></article>
-        <article><strong>{{ judge_pool_stats.english }}</strong><span>Evalúan inglés</span></article>
+        <article><strong>{{ judge_pool_stats.english }}</strong><span>Ingl&eacute;s oral</span></article>
         <article><strong>{{ judge_pool_stats.both_scopes }}</strong><span>Documento y expo</span></article>
         <article><strong>{{ judge_pool_stats.documentation_only }}</strong><span>Solo documento</span></article>
         <article><strong>{{ judge_pool_stats.exposition_only }}</strong><span>Solo exposición</span></article>
@@ -62,13 +62,11 @@
         </article>
         <article class="judge-capability-card english">
             <div>
-                <span>Inglés por área</span>
+                <span>Ingl&eacute;s oral</span>
                 <strong>{{ judge_pool_stats.english }}</strong>
             </div>
+            <p class="judge-capability-note">Solo exposici&oacute;n. La evaluaci&oacute;n en ingl&eacute;s es individual por estudiante.</p>
             <dl>
-                <dt>Doc. STEAM</dt><dd>{{ judge_pool_stats.english_matrix.documentacion.steam }}</dd>
-                <dt>Doc. Empr.</dt><dd>{{ judge_pool_stats.english_matrix.documentacion.emprendimiento }}</dd>
-                <dt>Doc. Cualquiera</dt><dd>{{ judge_pool_stats.english_matrix.documentacion.ambas }}</dd>
                 <dt>Expo STEAM</dt><dd>{{ judge_pool_stats.english_matrix.exposicion.steam }}</dd>
                 <dt>Expo Empr.</dt><dd>{{ judge_pool_stats.english_matrix.exposicion.emprendimiento }}</dd>
                 <dt>Expo Cualquiera</dt><dd>{{ judge_pool_stats.english_matrix.exposicion.ambas }}</dd>

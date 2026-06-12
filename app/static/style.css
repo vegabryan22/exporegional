@@ -2484,6 +2484,44 @@ th {
     color: #526d8a;
 }
 
+.logistics-upload-form {
+    margin-top: 0.85rem;
+}
+
+.logistics-upload-card {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) minmax(220px, 0.9fr) auto;
+    gap: 0.85rem;
+    align-items: end;
+    border: 1px solid #d7e6f5;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+    padding: 0.9rem;
+}
+
+.logistics-upload-card h5 {
+    margin: 0 0 0.2rem;
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.logistics-upload-card p,
+.logistics-upload-card small {
+    margin: 0;
+    color: #526d8a;
+}
+
+.logistics-upload-card input[type="file"] {
+    min-height: 42px;
+    padding: 0.42rem;
+}
+
+@media (max-width: 760px) {
+    .logistics-upload-card {
+        grid-template-columns: 1fr;
+    }
+}
+
 .logistics-requirements-summary {
     display: grid;
     gap: 0.32rem;

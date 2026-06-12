@@ -253,6 +253,27 @@
             <div class="actions-row"><button type="submit">Guardar control logistico</button></div>
         </form>
 
+        <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form logistics-upload-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="replace_project_document">
+            <input type="hidden" name="project_id" value="{{ project.id }}">
+            <div class="logistics-upload-card">
+                <div>
+                    <h5>Documento escrito del proyecto</h5>
+                    {% if project.project_document_path %}
+                        <p>Archivo actual: <a href="{{ url_for('static', filename=project.project_document_path) }}" target="_blank" rel="noopener">ver documento</a></p>
+                    {% else %}
+                        <p>No hay documento cargado.</p>
+                    {% endif %}
+                    <small>Solo se permite PDF. Al subir uno nuevo, reemplaza el archivo anterior.</small>
+                </div>
+                <label>Nuevo PDF
+                    <input type="file" name="project_document" accept="application/pdf,.pdf" required>
+                </label>
+                <button type="submit" class="secondary-btn">Reemplazar PDF</button>
+            </div>
+        </form>
+
         <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="upload_project_logo">
@@ -636,5 +657,4 @@
     })();
 </script>
 {% endblock %}
-
 

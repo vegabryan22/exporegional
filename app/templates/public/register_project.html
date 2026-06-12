@@ -99,7 +99,7 @@
                     <input type="text" name="required_resources" value="{{ form_data.get('required_resources', '') }}">
                 </label>
                 <label>Documentación del proyecto *
-                    <input type="file" name="project_document" accept=".pdf,.doc,.docx,.ppt,.pptx,.zip,.rar" {% if not temp_document_path %}required{% endif %}>
+                    <input type="file" name="project_document" accept="application/pdf,.pdf" {% if not temp_document_path %}required{% endif %}>
                 </label>
             </div>
             {% if temp_document_path %}

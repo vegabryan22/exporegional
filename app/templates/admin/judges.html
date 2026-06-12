@@ -158,7 +158,7 @@
                 </label>
             </div>
             <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
-            <div class="grid-3">
+            <div class="grid-3" data-judge-fields>
                 <label>C&eacute;dula o identificaci&oacute;n<input type="text" name="judge_identity" maxlength="40"></label>
                 <label>Instituci&oacute;n o empresa<input type="text" name="judge_institution"></label>
                 <label>Particip&oacute; antes
@@ -169,7 +169,7 @@
                     </select>
                 </label>
             </div>
-            <div class="grid-2">
+            <div class="grid-2" data-judge-fields>
                 <label>Categor&iacute;a que puede evaluar
                     <select name="judge_category_scope">
                         <option value="ambas">Ambas categor&iacute;as</option>
@@ -185,7 +185,7 @@
                     </select>
                 </label>
             </div>
-            <label class="checkbox-card"><input type="checkbox" name="judge_can_evaluate_english" value="1"> Puede evaluar exposici&oacute;n en ingl&eacute;s</label>
+            <label class="checkbox-card" data-judge-fields><input type="checkbox" name="judge_can_evaluate_english" value="1"> Puede evaluar exposici&oacute;n en ingl&eacute;s</label>
             <label>Contraseña inicial
                 <input type="password" name="judge_password" minlength="8">
                 <small>Si la dejas vac&iacute;a, el sistema genera una temporal por reset.</small>
@@ -239,7 +239,7 @@
                     <input type="text" value="{{ judge.last_login_at|local_datetime if judge.last_login_at else 'Sin acceso' }}" disabled>
                 </label>
             </div>
-            <div class="grid-3">
+            <div class="grid-3" data-judge-fields>
                 <label>C&eacute;dula o identificaci&oacute;n<input type="text" name="judge_identity" value="{{ judge.identity or '' }}" maxlength="40"></label>
                 <label>Instituci&oacute;n o empresa<input type="text" name="judge_institution" value="{{ judge.institution or '' }}"></label>
                 <label>Particip&oacute; antes
@@ -250,7 +250,7 @@
                     </select>
                 </label>
             </div>
-            <div class="grid-2">
+            <div class="grid-2" data-judge-fields>
                 <label>Categor&iacute;a que puede evaluar
                     <select name="judge_category_scope">
                         <option value="ambas" {% if judge.category_scope_normalized == 'ambas' %}selected{% endif %}>Ambas categor&iacute;as</option>
@@ -266,7 +266,7 @@
                     </select>
                 </label>
             </div>
-            <label class="checkbox-card"><input type="checkbox" name="judge_can_evaluate_english" value="1" {% if judge.can_evaluate_english %}checked{% endif %}> Puede evaluar exposici&oacute;n en ingl&eacute;s</label>
+            <label class="checkbox-card" data-judge-fields><input type="checkbox" name="judge_can_evaluate_english" value="1" {% if judge.can_evaluate_english %}checked{% endif %}> Puede evaluar exposici&oacute;n en ingl&eacute;s</label>
             <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
             <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar usuario</button></div>
         </form>
@@ -336,6 +336,13 @@
                     ? "Selecciona el departamento del usuario administrativo."
                     : "Los jueces no se asignan a un departamento.";
             }
+
+            form.querySelectorAll("[data-judge-fields]").forEach((section) => {
+                section.hidden = departmentRequired;
+                section.querySelectorAll("input, select, textarea").forEach((field) => {
+                    field.disabled = departmentRequired;
+                });
+            });
         };
 
         document.querySelectorAll(".maintenance-dialog form").forEach((form) => {

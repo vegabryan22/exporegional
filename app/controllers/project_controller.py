@@ -35,7 +35,7 @@ try:
 except Exception:
     REPORTLAB_AVAILABLE = False
 
-ALLOWED_DOC_EXTENSIONS = {"pdf", "doc", "docx", "ppt", "pptx", "zip", "rar"}
+ALLOWED_DOC_EXTENSIONS = {"pdf"}
 REGISTRATION_DRAFT_SESSION_KEY = "project_registration_draft"
 IDENTITY_MAX_LENGTH = 12
 PHONE_RE = re.compile(r"^\d{8}$")
@@ -104,7 +104,7 @@ def _save_project_document(document_file):
     original_name = secure_filename(document_file.filename or "")
     extension = _get_extension(original_name)
     if extension not in ALLOWED_DOC_EXTENSIONS:
-        raise ValueError("Formato de documento invalido. Usa PDF, DOC, DOCX, PPT, PPTX, ZIP o RAR.")
+        raise ValueError("Formato de documento invalido. La documentacion del proyecto debe ser PDF.")
 
     relative_dir = os.path.join("uploads", "projects", "documents")
     absolute_dir = os.path.join(current_app.static_folder, relative_dir)
@@ -120,7 +120,7 @@ def _save_temp_project_document(document_file):
     original_name = secure_filename(document_file.filename or "")
     extension = _get_extension(original_name)
     if extension not in ALLOWED_DOC_EXTENSIONS:
-        raise ValueError("Formato de documento invalido. Usa PDF, DOC, DOCX, PPT, PPTX, ZIP o RAR.")
+        raise ValueError("Formato de documento invalido. La documentacion del proyecto debe ser PDF.")
 
     relative_dir = os.path.join("uploads", "projects", "temp_documents")
     absolute_dir = os.path.join(current_app.static_folder, relative_dir)
@@ -142,6 +142,8 @@ def _promote_temp_project_document(temp_relative_path):
 
     _, filename = os.path.split(temp_absolute_path)
     extension = _get_extension(filename)
+    if extension not in ALLOWED_DOC_EXTENSIONS:
+        raise ValueError("Formato de documento invalido. La documentacion del proyecto debe ser PDF.")
     relative_dir = os.path.join("uploads", "projects", "documents")
     absolute_dir = os.path.join(current_app.static_folder, relative_dir)
     os.makedirs(absolute_dir, exist_ok=True)

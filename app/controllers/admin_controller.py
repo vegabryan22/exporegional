@@ -64,6 +64,7 @@ except Exception:
     REPORTLAB_AVAILABLE = False
 
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "gif"}
+ALLOWED_PROJECT_DOCUMENT_EXTENSIONS = {"pdf"}
 LOGISTICS_STATUSES = [
     ("pendiente_revision", "Revision"),
     ("completo", "Completo"),
@@ -192,6 +193,7 @@ ACTION_MODULE_MAP = {
     "rotate_judge_form_secret": "judges",
     "update_project": "projects",
     "update_project_logistics": "projects",
+    "replace_project_document": "projects",
     "upload_project_logo": "projects",
     "delete_project": "projects",
     "upload_member_photo": "projects",
@@ -431,19 +433,6 @@ def _role_requires_department(role: str) -> bool:
 
 def _normalize_department_for_role(role: str, department: str) -> str:
     return department if _role_requires_department(role) else ""
-
-
-def _department_has_generic_user(department: str, exclude_judge_id: int | None = None) -> bool:
-    if not department:
-        return False
-
-    query = Judge.query.filter(
-        Judge.department == department,
-        or_(Judge.role.in_(list(Judge.ADMIN_ROLES)), Judge.is_admin.is_(True)),
-    )
-    if exclude_judge_id:
-        query = query.filter(Judge.id != exclude_judge_id)
-    return db.session.query(query.exists()).scalar()
 
 
 def _parse_date(raw_value):
@@ -1677,6 +1666,22 @@ def _save_project_logo(photo_file):
     return f"{relative_dir}/{unique_name}".replace("\\", "/")
 
 
+def _save_project_document(document_file):
+    original_name = secure_filename(document_file.filename or "")
+    extension = _get_extension(original_name)
+    if extension not in ALLOWED_PROJECT_DOCUMENT_EXTENSIONS:
+        raise ValueError("Formato de documento invalido. Usa unicamente PDF.")
+
+    relative_dir = os.path.join("uploads", "projects", "documents")
+    absolute_dir = os.path.join(current_app.static_folder, relative_dir)
+    os.makedirs(absolute_dir, exist_ok=True)
+
+    unique_name = f"{uuid.uuid4().hex}.pdf"
+    absolute_path = os.path.join(absolute_dir, unique_name)
+    document_file.save(absolute_path)
+    return f"{relative_dir}/{unique_name}".replace("\\", "/")
+
+
 def _save_institution_logo(photo_file):
     original_name = secure_filename(photo_file.filename or "")
     extension = _get_extension(original_name)
@@ -2891,6 +2896,23 @@ def _delete_project_logo_file(project: Project):
         return
 
 
+def _delete_project_document_file(project: Project):
+    if not project.project_document_path:
+        return
+    if project.project_document_path.startswith("http://") or project.project_document_path.startswith("https://"):
+        return
+    try:
+        static_root = Path(current_app.static_folder).resolve()
+        documents_root = (static_root / "uploads" / "projects" / "documents").resolve()
+        full_path = (static_root / project.project_document_path.replace("/", os.sep)).resolve()
+        if documents_root not in full_path.parents:
+            return
+        if full_path.exists():
+            full_path.unlink()
+    except Exception:  # noqa: BLE001
+        return
+
+
 def _delete_institution_logo_file(relative_path: str):
     if not relative_path:
         return
@@ -3260,6 +3282,14 @@ def _handle_action(action: str):
         can_evaluate_english = _str_to_bool(request.form.get("judge_can_evaluate_english"))
         can_documentation, can_exposition, _scope_label = _judge_scope_from_value(request.form.get("judge_evaluation_scope", "ambas"))
         manual_password = request.form.get("judge_password", "")
+        if role != Judge.ROLE_JUDGE:
+            identity = ""
+            institution = ""
+            previous_expo = ""
+            category_scope = "ambas"
+            can_evaluate_english = False
+            can_documentation = False
+            can_exposition = False
         if not full_name or not email:
             flash("Nombre y correo son obligatorios.", "error")
         elif _role_requires_department(role) and not department:
@@ -3268,8 +3298,6 @@ def _handle_action(action: str):
             flash("Solo un superadministrador puede crear otro superadministrador.", "error")
         elif Judge.query.filter_by(email=email).first():
             flash("Ya existe un usuario con ese correo.", "error")
-        elif _role_requires_department(role) and _department_has_generic_user(department):
-            flash("Ya existe un usuario generico asignado a ese departamento.", "error")
         elif manual_password and len(manual_password) < 8:
             flash("La contrasena manual debe tener al menos 8 caracteres.", "error")
         else:
@@ -3326,6 +3354,14 @@ def _handle_action(action: str):
             can_evaluate_english = _str_to_bool(request.form.get("judge_can_evaluate_english"))
             can_documentation, can_exposition, _scope_label = _judge_scope_from_value(request.form.get("judge_evaluation_scope", "ambas"))
             is_active_user = _str_to_bool(request.form.get("judge_is_active_user", "1"))
+            if role != Judge.ROLE_JUDGE:
+                identity = ""
+                institution = ""
+                previous_expo = ""
+                category_scope = "ambas"
+                can_evaluate_english = False
+                can_documentation = False
+                can_exposition = False
             duplicate = Judge.query.filter(Judge.email == email, Judge.id != judge.id).first()
             if not full_name or not email:
                 flash("Nombre y correo son obligatorios.", "error")
@@ -3333,8 +3369,6 @@ def _handle_action(action: str):
                 flash("El departamento es obligatorio para usuarios administrativos.", "error")
             elif duplicate:
                 flash("Ya existe otro usuario con ese correo.", "error")
-            elif _role_requires_department(role) and _department_has_generic_user(department, exclude_judge_id=judge.id):
-                flash("Ya existe un usuario generico asignado a ese departamento.", "error")
             elif judge.id == current_user.id and not is_active_user:
                 flash("No puedes desactivarte a ti mismo.", "error")
             elif role == Judge.ROLE_SUPERADMIN and not current_user.is_superadmin:
@@ -3571,6 +3605,36 @@ def _handle_action(action: str):
                 db.session.commit()
                 if not forced_incomplete:
                     flash("Control logistico actualizado.", "success")
+
+    elif action == "replace_project_document":
+        project_id = request.form.get("project_id", type=int)
+        project = Project.query.get(project_id) if project_id else None
+        document_file = request.files.get("project_document")
+        if not project:
+            flash("Proyecto no encontrado.", "error")
+        elif not document_file or not document_file.filename:
+            flash("Debes seleccionar un archivo PDF.", "error")
+        else:
+            try:
+                old_path = project.project_document_path
+                new_path = _save_project_document(document_file)
+                _delete_project_document_file(project)
+                project.project_document_path = new_path
+                project.logistics_document_ok = False
+                project.logistics_status = "pendiente_revision"
+                log_event(
+                    "admin.project.document.replace",
+                    "project",
+                    entity_id=project.id,
+                    detail=(
+                        f"Documento reemplazado para proyecto #{project.id} '{project.title}'. "
+                        f"Anterior={old_path or 'sin documento'} Nuevo={new_path}"
+                    ),
+                )
+                db.session.commit()
+                flash("Documento del proyecto reemplazado. Queda pendiente de revision logistica.", "success")
+            except ValueError as error:
+                flash(str(error), "error")
 
     elif action == "upload_project_logo":
         project_id = request.form.get("project_id", type=int)

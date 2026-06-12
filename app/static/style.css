@@ -5195,6 +5195,127 @@ dialog.maintenance-dialog::backdrop {
     font-weight: 700;
 }
 
+.assignments-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.assignment-head-actions {
+    align-items: center;
+}
+
+.assignment-head-actions .secondary-btn,
+.assignment-head-actions .outline-btn,
+.assignment-manage-btn {
+    width: auto;
+    min-width: 150px;
+    white-space: nowrap;
+    overflow-wrap: normal;
+}
+
+.assignment-head-actions .secondary-btn,
+.assignment-head-actions .outline-btn {
+    min-height: 46px;
+    border-radius: 14px;
+}
+
+.assignment-card-list {
+    display: grid;
+    gap: 0.72rem;
+}
+
+.assignment-project-card {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.3fr) minmax(260px, 1fr) minmax(150px, 0.55fr) auto;
+    gap: 0.85rem;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    border: 1px solid #d7e6f5;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #ffffff 0%, #f7fbff 100%);
+    box-shadow: 0 12px 28px rgba(18, 63, 107, 0.06);
+}
+
+.assignment-project-card:hover {
+    border-color: #b9d3ee;
+    background: linear-gradient(135deg, #ffffff 0%, #eef7ff 100%);
+}
+
+.assignment-project-main {
+    display: grid;
+    gap: 0.28rem;
+    min-width: 0;
+}
+
+.assignment-project-main h4,
+.assignment-project-main p {
+    margin: 0;
+}
+
+.assignment-project-main h4 {
+    color: var(--primary);
+    font-size: clamp(1.05rem, 1.8vw, 1.28rem);
+    line-height: 1.18;
+    overflow-wrap: anywhere;
+}
+
+.assignment-project-main p {
+    color: #5c7696;
+    font-weight: 700;
+}
+
+.assignment-project-main .category-badge {
+    justify-self: start;
+    max-width: 100%;
+}
+
+.assignment-project-judges,
+.assignment-project-status {
+    display: grid;
+    gap: 0.38rem;
+    min-width: 0;
+}
+
+.assignment-project-status {
+    justify-items: start;
+}
+
+.assignment-field-label {
+    color: #607798;
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.assignment-summary-list-left {
+    justify-content: flex-start;
+}
+
+.assignment-manage-btn {
+    min-width: 128px;
+    min-height: 44px;
+    border-color: var(--primary-2);
+    border-radius: 14px;
+    background: linear-gradient(180deg, var(--primary-2) 0%, var(--primary) 100%);
+    color: #ffffff;
+    justify-self: end;
+}
+
+@media (max-width: 1180px) {
+    .assignment-project-card {
+        grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr);
+    }
+
+    .assignment-manage-btn {
+        justify-self: start;
+    }
+
+    .assignment-project-status {
+        justify-self: stretch;
+    }
+}
+
 .assignment-manage-dialog {
     width: min(1080px, calc(100vw - 2rem)) !important;
 }
@@ -8305,6 +8426,7 @@ button {
     .filter-grid,
     .projects-filter-row,
     .tracking-filter-row,
+    .assignment-project-card,
     .assignment-inline-add,
     .assignment-inline-create,
     .assignment-inline-create-compact,

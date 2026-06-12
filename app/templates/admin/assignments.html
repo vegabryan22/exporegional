@@ -3,14 +3,14 @@
 {% set active_projects = projects|selectattr('is_active')|list %}
 {% set active_project_ids = active_projects|map(attribute='id')|list %}
 {% set active_assignments = assignments|selectattr('project_id', 'in', active_project_ids)|list %}
-<section class="card admin-section maintenance-page">
+<section class="card admin-section maintenance-page assignments-page">
     <div class="page-head">
         <div>
             <p class="maintenance-kicker">Asignaci&oacute;n</p>
             <h3>Asignaciones de jueces</h3>
             <p class="table-subtext">Vista resumida por proyecto para resolver cambios r&aacute;pidos desde un modal.</p>
         </div>
-        <div class="page-head-actions">
+        <div class="page-head-actions assignment-head-actions">
             <span class="tag ok">{{ active_assignments|length }} asignaciones</span>
             <span class="tag">{{ active_projects|length }} proyectos</span>
             <button type="button" class="secondary-btn" data-dialog-open="quick-judge-dialog">Juez nuevo r&aacute;pido</button>
@@ -18,63 +18,44 @@
         </div>
     </div>
 
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Proyecto</th>
-                    <th>Categoría</th>
-                    <th>Equipo</th>
-                    <th>Jueces</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for project in active_projects|sort(attribute='title') %}
-                {% set ns = namespace(project_assignments=[]) %}
-                {% for assignment in assignments %}
-                    {% if assignment.project_id == project.id %}
-                        {% set ns.project_assignments = ns.project_assignments + [assignment] %}
-                    {% endif %}
-                {% endfor %}
-                <tr>
-                    <td class="table-cell-center">{{ project.title }}</td>
-                    <td class="table-cell-center">
-                        <span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span>
-                    </td>
-                    <td class="table-cell-center">
-                        <span class="tag assignment-team-badge">{{ project.team_name }}</span>
-                    </td>
-                    <td class="table-cell-center">
-                        {% if ns.project_assignments %}
-                            <div class="assignment-summary-list">
-                                {% for assignment in ns.project_assignments %}
-                                    <span class="assignment-summary-pill">
-                                        {{ assignment.judge.full_name }}
-                                        <small>{{ assignment.scope_label }}</small>
-                                    </span>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <span class="tag off">Sin jueces</span>
-                        {% endif %}
-                    </td>
-                    <td class="table-cell-center">
-                        <div class="assignment-summary-list">
-                            <span class="tag {{ 'ok' if ns.project_assignments else 'off' }}">{{ ns.project_assignments|length }} juez(es)</span>
-                                    {% if project.requires_english_evaluation %}<span class="tag warning">Ingl&eacute;s · {{ project.english_members_count }}</span>{% endif %}
-                        </div>
-                    </td>
-                    <td class="table-cell-center">
-                        <button type="button" class="secondary-btn" data-dialog-open="manage-project-{{ project.id }}">Gestionar</button>
-                    </td>
-                </tr>
-            {% else %}
-                <tr><td colspan="6">No hay proyectos disponibles para asignacion.</td></tr>
+    <div class="assignment-card-list">
+        {% for project in active_projects|sort(attribute='title') %}
+            {% set ns = namespace(project_assignments=[]) %}
+            {% for assignment in assignments %}
+                {% if assignment.project_id == project.id %}
+                    {% set ns.project_assignments = ns.project_assignments + [assignment] %}
+                {% endif %}
             {% endfor %}
-            </tbody>
-        </table>
+            <article class="assignment-project-card">
+                <div class="assignment-project-main">
+                    <span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span>
+                    <h4>{{ project.title }}</h4>
+                    <p>{{ project.team_name }}</p>
+                </div>
+                <div class="assignment-project-judges">
+                    <span class="assignment-field-label">Jueces</span>
+                    {% if ns.project_assignments %}
+                        <div class="assignment-summary-list assignment-summary-list-left">
+                            {% for assignment in ns.project_assignments %}
+                                <span class="assignment-summary-pill">
+                                    {{ assignment.judge.full_name }}
+                                    <small>{{ assignment.scope_label }}</small>
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <span class="tag off">Sin jueces</span>
+                    {% endif %}
+                </div>
+                <div class="assignment-project-status">
+                    <span class="tag {{ 'ok' if ns.project_assignments else 'off' }}">{{ ns.project_assignments|length }} juez(es)</span>
+                    {% if project.requires_english_evaluation %}<span class="tag warning">Ingl&eacute;s &middot; {{ project.english_members_count }}</span>{% endif %}
+                </div>
+                <button type="button" class="secondary-btn assignment-manage-btn" data-dialog-open="manage-project-{{ project.id }}">Gestionar</button>
+            </article>
+        {% else %}
+            <p class="muted-empty">No hay proyectos disponibles para asignaci&oacute;n.</p>
+        {% endfor %}
     </div>
 </section>
 
@@ -384,7 +365,7 @@
         }
 
         if (!assignedProjects.length) {
-            summary.textContent = 'Este juez no tiene proyectos asignados todavia.';
+            summary.textContent = 'Este juez no tiene proyectos asignados todavía.';
             return;
         }
 

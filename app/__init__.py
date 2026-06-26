@@ -791,6 +791,15 @@ def ensure_schema_updates():
                 )
             )
 
+        if "project_document_revisions" in inspector.get_table_names():
+            doc_rev_columns = [c["name"] for c in inspector.get_columns("project_document_revisions")]
+            if "replaced_document_path" not in doc_rev_columns:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE project_document_revisions ADD COLUMN replaced_document_path VARCHAR(300) NULL",
+                    "project_document_revisions.replaced_document_path",
+                )
+
         if "project_member_changes" in inspector.get_table_names():
             member_change_fks = inspector.get_foreign_keys("project_member_changes")
             member_fk = next(

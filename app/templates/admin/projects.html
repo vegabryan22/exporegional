@@ -303,7 +303,7 @@
             <div class="table-wrap">
                 <table>
                     <thead>
-                        <tr><th>Fecha</th><th>Enviado por</th><th>Justificación</th><th>Estado</th><th>Documento</th><th>Notas admin</th></tr>
+                        <tr><th>Fecha</th><th>Enviado por</th><th>Justificación</th><th>Estado</th><th>Documento enviado</th><th>Documento anterior</th><th>Notas admin</th></tr>
                     </thead>
                     <tbody>
                         {% for rev in all_revisions %}
@@ -317,6 +317,13 @@
                                 </span>
                             </td>
                             <td><a class="table-link-btn ghost" href="{{ url_for('static', filename=rev.document_path) }}" target="_blank" rel="noopener">Ver PDF</a></td>
+                            <td>
+                                {% if rev.replaced_document_path %}
+                                    <a class="table-link-btn ghost" href="{{ url_for('static', filename=rev.replaced_document_path) }}" target="_blank" rel="noopener">Ver anterior</a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
                             <td>{{ rev.admin_notes or '—' }}</td>
                         </tr>
                         {% endfor %}

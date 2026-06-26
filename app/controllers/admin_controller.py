@@ -3725,6 +3725,7 @@ def _handle_action(action: str):
         else:
             project = revision.project
             old_path = project.project_document_path
+            revision.replaced_document_path = old_path
             project.project_document_path = revision.document_path
             project.logistics_document_ok = True
             project.logistics_status = "pendiente_revision"

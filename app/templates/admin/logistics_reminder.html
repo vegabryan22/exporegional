@@ -1,66 +1,58 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section reminder-page">
-    <div class="page-head">
+<section class="card admin-section maintenance-page">
+
+    <div class="maintenance-banner">
         <div>
             <p class="maintenance-kicker">Logística</p>
             <h3>Recordatorio por correo</h3>
-            <p class="table-subtext">
-                Vista previa de los correos que se enviarán a los integrantes con requisitos pendientes.
-                La fecha límite indicada en el correo es un día antes del cierre de la campaña activa.
-            </p>
+            <p>Vista previa de los correos que se enviarán a los integrantes con requisitos pendientes. La fecha límite indicada es un día antes del cierre de la campaña activa.</p>
         </div>
-        <div class="page-head-actions">
-            <a href="{{ url_for('admin.projects_page') }}" class="table-link-btn ghost">Volver a Proyectos</a>
-        </div>
+        <a href="{{ url_for('admin.projects_page') }}" class="table-link-btn ghost">Volver</a>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-        <div class="flash-message {{ category }}">{{ message }}</div>
-        {% endfor %}
-    {% endwith %}
-
-    <div class="reminder-stats-row">
-        <div class="reminder-stat-card">
+    <div class="overview-metric-list compact">
+        <article>
             <strong>{{ reminder_data.total_projects }}</strong>
-            <span>proyectos con pendientes</span>
-        </div>
-        <div class="reminder-stat-card">
+            <span>Proyectos con pendientes</span>
+        </article>
+        <article>
             <strong>{{ reminder_data.total_recipients }}</strong>
-            <span>correos a enviar</span>
-        </div>
-        <div class="reminder-stat-card">
+            <span>Correos a enviar</span>
+        </article>
+        <article>
             {% if reminder_data.deadline %}
             <strong>{{ reminder_data.deadline.strftime('%d/%m/%Y') }}</strong>
-            <span>fecha l&iacute;mite en el correo</span>
+            <span>Fecha l&iacute;mite en correo</span>
             {% else %}
-            <strong>Sin definir</strong>
-            <span>no hay campa&ntilde;a activa</span>
+            <strong>&mdash;</strong>
+            <span>Sin campa&ntilde;a activa</span>
             {% endif %}
-        </div>
-        <div class="reminder-stat-card">
-            {% if smtp_configured %}
-            <strong class="reminder-stat-ok">Listo</strong>
+        </article>
+        {% if smtp_configured %}
+        <article>
+            <strong style="color:var(--success-text)">Listo</strong>
             <span>SMTP configurado</span>
-            {% else %}
-            <strong class="reminder-stat-error">No configurado</strong>
-            <span>SMTP sin configurar</span>
-            {% endif %}
-        </div>
+        </article>
+        {% else %}
+        <article class="metric-alert">
+            <strong>Sin SMTP</strong>
+            <span>No configurado</span>
+            <a class="metric-alert-link" href="{{ url_for('admin.smtp_page') }}">Configurar</a>
+        </article>
+        {% endif %}
     </div>
 
     {% if not smtp_configured %}
-    <div class="reminder-alert">
-        <strong>SMTP no configurado.</strong>
-        Debes configurar el servidor de correo antes de poder enviar recordatorios.
-        <a href="{{ url_for('admin.smtp_page') }}" class="reminder-alert-link">Configurar SMTP &rarr;</a>
+    <div class="alert error">
+        El servidor SMTP no est&aacute; configurado.
+        Conf&iacute;guralo en <a href="{{ url_for('admin.smtp_page') }}">Ajustes &rarr; SMTP</a> antes de poder enviar correos.
     </div>
     {% endif %}
 
     {% if not reminder_data.active_campaign %}
-    <div class="reminder-alert reminder-alert-info">
-        No hay ninguna campa&ntilde;a activa. El correo no incluir&aacute; fecha l&iacute;mite hasta que actives una campa&ntilde;a.
+    <div class="alert" style="background:var(--warning-soft);border-color:#ddb94a;color:#6b4c00;">
+        No hay campa&ntilde;a activa. El correo se enviar&aacute; sin fecha l&iacute;mite.
     </div>
     {% endif %}
 
@@ -68,65 +60,59 @@
     <p class="muted-empty">No hay integrantes con requisitos pendientes y correo electr&oacute;nico registrado. No se enviar&aacute; ning&uacute;n correo.</p>
     {% else %}
 
-    <div class="reminder-send-bar">
+    <div class="page-head reminder-send-bar">
         <p class="table-subtext">
             Se enviar&aacute; <strong>{{ reminder_data.total_recipients }}</strong> correo(s)
             a integrantes de <strong>{{ reminder_data.total_projects }}</strong> proyecto(s) con pendientes.
-            Los integrantes sin correo registrado ser&aacute;n omitidos.
+            Los integrantes sin correo registrado ser&aacute;n omitidos autom&aacute;ticamente.
         </p>
-        <form method="POST" action="{{ action_url }}">
+        <form method="POST" action="{{ action_url }}" class="page-head-actions">
             <input type="hidden" name="action" value="send_logistics_reminder">
             <input type="hidden" name="next" value="{{ request.path }}">
             <button
                 type="submit"
-                class="table-link-btn reminder-send-btn"
+                class="table-link-btn logistics-control-link"
                 {% if not smtp_configured %}disabled title="Configura SMTP primero"{% endif %}
-            >
-                Enviar {{ reminder_data.total_recipients }} correo(s) ahora
-            </button>
+            >Enviar {{ reminder_data.total_recipients }} correo(s)</button>
         </form>
     </div>
 
-    <div class="reminder-sections-grid">
+    <div class="reminder-two-col">
 
-        <section class="reminder-project-list-section">
-            <h4>Proyectos y destinatarios</h4>
-            <p class="table-subtext">Verifica qui&eacute;n recibir&aacute; el correo y qu&eacute; requisitos se listar&aacute;n.</p>
+        <section class="reminder-list-col">
+            <p class="maintenance-kicker">Destinatarios por proyecto</p>
+            <p class="table-subtext" style="margin-bottom:0.6rem">Verifica qui&eacute;n recibir&aacute; el correo y qu&eacute; requisitos se listar&aacute;n en cada caso.</p>
 
             {% for row in reminder_data.reminder_rows %}
-            <div class="reminder-project-card">
+            <div class="reminder-project-entry">
                 <div class="reminder-project-head">
                     <strong>{{ row.project.title }}</strong>
                     <span class="tag">{{ row.recipient_count }} correo(s)</span>
                 </div>
 
                 {% if row.missing_group %}
-                <div class="reminder-missing-group">
-                    <span class="reminder-label">Grupales:</span>
+                <div class="reminder-chips">
+                    <span class="table-subtext">Grupales:</span>
                     {% for item in row.missing_group %}
-                    <span class="reminder-chip">{{ item }}</span>
+                    <span class="tag warning">{{ item }}</span>
                     {% endfor %}
                 </div>
                 {% endif %}
 
-                <div class="reminder-members-list">
+                <div class="reminder-member-rows">
                     {% for mr in row.member_rows %}
-                    <div class="reminder-member-row {% if not mr.has_email %}reminder-member-no-email{% endif %}">
-                        <div class="reminder-member-info">
+                    <div class="reminder-member-line {{ 'reminder-no-email' if not mr.has_email else '' }}">
+                        <div class="reminder-member-meta">
                             <strong>{{ mr.member.full_name }}</strong>
                             {% if mr.missing_individual %}
-                            <span class="reminder-member-individual">
-                                Individual: {{ mr.missing_individual | join(', ') }}
-                            </span>
+                            <span class="reminder-individual">{{ mr.missing_individual | join(', ') }}</span>
                             {% endif %}
                         </div>
-                        <div class="reminder-member-email">
-                            {% if mr.has_email %}
-                            <span class="tag ok">{{ mr.member.email }}</span>
-                            {% else %}
-                            <span class="tag off">Sin correo</span>
-                            {% endif %}
-                        </div>
+                        {% if mr.has_email %}
+                        <span class="tag ok reminder-email-tag">{{ mr.member.email }}</span>
+                        {% else %}
+                        <span class="tag off">Sin correo</span>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -134,16 +120,19 @@
             {% endfor %}
         </section>
 
-        <section class="reminder-preview-section">
-            <h4>Vista previa del correo</h4>
-            <p class="table-subtext">
+        <section class="reminder-preview-col">
+            <p class="maintenance-kicker">Vista previa del correo</p>
+            <p class="table-subtext" style="margin-bottom:0.6rem">
                 As&iacute; ver&aacute; el correo el primer integrante elegible.
-                Cada integrante recibe su propia versi&oacute;n con sus datos y pendientes individuales.
+                Cada integrante recibe su propia versi&oacute;n con sus pendientes individuales.
             </p>
             {% if preview_email_html %}
-            <div class="reminder-email-preview-frame">
-                {{ preview_email_html | safe }}
-            </div>
+            <iframe
+                class="reminder-email-iframe"
+                srcdoc="{{ preview_email_html | e }}"
+                title="Vista previa del correo"
+                scrolling="yes"
+            ></iframe>
             {% else %}
             <p class="muted-empty">No hay destinatarios con correo registrado para mostrar una vista previa.</p>
             {% endif %}

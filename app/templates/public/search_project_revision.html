@@ -57,6 +57,7 @@
                     </div>
                 </div>
                 <div class="search-revision-card-action">
+                    <a class="project-action project-action-secondary" href="{{ url_for('public.project_documents', project_id=project.id) }}">Descargar formularios</a>
                     {% if row.has_pending_revision %}
                     <span class="search-revision-pending-badge">Solicitud pendiente</span>
                     <p class="search-revision-pending-note">Ya existe una solicitud en revisión. Espera a que sea procesada.</p>

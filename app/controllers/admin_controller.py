@@ -3653,7 +3653,7 @@ def _handle_action(action: str):
             project = revision.project
             old_path = project.project_document_path
             project.project_document_path = revision.document_path
-            project.logistics_document_ok = False
+            project.logistics_document_ok = True
             project.logistics_status = "pendiente_revision"
             revision.status = ProjectDocumentRevision.STATUS_APPROVED
             revision.reviewed_by_id = current_user.id

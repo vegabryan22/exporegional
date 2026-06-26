@@ -296,6 +296,36 @@
             <div class="actions-row"><button type="submit">Guardar control logistico</button></div>
         </form>
 
+        {% set all_revisions = project.document_revisions | sort(attribute='created_at', reverse=True) %}
+        {% if all_revisions %}
+        <div class="section-block">
+            <h5>Historial de documentos enviados</h5>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>Fecha</th><th>Enviado por</th><th>Justificación</th><th>Estado</th><th>Documento</th><th>Notas admin</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for rev in all_revisions %}
+                        <tr>
+                            <td>{{ rev.created_at | local_datetime }}</td>
+                            <td>{{ rev.submitted_by_name }}</td>
+                            <td>{{ rev.justification }}</td>
+                            <td>
+                                <span class="tag {% if rev.status == 'aprobado' %}ok{% elif rev.status == 'rechazado' %}off{% else %}warning{% endif %}">
+                                    {{ rev.status | capitalize }}
+                                </span>
+                            </td>
+                            <td><a class="table-link-btn ghost" href="{{ url_for('static', filename=rev.document_path) }}" target="_blank" rel="noopener">Ver PDF</a></td>
+                            <td>{{ rev.admin_notes or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
         <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form logistics-upload-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="replace_project_document">

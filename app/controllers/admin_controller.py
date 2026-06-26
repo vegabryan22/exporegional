@@ -250,6 +250,7 @@ ACTION_MODULE_MAP = {
     "save_gitops_remote": "gitops",
     "gitops_test_remote": "gitops",
     "save_permissions_matrix": "permissions",
+    "send_logistics_reminder": "projects",
 }
 
 
@@ -762,6 +763,78 @@ def _project_logistics_missing_items(project):
     if not project.logistics_requirements_reviewed_ok:
         missing.append("revision de requisitos")
     return missing
+
+
+def _project_logistics_group_missing(project):
+    missing = []
+    if not project.has_real_logo or not project.logistics_logo_ok:
+        missing.append("Logo del proyecto")
+    if not project.logistics_document_ok:
+        missing.append("Documento escrito")
+    if not project.logistics_registration_form_signed_ok:
+        missing.append("Formulario físico de inscripción firmado")
+    if not project.logistics_student_consents_signed_ok:
+        missing.append("Consentimientos físicos estudiantiles firmados")
+    if not project.logistics_requirements_reviewed_ok:
+        missing.append("Revisión de requisitos completada")
+    return missing
+
+
+def _build_logistics_reminder_data(projects, campaigns):
+    from datetime import timedelta
+
+    active_campaign = next((c for c in campaigns if c.is_active), None)
+    deadline = None
+    if active_campaign and active_campaign.end_date:
+        deadline = active_campaign.end_date - timedelta(days=1)
+    institution_name = SystemSetting.get_value("school_name", "ExpoTécnica")
+
+    reminder_rows = []
+    for project in projects:
+        if not project.is_active:
+            continue
+        missing_group = _project_logistics_group_missing(project)
+        member_rows = []
+        for member in sorted(project.members, key=lambda m: m.student_number or 0):
+            missing_individual = []
+            if not member.photo_url:
+                missing_individual.append("Foto de perfil")
+            if missing_group or missing_individual:
+                member_rows.append({
+                    "member": member,
+                    "missing_individual": missing_individual,
+                    "has_email": bool(member.email and member.email.strip()),
+                })
+        if missing_group or any(r["missing_individual"] for r in member_rows):
+            recipients = [r for r in member_rows if r["has_email"]]
+            reminder_rows.append({
+                "project": project,
+                "missing_group": missing_group,
+                "member_rows": member_rows,
+                "recipients": recipients,
+                "recipient_count": len(recipients),
+            })
+
+    return {
+        "reminder_rows": reminder_rows,
+        "active_campaign": active_campaign,
+        "deadline": deadline,
+        "total_recipients": sum(r["recipient_count"] for r in reminder_rows),
+        "total_projects": len(reminder_rows),
+        "institution_name": institution_name,
+    }
+
+
+def _render_logistics_reminder_email(member, project, missing_group, missing_individual, deadline, institution_name):
+    return render_template(
+        "admin/email_logistics_reminder.html",
+        member=member,
+        project=project,
+        missing_group=missing_group,
+        missing_individual=missing_individual,
+        deadline=deadline,
+        institution_name=institution_name,
+    )
 
 
 def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_per_page=5, pending_revisions=None):
@@ -3697,6 +3770,70 @@ def _handle_action(action: str):
             db.session.commit()
             flash(f"Solicitud rechazada. El documento oficial del proyecto '{project.title}' no fue modificado.", "success")
 
+    elif action == "send_logistics_reminder":
+        if not smtp_is_configured():
+            flash("El servidor SMTP no está configurado. Ve a Ajustes → SMTP antes de enviar correos.", "error")
+        else:
+            from datetime import timedelta
+            active_campaign = Campaign.query.filter_by(is_active=True).first()
+            deadline = None
+            if active_campaign and active_campaign.end_date:
+                deadline = active_campaign.end_date - timedelta(days=1)
+            institution_name = SystemSetting.get_value("school_name", "ExpoTécnica")
+            active_projects = (
+                Project.query
+                .options(joinedload(Project.members))
+                .filter_by(is_active=True)
+                .all()
+            )
+            sent = 0
+            failed = 0
+            skipped = 0
+            for project in active_projects:
+                missing_group = _project_logistics_group_missing(project)
+                for member in project.members:
+                    missing_individual = []
+                    if not member.photo_url:
+                        missing_individual.append("Foto de perfil")
+                    if not missing_group and not missing_individual:
+                        continue
+                    if not member.email or not member.email.strip():
+                        skipped += 1
+                        continue
+                    subject = f"Recordatorio: Requisitos pendientes — {project.title}"
+                    html_body = _render_logistics_reminder_email(
+                        member=member,
+                        project=project,
+                        missing_group=missing_group,
+                        missing_individual=missing_individual,
+                        deadline=deadline,
+                        institution_name=institution_name,
+                    )
+                    plain_body = (
+                        f"Estimado/a {member.full_name},\n\n"
+                        f"Tienes requisitos pendientes en el proyecto '{project.title}'.\n\n"
+                        f"Grupales: {', '.join(missing_group) if missing_group else 'Ninguno'}\n"
+                        f"Individuales: {', '.join(missing_individual) if missing_individual else 'Ninguno'}\n\n"
+                        f"{'Fecha límite: ' + deadline.strftime('%d/%m/%Y') if deadline else ''}\n\n"
+                        "Organización ExpoTécnica"
+                    )
+                    ok, _err = send_email(member.email.strip(), subject, plain_body, html_body=html_body)
+                    if ok:
+                        sent += 1
+                    else:
+                        failed += 1
+            parts = [f"{sent} correo(s) enviado(s)"]
+            if failed:
+                parts.append(f"{failed} fallo(s)")
+            if skipped:
+                parts.append(f"{skipped} integrante(s) sin correo registrado omitido(s)")
+            log_event(
+                "admin.logistics.reminder_sent",
+                "projects",
+                detail=f"Recordatorio logístico: {sent} enviados, {failed} fallos, {skipped} sin correo",
+            )
+            flash(". ".join(parts) + ".", "success" if not failed else "warning")
+
     elif action == "upload_project_logo":
         project_id = request.form.get("project_id", type=int)
         project = Project.query.get(project_id) if project_id else None
@@ -5446,6 +5583,29 @@ def rubrics_page():
 @admin_module_required("projects")
 def projects_page():
     return _render("admin/projects.html", "projects")
+
+
+@admin_module_required("projects")
+def logistics_reminder_page():
+    context = _base_context("projects")
+    reminder_data = _build_logistics_reminder_data(context["projects"], context["campaigns"])
+    preview_html = ""
+    for row in reminder_data["reminder_rows"]:
+        for member_row in row["recipients"]:
+            preview_html = _render_logistics_reminder_email(
+                member=member_row["member"],
+                project=row["project"],
+                missing_group=row["missing_group"],
+                missing_individual=member_row["missing_individual"],
+                deadline=reminder_data["deadline"],
+                institution_name=reminder_data["institution_name"],
+            )
+            break
+        if preview_html:
+            break
+    context["reminder_data"] = reminder_data
+    context["preview_email_html"] = preview_html
+    return render_template("admin/logistics_reminder.html", **context)
 
 
 @admin_module_required("evaluations")

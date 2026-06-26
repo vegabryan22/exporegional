@@ -35,7 +35,13 @@
             <nav id="site-nav" class="site-nav">
                 <div class="site-nav-public" aria-label="Navegación pública">
                     <a href="{{ url_for('public.index') }}">Inicio</a>
-                    <a href="{{ url_for('public.projects') }}">Proyectos</a>
+                    <details class="nav-dropdown" data-no-iconify>
+                        <summary>Proyectos</summary>
+                        <div class="nav-dropdown-card">
+                            <a href="{{ url_for('public.projects') }}" data-no-iconify>Ver proyectos</a>
+                            <a href="{{ url_for('public.search_project_revision') }}" data-no-iconify>Actualizar documento</a>
+                        </div>
+                    </details>
                     {% if campaign_is_open %}
                         <a href="{{ url_for('public.register_project') }}">Inscripción</a>
                     {% endif %}
@@ -290,6 +296,12 @@
         applyTableIcons();
         applyFormIcons();
         applyStandaloneIcons();
+
+        document.addEventListener('click', function (e) {
+            document.querySelectorAll('.nav-dropdown[open]').forEach(function (dd) {
+                if (!dd.contains(e.target)) dd.removeAttribute('open');
+            });
+        });
     })();
     </script>
 </body>

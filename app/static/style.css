@@ -329,6 +329,74 @@ nav a:hover,
     color: #8c2030;
 }
 
+/* Nav dropdown (e.g. Proyectos) */
+.nav-dropdown {
+    position: relative;
+}
+
+.nav-dropdown > summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.28rem 0.65rem;
+    border-radius: 6px;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    list-style: none;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.nav-dropdown > summary::-webkit-details-marker {
+    display: none;
+}
+
+.nav-dropdown > summary::after {
+    content: "▾";
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.nav-dropdown[open] > summary {
+    background: rgba(244, 122, 32, 0.18);
+}
+
+.nav-dropdown-card {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 3200;
+    display: grid;
+    gap: 0.35rem;
+    min-width: 200px;
+    padding: 0.6rem;
+    border: 1px solid #c9daec;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 12px 28px rgba(7, 28, 48, 0.18);
+}
+
+.nav-dropdown-card a {
+    display: block;
+    padding: 0.5rem 0.7rem;
+    border: 1px solid #d4e2f0;
+    border-radius: 8px;
+    background: #f6faff;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.nav-dropdown-card a:hover {
+    border-color: #9fbddc;
+    background: #eaf4ff;
+}
+
 .btn-icon-only {
     width: 42px;
     height: 42px;
@@ -7857,6 +7925,33 @@ dialog.maintenance-dialog::backdrop {
     .nav-profile-copy strong,
     .nav-profile-copy small {
         max-width: none;
+    }
+
+    .nav-dropdown {
+        width: 100%;
+    }
+
+    .nav-dropdown > summary {
+        width: 100%;
+        justify-content: center;
+        border-radius: 8px;
+        min-height: 36px;
+        padding: 0.45rem 0.5rem;
+        border: 1px solid rgba(244, 122, 32, 0.22);
+        background: rgba(255, 255, 255, 0.06);
+        font-size: 0.94rem;
+    }
+
+    .nav-dropdown > summary::after {
+        margin-left: auto;
+    }
+
+    .nav-dropdown-card {
+        position: static;
+        width: 100%;
+        margin-top: 0.4rem;
+        border-radius: 10px;
+        box-shadow: none;
     }
 
     .header nav a,

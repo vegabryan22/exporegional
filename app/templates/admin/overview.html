@@ -40,6 +40,13 @@
                 <article><strong>{{ overview_metrics.projects_without_logo }}</strong><span>Sin logo</span></article>
                 <article><strong>{{ overview_metrics.projects_without_document }}</strong><span>Sin documento</span></article>
                 <article><strong>{{ overview_metrics.projects_incomplete_logistics }}</strong><span>Logística incompleta</span></article>
+                {% if overview_metrics.pending_document_revisions_count > 0 %}
+                <article class="metric-alert">
+                    <strong>{{ overview_metrics.pending_document_revisions_count }}</strong>
+                    <span>Doc. por revisar</span>
+                    <a class="metric-alert-link" href="{{ url_for('admin.projects_page') }}">Revisar</a>
+                </article>
+                {% endif %}
             </div>
         </section>
     </div>
@@ -136,7 +143,7 @@
                         </span>
                         <span class="logistics-mini-check {{ 'is-ok' if physical_ok else 'is-missing' }}">
                             <strong>F&iacute;sicos</strong>
-                            <em>{{ 'OK' if physical_ok else 'Falta' }}</em>
+                            <em>{% if not physical_ok %}{% if not project.logistics_registration_form_signed_ok and not project.logistics_student_consents_signed_ok %}Form + Consentim.{% elif not project.logistics_registration_form_signed_ok %}Formulario{% else %}Consentim.{% endif %}{% else %}OK{% endif %}</em>
                         </span>
                         <span class="logistics-mini-check {{ 'is-ok' if project.logistics_requirements_reviewed_ok else 'is-missing' }}">
                             <strong>Requisitos</strong>
@@ -144,9 +151,25 @@
                         </span>
                         <span class="logistics-mini-check {{ 'is-ok' if project.logistics_photos_ok else 'is-warning' }}">
                             <strong>Fotos</strong>
-                            <em>{{ 'OK' if project.logistics_photos_ok else row.missing_member_photos }}</em>
+                            <em>{{ 'OK' if project.logistics_photos_ok else (row.missing_member_photos|string + ' pendiente' + ('s' if row.missing_member_photos != 1 else '')) }}</em>
                         </span>
                     </div>
+                    {% if not project.logistics_photos_ok and row.members_without_photos %}
+                    <div class="pending-logistics-member-list">
+                        <span class="logistics-member-list-label">Sin foto:</span>
+                        {% for member in row.members_without_photos %}
+                            <span class="logistics-member-chip missing">{{ member.full_name }}{% if member.section_name %} <em>{{ member.section_name }}</em>{% endif %}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if row.missing_logistics_items %}
+                    <div class="pending-logistics-missing-items">
+                        <span class="logistics-member-list-label">Pendientes:</span>
+                        {% for item in row.missing_logistics_items %}
+                            <span class="logistics-member-chip missing-item">{{ item }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                     <a class="table-link-btn logistics-control-link pending-logistics-action" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Verificar</a>
                 </article>
             {% else %}

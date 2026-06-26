@@ -15,6 +15,7 @@ from app.models.category import Category
 from app.models.campaign import Campaign
 from app.models.level import Level
 from app.models.project import Project
+from app.models.project_document_revision import ProjectDocumentRevision
 from app.models.project_member import ProjectMember
 from app.models.project_type import ProjectType
 from app.models.assignment import Assignment
@@ -1344,6 +1345,96 @@ def project_documents_packet(project_id: int):
         as_attachment=True,
         download_name=f"expotec_documentos_{project.id}_{safe_title or 'proyecto'}.pdf",
     )
+
+
+def submit_document_revision(project_id: int):
+    project = (
+        Project.query.options(joinedload(Project.members))
+        .filter(Project.id == project_id)
+        .first_or_404()
+    )
+
+    if not project.is_active:
+        flash("Este proyecto no está activo.", "error")
+        return redirect(url_for("public.project_documents", project_id=project_id))
+
+    pending_revision = ProjectDocumentRevision.query.filter_by(
+        project_id=project.id, status=ProjectDocumentRevision.STATUS_PENDING
+    ).first()
+
+    if request.method == "POST":
+        submitted_by_name = (request.form.get("submitted_by_name") or "").strip()
+        justification = (request.form.get("justification") or "").strip()
+        document_file = request.files.get("project_document")
+
+        errors = []
+        if not submitted_by_name:
+            errors.append("Debes seleccionar o indicar tu nombre.")
+        if not justification or len(justification) < 10:
+            errors.append("La justificación debe tener al menos 10 caracteres.")
+        if not document_file or not document_file.filename:
+            errors.append("Debes adjuntar el nuevo documento PDF.")
+        if pending_revision:
+            errors.append("Ya existe una solicitud pendiente de revisión para este proyecto. Espera a que sea procesada antes de enviar otra.")
+
+        doc_path = None
+        if not errors:
+            try:
+                doc_path = _save_revision_document(document_file)
+            except ValueError as err:
+                errors.append(str(err))
+
+        if errors:
+            for error in errors:
+                flash(error, "error")
+            return render_template(
+                "public/project_document_revision.html",
+                project=project,
+                pending_revision=pending_revision,
+            )
+
+        revision = ProjectDocumentRevision(
+            project_id=project.id,
+            document_path=doc_path,
+            justification=justification,
+            submitted_by_name=submitted_by_name,
+            status=ProjectDocumentRevision.STATUS_PENDING,
+        )
+        db.session.add(revision)
+        log_event(
+            "public.project.document_revision.submit",
+            "project",
+            entity_id=project.id,
+            detail=(
+                f"Solicitud de revision de documento enviada para proyecto #{project.id} "
+                f"'{project.title}' por '{submitted_by_name}'"
+            ),
+        )
+        db.session.commit()
+        flash("Solicitud enviada. La organización revisará tu documento actualizado y te notificará si es aprobado.", "success")
+        return redirect(url_for("public.project_documents", project_id=project_id))
+
+    return render_template(
+        "public/project_document_revision.html",
+        project=project,
+        pending_revision=pending_revision,
+    )
+
+
+def _save_revision_document(document_file):
+    original_name = secure_filename(document_file.filename or "")
+    extension = _get_extension(original_name)
+    if extension not in ALLOWED_DOC_EXTENSIONS:
+        raise ValueError("Formato invalido. El documento debe ser PDF.")
+
+    relative_dir = os.path.join("uploads", "projects", "revisions")
+    absolute_dir = os.path.join(current_app.static_folder, relative_dir)
+    os.makedirs(absolute_dir, exist_ok=True)
+
+    unique_name = f"{uuid.uuid4().hex}.{extension}"
+    absolute_path = os.path.join(absolute_dir, unique_name)
+    document_file.save(absolute_path)
+    return f"{relative_dir}/{unique_name}".replace("\\", "/")
 
 
 def evaluate_project_entry(project_id: int):

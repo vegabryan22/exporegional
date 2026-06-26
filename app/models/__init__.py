@@ -1,4 +1,5 @@
 from app.models.assignment import Assignment
+from app.models.project_document_revision import ProjectDocumentRevision
 from app.models.campaign import Campaign
 from app.models.category import Category
 from app.models.evaluation import Evaluation
@@ -38,4 +39,5 @@ __all__ = [
     "Assignment",
     "Evaluation",
     "EvaluationScore",
+    "ProjectDocumentRevision",
 ]

@@ -57,6 +57,49 @@
         <p id="projects-filter-count" class="filter-count projects-filter-count"></p>
     </div>
 
+    {% if pending_document_revisions %}
+    <section class="doc-revision-admin-section">
+        <div class="page-head">
+            <div>
+                <p class="maintenance-kicker">Requiere atenci&oacute;n</p>
+                <h4>Solicitudes de actualizaci&oacute;n de documento</h4>
+                <p class="table-subtext">{{ pending_document_revisions | length }} solicitud{{ 'es' if pending_document_revisions | length != 1 else '' }} pendiente{{ 's' if pending_document_revisions | length != 1 else '' }} de revisi&oacute;n. El documento oficial <strong>no cambia</strong> hasta que apruebes la solicitud.</p>
+            </div>
+        </div>
+        <div class="doc-revision-admin-list">
+            {% for revision in pending_document_revisions %}
+            {% set rev_project = revision.project %}
+            <article class="doc-revision-admin-card">
+                <div class="doc-revision-admin-main">
+                    <span class="maintenance-kicker">{{ rev_project.title }}</span>
+                    <p class="doc-revision-admin-by">Enviado por <strong>{{ revision.submitted_by_name }}</strong> &middot; {{ revision.created_at | local_datetime }}</p>
+                    <p class="doc-revision-admin-justification">{{ revision.justification }}</p>
+                    {% if rev_project.project_document_path %}
+                    <a class="table-link-btn ghost doc-revision-prev-link" href="{{ url_for('static', filename=rev_project.project_document_path) }}" target="_blank" rel="noopener">Ver documento actual</a>
+                    {% endif %}
+                    <a class="table-link-btn doc-revision-new-link" href="{{ url_for('static', filename=revision.document_path) }}" target="_blank" rel="noopener">Ver documento propuesto</a>
+                </div>
+                <div class="doc-revision-admin-actions">
+                    <form method="POST" action="{{ action_url }}">
+                        <input type="hidden" name="action" value="approve_document_revision">
+                        <input type="hidden" name="revision_id" value="{{ revision.id }}">
+                        <input type="hidden" name="next" value="{{ next_url }}">
+                        <button type="submit" class="table-link-btn approve-btn" onclick="return confirm('¿Aprobar y activar este documento como versión oficial?')">Aprobar</button>
+                    </form>
+                    <form method="POST" action="{{ action_url }}" class="doc-revision-reject-form">
+                        <input type="hidden" name="action" value="reject_document_revision">
+                        <input type="hidden" name="revision_id" value="{{ revision.id }}">
+                        <input type="hidden" name="next" value="{{ next_url }}">
+                        <textarea name="admin_notes" class="doc-revision-reject-notes" placeholder="Motivo del rechazo (opcional)..." rows="2"></textarea>
+                        <button type="submit" class="table-link-btn ghost reject-btn">Rechazar</button>
+                    </form>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <div id="projects-list" class="projects-card-list">
         {% for project in projects %}
             {% set member_count = project.members|length %}

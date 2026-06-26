@@ -64,6 +64,12 @@ class Project(db.Model):
     evaluations = db.relationship("Evaluation", back_populates="project")
     members = db.relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
     member_changes = db.relationship("ProjectMemberChange", back_populates="project", cascade="all, delete-orphan")
+    document_revisions = db.relationship(
+        "ProjectDocumentRevision",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="ProjectDocumentRevision.created_at",
+    )
     section = db.relationship("Section")
     specialty_ref = db.relationship("Specialty")
     thematic_axis = db.relationship("ThematicAxis")

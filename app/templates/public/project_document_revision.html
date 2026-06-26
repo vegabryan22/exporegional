@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="project-documents-shell">
+    <div class="project-documents-head">
+        <p class="maintenance-kicker">Actualización de documento</p>
+        <h2>{{ project.title }}</h2>
+        <p>Envía una versión actualizada del proyecto escrito. La organización la revisará antes de activarla como versión oficial.</p>
+    </div>
+
+    <a class="doc-revision-back" href="{{ url_for('public.project_documents', project_id=project.id) }}">&larr; Volver a documentos del proyecto</a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if pending_revision %}
+    <div class="doc-revision-pending-notice">
+        <div class="doc-revision-pending-icon">&#9203;</div>
+        <div>
+            <strong>Solicitud en espera de revisión</strong>
+            <p>Ya enviaste una solicitud de actualización el {{ pending_revision.created_at | local_datetime }}. La organización la revisará pronto. No puedes enviar otra hasta que la actual sea procesada.</p>
+        </div>
+    </div>
+    {% else %}
+
+    <div class="doc-revision-info-grid">
+        <article class="doc-revision-info-card">
+            <h4>¿Qué ocurre al enviar?</h4>
+            <ol>
+                <li>Tu nuevo documento queda registrado con la fecha y hora de envío.</li>
+                <li>La organización lo revisa y decide si lo aprueba.</li>
+                <li>Si es aprobado, reemplaza al documento oficial anterior.</li>
+                <li>Las versiones anteriores se conservan en el historial.</li>
+            </ol>
+        </article>
+        <article class="doc-revision-info-card">
+            <h4>Requisitos del archivo</h4>
+            <ul>
+                <li>Formato <strong>PDF</strong> únicamente.</li>
+                <li>Incluir las correcciones indicadas por el tutor.</li>
+                <li>Debe estar completo, con portada y todas las secciones.</li>
+            </ul>
+        </article>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="doc-revision-form" novalidate>
+        <fieldset>
+            <legend>Información del envío</legend>
+
+            <div class="form-field">
+                <label for="submitted_by_name">¿Quién envía esta versión? <span class="required">*</span></label>
+                {% set members = project.members | sort(attribute='student_number') %}
+                {% if members %}
+                <select id="submitted_by_name" name="submitted_by_name" required>
+                    <option value="">— Selecciona tu nombre —</option>
+                    {% for member in members %}
+                        <option value="{{ member.full_name }}">{{ member.full_name }}{% if member.section_name %} ({{ member.section_name }}){% endif %}</option>
+                    {% endfor %}
+                    <option value="__otro__">Otro / No aparezco en la lista</option>
+                </select>
+                {% else %}
+                <input type="text" id="submitted_by_name" name="submitted_by_name" required placeholder="Tu nombre completo">
+                {% endif %}
+            </div>
+
+            <div class="form-field">
+                <label for="justification">Justificación del cambio <span class="required">*</span></label>
+                <textarea
+                    id="justification"
+                    name="justification"
+                    rows="4"
+                    required
+                    minlength="10"
+                    placeholder="Describe brevemente qué cambió y por qué (correcciones del tutor, errores corregidos, secciones actualizadas, etc.)"
+                ></textarea>
+                <small>Mínimo 10 caracteres. Esta nota queda registrada para el historial.</small>
+            </div>
+
+            <div class="form-field">
+                <label for="project_document">Nuevo documento PDF <span class="required">*</span></label>
+                <input type="file" id="project_document" name="project_document" accept=".pdf" required>
+                <small>Solo se aceptan archivos PDF.</small>
+            </div>
+        </fieldset>
+
+        <div class="doc-revision-form-actions">
+            <a class="ghost-btn" href="{{ url_for('public.project_documents', project_id=project.id) }}">Cancelar</a>
+            <button type="submit" class="project-action">Enviar solicitud de actualización</button>
+        </div>
+    </form>
+    {% endif %}
+
+    {% if project.document_revisions %}
+    <section class="doc-revision-history">
+        <h3>Historial de versiones enviadas</h3>
+        <div class="doc-revision-history-list">
+            {% for rev in project.document_revisions | sort(attribute='created_at', reverse=True) %}
+            <article class="doc-revision-history-card {{ rev.status }}">
+                <div class="doc-revision-history-meta">
+                    <span class="doc-revision-status-badge {{ rev.status }}">
+                        {% if rev.status == 'aprobado' %}Aprobado{% elif rev.status == 'rechazado' %}Rechazado{% else %}Pendiente{% endif %}
+                    </span>
+                    <span>{{ rev.submitted_by_name }}</span>
+                    <span class="doc-revision-history-date">{{ rev.created_at | local_datetime }}</span>
+                </div>
+                <p class="doc-revision-history-justification">{{ rev.justification }}</p>
+                {% if rev.admin_notes %}
+                <p class="doc-revision-history-admin-note"><strong>Nota de la organización:</strong> {{ rev.admin_notes }}</p>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</section>
+{% endblock %}

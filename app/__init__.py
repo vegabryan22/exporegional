@@ -767,6 +767,30 @@ def ensure_schema_updates():
             if "name" in rubric_columns:
                 connection.execute(text("ALTER TABLE rubric_criteria MODIFY COLUMN name VARCHAR(500) NOT NULL"))
 
+        if "project_document_revisions" not in inspector.get_table_names():
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE project_document_revisions (
+                        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                        project_id INT NOT NULL,
+                        document_path VARCHAR(300) NOT NULL,
+                        justification TEXT NOT NULL,
+                        submitted_by_name VARCHAR(120) NOT NULL,
+                        status VARCHAR(20) NOT NULL DEFAULT 'pendiente',
+                        admin_notes TEXT NULL,
+                        reviewed_by_id INT NULL,
+                        reviewed_at DATETIME NULL,
+                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_doc_revision_project (project_id),
+                        INDEX idx_doc_revision_status (status),
+                        CONSTRAINT fk_doc_revision_project FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE,
+                        CONSTRAINT fk_doc_revision_reviewer FOREIGN KEY (reviewed_by_id) REFERENCES judges (id) ON DELETE SET NULL
+                    )
+                    """
+                )
+            )
+
         if "project_member_changes" in inspector.get_table_names():
             member_change_fks = inspector.get_foreign_keys("project_member_changes")
             member_fk = next(

@@ -2736,6 +2736,64 @@ th {
     border-radius: 14px;
 }
 
+.pending-logistics-member-list,
+.pending-logistics-missing-items {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.45rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: 12px;
+    background: #fff8f0;
+    border: 1px solid #f0d8b0;
+}
+
+.pending-logistics-missing-items {
+    background: #fff2f5;
+    border-color: #efbfca;
+}
+
+.logistics-member-list-label {
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #7a5a20;
+    flex-shrink: 0;
+}
+
+.pending-logistics-missing-items .logistics-member-list-label {
+    color: #7a2030;
+}
+
+.logistics-member-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    padding: 0.22rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.25;
+    background: #fff0d0;
+    border: 1px solid #e5c06a;
+    color: #7a5010;
+}
+
+.logistics-member-chip em {
+    font-style: normal;
+    font-size: 0.7rem;
+    opacity: 0.75;
+    font-weight: 600;
+}
+
+.logistics-member-chip.missing-item {
+    background: #ffe8ee;
+    border-color: #e8a0b0;
+    color: #821530;
+}
+
 @media (max-width: 1250px) {
     .pending-logistics-card {
         grid-template-columns: minmax(240px, 1fr) minmax(360px, 1.2fr);
@@ -10595,5 +10653,331 @@ body {
 
     .judge-action-link.document {
         grid-column: 1 / -1;
+    }
+}
+
+/* ── Metric alert (overview panel for pending revisions) ─────────────────── */
+.overview-metric-list .metric-alert {
+    border: 1px solid #f0d090;
+    background: #fff8e8;
+    border-radius: 12px;
+    padding: 0.55rem 0.7rem;
+    display: grid;
+    gap: 0.1rem;
+    text-align: center;
+}
+
+.overview-metric-list .metric-alert strong {
+    color: #8a4d00;
+    font-size: 1.5rem;
+    font-weight: 900;
+}
+
+.overview-metric-list .metric-alert span {
+    color: #7a5010;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.metric-alert-link {
+    display: inline-block;
+    margin-top: 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #9a5010;
+    text-decoration: underline;
+}
+
+/* ── Public: doc-revision page ───────────────────────────────────────────── */
+.doc-revision-back {
+    display: inline-block;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+}
+
+.doc-revision-back:hover { text-decoration: underline; }
+
+.doc-revision-pending-notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: #fff8e8;
+    border: 1px solid #f0d090;
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+}
+
+.doc-revision-pending-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.doc-revision-pending-notice strong {
+    display: block;
+    color: #7a4d00;
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+}
+
+.doc-revision-pending-notice p { margin: 0; color: #7a5010; }
+
+.doc-revision-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.doc-revision-info-card {
+    border: 1px solid #d7e3ef;
+    border-radius: 12px;
+    background: #f7fbff;
+    padding: 1rem 1.1rem;
+}
+
+.doc-revision-info-card h4 { margin: 0 0 0.6rem; color: #0f2f52; }
+
+.doc-revision-info-card ol,
+.doc-revision-info-card ul {
+    margin: 0;
+    padding-left: 1.3rem;
+    color: #344e6a;
+    font-size: 0.9rem;
+    display: grid;
+    gap: 0.3rem;
+}
+
+.doc-revision-form {
+    border: 1px solid #d7e3ef;
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 1.4rem 1.5rem;
+}
+
+.doc-revision-form fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 1.1rem;
+}
+
+.doc-revision-form legend {
+    font-size: 0.78rem;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #607798;
+    margin-bottom: 1rem;
+}
+
+.doc-revision-form .form-field {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.doc-revision-form label {
+    font-weight: 700;
+    color: #1a3a5c;
+    font-size: 0.92rem;
+}
+
+.doc-revision-form label .required { color: #c0392b; }
+
+.doc-revision-form select,
+.doc-revision-form textarea,
+.doc-revision-form input[type="file"] {
+    border: 1px solid #c7d9ed;
+    border-radius: 8px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.95rem;
+    color: #1a3a5c;
+    background: #f8fbff;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.doc-revision-form textarea { resize: vertical; min-height: 80px; }
+
+.doc-revision-form small { color: #6a8299; font-size: 0.8rem; }
+
+.doc-revision-form-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 1.3rem;
+    flex-wrap: wrap;
+}
+
+.project-action-secondary {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+    padding: 0.6rem 1.3rem;
+    border-radius: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.92rem;
+    display: inline-block;
+}
+
+.project-action-secondary:hover { background: #eaf3ff; }
+
+.doc-revision-cta-card { border-color: #b9d9f0; background: #f0f8ff; }
+
+/* ── Public: revision history ────────────────────────────────────────────── */
+.doc-revision-history { margin-top: 0.5rem; }
+
+.doc-revision-history h3 { margin: 0 0 0.85rem; color: #1a3a5c; font-size: 1.05rem; }
+
+.doc-revision-history-list { display: grid; gap: 0.65rem; }
+
+.doc-revision-history-card {
+    border: 1px solid #d7e3ef;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 0.9rem 1rem;
+    display: grid;
+    gap: 0.4rem;
+}
+
+.doc-revision-history-card.aprobado { border-color: #b0ddb0; background: #f3fff5; }
+.doc-revision-history-card.rechazado { border-color: #e5b0b0; background: #fff5f5; }
+
+.doc-revision-history-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+}
+
+.doc-revision-status-badge {
+    padding: 0.18rem 0.65rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: #e8f0ff;
+    color: #1a3a7a;
+    border: 1px solid #b5ceee;
+}
+
+.doc-revision-status-badge.aprobado { background: #e2f9e2; color: #1a6a1a; border-color: #90d990; }
+.doc-revision-status-badge.rechazado { background: #ffe8e8; color: #8a1a1a; border-color: #e09090; }
+
+.doc-revision-history-date { color: #7a9ab5; font-size: 0.82rem; margin-left: auto; }
+
+.doc-revision-history-justification { margin: 0; color: #344e6a; font-size: 0.9rem; }
+
+.doc-revision-history-admin-note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #7a1a1a;
+    background: #fff0f0;
+    border-left: 3px solid #e09090;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0 6px 6px 0;
+}
+
+/* ── Admin: pending document revisions section ───────────────────────────── */
+.doc-revision-admin-section {
+    margin-bottom: 1.5rem;
+    border: 2px solid #f0d090;
+    border-radius: 18px;
+    background: #fffdf5;
+    padding: 1.1rem 1.2rem;
+}
+
+.doc-revision-admin-list { display: grid; gap: 1rem; margin-top: 0.75rem; }
+
+.doc-revision-admin-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: start;
+    background: #ffffff;
+    border: 1px solid #e8d8a0;
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+}
+
+.doc-revision-admin-main { display: grid; gap: 0.4rem; }
+
+.doc-revision-admin-main .maintenance-kicker {
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #8a6000;
+}
+
+.doc-revision-admin-by { margin: 0; font-size: 0.85rem; color: #5a5a5a; }
+
+.doc-revision-admin-justification {
+    margin: 0;
+    color: #2a3a5a;
+    font-size: 0.9rem;
+    border-left: 3px solid #c8a030;
+    padding: 0.3rem 0.6rem;
+    background: #fffbf0;
+    border-radius: 0 6px 6px 0;
+}
+
+.doc-revision-prev-link,
+.doc-revision-new-link {
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+}
+
+.doc-revision-new-link { background: #eaf6ff; border-color: #90c8f0; color: #0a4a7a; }
+
+.doc-revision-admin-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 160px;
+}
+
+.doc-revision-reject-form {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.doc-revision-reject-notes {
+    border: 1px solid #d0c0a0;
+    border-radius: 8px;
+    padding: 0.4rem 0.55rem;
+    font-size: 0.82rem;
+    resize: vertical;
+    min-height: 52px;
+    background: #fffff8;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.approve-btn { background: #e6f7e6; border-color: #80c880; color: #1a5a1a; }
+.approve-btn:hover { background: #c8eec8; }
+.reject-btn { border-color: #d0a0a0; color: #8a1a1a; }
+.reject-btn:hover { background: #fff0f0; }
+
+@media (max-width: 760px) {
+    .doc-revision-admin-card {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .doc-revision-admin-actions {
+        flex-direction: row;
+        flex-wrap: wrap;
+        min-width: unset;
+    }
+
+    .doc-revision-reject-form {
+        flex: 1 1 100%;
+        width: 100%;
     }
 }

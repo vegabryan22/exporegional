@@ -24,6 +24,7 @@ from werkzeug.utils import secure_filename
 from app.extensions import db
 from app.models.assignment import Assignment
 from app.models.campaign import Campaign
+from app.models.project_document_revision import ProjectDocumentRevision
 from app.models.category import Category
 from app.models.evaluation import Evaluation
 from app.models.evaluation_score import EvaluationScore
@@ -194,6 +195,8 @@ ACTION_MODULE_MAP = {
     "update_project": "projects",
     "update_project_logistics": "projects",
     "replace_project_document": "projects",
+    "approve_document_revision": "projects",
+    "reject_document_revision": "projects",
     "upload_project_logo": "projects",
     "delete_project": "projects",
     "upload_member_photo": "projects",
@@ -761,7 +764,7 @@ def _project_logistics_missing_items(project):
     return missing
 
 
-def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_per_page=5):
+def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_per_page=5, pending_revisions=None):
     active_projects = [project for project in projects if project.is_active]
     active_project_ids = {project.id for project in active_projects}
     active_assignments = [assignment for assignment in assignments if assignment.project_id in active_project_ids]
@@ -797,13 +800,15 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
                 }
             )
 
-        missing_member_photos = len([member for member in project.members if not member.photo_url])
+        members_without_photos = [member for member in project.members if not member.photo_url]
+        missing_member_photos = len(members_without_photos)
         missing_logistics_items = _project_logistics_missing_items(project)
         if project.logistics_status != "completo" or missing_logistics_items:
             projects_pending_logistics.append(
                 {
                     "project": project,
                     "missing_member_photos": missing_member_photos,
+                    "members_without_photos": members_without_photos,
                     "missing_logistics_items": missing_logistics_items,
                 }
             )
@@ -850,6 +855,7 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "pending_logistics_start": 1 if pending_logistics_total else 0,
         "pending_logistics_end": logistics_end,
         "pending_logistics_per_page": logistics_per_page,
+        "pending_document_revisions_count": len(pending_revisions) if pending_revisions is not None else 0,
     }
 
 
@@ -3636,6 +3642,61 @@ def _handle_action(action: str):
             except ValueError as error:
                 flash(str(error), "error")
 
+    elif action == "approve_document_revision":
+        revision_id = request.form.get("revision_id", type=int)
+        revision = ProjectDocumentRevision.query.get(revision_id) if revision_id else None
+        if not revision:
+            flash("Solicitud no encontrada.", "error")
+        elif revision.status != ProjectDocumentRevision.STATUS_PENDING:
+            flash("Esta solicitud ya fue procesada.", "error")
+        else:
+            project = revision.project
+            old_path = project.project_document_path
+            project.project_document_path = revision.document_path
+            project.logistics_document_ok = False
+            project.logistics_status = "pendiente_revision"
+            revision.status = ProjectDocumentRevision.STATUS_APPROVED
+            revision.reviewed_by_id = current_user.id
+            revision.reviewed_at = datetime.now()
+            log_event(
+                "admin.project.document_revision.approve",
+                "project",
+                entity_id=project.id,
+                detail=(
+                    f"Revision #{revision.id} aprobada para proyecto #{project.id} '{project.title}'. "
+                    f"Enviada por '{revision.submitted_by_name}'. "
+                    f"Anterior={old_path or 'ninguno'} Nuevo={revision.document_path}"
+                ),
+            )
+            db.session.commit()
+            flash(f"Documento aprobado y activado como version oficial del proyecto '{project.title}'.", "success")
+
+    elif action == "reject_document_revision":
+        revision_id = request.form.get("revision_id", type=int)
+        revision = ProjectDocumentRevision.query.get(revision_id) if revision_id else None
+        admin_notes = (request.form.get("admin_notes") or "").strip()
+        if not revision:
+            flash("Solicitud no encontrada.", "error")
+        elif revision.status != ProjectDocumentRevision.STATUS_PENDING:
+            flash("Esta solicitud ya fue procesada.", "error")
+        else:
+            project = revision.project
+            revision.status = ProjectDocumentRevision.STATUS_REJECTED
+            revision.admin_notes = admin_notes or None
+            revision.reviewed_by_id = current_user.id
+            revision.reviewed_at = datetime.now()
+            log_event(
+                "admin.project.document_revision.reject",
+                "project",
+                entity_id=project.id,
+                detail=(
+                    f"Revision #{revision.id} rechazada para proyecto #{project.id} '{project.title}'. "
+                    f"Enviada por '{revision.submitted_by_name}'. Motivo: {admin_notes or 'sin motivo indicado'}"
+                ),
+            )
+            db.session.commit()
+            flash(f"Solicitud rechazada. El documento oficial del proyecto '{project.title}' no fue modificado.", "success")
+
     elif action == "upload_project_logo":
         project_id = request.form.get("project_id", type=int)
         project = Project.query.get(project_id) if project_id else None
@@ -4967,6 +5028,7 @@ def _base_context(active_page: str, **kwargs):
         evaluation_types = []
         exposition_evaluation_types = []
         documentation_evaluation_types = []
+        pending_document_revisions = []
         smtp_settings = {"host": "", "port": "587", "username": "", "from_email": "", "use_tls": True, "use_ssl": False}
         institution_settings = {
             "name": "CTP Roberto Gamboa Valverde",
@@ -5032,7 +5094,15 @@ def _base_context(active_page: str, **kwargs):
             joinedload(Project.project_type),
             joinedload(Project.workshop_ref),
             joinedload(Project.member_changes),
+            joinedload(Project.document_revisions),
         ).order_by(Project.created_at.desc()).all()
+        pending_document_revisions = (
+            ProjectDocumentRevision.query
+            .options(joinedload(ProjectDocumentRevision.project))
+            .filter(ProjectDocumentRevision.status == ProjectDocumentRevision.STATUS_PENDING)
+            .order_by(ProjectDocumentRevision.created_at.asc())
+            .all()
+        )
         assignments = Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project)).order_by(Assignment.id.desc()).all()
         evaluation_types = EvaluationType.query.options(joinedload(EvaluationType.rubric_criteria)).order_by(EvaluationType.sort_order.asc(), EvaluationType.name.asc()).all()
         exposition_evaluation_types = [
@@ -5154,6 +5224,7 @@ def _base_context(active_page: str, **kwargs):
         projects,
         assignments,
         logistics_page=kwargs.get("logistics_page", 1),
+        pending_revisions=pending_document_revisions if not (restore_safe_mode or database_light_mode) else [],
     )
 
     return {
@@ -5204,6 +5275,7 @@ def _base_context(active_page: str, **kwargs):
         "overview_metrics": overview_metrics,
         "logistics_statuses": LOGISTICS_STATUSES,
         "logistics_status_map": {code: label for code, label in LOGISTICS_STATUSES},
+        "pending_document_revisions": pending_document_revisions,
         "permission_modules": permission_modules,
         "permission_matrix": permission_matrix,
         "is_superadmin": current_user.is_superadmin,

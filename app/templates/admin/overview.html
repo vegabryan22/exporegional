@@ -154,19 +154,11 @@
                             <em>{{ 'OK' if project.logistics_photos_ok else (row.missing_member_photos|string + ' pendiente' + ('s' if row.missing_member_photos != 1 else '')) }}</em>
                         </span>
                     </div>
-                    {% if not project.logistics_photos_ok and row.members_without_photos %}
+                    {% if row.members_without_photos %}
                     <div class="pending-logistics-member-list">
                         <span class="logistics-member-list-label">Sin foto:</span>
                         {% for member in row.members_without_photos %}
                             <span class="logistics-member-chip missing">{{ member.full_name }}{% if member.section_name %} <em>{{ member.section_name }}</em>{% endif %}</span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    {% if row.missing_logistics_items %}
-                    <div class="pending-logistics-missing-items">
-                        <span class="logistics-member-list-label">Pendientes:</span>
-                        {% for item in row.missing_logistics_items %}
-                            <span class="logistics-member-chip missing-item">{{ item }}</span>
                         {% endfor %}
                     </div>
                     {% endif %}

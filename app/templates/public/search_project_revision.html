@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="project-documents-shell">
+    <div class="project-documents-head">
+        <p class="maintenance-kicker">Actualización de documento escrito</p>
+        <h2>Buscar mi proyecto</h2>
+        <p>Ingresa tu número de cédula o tu nombre completo para encontrar tu proyecto y enviar una versión actualizada del documento escrito.</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <form method="GET" action="" class="search-revision-form" autocomplete="off">
+        <div class="search-revision-field">
+            <label for="q">Cédula o nombre del estudiante</label>
+            <div class="search-revision-input-row">
+                <input
+                    type="search"
+                    id="q"
+                    name="q"
+                    value="{{ query }}"
+                    placeholder="Ej: 208730045 o Juan Pérez"
+                    minlength="3"
+                    required
+                    autofocus
+                >
+                <button type="submit" class="project-action">Buscar</button>
+            </div>
+            <small>Mínimo 3 caracteres. Puedes buscar por número de cédula (sin guiones) o por nombre.</small>
+        </div>
+    </form>
+
+    {% if searched %}
+        {% if results %}
+        <div class="search-revision-results">
+            <p class="search-revision-count">{{ results | length }} proyecto{{ 's' if results | length != 1 else '' }} encontrado{{ 's' if results | length != 1 else '' }} para <strong>{{ query }}</strong>.</p>
+            {% for row in results %}
+            {% set project = row.project %}
+            <article class="search-revision-card">
+                <div class="search-revision-project-info">
+                    <h3>{{ project.title }}</h3>
+                    <p class="search-revision-team">{{ project.team_name }}</p>
+                    <div class="search-revision-members">
+                        {% for member in project.members | sort(attribute='student_number') %}
+                        <span class="search-revision-member-chip {% if member in row.matching_members %}match{% endif %}">
+                            {{ member.full_name }}
+                            {% if member.section_name %}<em>{{ member.section_name }}</em>{% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="search-revision-card-action">
+                    {% if row.has_pending_revision %}
+                    <span class="search-revision-pending-badge">Solicitud pendiente</span>
+                    <p class="search-revision-pending-note">Ya existe una solicitud en revisión. Espera a que sea procesada.</p>
+                    <a class="table-link-btn ghost" href="{{ url_for('public.project_document_revision', project_id=project.id) }}">Ver estado</a>
+                    {% else %}
+                    <a class="project-action" href="{{ url_for('public.project_document_revision', project_id=project.id) }}">Enviar documento actualizado</a>
+                    {% endif %}
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="search-revision-empty">
+            <p>No se encontró ningún proyecto activo asociado a <strong>{{ query }}</strong>.</p>
+            <p>Verifica que la cédula o el nombre estén escritos correctamente, tal como fueron ingresados al momento de la inscripción.</p>
+        </div>
+        {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

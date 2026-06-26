@@ -10690,6 +10690,162 @@ body {
     text-decoration: underline;
 }
 
+/* ── Public: search project for revision ────────────────────────────────── */
+.search-revision-form {
+    background: #f7fbff;
+    border: 1px solid #d0e4f4;
+    border-radius: 14px;
+    padding: 1.2rem 1.4rem;
+}
+
+.search-revision-field {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.search-revision-field label {
+    font-weight: 700;
+    color: #1a3a5c;
+    font-size: 0.95rem;
+}
+
+.search-revision-input-row {
+    display: flex;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+}
+
+.search-revision-input-row input[type="search"] {
+    flex: 1 1 240px;
+    border: 1.5px solid #b0ccе4;
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+    font-size: 1rem;
+    color: #1a3a5c;
+    background: #ffffff;
+    min-width: 0;
+}
+
+.search-revision-field small {
+    color: #6a8299;
+    font-size: 0.82rem;
+}
+
+.search-revision-count {
+    margin: 0 0 0.75rem;
+    color: #344e6a;
+    font-size: 0.92rem;
+}
+
+.search-revision-results { display: grid; gap: 0.9rem; }
+
+.search-revision-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+    border: 1px solid #d0e4f4;
+    border-radius: 14px;
+    background: #ffffff;
+    padding: 1rem 1.1rem;
+}
+
+.search-revision-project-info { display: grid; gap: 0.3rem; }
+
+.search-revision-project-info h3 {
+    margin: 0;
+    color: #0f2f52;
+    font-size: 1rem;
+}
+
+.search-revision-team {
+    margin: 0;
+    color: #5d7693;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.search-revision-members {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.45rem;
+    margin-top: 0.2rem;
+}
+
+.search-revision-member-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    background: #f0f5fa;
+    border: 1px solid #c8d8ea;
+    color: #3a5a78;
+}
+
+.search-revision-member-chip.match {
+    background: #e6f3ff;
+    border-color: #80b8e8;
+    color: #0a3a70;
+    font-weight: 800;
+}
+
+.search-revision-member-chip em {
+    font-style: normal;
+    opacity: 0.65;
+    font-size: 0.72rem;
+}
+
+.search-revision-card-action {
+    display: grid;
+    gap: 0.4rem;
+    text-align: center;
+    min-width: 160px;
+}
+
+.search-revision-pending-badge {
+    display: inline-block;
+    background: #fff8e8;
+    border: 1px solid #f0d090;
+    color: #8a5500;
+    border-radius: 20px;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.search-revision-pending-note {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #7a6020;
+}
+
+.search-revision-empty {
+    background: #f7f9fc;
+    border: 1px solid #d0dde8;
+    border-radius: 14px;
+    padding: 1.4rem 1.5rem;
+    color: #3a5070;
+}
+
+.search-revision-empty p { margin: 0 0 0.4rem; }
+.search-revision-empty p:last-child { margin: 0; }
+
+@media (max-width: 640px) {
+    .search-revision-card {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .search-revision-card-action {
+        min-width: unset;
+        text-align: left;
+    }
+}
+
 /* ── Public: doc-revision page ───────────────────────────────────────────── */
 .doc-revision-back {
     display: inline-block;

@@ -1347,6 +1347,74 @@ def project_documents_packet(project_id: int):
     )
 
 
+def search_project_for_revision():
+    query = (request.args.get("q") or "").strip()
+    results = []
+    searched = False
+
+    if query and len(query) >= 3:
+        searched = True
+        normalized = re.sub(r"[\s\-]+", "", query).upper()
+
+        members_by_identity = (
+            ProjectMember.query
+            .options(joinedload(ProjectMember.project).joinedload(Project.members))
+            .filter(
+                func.upper(func.replace(func.replace(ProjectMember.identity_number, "-", ""), " ", "")) == normalized
+            )
+            .all()
+        )
+        project_ids_from_identity = {m.project_id for m in members_by_identity}
+
+        members_by_name = (
+            ProjectMember.query
+            .options(joinedload(ProjectMember.project).joinedload(Project.members))
+            .filter(ProjectMember.full_name.ilike(f"%{query}%"))
+            .all()
+        )
+        project_ids_from_name = {m.project_id for m in members_by_name}
+
+        all_project_ids = project_ids_from_identity | project_ids_from_name
+
+        if all_project_ids:
+            projects = (
+                Project.query
+                .options(joinedload(Project.members))
+                .filter(Project.id.in_(all_project_ids), Project.is_active.is_(True))
+                .order_by(Project.title.asc())
+                .all()
+            )
+            pending_ids = {
+                r.project_id
+                for r in ProjectDocumentRevision.query
+                .filter(
+                    ProjectDocumentRevision.project_id.in_(all_project_ids),
+                    ProjectDocumentRevision.status == ProjectDocumentRevision.STATUS_PENDING,
+                )
+                .all()
+            }
+            for project in projects:
+                matching_members = [
+                    m for m in project.members
+                    if (
+                        re.sub(r"[\s\-]+", "", m.identity_number or "").upper() == normalized
+                        or query.lower() in (m.full_name or "").lower()
+                    )
+                ]
+                results.append({
+                    "project": project,
+                    "matching_members": matching_members,
+                    "has_pending_revision": project.id in pending_ids,
+                })
+
+    return render_template(
+        "public/search_project_revision.html",
+        query=query,
+        results=results,
+        searched=searched,
+    )
+
+
 def submit_document_revision(project_id: int):
     project = (
         Project.query.options(joinedload(Project.members))

@@ -42,6 +42,13 @@ public_bp.add_url_rule(
 )
 
 public_bp.add_url_rule(
+    "/actualizar-documento",
+    endpoint="search_project_revision",
+    view_func=project_controller.search_project_for_revision,
+    methods=["GET"],
+)
+
+public_bp.add_url_rule(
     "/proyecto/<int:project_id>/documentos/paquete",
     endpoint="project_documents_packet",
     view_func=project_controller.project_documents_packet,

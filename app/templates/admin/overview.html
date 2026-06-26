@@ -149,19 +149,23 @@
                             <strong>Requisitos</strong>
                             <em>{{ 'OK' if project.logistics_requirements_reviewed_ok else 'Falta' }}</em>
                         </span>
-                        <span class="logistics-mini-check {{ 'is-ok' if project.logistics_photos_ok else 'is-warning' }}">
+                        {% if row.members_without_photos %}
+                        <button
+                            type="button"
+                            class="logistics-mini-check is-warning logistics-photos-btn"
+                            data-modal="photos-modal-{{ project.id }}"
+                            aria-haspopup="dialog"
+                        >
                             <strong>Fotos</strong>
-                            <em>{{ 'OK' if project.logistics_photos_ok else (row.missing_member_photos|string + ' pendiente' + ('s' if row.missing_member_photos != 1 else '')) }}</em>
+                            <em>{{ row.missing_member_photos }} pendiente{{ 's' if row.missing_member_photos != 1 else '' }}</em>
+                        </button>
+                        {% else %}
+                        <span class="logistics-mini-check is-ok">
+                            <strong>Fotos</strong>
+                            <em>OK</em>
                         </span>
+                        {% endif %}
                     </div>
-                    {% if row.members_without_photos %}
-                    <div class="pending-logistics-member-list">
-                        <span class="logistics-member-list-label">Sin foto:</span>
-                        {% for member in row.members_without_photos %}
-                            <span class="logistics-member-chip missing">{{ member.full_name }}{% if member.section_name %} <em>{{ member.section_name }}</em>{% endif %}</span>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
                     <a class="table-link-btn logistics-control-link pending-logistics-action" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Verificar</a>
                 </article>
             {% else %}
@@ -234,6 +238,52 @@
 
         renderPage(1);
     })();
+</script>
+{% for row in overview_metrics.pending_logistics_projects %}
+    {% if row.members_without_photos %}
+    {% set project = row.project %}
+    <dialog class="photos-modal" id="photos-modal-{{ project.id }}" aria-label="Integrantes sin foto — {{ project.title }}">
+        <div class="photos-modal-inner">
+            <div class="photos-modal-head">
+                <div>
+                    <p class="maintenance-kicker">Sin foto</p>
+                    <h4>{{ project.title }}</h4>
+                </div>
+                <button type="button" class="photos-modal-close" data-close-modal aria-label="Cerrar">&times;</button>
+            </div>
+            <ul class="photos-modal-list">
+                {% for member in row.members_without_photos %}
+                <li>
+                    <strong>{{ member.full_name }}</strong>
+                    {% if member.section_name %}<span>{{ member.section_name }}</span>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            <a class="table-link-btn photos-modal-link" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Ir al proyecto</a>
+        </div>
+    </dialog>
+    {% endif %}
+{% endfor %}
+
+<script>
+(function () {
+    document.querySelectorAll('.logistics-photos-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var modal = document.getElementById(btn.getAttribute('data-modal'));
+            if (modal) modal.showModal();
+        });
+    });
+    document.querySelectorAll('[data-close-modal]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            btn.closest('dialog').close();
+        });
+    });
+    document.querySelectorAll('.photos-modal').forEach(function (modal) {
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) modal.close();
+        });
+    });
+})();
 </script>
 {% endblock %}
 

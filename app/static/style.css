@@ -10690,6 +10690,122 @@ body {
     text-decoration: underline;
 }
 
+/* ── Photos modal (overview logistics) ──────────────────────────────────── */
+.logistics-photos-btn {
+    all: unset;
+    cursor: pointer;
+    display: grid;
+    gap: 0.18rem;
+    min-height: 56px;
+    padding: 0.45rem 0.55rem;
+    border: 1px solid #f0cf86;
+    border-radius: 14px;
+    background: #fff8e8;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.logistics-photos-btn:hover {
+    background: #fff0c0;
+    border-color: #d4a800;
+}
+
+.logistics-photos-btn strong {
+    color: #607798;
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.logistics-photos-btn em {
+    color: #9a5b12;
+    font-style: normal;
+    font-size: 0.9rem;
+    font-weight: 900;
+    line-height: 1.05;
+}
+
+.photos-modal {
+    border: none;
+    border-radius: 18px;
+    padding: 0;
+    max-width: 400px;
+    width: 90vw;
+    box-shadow: 0 20px 60px rgba(10, 40, 80, 0.18);
+}
+
+.photos-modal::backdrop {
+    background: rgba(10, 30, 60, 0.35);
+    backdrop-filter: blur(2px);
+}
+
+.photos-modal-inner {
+    display: grid;
+    gap: 1rem;
+    padding: 1.3rem 1.4rem;
+}
+
+.photos-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.photos-modal-head h4 {
+    margin: 0;
+    color: #0f2f52;
+    font-size: 1rem;
+    line-height: 1.25;
+}
+
+.photos-modal-close {
+    all: unset;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    font-size: 1.3rem;
+    line-height: 1;
+    color: #6a8aaa;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.photos-modal-close:hover { background: #eef4fb; color: #0f2f52; }
+
+.photos-modal-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.photos-modal-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.55rem 0.75rem;
+    background: #fff8e8;
+    border: 1px solid #f0d090;
+    border-radius: 10px;
+}
+
+.photos-modal-list li strong { color: #0f2f52; font-size: 0.92rem; }
+
+.photos-modal-list li span {
+    color: #7a8a9a;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+.photos-modal-link { justify-self: start; font-size: 0.85rem; }
+
 /* ── Public: search project for revision ────────────────────────────────── */
 .search-revision-form {
     background: #f7fbff;

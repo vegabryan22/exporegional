@@ -11254,6 +11254,20 @@ body {
     }
 }
 
+/* ── Overview logistics panel head ───────────────────────────────────────── */
+.overview-metric-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.6rem;
+}
+
+.overview-reminder-btn {
+    white-space: nowrap;
+    font-size: 0.78rem;
+    flex-shrink: 0;
+}
+
 /* ── Logistics reminder page ─────────────────────────────────────────────── */
 .reminder-send-bar {
     background: var(--primary-soft);

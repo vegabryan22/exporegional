@@ -33,13 +33,8 @@
         </section>
 
         <section class="overview-metric-panel logistics">
-            <div class="overview-metric-panel-head">
-                <div>
-                    <p class="maintenance-kicker">Control logístico</p>
-                    <h4>Requisitos por completar</h4>
-                </div>
-                <a href="{{ url_for('admin.logistics_reminder_page') }}" class="table-link-btn ghost overview-reminder-btn">Enviar recordatorio</a>
-            </div>
+            <p class="maintenance-kicker">Control logístico</p>
+            <h4>Requisitos por completar</h4>
             <div class="overview-metric-list compact">
                 <article><strong>{{ overview_metrics.members_without_photo }}</strong><span>Sin foto</span></article>
                 <article><strong>{{ overview_metrics.projects_without_logo }}</strong><span>Sin logo</span></article>

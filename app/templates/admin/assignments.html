@@ -18,6 +18,7 @@
             <button type="button" class="secondary-btn" data-dialog-open="quick-judge-dialog">Juez nuevo r&aacute;pido</button>
             <button type="button" class="outline-btn" data-dialog-open="create-assignment-dialog">Asignaci&oacute;n masiva</button>
             <button type="button" class="project-action-btn action-members" data-dialog-open="auto-assign-dialog">Asignar autom&aacute;ticamente</button>
+            <button type="button" class="outline-btn" data-dialog-open="load-report-dialog">Reporte de carga</button>
         </div>
     </div>
 
@@ -324,6 +325,91 @@
         </form>
     </div>
 </dialog>
+<dialog id="load-report-dialog" class="maintenance-dialog assignment-manage-dialog">
+    <div class="dialog-card dialog-card-wide">
+        <div class="dialog-head">
+            <h4>Reporte de carga por juez</h4>
+            <button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button>
+        </div>
+        {% set project_map = {} %}
+        {% for p in projects %}{% set _ = project_map.update({p.id: p}) %}{% endfor %}
+        {% set judge_rows = [] %}
+        {% for judge in judges %}
+            {% if judge.effective_role == 'judge' and judge.is_active_user %}
+                {% set ns = namespace(confirmed=[], drafts=[]) %}
+                {% for a in assignments %}
+                    {% if a.judge_id == judge.id %}
+                        {% if a.status == 'confirmed' %}{% set ns.confirmed = ns.confirmed + [a] %}
+                        {% else %}{% set ns.drafts = ns.drafts + [a] %}{% endif %}
+                    {% endif %}
+                {% endfor %}
+                {% set total = ns.confirmed|length + ns.drafts|length %}
+                {% set _ = judge_rows.append({'judge': judge, 'confirmed': ns.confirmed, 'drafts': ns.drafts, 'total': total}) %}
+            {% endif %}
+        {% endfor %}
+        {% set sorted_rows = judge_rows|sort(attribute='total', reverse=True) %}
+        <div class="table-wrap">
+            <table class="load-report-table">
+                <thead>
+                    <tr>
+                        <th>Juez</th>
+                        <th>Capacidades</th>
+                        <th>Confirmadas</th>
+                        <th>Borrador</th>
+                        <th>Total</th>
+                        <th>Proyectos asignados</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sorted_rows %}
+                    <tr class="{% if row.total >= 3 %}load-high{% elif row.total == 0 %}load-none{% endif %}">
+                        <td>
+                            <strong>{{ row.judge.full_name }}</strong>
+                            <small style="display:block;color:#5d728c">{{ row.judge.email }}</small>
+                        </td>
+                        <td>
+                            <div style="display:flex;flex-direction:column;gap:0.15rem">
+                                <span class="tag {% if row.judge.category_scope_normalized == 'ambas' %}ok{% else %}warning{% endif %}" style="font-size:0.7rem">{{ row.judge.category_scope_label }}</span>
+                                <span class="tag" style="font-size:0.7rem">{{ row.judge.evaluation_scope_label }}</span>
+                                {% if row.judge.can_evaluate_english %}<span class="tag ok" style="font-size:0.7rem">Ingl&eacute;s</span>{% endif %}
+                            </div>
+                        </td>
+                        <td style="text-align:center;font-weight:900">{{ row.confirmed|length }}</td>
+                        <td style="text-align:center;font-weight:900;color:{% if row.drafts %}#7a4f00{% else %}#aaa{% endif %}">{{ row.drafts|length }}</td>
+                        <td style="text-align:center">
+                            <span class="tag {% if row.total >= 3 %}off{% elif row.total > 0 %}ok{% else %}{% endif %}">{{ row.total }}</span>
+                        </td>
+                        <td>
+                            {% if row.confirmed or row.drafts %}
+                            <div style="display:flex;flex-direction:column;gap:0.2rem">
+                                {% for a in row.confirmed %}
+                                    {% set p = project_map.get(a.project_id) %}
+                                    {% if p %}
+                                    <span style="font-size:0.78rem"><strong>{{ p.title }}</strong> <em style="color:#5d728c">({{ a.scope_label }})</em></span>
+                                    {% endif %}
+                                {% endfor %}
+                                {% for a in row.drafts %}
+                                    {% set p = project_map.get(a.project_id) %}
+                                    {% if p %}
+                                    <span style="font-size:0.78rem;color:#7a4f00"><strong>{{ p.title }}</strong> <em>({{ a.scope_label }}) [borrador]</em></span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <span style="color:#aaa;font-size:0.82rem">Sin asignaciones</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6">No hay jueces activos.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div>
+    </div>
+</dialog>
+
 <dialog id="auto-assign-dialog" class="maintenance-dialog">
     <div class="dialog-card">
         <div class="dialog-head"><h4>Asignaci&oacute;n autom&aacute;tica</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>

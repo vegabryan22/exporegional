@@ -5642,6 +5642,14 @@ dialog.maintenance-dialog::backdrop {
     gap: 0.8rem;
 }
 
+.load-report-table tr.load-high td {
+    background: #fff5f5;
+}
+
+.load-report-table tr.load-none td {
+    opacity: 0.55;
+}
+
 .auto-assign-rules {
     margin-top: 1rem;
     padding: 0.75rem 1rem;

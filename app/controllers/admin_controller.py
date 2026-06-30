@@ -183,6 +183,9 @@ ACTION_MODULE_MAP = {
     "replace_assignment": "assignments",
     "quick_create_assignment_judge": "assignments",
     "delete_assignment": "assignments",
+    "auto_assign": "assignments",
+    "confirm_draft_assignments": "assignments",
+    "discard_draft_assignments": "assignments",
     "create_judge": "judges",
     "update_judge": "judges",
     "reset_judge_password": "judges",
@@ -328,6 +331,82 @@ def _assignment_compatibility_error(
     if not judge.can_evaluate_category(project.category):
         return f"{judge.full_name} no está clasificado para la categoría {project.category}."
     return ""
+
+
+def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int, int]:
+    """Generate draft assignments respecting judge capabilities and load balancing.
+    Returns (created_count, skipped_count)."""
+    if replace_drafts:
+        Assignment.query.filter_by(status=Assignment.STATUS_DRAFT).delete()
+        db.session.flush()
+
+    active_projects = Project.query.filter(Project.is_active == True).all()  # noqa: E712
+    eligible_judges = (
+        Judge.query.filter(
+            Judge.is_active_user == True,  # noqa: E712
+            Judge.role == Judge.ROLE_JUDGE,
+        ).all()
+    )
+    if not eligible_judges or not active_projects:
+        return 0, 0
+
+    # Load: count confirmed + draft assignments per judge
+    judge_load: dict[int, int] = {
+        j.id: Assignment.query.filter_by(judge_id=j.id).count()
+        for j in eligible_judges
+    }
+
+    created = 0
+    skipped = 0
+
+    for project in active_projects:
+        existing = Assignment.query.filter_by(project_id=project.id).all()
+        confirmed_count = sum(1 for a in existing if a.status == Assignment.STATUS_CONFIRMED)
+        slots = max_per_project - confirmed_count
+        if slots <= 0:
+            skipped += 1
+            continue
+
+        already_assigned_judge_ids = {a.judge_id for a in existing}
+
+        # Candidates: must not already be assigned and must be compatible
+        candidates = []
+        for judge in eligible_judges:
+            if judge.id in already_assigned_judge_ids:
+                continue
+            # Category check
+            if not judge.can_evaluate_category(project.category):
+                continue
+            # English check
+            if _project_requires_english(project) and not judge.can_evaluate_english:
+                continue
+            # Must be able to evaluate at least one dimension
+            if not judge.can_evaluate_documentation and not judge.can_evaluate_exposition:
+                continue
+            candidates.append(judge)
+
+        # Sort by current load (fewest assignments first)
+        candidates.sort(key=lambda j: judge_load.get(j.id, 0))
+
+        assigned_this_project = 0
+        for judge in candidates:
+            if assigned_this_project >= slots:
+                break
+            assignment = Assignment(
+                judge_id=judge.id,
+                project_id=project.id,
+                can_evaluate_documentation=judge.can_evaluate_documentation,
+                can_evaluate_exposition=judge.can_evaluate_exposition,
+                status=Assignment.STATUS_DRAFT,
+            )
+            db.session.add(assignment)
+            judge_load[judge.id] = judge_load.get(judge.id, 0) + 1
+            already_assigned_judge_ids.add(judge.id)
+            assigned_this_project += 1
+            created += 1
+
+    db.session.commit()
+    return created, skipped
 
 
 def _build_default_department_access():
@@ -3221,6 +3300,52 @@ def _handle_action(action: str):
             db.session.delete(assignment)
             db.session.commit()
             flash("Asignacion eliminada.", "success")
+
+    elif action == "auto_assign":
+        max_per_project = request.form.get("max_per_project", type=int) or 2
+        max_per_project = max(1, min(max_per_project, 10))
+        replace_drafts = request.form.get("replace_drafts") == "1"
+        created, skipped = _auto_assign_judges(max_per_project, replace_drafts)
+        if created:
+            log_event(
+                "admin.assignment.auto_assign",
+                "assignment",
+                detail=f"Auto-asignacion generada: {created} borradores creados, {skipped} proyectos sin espacio, max={max_per_project}",
+            )
+            flash(
+                f"Se generaron {created} asignación(es) en borrador. "
+                "Revísalas y confirma para notificar a los jueces.",
+                "success",
+            )
+        else:
+            flash("No se generaron nuevas asignaciones. Verifica que haya jueces activos y proyectos disponibles.", "error")
+
+    elif action == "confirm_draft_assignments":
+        drafts = Assignment.query.filter_by(status=Assignment.STATUS_DRAFT).all()
+        if not drafts:
+            flash("No hay asignaciones en borrador para confirmar.", "error")
+        else:
+            for assignment in drafts:
+                assignment.status = Assignment.STATUS_CONFIRMED
+            db.session.commit()
+            log_event(
+                "admin.assignment.confirm_drafts",
+                "assignment",
+                detail=f"Confirmadas {len(drafts)} asignaciones en borrador. Se envían correos.",
+            )
+            for assignment in drafts:
+                _send_assignment_email(assignment.judge, assignment.project, assignment)
+            flash(f"{len(drafts)} asignación(es) confirmadas. Se notificó a los jueces por correo.", "success")
+
+    elif action == "discard_draft_assignments":
+        deleted = Assignment.query.filter_by(status=Assignment.STATUS_DRAFT).delete()
+        db.session.commit()
+        log_event(
+            "admin.assignment.discard_drafts",
+            "assignment",
+            detail=f"Descartadas {deleted} asignaciones en borrador.",
+        )
+        flash(f"{deleted} asignación(es) en borrador descartadas. No se enviaron correos.", "success")
 
     elif action == "replace_assignment":
         assignment_id = request.form.get("assignment_id", type=int)

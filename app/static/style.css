@@ -5616,6 +5616,51 @@ dialog.maintenance-dialog::backdrop {
     line-height: 1.1;
 }
 
+.assignment-pill-draft {
+    background: #fff8e8;
+    color: #7a4f00;
+    border: 1px dashed #e0b040;
+}
+
+.assignment-pill-draft small {
+    color: #9a6b10;
+}
+
+.auto-assign-draft-section {
+    border: 2px solid #e0b040;
+    background: #fffbf0;
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.auto-assign-draft-section .page-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.auto-assign-rules {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #d4e2f0;
+    border-radius: 10px;
+    background: #f6faff;
+    font-size: 0.88rem;
+}
+
+.auto-assign-rules ul {
+    margin: 0.3rem 0 0 1.1rem;
+    padding: 0;
+}
+
+.auto-assign-rules li {
+    margin-bottom: 0.2rem;
+    color: #3a5a7c;
+}
+
 .assignment-manage-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

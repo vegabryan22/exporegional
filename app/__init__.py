@@ -791,6 +791,20 @@ def ensure_schema_updates():
                 )
             )
 
+        if "assignments" in inspector.get_table_names():
+            assignment_columns = [c["name"] for c in inspector.get_columns("assignments")]
+            if "status" not in assignment_columns:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE assignments ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'confirmed'",
+                    "assignments.status",
+                )
+                _run_optional_schema_statement(
+                    connection,
+                    "CREATE INDEX IF NOT EXISTS idx_assignments_status ON assignments (status)",
+                    "assignments.status index",
+                )
+
         if "project_document_revisions" in inspector.get_table_names():
             doc_rev_columns = [c["name"] for c in inspector.get_columns("project_document_revisions")]
             if "replaced_document_path" not in doc_rev_columns:

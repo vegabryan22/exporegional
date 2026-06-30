@@ -2,7 +2,8 @@
 {% block admin_content %}
 {% set active_projects = projects|selectattr('is_active')|list %}
 {% set active_project_ids = active_projects|map(attribute='id')|list %}
-{% set active_assignments = assignments|selectattr('project_id', 'in', active_project_ids)|list %}
+{% set confirmed_assignments = assignments|selectattr('status', 'equalto', 'confirmed')|selectattr('project_id', 'in', active_project_ids)|list %}
+{% set draft_assignments = assignments|selectattr('status', 'equalto', 'draft')|list %}
 <section class="card admin-section maintenance-page assignments-page">
     <div class="page-head">
         <div>
@@ -11,21 +12,52 @@
             <p class="table-subtext">Vista resumida por proyecto para resolver cambios r&aacute;pidos desde un modal.</p>
         </div>
         <div class="page-head-actions assignment-head-actions">
-            <span class="tag ok">{{ active_assignments|length }} asignaciones</span>
+            <span class="tag ok">{{ confirmed_assignments|length }} confirmadas</span>
+            {% if draft_assignments %}<span class="tag warning">{{ draft_assignments|length }} borrador</span>{% endif %}
             <span class="tag">{{ active_projects|length }} proyectos</span>
             <button type="button" class="secondary-btn" data-dialog-open="quick-judge-dialog">Juez nuevo r&aacute;pido</button>
             <button type="button" class="outline-btn" data-dialog-open="create-assignment-dialog">Asignaci&oacute;n masiva</button>
+            <button type="button" class="project-action-btn action-members" data-dialog-open="auto-assign-dialog">Asignar autom&aacute;ticamente</button>
         </div>
     </div>
 
+    {% if draft_assignments %}
+    <section class="doc-revision-admin-section auto-assign-draft-section">
+        <div class="page-head">
+            <div>
+                <p class="maintenance-kicker">Pendiente de confirmaci&oacute;n</p>
+                <h4>Borrador de asignaciones autom&aacute;ticas</h4>
+                <p class="table-subtext">{{ draft_assignments|length }} asignaci&oacute;n(es) en borrador. Los jueces <strong>no reciben correo</strong> hasta que confirmes. Puedes gestionar cada proyecto individualmente antes de confirmar.</p>
+            </div>
+            <div class="page-head-actions">
+                <form method="post" action="{{ action_url }}" style="display:contents">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="action" value="discard_draft_assignments">
+                    <button type="submit" class="ghost-btn" onclick="return confirm('¿Descartar todas las asignaciones en borrador? No se enviará ningún correo.')">Descartar borrador</button>
+                </form>
+                <form method="post" action="{{ action_url }}" style="display:contents">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="action" value="confirm_draft_assignments">
+                    <button type="submit" class="project-action-btn" onclick="return confirm('¿Confirmar todas las asignaciones en borrador y notificar a los jueces por correo?')">Confirmar y notificar</button>
+                </form>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
     <div class="assignment-card-list">
         {% for project in active_projects|sort(attribute='title') %}
-            {% set ns = namespace(project_assignments=[]) %}
+            {% set ns = namespace(confirmed=[], drafts=[]) %}
             {% for assignment in assignments %}
                 {% if assignment.project_id == project.id %}
-                    {% set ns.project_assignments = ns.project_assignments + [assignment] %}
+                    {% if assignment.status == 'confirmed' %}
+                        {% set ns.confirmed = ns.confirmed + [assignment] %}
+                    {% else %}
+                        {% set ns.drafts = ns.drafts + [assignment] %}
+                    {% endif %}
                 {% endif %}
             {% endfor %}
+            {% set ns_all = namespace(project_assignments=ns.confirmed + ns.drafts) %}
             <article class="assignment-project-card">
                 <div class="assignment-project-main">
                     <span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span>
@@ -33,10 +65,10 @@
                     <p>{{ project.team_name }}</p>
                 </div>
                 <div class="assignment-project-judges">
-                    <span class="assignment-field-label">Jueces</span>
-                    {% if ns.project_assignments %}
+                    <span class="assignment-field-label">Jueces confirmados</span>
+                    {% if ns.confirmed %}
                         <div class="assignment-summary-list assignment-summary-list-left">
-                            {% for assignment in ns.project_assignments %}
+                            {% for assignment in ns.confirmed %}
                                 <span class="assignment-summary-pill">
                                     {{ assignment.judge.full_name }}
                                     <small>{{ assignment.scope_label }}</small>
@@ -46,9 +78,21 @@
                     {% else %}
                         <span class="tag off">Sin jueces</span>
                     {% endif %}
+                    {% if ns.drafts %}
+                        <span class="assignment-field-label" style="margin-top:0.4rem">Borrador</span>
+                        <div class="assignment-summary-list assignment-summary-list-left">
+                            {% for assignment in ns.drafts %}
+                                <span class="assignment-summary-pill assignment-pill-draft">
+                                    {{ assignment.judge.full_name }}
+                                    <small>{{ assignment.scope_label }}</small>
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="assignment-project-status">
-                    <span class="tag {{ 'ok' if ns.project_assignments else 'off' }}">{{ ns.project_assignments|length }} juez(es)</span>
+                    <span class="tag {{ 'ok' if ns.confirmed else 'off' }}">{{ ns.confirmed|length }} confirmado(s)</span>
+                    {% if ns.drafts %}<span class="tag warning">{{ ns.drafts|length }} borrador</span>{% endif %}
                     {% if project.requires_english_evaluation %}<span class="tag warning">Ingl&eacute;s &middot; {{ project.english_members_count }}</span>{% endif %}
                 </div>
                 <button type="button" class="secondary-btn assignment-manage-btn" data-dialog-open="manage-project-{{ project.id }}">Gestionar</button>
@@ -280,6 +324,37 @@
         </form>
     </div>
 </dialog>
+<dialog id="auto-assign-dialog" class="maintenance-dialog">
+    <div class="dialog-card">
+        <div class="dialog-head"><h4>Asignaci&oacute;n autom&aacute;tica</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+        <form method="post" action="{{ action_url }}" class="compact-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="auto_assign">
+            <p>El sistema asignar&aacute; jueces a proyectos respetando sus capacidades (categor&iacute;a, ingl&eacute;s, alcance). Las asignaciones se guardan como <strong>borrador</strong> sin enviar correos hasta que confirmes.</p>
+            <label>M&aacute;ximo de jueces por proyecto
+                <input type="number" name="max_per_project" value="2" min="1" max="10" required>
+            </label>
+            <label class="logistics-check-card" style="margin-top:0.5rem">
+                <input type="checkbox" name="replace_drafts" value="1">
+                <span class="check-card-title">Reemplazar borrador existente</span>
+                <span class="check-card-help">Elimina las asignaciones en borrador previas antes de generar las nuevas. Las asignaciones confirmadas no se tocan.</span>
+            </label>
+            <div class="auto-assign-rules">
+                <p class="maintenance-kicker" style="margin-bottom:0.3rem">Reglas aplicadas</p>
+                <ul>
+                    <li>Solo STEAM &rarr; no se asigna a proyectos de emprendimiento (y viceversa).</li>
+                    <li>No eval&uacute;a ingl&eacute;s &rarr; no se asigna a proyectos con ingl&eacute;s.</li>
+                    <li>Solo documento &rarr; asignaci&oacute;n con alcance solo documento.</li>
+                    <li>Solo exposici&oacute;n &rarr; asignaci&oacute;n con alcance solo exposici&oacute;n.</li>
+                    <li>Ambos &rarr; asignaci&oacute;n completa (documento + exposici&oacute;n).</li>
+                    <li>Balance de carga: se prioriza el juez con menos asignaciones.</li>
+                </ul>
+            </div>
+            <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Generar borrador</button></div>
+        </form>
+    </div>
+</dialog>
+
 {% set assignment_map = {} %}
 {% for judge in judges %}
     {% set ns = namespace(project_ids=[]) %}

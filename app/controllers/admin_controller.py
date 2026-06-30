@@ -334,23 +334,22 @@ def _assignment_compatibility_error(
 
 
 def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int, int]:
-    """Generate draft assignments respecting judge capabilities and load balancing.
+    """Generate draft assignments ensuring full doc+expo coverage per project.
     Returns (created_count, skipped_count)."""
+    MAX_PROJECTS_PER_JUDGE = 3
+
     if replace_drafts:
         Assignment.query.filter_by(status=Assignment.STATUS_DRAFT).delete()
         db.session.flush()
 
     active_projects = Project.query.filter(Project.is_active == True).all()  # noqa: E712
-    eligible_judges = (
-        Judge.query.filter(
-            Judge.is_active_user == True,  # noqa: E712
-            Judge.role == Judge.ROLE_JUDGE,
-        ).all()
-    )
+    eligible_judges = Judge.query.filter(
+        Judge.is_active_user == True,  # noqa: E712
+        Judge.role == Judge.ROLE_JUDGE,
+    ).all()
     if not eligible_judges or not active_projects:
         return 0, 0
 
-    # Load: count confirmed + draft assignments per judge
     judge_load: dict[int, int] = {
         j.id: Assignment.query.filter_by(judge_id=j.id).count()
         for j in eligible_judges
@@ -361,55 +360,104 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
 
     for project in active_projects:
         existing = Assignment.query.filter_by(project_id=project.id).all()
-        confirmed_count = sum(1 for a in existing if a.status == Assignment.STATUS_CONFIRMED)
+        confirmed = [a for a in existing if a.status == Assignment.STATUS_CONFIRMED]
+        current_drafts = [a for a in existing if a.status == Assignment.STATUS_DRAFT]
+
+        confirmed_count = len(confirmed)
         slots = max_per_project - confirmed_count
         if slots <= 0:
             skipped += 1
             continue
 
-        already_assigned_judge_ids = {a.judge_id for a in existing}
+        # Current coverage considering confirmed + already existing drafts
+        doc_covered = any(a.can_evaluate_documentation for a in confirmed + current_drafts)
+        expo_covered = any(a.can_evaluate_exposition for a in confirmed + current_drafts)
+        already_assigned_ids = {a.judge_id for a in existing}
+        remaining_slots = slots - len(current_drafts)
 
-        # Candidates: must not already be assigned and must be compatible
-        candidates = []
-        for judge in eligible_judges:
-            if judge.id in already_assigned_judge_ids:
-                continue
-            # Category check
-            if not judge.can_evaluate_category(project.category):
-                continue
-            # English check
-            if _project_requires_english(project) and not judge.can_evaluate_english:
-                continue
-            # Must be able to evaluate at least one dimension
-            if not judge.can_evaluate_documentation and not judge.can_evaluate_exposition:
-                continue
-            candidates.append(judge)
-
-        # Sort: judges who evaluate both dimensions first, then by load (fewest first)
-        candidates.sort(key=lambda j: (
-            0 if (j.can_evaluate_documentation and j.can_evaluate_exposition) else 1,
-            judge_load.get(j.id, 0),
-        ))
-
-        MAX_PROJECTS_PER_JUDGE = 3
-        assigned_this_project = 0
-        for judge in candidates:
-            if assigned_this_project >= slots:
-                break
+        # Build candidate pool for this project
+        def eligible_for_project(judge):
+            if judge.id in already_assigned_ids:
+                return False
             if judge_load.get(judge.id, 0) >= MAX_PROJECTS_PER_JUDGE:
-                continue
-            assignment = Assignment(
+                return False
+            if not judge.can_evaluate_category(project.category):
+                return False
+            if _project_requires_english(project) and not judge.can_evaluate_english:
+                return False
+            return judge.can_evaluate_documentation or judge.can_evaluate_exposition
+
+        def by_load(j):
+            return judge_load.get(j.id, 0)
+
+        both = sorted([j for j in eligible_judges if eligible_for_project(j)
+                       and j.can_evaluate_documentation and j.can_evaluate_exposition], key=by_load)
+        doc_only = sorted([j for j in eligible_judges if eligible_for_project(j)
+                           and j.can_evaluate_documentation and not j.can_evaluate_exposition], key=by_load)
+        expo_only = sorted([j for j in eligible_judges if eligible_for_project(j)
+                            and not j.can_evaluate_documentation and j.can_evaluate_exposition], key=by_load)
+
+        new_assignments: list[Assignment] = []
+
+        def assign(judge, can_doc, can_expo):
+            nonlocal doc_covered, expo_covered, remaining_slots
+            a = Assignment(
                 judge_id=judge.id,
                 project_id=project.id,
-                can_evaluate_documentation=judge.can_evaluate_documentation,
-                can_evaluate_exposition=judge.can_evaluate_exposition,
+                can_evaluate_documentation=can_doc,
+                can_evaluate_exposition=can_expo,
                 status=Assignment.STATUS_DRAFT,
             )
-            db.session.add(assignment)
+            db.session.add(a)
             judge_load[judge.id] = judge_load.get(judge.id, 0) + 1
-            already_assigned_judge_ids.add(judge.id)
-            assigned_this_project += 1
-            created += 1
+            already_assigned_ids.add(judge.id)
+            new_assignments.append(a)
+            remaining_slots -= 1
+            if can_doc:
+                doc_covered = True
+            if can_expo:
+                expo_covered = True
+
+        # Phase 1: ensure both doc and expo are covered
+        if not doc_covered and not expo_covered:
+            if both and remaining_slots >= 1:
+                # One judge covers both — ideal
+                assign(both.pop(0), True, True)
+            else:
+                # Need separate judges
+                if doc_only and remaining_slots >= 1:
+                    assign(doc_only.pop(0), True, False)
+                elif both and remaining_slots >= 1:
+                    assign(both.pop(0), True, True)
+                if expo_only and remaining_slots >= 1:
+                    assign(expo_only.pop(0), False, True)
+                elif both and remaining_slots >= 1:
+                    assign(both.pop(0), True, True)
+        elif not doc_covered:
+            if both and remaining_slots >= 1:
+                assign(both.pop(0), True, True)
+            elif doc_only and remaining_slots >= 1:
+                assign(doc_only.pop(0), True, False)
+        elif not expo_covered:
+            if both and remaining_slots >= 1:
+                assign(both.pop(0), True, True)
+            elif expo_only and remaining_slots >= 1:
+                assign(expo_only.pop(0), False, True)
+
+        # Phase 2: fill remaining slots (redundancy), prioritizing "both" judges
+        fill_candidates = sorted(
+            [j for j in both + doc_only + expo_only if j.id not in already_assigned_ids],
+            key=lambda j: (
+                0 if (j.can_evaluate_documentation and j.can_evaluate_exposition) else 1,
+                judge_load.get(j.id, 0),
+            ),
+        )
+        for judge in fill_candidates:
+            if remaining_slots <= 0:
+                break
+            assign(judge, judge.can_evaluate_documentation, judge.can_evaluate_exposition)
+
+        created += len(new_assignments)
 
     db.session.commit()
     return created, skipped

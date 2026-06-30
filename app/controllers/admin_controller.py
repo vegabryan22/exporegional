@@ -385,8 +385,11 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
                 continue
             candidates.append(judge)
 
-        # Sort by current load (fewest assignments first)
-        candidates.sort(key=lambda j: judge_load.get(j.id, 0))
+        # Sort: judges who evaluate both dimensions first, then by load (fewest first)
+        candidates.sort(key=lambda j: (
+            0 if (j.can_evaluate_documentation and j.can_evaluate_exposition) else 1,
+            judge_load.get(j.id, 0),
+        ))
 
         assigned_this_project = 0
         for judge in candidates:

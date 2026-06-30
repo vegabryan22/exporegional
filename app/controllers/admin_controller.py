@@ -334,8 +334,9 @@ def _assignment_compatibility_error(
 
 
 def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int, int]:
-    """Generate draft assignments ensuring full doc+expo coverage per project.
-    Uses a soft cap of 3 projects per judge (overloads only when no alternative).
+    """Assign judges to projects. Every assigned judge evaluates BOTH doc and expo.
+    For English projects, prefer English-capable judges (at least 1-2).
+    Soft cap: prefer judges under 3 projects, but will overload if no alternative.
     Returns (created_count, skipped_count)."""
     SOFT_CAP = 3
 
@@ -344,16 +345,21 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
         db.session.flush()
 
     active_projects = Project.query.filter(Project.is_active == True).all()  # noqa: E712
-    eligible_judges = Judge.query.filter(
+
+    # Only judges who can evaluate BOTH dimensions qualify for auto-assignment
+    full_judges = Judge.query.filter(
         Judge.is_active_user == True,  # noqa: E712
         Judge.role == Judge.ROLE_JUDGE,
+        Judge.can_evaluate_documentation == True,  # noqa: E712
+        Judge.can_evaluate_exposition == True,  # noqa: E712
     ).all()
-    if not eligible_judges or not active_projects:
+
+    if not full_judges or not active_projects:
         return 0, 0
 
     judge_load: dict[int, int] = {
         j.id: Assignment.query.filter_by(judge_id=j.id).count()
-        for j in eligible_judges
+        for j in full_judges
     }
 
     created = 0
@@ -361,100 +367,50 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
 
     for project in active_projects:
         existing = Assignment.query.filter_by(project_id=project.id).all()
-        confirmed = [a for a in existing if a.status == Assignment.STATUS_CONFIRMED]
-        current_drafts = [a for a in existing if a.status == Assignment.STATUS_DRAFT]
-
-        confirmed_count = len(confirmed)
-        slots = max_per_project - confirmed_count
+        confirmed_count = sum(1 for a in existing if a.status == Assignment.STATUS_CONFIRMED)
+        existing_draft_count = sum(1 for a in existing if a.status == Assignment.STATUS_DRAFT)
+        slots = max_per_project - confirmed_count - existing_draft_count
         if slots <= 0:
             skipped += 1
             continue
 
-        # Track coverage counts (not just boolean — for balancing)
-        doc_count = sum(1 for a in confirmed + current_drafts if a.can_evaluate_documentation)
-        expo_count = sum(1 for a in confirmed + current_drafts if a.can_evaluate_exposition)
         already_assigned_ids = {a.judge_id for a in existing}
-        remaining_slots = slots - len(current_drafts)
-
-        if remaining_slots <= 0:
-            continue
-
-        new_assignments: list[Assignment] = []
+        needs_english = _project_requires_english(project)
 
         def compatible(judge) -> bool:
             if judge.id in already_assigned_ids:
                 return False
             if not judge.can_evaluate_category(project.category):
                 return False
-            if _project_requires_english(project) and not judge.can_evaluate_english:
-                return False
-            return bool(judge.can_evaluate_documentation or judge.can_evaluate_exposition)
+            return True
 
+        candidates = [j for j in full_judges if compatible(j)]
+
+        # Sort: prefer judges under soft cap, then by fewest assignments.
+        # For English projects: among same-tier judges, prefer English-capable first.
         def sort_key(j):
-            # Prefer under soft cap; within same tier prefer fewer assignments
-            over = 1 if judge_load.get(j.id, 0) >= SOFT_CAP else 0
-            return (over, judge_load.get(j.id, 0))
+            over_cap = 1 if judge_load.get(j.id, 0) >= SOFT_CAP else 0
+            no_english = 1 if (needs_english and not j.can_evaluate_english) else 0
+            return (over_cap, no_english, judge_load.get(j.id, 0))
 
-        def fresh_pool():
-            return sorted([j for j in eligible_judges if compatible(j)], key=sort_key)
+        candidates.sort(key=sort_key)
 
-        def assign(judge, can_doc, can_expo):
-            nonlocal doc_count, expo_count, remaining_slots
-            a = Assignment(
+        new_count = 0
+        for judge in candidates:
+            if new_count >= slots:
+                break
+            assignment = Assignment(
                 judge_id=judge.id,
                 project_id=project.id,
-                can_evaluate_documentation=can_doc,
-                can_evaluate_exposition=can_expo,
+                can_evaluate_documentation=True,
+                can_evaluate_exposition=True,
                 status=Assignment.STATUS_DRAFT,
             )
-            db.session.add(a)
+            db.session.add(assignment)
             judge_load[judge.id] = judge_load.get(judge.id, 0) + 1
             already_assigned_ids.add(judge.id)
-            new_assignments.append(a)
-            remaining_slots -= 1
-            if can_doc:
-                doc_count += 1
-            if can_expo:
-                expo_count += 1
-
-        def pick(pool, need_doc: bool, need_expo: bool):
-            """Return best judge from pool covering at least one needed dimension."""
-            # 1st pass: judge covers BOTH needed dimensions
-            for j in pool:
-                covers = (need_doc and j.can_evaluate_documentation) and (need_expo and j.can_evaluate_exposition)
-                if covers:
-                    return j
-            # 2nd pass: judge covers any needed dimension
-            for j in pool:
-                covers = (need_doc and j.can_evaluate_documentation) or (need_expo and j.can_evaluate_exposition)
-                if covers:
-                    return j
-            return pool[0] if pool else None
-
-        # Phase 1: guarantee doc coverage
-        if doc_count == 0 and remaining_slots > 0:
-            pool = fresh_pool()
-            doc_pool = [j for j in pool if j.can_evaluate_documentation]
-            if doc_pool:
-                j = doc_pool[0]
-                assign(j, j.can_evaluate_documentation, j.can_evaluate_exposition)
-
-        # Phase 2: guarantee expo coverage
-        if expo_count == 0 and remaining_slots > 0:
-            pool = fresh_pool()
-            expo_pool = [j for j in pool if j.can_evaluate_exposition]
-            if expo_pool:
-                j = expo_pool[0]
-                assign(j, j.can_evaluate_documentation, j.can_evaluate_exposition)
-
-        # Phase 3: fill remaining slots ONLY with judges who cover both dimensions
-        while remaining_slots > 0:
-            pool = [j for j in fresh_pool() if j.can_evaluate_documentation and j.can_evaluate_exposition]
-            if not pool:
-                break
-            assign(pool[0], True, True)
-
-        created += len(new_assignments)
+            new_count += 1
+            created += 1
 
     db.session.commit()
     return created, skipped

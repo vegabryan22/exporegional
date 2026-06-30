@@ -447,18 +447,12 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
                 j = expo_pool[0]
                 assign(j, j.can_evaluate_documentation, j.can_evaluate_exposition)
 
-        # Phase 3: fill remaining slots with BALANCED distribution
+        # Phase 3: fill remaining slots ONLY with judges who cover both dimensions
         while remaining_slots > 0:
-            pool = fresh_pool()
+            pool = [j for j in fresh_pool() if j.can_evaluate_documentation and j.can_evaluate_exposition]
             if not pool:
                 break
-            # Decide which dimension needs reinforcement
-            need_doc = doc_count <= expo_count
-            need_expo = expo_count <= doc_count
-            j = pick(pool, need_doc, need_expo)
-            if j is None:
-                break
-            assign(j, j.can_evaluate_documentation, j.can_evaluate_exposition)
+            assign(pool[0], True, True)
 
         created += len(new_assignments)
 

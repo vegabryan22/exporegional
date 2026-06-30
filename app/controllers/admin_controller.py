@@ -391,10 +391,13 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
             judge_load.get(j.id, 0),
         ))
 
+        MAX_PROJECTS_PER_JUDGE = 3
         assigned_this_project = 0
         for judge in candidates:
             if assigned_this_project >= slots:
                 break
+            if judge_load.get(judge.id, 0) >= MAX_PROJECTS_PER_JUDGE:
+                continue
             assignment = Assignment(
                 judge_id=judge.id,
                 project_id=project.id,

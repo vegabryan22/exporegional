@@ -847,3 +847,12 @@ def ensure_schema_updates():
                         """
                     )
                 )
+
+        if "project_member_edit_requests" in inspector.get_table_names():
+            mer_cols = {c["name"] for c in inspector.get_columns("project_member_edit_requests")}
+            if "justification" not in mer_cols:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE project_member_edit_requests ADD COLUMN justification TEXT NULL",
+                    "project_member_edit_requests.justification",
+                )

@@ -1632,6 +1632,7 @@ def submit_member_edit(project_id: int, member_id: int):
             flash("Ya existe una solicitud pendiente para este integrante. Espera a que sea procesada.", "error")
             return redirect(url_for("public.project_member_edit", project_id=project_id, member_id=member_id))
 
+        justification = (request.form.get("justification") or "").strip()
         new_vals = {
             "full_name":               (request.form.get("full_name") or "").strip(),
             "identity_number":         (request.form.get("identity_number") or "").strip(),
@@ -1660,8 +1661,14 @@ def submit_member_edit(project_id: int, member_id: int):
             "role":                    member.role or "",
         }
 
+        errors = []
         if not new_vals["full_name"]:
-            flash("El nombre completo es obligatorio.", "error")
+            errors.append("El nombre completo es obligatorio.")
+        if not justification or len(justification) < 10:
+            errors.append("Debes indicar el motivo del cambio (mínimo 10 caracteres).")
+        if errors:
+            for e in errors:
+                flash(e, "error")
             return render_template("public/project_member_edit.html", project=project, member=member,
                                    pending=pending, past_requests=past_requests)
 
@@ -1669,6 +1676,7 @@ def submit_member_edit(project_id: int, member_id: int):
             project_id=project_id,
             member_id=member_id,
             submitted_by_name=new_vals["full_name"],
+            justification=justification,
             changes_json=_json.dumps(new_vals, ensure_ascii=False),
             snapshot_json=_json.dumps(snapshot, ensure_ascii=False),
             status=ProjectMemberEditRequest.STATUS_PENDING,

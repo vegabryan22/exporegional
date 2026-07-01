@@ -126,6 +126,19 @@
             </div>
         </fieldset>
 
+            <div class="form-field" style="margin-top: 0.8rem;">
+                <label for="justification">Motivo del cambio <span class="required">*</span></label>
+                <textarea
+                    id="justification"
+                    name="justification"
+                    rows="3"
+                    required
+                    minlength="10"
+                    placeholder="Explica brevemente qué dato está incorrecto y por qué debe cambiarse."
+                ></textarea>
+                <small>Mínimo 10 caracteres.</small>
+            </div>
+
         <div class="doc-revision-form-actions">
             <a class="ghost-btn" href="{{ url_for('public.project_documents', project_id=project.id) }}">Cancelar</a>
             <button type="submit" class="project-action">Enviar solicitud de cambio</button>

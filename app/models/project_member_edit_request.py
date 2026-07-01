@@ -10,6 +10,7 @@ class ProjectMemberEditRequest(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
     member_id = db.Column(db.Integer, db.ForeignKey("project_members.id", ondelete="SET NULL"), nullable=True, index=True)
     submitted_by_name = db.Column(db.String(120), nullable=False)
+    justification = db.Column(db.Text, nullable=True)
     # JSON dict of {field: new_value} for all editable fields
     changes_json = db.Column(db.Text, nullable=False)
     # JSON snapshot of member values at submission time for diff display

@@ -5846,7 +5846,7 @@ def _build_advisor_stats(projects):
         if not key:
             continue
         b = buckets[key]
-        b["name"] = p.advisor_name or "Sin nombre"
+        b["name"] = " ".join(w.capitalize() for w in (p.advisor_name or "Sin nombre").split())
         b["email"] = p.advisor_email or ""
         b["identity"] = p.advisor_identity or ""
         cat = (p.category or "").lower()
@@ -6479,7 +6479,8 @@ def _build_students_stats(context: dict) -> dict:
     # projects by advisor
     advisor_proj: dict[str, int] = defaultdict(int)
     for p in active_projects:
-        key = (p.advisor_name or "Sin tutor").strip()
+        raw = (p.advisor_name or "Sin tutor").strip()
+        key = " ".join(w.capitalize() for w in raw.split())
         advisor_proj[key] += 1
     top_advisors = sorted(advisor_proj.items(), key=lambda x: -x[1])[:10]
 

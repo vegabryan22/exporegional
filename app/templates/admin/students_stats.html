@@ -141,11 +141,14 @@
         return lines.length > 1 ? lines : str;
     }
 
-    function hbar(id, labels, datasets) {
+    function hbar(id, labels, datasets, { multiColor = false } = {}) {
         const wrappedLabels = labels.map(l => wrapLabel(l));
-        const rowHeight = 52;
+        if (multiColor && datasets.length === 1) {
+            datasets[0].backgroundColor = labels.map((_, i) => PALETTE[i % PALETTE.length]);
+        }
+        const rowHeight = 48;
         const canvas = document.getElementById(id);
-        canvas.parentElement.style.height = Math.max(200, labels.length * rowHeight) + "px";
+        canvas.parentElement.style.height = Math.max(180, labels.length * rowHeight) + "px";
         new Chart(canvas, {
             type: "bar",
             data: { labels: wrappedLabels, datasets },
@@ -164,9 +167,10 @@
                     y: {
                         grid: { display: false },
                         ticks: { font: { size: 11 }, autoSkip: false },
-                        afterFit(scale) { scale.width = Math.max(scale.width, 230); },
+                        afterFit(scale) { scale.width = Math.min(scale.width, 160); },
                     },
                 },
+                datasets: { bar: { barPercentage: 0.75, categoryPercentage: 0.85 } },
             },
         });
     }
@@ -206,15 +210,15 @@
     // Specialty horizontal bar
     hbar("chartSpecialty",
         {{ s.specialty_chart.labels | tojson }},
-        [{ label: "Estudiantes", data: {{ s.specialty_chart.data | tojson }},
-           backgroundColor: PALETTE, borderRadius: 5 }]
+        [{ label: "Estudiantes", data: {{ s.specialty_chart.data | tojson }}, borderRadius: 5 }],
+        { multiColor: true }
     );
 
     // Section horizontal bar
     hbar("chartSection",
         {{ s.section_chart.labels | tojson }},
-        [{ label: "Estudiantes", data: {{ s.section_chart.data | tojson }},
-           backgroundColor: "#1a6fba", borderRadius: 5 }]
+        [{ label: "Estudiantes", data: {{ s.section_chart.data | tojson }}, borderRadius: 5 }],
+        { multiColor: true }
     );
 
     // Team size donut

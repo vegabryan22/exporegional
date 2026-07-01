@@ -143,7 +143,10 @@
 
     function hbar(id, labels, datasets) {
         const wrappedLabels = labels.map(l => wrapLabel(l));
-        new Chart(document.getElementById(id), {
+        const rowHeight = 58;
+        const canvas = document.getElementById(id);
+        canvas.parentElement.style.height = Math.max(200, labels.length * rowHeight) + "px";
+        new Chart(canvas, {
             type: "bar",
             data: { labels: wrappedLabels, datasets },
             options: {

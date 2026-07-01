@@ -161,20 +161,16 @@
 
     function pie(id, labels, data, colors) {
         const total = data.reduce((a, b) => a + b, 0);
-        const shortLabels = labels.map(l => l.length > 30 ? l.slice(0, 28) + "…" : l);
+        const bg = colors || PALETTE;
         new Chart(document.getElementById(id), {
             type: "pie",
-            data: { labels: shortLabels, datasets: [{ data, backgroundColor: colors || PALETTE, borderWidth: 2, borderColor: "#fff", hoverOffset: 8 }] },
+            data: { labels, datasets: [{ data, backgroundColor: bg, borderWidth: 2, borderColor: "#fff", hoverOffset: 8 }] },
             options: {
                 maintainAspectRatio: true,
                 plugins: {
-                    legend: {
-                        position: "bottom",
-                        labels: { padding: 12, boxWidth: 14, font: { size: 11 } },
-                    },
+                    legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            title: (items) => labels[items[0].dataIndex],
                             label: ctx => {
                                 const pct = total ? Math.round(ctx.raw / total * 100) : 0;
                                 return ` ${ctx.raw} proyectos (${pct}%)`;
@@ -184,6 +180,15 @@
                 },
             },
         });
+        // Custom HTML legend — full name, proper wrap
+        const ul = document.createElement("ul");
+        ul.className = "pie-legend";
+        labels.forEach((label, i) => {
+            const li = document.createElement("li");
+            li.innerHTML = `<span class="pie-legend-dot" style="background:${bg[i % bg.length]}"></span>${label}`;
+            ul.appendChild(li);
+        });
+        document.getElementById(id).closest(".ss-chart-wrap").after(ul);
     }
 
     function wrapLabel(str, maxChars = 30) {

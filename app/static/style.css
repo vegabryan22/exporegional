@@ -6928,25 +6928,30 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .project-main-meta {
-    display: grid;
-    gap: 0.45rem;
-    margin: 0.45rem 0 0;
-    color: #31587f;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.6rem 0 0;
 }
 
 .project-detail.has-three-members .project-main-meta {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.55rem;
 }
 
 .project-main-meta div {
-    display: grid;
-    gap: 0.08rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid #d4e5f5;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #ffffff 0%, #f2f8ff 100%);
+    min-width: 90px;
 }
 
 .project-main-meta dt {
     color: #607998;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 900;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -6956,6 +6961,8 @@ dialog.maintenance-dialog::backdrop {
     margin: 0;
     color: #123f6b;
     font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.25;
 }
 
 .project-main-description {
@@ -7838,7 +7845,6 @@ dialog.maintenance-dialog::backdrop {
             "members";
     }
 
-    .project-detail.has-three-members .project-main-meta,
     .project-detail.has-three-members .integrants-grid {
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }

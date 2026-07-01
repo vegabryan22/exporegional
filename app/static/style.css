@@ -3414,7 +3414,19 @@ dialog.maintenance-dialog::backdrop {
     height: 240px;
 }
 
-.ss-chart-donut { height: 260px; }
+.ss-chart-donut {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: auto;
+    padding: 0.5rem 0;
+}
+
+.ss-chart-donut canvas {
+    max-width: 280px;
+    width: 100% !important;
+    height: auto !important;
+}
 
 @media (max-width: 860px) {
     .ss-chart-row-2 { grid-template-columns: 1fr; }

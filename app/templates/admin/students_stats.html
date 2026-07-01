@@ -97,7 +97,7 @@
         </article>
         <article class="ss-chart-card">
             <h4 class="ss-chart-title">Proyectos por especialidad</h4>
-            <div class="ss-chart-wrap">
+            <div class="ss-chart-wrap ss-chart-donut">
                 <canvas id="chartProjSpecialty"></canvas>
             </div>
         </article>
@@ -154,6 +154,28 @@
                 plugins: {
                     legend: { position: "bottom", labels: { padding: 14, boxWidth: 14, font: { size: 12 } } },
                     tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } },
+                },
+            },
+        });
+    }
+
+    function pie(id, labels, data, colors) {
+        const total = data.reduce((a, b) => a + b, 0);
+        new Chart(document.getElementById(id), {
+            type: "pie",
+            data: { labels, datasets: [{ data, backgroundColor: colors || PALETTE, borderWidth: 2, borderColor: "#fff", hoverOffset: 8 }] },
+            options: {
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { position: "bottom", labels: { padding: 12, boxWidth: 14, font: { size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                const pct = total ? Math.round(ctx.raw / total * 100) : 0;
+                                return ` ${ctx.label}: ${ctx.raw} (${pct}%)`;
+                            }
+                        }
+                    },
                 },
             },
         });
@@ -268,18 +290,16 @@
         LOGISTICS_COLORS
     );
 
-    // Projects per section
-    hbar("chartProjSection",
+    // Projects per section (vertical bar)
+    vbar("chartProjSection",
         {{ s.proj_section_chart.labels | tojson }},
-        [{ label: "Proyectos", data: {{ s.proj_section_chart.data | tojson }}, borderRadius: 5 }],
-        { multiColor: true }
+        [{ label: "Proyectos", data: {{ s.proj_section_chart.data | tojson }}, backgroundColor: PALETTE, borderRadius: 6 }]
     );
 
-    // Projects per specialty
-    hbar("chartProjSpecialty",
+    // Projects per specialty (pie)
+    pie("chartProjSpecialty",
         {{ s.proj_specialty_chart.labels | tojson }},
-        [{ label: "Proyectos", data: {{ s.proj_specialty_chart.data | tojson }}, borderRadius: 5 }],
-        { multiColor: true }
+        {{ s.proj_specialty_chart.data   | tojson }}
     );
 
     // Projects per advisor

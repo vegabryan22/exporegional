@@ -3393,7 +3393,8 @@ def _handle_action(action: str):
                 flash("Especifica un paquete para instalar.", "error")
             else:
                 try:
-                    cmd = ["pip", "install"] + package_spec.split()
+                    import sys
+                    cmd = [sys.executable, "-m", "pip", "install"] + package_spec.split()
                     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
                     output = (result.stdout + result.stderr).strip()
                     status = "ok" if result.returncode == 0 else "error"
@@ -6423,9 +6424,10 @@ def _superadmin_required(view_func):
 
 
 def _pip_list_installed() -> list[dict]:
+    import sys
     try:
         result = subprocess.run(
-            ["pip", "list", "--format=freeze"],
+            [sys.executable, "-m", "pip", "list", "--format=freeze"],
             capture_output=True, text=True, timeout=30,
         )
         packages = []

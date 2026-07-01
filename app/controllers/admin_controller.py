@@ -195,6 +195,7 @@ ACTION_MODULE_MAP = {
     "delete_judge": "judges",
     "save_judge_form_settings": "judges",
     "rotate_judge_form_secret": "judges",
+    "update_advisor": "projects",
     "update_project": "projects",
     "update_project_logistics": "projects",
     "replace_project_document": "projects",
@@ -3345,6 +3346,7 @@ def _handle_action(action: str):
 
     elif action == "update_advisor":
         old_key = request.form.get("old_advisor_key", "").strip()
+        merge_key = request.form.get("merge_advisor_key", "").strip()
         new_name = request.form.get("advisor_name", "").strip()
         new_identity = request.form.get("advisor_identity", "").strip()
         new_email = request.form.get("advisor_email", "").strip().lower()
@@ -3352,20 +3354,26 @@ def _handle_action(action: str):
         if not old_key:
             flash("Clave de tutor no especificada.", "error")
         else:
-            affected = Project.query.filter(
-                db.or_(
-                    Project.advisor_identity == old_key,
-                    db.and_(
-                        db.or_(Project.advisor_identity == None, Project.advisor_identity == ""),  # noqa: E711
-                        Project.advisor_name == old_key,
-                    ),
-                )
-            ).all()
+            def _projects_for_key(key):
+                return Project.query.filter(
+                    db.or_(
+                        Project.advisor_identity == key,
+                        db.and_(
+                            db.or_(Project.advisor_identity == None, Project.advisor_identity == ""),  # noqa: E711
+                            Project.advisor_name == key,
+                        ),
+                    )
+                ).all()
+
+            affected = _projects_for_key(old_key)
+            if merge_key and merge_key != old_key:
+                affected += _projects_for_key(merge_key)
             for p in affected:
                 p.advisor_name = new_name or p.advisor_name
                 p.advisor_identity = new_identity
                 p.advisor_email = new_email
-                p.advisor_phone = new_phone
+                if new_phone:
+                    p.advisor_phone = new_phone
             db.session.commit()
             flash(f"Tutor actualizado en {len(affected)} proyecto(s).", "ok")
 

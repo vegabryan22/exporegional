@@ -57,7 +57,7 @@
                 <h4>Editar tutor</h4>
                 <button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button>
             </div>
-            <p class="table-subtext">Los cambios se aplican a todos los proyectos de este tutor.</p>
+            <p class="table-subtext">Los cambios se aplican a todos los proyectos de este tutor. Para unificar duplicados, selecciona el otro tutor a fusionar.</p>
             <form method="post" action="{{ action_url }}" class="compact-form">
                 <input type="hidden" name="next" value="{{ next_url }}">
                 <input type="hidden" name="action" value="update_advisor">
@@ -70,6 +70,19 @@
                     <label>Correo<input type="email" name="advisor_email" value="{{ row.email or '' }}"></label>
                     <label>Tel&eacute;fono<input type="text" name="advisor_phone" value="{{ row.phone or '' }}"></label>
                 </div>
+                {% if advisor_stats|length > 1 %}
+                <label>Unificar con (opcional)
+                    <select name="merge_advisor_key">
+                        <option value="">— No unificar —</option>
+                        {% for other in advisor_stats %}
+                        {% set other_key = other.identity if other.identity else other.name %}
+                        {% if other_key != advisor_key %}
+                        <option value="{{ other_key }}">{{ other.name }}{% if other.identity %} ({{ other.identity }}){% endif %} — {{ other.total }} proy.</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </label>
+                {% endif %}
                 <div class="actions-row">
                     <button type="button" class="ghost-btn" data-dialog-close>Cancelar</button>
                     <button type="submit" class="secondary-btn">Guardar cambios</button>

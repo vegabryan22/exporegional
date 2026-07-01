@@ -3414,6 +3414,12 @@ dialog.maintenance-dialog::backdrop {
     white-space: nowrap;
 }
 
+.project-advisor-line {
+    margin: 0.15rem 0 0;
+    font-size: 0.83rem;
+    color: #5d7897;
+}
+
 .judge-filter-panel {
     display: grid;
     grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, 1fr));

@@ -107,6 +107,12 @@
                                     <dt>Eje temático</dt>
                                     <dd>{{ project.thematic_axis.name if project.thematic_axis else 'N/D' }}</dd>
                                 </div>
+                                {% if project.advisor_name %}
+                                <div>
+                                    <dt>Tutor</dt>
+                                    <dd>{{ project.advisor_name }}</dd>
+                                </div>
+                                {% endif %}
                             </dl>
                             {% if project.description and project.description != 'Proyecto registrado por formulario ExpoTEC-1.' %}
                                 <p class="project-main-description">{{ project.description }}</p>

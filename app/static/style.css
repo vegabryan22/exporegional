@@ -3408,6 +3408,12 @@ dialog.maintenance-dialog::backdrop {
     font-size: 0.83rem;
 }
 
+.advisor-edit-btn {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
 .judge-filter-panel {
     display: grid;
     grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, 1fr));

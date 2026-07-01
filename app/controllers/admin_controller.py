@@ -3343,6 +3343,32 @@ def _handle_action(action: str):
             db.session.commit()
             flash("Asignacion eliminada.", "success")
 
+    elif action == "update_advisor":
+        old_key = request.form.get("old_advisor_key", "").strip()
+        new_name = request.form.get("advisor_name", "").strip()
+        new_identity = request.form.get("advisor_identity", "").strip()
+        new_email = request.form.get("advisor_email", "").strip().lower()
+        new_phone = request.form.get("advisor_phone", "").strip()
+        if not old_key:
+            flash("Clave de tutor no especificada.", "error")
+        else:
+            affected = Project.query.filter(
+                db.or_(
+                    Project.advisor_identity == old_key,
+                    db.and_(
+                        db.or_(Project.advisor_identity == None, Project.advisor_identity == ""),  # noqa: E711
+                        Project.advisor_name == old_key,
+                    ),
+                )
+            ).all()
+            for p in affected:
+                p.advisor_name = new_name or p.advisor_name
+                p.advisor_identity = new_identity
+                p.advisor_email = new_email
+                p.advisor_phone = new_phone
+            db.session.commit()
+            flash(f"Tutor actualizado en {len(affected)} proyecto(s).", "ok")
+
     elif action == "auto_assign":
         max_per_project = request.form.get("max_per_project", type=int) or 2
         max_per_project = max(1, min(max_per_project, 10))

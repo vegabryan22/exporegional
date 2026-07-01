@@ -26,10 +26,13 @@
                         <th>STEAM</th>
                         <th>Emprend.</th>
                         <th>Total</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in advisor_stats %}
+                    {% set advisor_key = row.identity if row.identity else row.name %}
+                    {% set dialog_id = "advisor-edit-" ~ loop.index %}
                     <tr>
                         <td>{{ row.name }}</td>
                         <td class="muted-cell">{{ row.identity or '—' }}</td>
@@ -37,12 +40,44 @@
                         <td>{{ row.steam or '—' }}</td>
                         <td>{{ row.emprendimiento or '—' }}</td>
                         <td><strong>{{ row.total }}</strong></td>
+                        <td><button type="button" class="ghost-btn advisor-edit-btn" data-dialog-open="{{ dialog_id }}">Editar</button></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </details>
+
+    {% for row in advisor_stats %}
+    {% set advisor_key = row.identity if row.identity else row.name %}
+    {% set dialog_id = "advisor-edit-" ~ loop.index %}
+    <dialog id="{{ dialog_id }}" class="maintenance-dialog">
+        <div class="dialog-card">
+            <div class="dialog-head">
+                <h4>Editar tutor</h4>
+                <button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button>
+            </div>
+            <p class="table-subtext">Los cambios se aplican a todos los proyectos de este tutor.</p>
+            <form method="post" action="{{ action_url }}" class="compact-form">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="update_advisor">
+                <input type="hidden" name="old_advisor_key" value="{{ advisor_key }}">
+                <div class="grid-2">
+                    <label>Nombre completo<input type="text" name="advisor_name" value="{{ row.name }}" required></label>
+                    <label>C&eacute;dula<input type="text" name="advisor_identity" value="{{ row.identity or '' }}"></label>
+                </div>
+                <div class="grid-2">
+                    <label>Correo<input type="email" name="advisor_email" value="{{ row.email or '' }}"></label>
+                    <label>Tel&eacute;fono<input type="text" name="advisor_phone" value="{{ row.phone or '' }}"></label>
+                </div>
+                <div class="actions-row">
+                    <button type="button" class="ghost-btn" data-dialog-close>Cancelar</button>
+                    <button type="submit" class="secondary-btn">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+    {% endfor %}
     {% endif %}
 
     <div class="projects-filter-bar">

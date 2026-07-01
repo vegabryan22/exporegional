@@ -13,65 +13,64 @@
         </div>
     </div>
 
-    <div class="judge-pool-summary">
-        <article><strong>{{ judge_pool_stats.total }}</strong><span>Total jueces</span></article>
-        <article><strong>{{ judge_pool_stats.active }}</strong><span>Activos</span></article>
-        <article><strong>{{ judge_pool_stats.english }}</strong><span>Ingl&eacute;s oral</span></article>
-        <article><strong>{{ judge_pool_stats.both_scopes }}</strong><span>Documento y expo</span></article>
-        <article><strong>{{ judge_pool_stats.documentation_only }}</strong><span>Solo documento</span></article>
-        <article><strong>{{ judge_pool_stats.exposition_only }}</strong><span>Solo exposición</span></article>
+    <div class="judge-pool-summary-strip">
+        <span><strong>{{ judge_pool_stats.active }}</strong> activos de {{ judge_pool_stats.total }}</span>
+        <span class="strip-sep">·</span>
+        <span><strong>{{ judge_pool_stats.both_scopes }}</strong> doc + expo</span>
+        <span class="strip-sep">·</span>
+        <span><strong>{{ judge_pool_stats.documentation_only }}</strong> solo doc</span>
+        <span class="strip-sep">·</span>
+        <span><strong>{{ judge_pool_stats.exposition_only }}</strong> solo expo</span>
+        <span class="strip-sep">·</span>
+        <span><strong>{{ judge_pool_stats.english }}</strong> con ingl&eacute;s</span>
     </div>
 
-    <div class="judge-pool-split">
-        <article class="judge-pool-stat-card">
-            <span>STEAM</span>
-            <strong>{{ judge_pool_stats.steam }}</strong>
-        </article>
-        <article class="judge-pool-stat-card">
-            <span>Emprendimiento</span>
-            <strong>{{ judge_pool_stats.entrepreneurship }}</strong>
-        </article>
-        <article class="judge-pool-stat-card">
-            <span>Ambas categorías</span>
-            <strong>{{ judge_pool_stats.both_categories }}</strong>
-        </article>
-    </div>
-
-    <div class="judge-capability-board">
-        <article class="judge-capability-card">
-            <div>
-                <span>Documento escrito</span>
-                <strong>{{ judge_pool_stats.matrix.documentacion.steam + judge_pool_stats.matrix.documentacion.emprendimiento + judge_pool_stats.matrix.documentacion.ambas }}</strong>
-            </div>
-            <dl>
-                <dt>STEAM</dt><dd>{{ judge_pool_stats.matrix.documentacion.steam }}</dd>
-                <dt>Emprendimiento</dt><dd>{{ judge_pool_stats.matrix.documentacion.emprendimiento }}</dd>
-                <dt>Cualquiera</dt><dd>{{ judge_pool_stats.matrix.documentacion.ambas }}</dd>
-            </dl>
-        </article>
-        <article class="judge-capability-card">
-            <div>
-                <span>Exposición oral</span>
-                <strong>{{ judge_pool_stats.matrix.exposicion.steam + judge_pool_stats.matrix.exposicion.emprendimiento + judge_pool_stats.matrix.exposicion.ambas }}</strong>
-            </div>
-            <dl>
-                <dt>STEAM</dt><dd>{{ judge_pool_stats.matrix.exposicion.steam }}</dd>
-                <dt>Emprendimiento</dt><dd>{{ judge_pool_stats.matrix.exposicion.emprendimiento }}</dd>
-                <dt>Cualquiera</dt><dd>{{ judge_pool_stats.matrix.exposicion.ambas }}</dd>
-            </dl>
-        </article>
-        <article class="judge-capability-card english">
-            <div>
-                <span>Ingl&eacute;s oral</span>
-                <strong>{{ judge_pool_stats.english }}</strong>
-            </div>
-            <p class="judge-capability-note">Solo exposici&oacute;n. La evaluaci&oacute;n en ingl&eacute;s es individual por estudiante.</p>
-            <dl>
-                <dt>Expo STEAM</dt><dd>{{ judge_pool_stats.english_matrix.exposicion.steam }}</dd>
-                <dt>Expo Empr.</dt><dd>{{ judge_pool_stats.english_matrix.exposicion.emprendimiento }}</dd>
-                <dt>Expo Cualquiera</dt><dd>{{ judge_pool_stats.english_matrix.exposicion.ambas }}</dd>
-            </dl>
-        </article>
+    {% set m = judge_pool_stats.scope_matrix %}
+    <div class="judge-scope-matrix-wrap">
+        <table class="judge-scope-matrix">
+            <thead>
+                <tr>
+                    <th>Categoría</th>
+                    <th>Solo doc</th>
+                    <th>Solo expo</th>
+                    <th>Doc + Expo</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>STEAM</td>
+                    <td>{{ m.steam.doc_only }}</td>
+                    <td>{{ m.steam.expo_only }}</td>
+                    <td>{{ m.steam.both }}</td>
+                    <td><strong>{{ m.steam.total }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Emprendimiento</td>
+                    <td>{{ m.emprendimiento.doc_only }}</td>
+                    <td>{{ m.emprendimiento.expo_only }}</td>
+                    <td>{{ m.emprendimiento.both }}</td>
+                    <td><strong>{{ m.emprendimiento.total }}</strong></td>
+                </tr>
+                <tr>
+                    <td>Ambas categor&iacute;as</td>
+                    <td>{{ m.ambas.doc_only }}</td>
+                    <td>{{ m.ambas.expo_only }}</td>
+                    <td>{{ m.ambas.both }}</td>
+                    <td><strong>{{ m.ambas.total }}</strong></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td><strong>{{ m.totals.doc_only }}</strong></td>
+                    <td><strong>{{ m.totals.expo_only }}</strong></td>
+                    <td><strong>{{ m.totals.both }}</strong></td>
+                    <td><strong>{{ m.totals.total }}</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        <p class="judge-scope-matrix-note">{{ judge_pool_stats.english }} jueces eval&uacute;an exposici&oacute;n en ingl&eacute;s (evaluaci&oacute;n individual por estudiante)</p>
     </div>
 
     <div class="judge-filter-panel">

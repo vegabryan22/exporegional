@@ -334,9 +334,9 @@ def _assignment_compatibility_error(
 
 
 def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int, int]:
-    """Assign judges to projects. Every assigned judge evaluates BOTH doc and expo.
-    For English projects, prefer English-capable judges (at least 1-2).
-    Soft cap: prefer judges under 3 projects, but will overload if no alternative.
+    """Assign up to max_per_project judges per project ensuring both doc and expo
+    are covered collectively. Single-dimension judges are paired with complementary
+    ones. 'Ambos' judges are preferred. Soft cap of 3 projects per judge.
     Returns (created_count, skipped_count)."""
     SOFT_CAP = 3
 
@@ -345,21 +345,16 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
         db.session.flush()
 
     active_projects = Project.query.filter(Project.is_active == True).all()  # noqa: E712
-
-    # Only judges who can evaluate BOTH dimensions qualify for auto-assignment
-    full_judges = Judge.query.filter(
+    eligible_judges = Judge.query.filter(
         Judge.is_active_user == True,  # noqa: E712
         Judge.role == Judge.ROLE_JUDGE,
-        Judge.can_evaluate_documentation == True,  # noqa: E712
-        Judge.can_evaluate_exposition == True,  # noqa: E712
     ).all()
-
-    if not full_judges or not active_projects:
+    if not eligible_judges or not active_projects:
         return 0, 0
 
     judge_load: dict[int, int] = {
         j.id: Assignment.query.filter_by(judge_id=j.id).count()
-        for j in full_judges
+        for j in eligible_judges
     }
 
     created = 0
@@ -367,50 +362,90 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
 
     for project in active_projects:
         existing = Assignment.query.filter_by(project_id=project.id).all()
-        confirmed_count = sum(1 for a in existing if a.status == Assignment.STATUS_CONFIRMED)
-        existing_draft_count = sum(1 for a in existing if a.status == Assignment.STATUS_DRAFT)
-        slots = max_per_project - confirmed_count - existing_draft_count
+        confirmed = [a for a in existing if a.status == Assignment.STATUS_CONFIRMED]
+        existing_drafts = [a for a in existing if a.status == Assignment.STATUS_DRAFT]
+        slots = max_per_project - len(confirmed) - len(existing_drafts)
         if slots <= 0:
             skipped += 1
             continue
 
+        # Running coverage counts from confirmed + existing drafts
+        doc_count = sum(1 for a in confirmed + existing_drafts if a.can_evaluate_documentation)
+        expo_count = sum(1 for a in confirmed + existing_drafts if a.can_evaluate_exposition)
         already_assigned_ids = {a.judge_id for a in existing}
         needs_english = _project_requires_english(project)
+        new_assignments: list[Assignment] = []
 
-        def compatible(judge) -> bool:
-            if judge.id in already_assigned_ids:
+        def compatible(j) -> bool:
+            if j.id in already_assigned_ids:
                 return False
-            if not judge.can_evaluate_category(project.category):
+            if not j.can_evaluate_category(project.category):
                 return False
-            return True
+            return bool(j.can_evaluate_documentation or j.can_evaluate_exposition)
 
-        candidates = [j for j in full_judges if compatible(j)]
-
-        # Sort: prefer judges under soft cap, then by fewest assignments.
-        # For English projects: among same-tier judges, prefer English-capable first.
-        def sort_key(j):
+        def base_sort(j):
             over_cap = 1 if judge_load.get(j.id, 0) >= SOFT_CAP else 0
+            not_both = 0 if (j.can_evaluate_documentation and j.can_evaluate_exposition) else 1
             no_english = 1 if (needs_english and not j.can_evaluate_english) else 0
-            return (over_cap, no_english, judge_load.get(j.id, 0))
+            return (over_cap, not_both, no_english, judge_load.get(j.id, 0))
 
-        candidates.sort(key=sort_key)
+        def pools():
+            cands = sorted([j for j in eligible_judges if compatible(j)], key=base_sort)
+            both = [j for j in cands if j.can_evaluate_documentation and j.can_evaluate_exposition]
+            doc  = [j for j in cands if j.can_evaluate_documentation and not j.can_evaluate_exposition]
+            expo = [j for j in cands if not j.can_evaluate_documentation and j.can_evaluate_exposition]
+            return both, doc, expo
 
-        new_count = 0
-        for judge in candidates:
-            if new_count >= slots:
-                break
-            assignment = Assignment(
+        def assign(judge):
+            nonlocal doc_count, expo_count, slots
+            a = Assignment(
                 judge_id=judge.id,
                 project_id=project.id,
-                can_evaluate_documentation=True,
-                can_evaluate_exposition=True,
+                can_evaluate_documentation=judge.can_evaluate_documentation,
+                can_evaluate_exposition=judge.can_evaluate_exposition,
                 status=Assignment.STATUS_DRAFT,
             )
-            db.session.add(assignment)
+            db.session.add(a)
             judge_load[judge.id] = judge_load.get(judge.id, 0) + 1
             already_assigned_ids.add(judge.id)
-            new_count += 1
-            created += 1
+            new_assignments.append(a)
+            slots -= 1
+            if judge.can_evaluate_documentation:
+                doc_count += 1
+            if judge.can_evaluate_exposition:
+                expo_count += 1
+
+        # Phase 1: guarantee at least one judge covers doc
+        if doc_count == 0 and slots > 0:
+            both, doc, _ = pools()
+            pick = (both or doc or [None])[0]
+            if pick:
+                assign(pick)
+
+        # Phase 2: guarantee at least one judge covers expo
+        if expo_count == 0 and slots > 0:
+            both, _, expo = pools()
+            pick = (both or expo or [None])[0]
+            if pick:
+                assign(pick)
+
+        # Phase 3: fill remaining slots with balanced doc/expo distribution
+        while slots > 0:
+            both, doc, expo = pools()
+            if not both and not doc and not expo:
+                break
+            # Decide priority based on which dimension has less coverage
+            if doc_count <= expo_count:
+                # Need more doc coverage: prefer ambos, then doc-only, then expo-only
+                pick = (both or doc or expo or [None])[0]
+            else:
+                # Need more expo coverage: prefer ambos, then expo-only, then doc-only
+                pick = (both or expo or doc or [None])[0]
+            if pick is None:
+                break
+            assign(pick)
+
+        created += len(new_assignments)
 
     db.session.commit()
     return created, skipped
@@ -5654,6 +5689,27 @@ def _build_judge_pool_context(context: dict) -> dict:
     }
     stats["matrix"] = _capability_matrix(active_judge_users)
     stats["english_matrix"] = _capability_matrix(english_exposition_judges)
+
+    def _scope_category_matrix(judges_subset):
+        cats = ["steam", "emprendimiento", "ambas"]
+        result = {}
+        for cat in cats:
+            subset = [j for j in judges_subset if j.category_scope_normalized == cat]
+            result[cat] = {
+                "doc_only": sum(1 for j in subset if j.can_evaluate_documentation and not j.can_evaluate_exposition),
+                "expo_only": sum(1 for j in subset if j.can_evaluate_exposition and not j.can_evaluate_documentation),
+                "both": sum(1 for j in subset if j.can_evaluate_documentation and j.can_evaluate_exposition),
+                "total": len(subset),
+            }
+        result["totals"] = {
+            "doc_only": sum(result[c]["doc_only"] for c in cats),
+            "expo_only": sum(result[c]["expo_only"] for c in cats),
+            "both": sum(result[c]["both"] for c in cats),
+            "total": sum(result[c]["total"] for c in cats),
+        }
+        return result
+
+    stats["scope_matrix"] = _scope_category_matrix(active_judge_users)
     return {
         "judge_pool_rows": rows,
         "judge_pool_stats": stats,

@@ -6028,22 +6028,121 @@ def _build_assignments_report_rows(context: dict) -> list[dict]:
 
 
 @admin_module_required("assignments")
-def assignments_report_csv():
-    import csv, io
+def assignments_report_excel():
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.table import Table, TableStyleInfo
+    except ImportError:
+        flash("Instala openpyxl en el servidor para exportar Excel.", "error")
+        return redirect(url_for("admin.assignments_page"))
+
     context = _base_context("assignments")
     rows = _build_assignments_report_rows(context)
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["Juez", "Correo", "Alcance evaluación", "Alcance categoría", "Proyecto", "Categoría", "Estado"])
-    for r in rows:
-        writer.writerow([r["judge_name"], r["judge_email"], r["eval_scope"], r["category_scope"],
-                         r["project_title"], r["project_category"], r["status"]])
-    output.seek(0)
+
+    wb = Workbook()
+
+    # ── Hoja 1: Datos ──────────────────────────────────────────────────────
+    ws = wb.active
+    ws.title = "Asignaciones"
+
+    headers = ["Juez", "Correo", "Alcance evaluación", "Alcance categoría", "Proyecto", "Categoría proyecto", "Estado"]
+    col_widths = [30, 36, 22, 20, 55, 20, 14]
+
+    header_fill = PatternFill("solid", fgColor="1A4A7A")
+    header_font = Font(bold=True, color="FFFFFF", size=10)
+    draft_fill  = PatternFill("solid", fgColor="FFF3CD")
+    thin = Side(style="thin", color="C8DDF0")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    wrap   = Alignment(vertical="top", wrap_text=True)
+
+    ws.append(headers)
+    for col_idx, (h, w) in enumerate(zip(headers, col_widths), start=1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws.column_dimensions[get_column_letter(col_idx)].width = w
+    ws.row_dimensions[1].height = 22
+
+    for row in rows:
+        ws.append([
+            row["judge_name"], row["judge_email"], row["eval_scope"],
+            row["category_scope"], row["project_title"],
+            row["project_category"], row["status"],
+        ])
+        r = ws.max_row
+        is_draft = row["status"] == "Borrador"
+        for col_idx in range(1, len(headers) + 1):
+            cell = ws.cell(row=r, column=col_idx)
+            cell.alignment = wrap
+            cell.border = border
+            if is_draft:
+                cell.fill = draft_fill
+
+    # Excel table with autofilter
+    last_row = ws.max_row
+    last_col = get_column_letter(len(headers))
+    tbl = Table(displayName="Asignaciones", ref=f"A1:{last_col}{last_row}")
+    tbl.tableStyleInfo = TableStyleInfo(
+        name="TableStyleMedium2", showFirstColumn=False,
+        showLastColumn=False, showRowStripes=True, showColumnStripes=False,
+    )
+    ws.add_table(tbl)
+    ws.freeze_panes = "A2"
+
+    # ── Hoja 2: Resumen por juez (base para tabla dinámica) ────────────────
+    ws2 = wb.create_sheet("Resumen por juez")
+    summary: dict[str, dict] = {}
+    for row in rows:
+        key = row["judge_name"]
+        if key not in summary:
+            summary[key] = {"Juez": key, "Correo": row["judge_email"],
+                            "Alcance": row["eval_scope"], "Confirmadas": 0, "Borradores": 0, "Total": 0}
+        if row["status"] == "Confirmado":
+            summary[key]["Confirmadas"] += 1
+        else:
+            summary[key]["Borradores"] += 1
+        summary[key]["Total"] += 1
+
+    summary_headers = ["Juez", "Correo", "Alcance", "Confirmadas", "Borradores", "Total"]
+    summary_widths  = [30, 36, 22, 14, 14, 10]
+    ws2.append(summary_headers)
+    for col_idx, (h, w) in enumerate(zip(summary_headers, summary_widths), start=1):
+        cell = ws2.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws2.column_dimensions[get_column_letter(col_idx)].width = w
+
+    for s in sorted(summary.values(), key=lambda x: -x["Total"]):
+        ws2.append([s["Juez"], s["Correo"], s["Alcance"], s["Confirmadas"], s["Borradores"], s["Total"]])
+        r = ws2.max_row
+        for col_idx in range(1, len(summary_headers) + 1):
+            ws2.cell(row=r, column=col_idx).border = border
+
+    last_row2 = ws2.max_row
+    last_col2 = get_column_letter(len(summary_headers))
+    tbl2 = Table(displayName="ResumenJuez", ref=f"A1:{last_col2}{last_row2}")
+    tbl2.tableStyleInfo = TableStyleInfo(
+        name="TableStyleMedium2", showFirstColumn=False,
+        showLastColumn=False, showRowStripes=True, showColumnStripes=False,
+    )
+    ws2.add_table(tbl2)
+    ws2.freeze_panes = "A2"
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
     return send_file(
-        BytesIO(output.getvalue().encode("utf-8-sig")),
-        mimetype="text/csv",
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name="asignaciones_por_juez.csv",
+        download_name="asignaciones_por_juez.xlsx",
     )
 
 

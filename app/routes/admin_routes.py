@@ -8,7 +8,7 @@ admin_bp.add_url_rule("/action", view_func=admin_controller.perform_action, meth
 admin_bp.add_url_rule("/panel", view_func=admin_controller.overview, methods=["GET"])
 admin_bp.add_url_rule("/asignaciones", view_func=admin_controller.assignments_page, methods=["GET"])
 admin_bp.add_url_rule("/asignaciones/reporte/pdf", view_func=admin_controller.assignments_report_pdf, methods=["GET"])
-admin_bp.add_url_rule("/asignaciones/reporte/csv", view_func=admin_controller.assignments_report_csv, methods=["GET"])
+admin_bp.add_url_rule("/asignaciones/reporte/excel", view_func=admin_controller.assignments_report_excel, methods=["GET"])
 admin_bp.add_url_rule("/jueces/evaluacion", view_func=admin_controller.judge_pool_page, methods=["GET"])
 admin_bp.add_url_rule("/jueces", view_func=admin_controller.judges_page, methods=["GET"])
 admin_bp.add_url_rule("/permisos", view_func=admin_controller.permissions_page, methods=["GET"])

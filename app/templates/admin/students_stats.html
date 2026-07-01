@@ -45,6 +45,14 @@
             <strong class="ss-kpi-value">{{ s.avg_team }}</strong>
             <span class="ss-kpi-sub">estudiantes</span>
         </article>
+        <article class="ss-kpi-card">
+            <span class="ss-kpi-label">Secciones participantes</span>
+            <strong class="ss-kpi-value">{{ s.total_sections }}</strong>
+        </article>
+        <article class="ss-kpi-card">
+            <span class="ss-kpi-label">Tutores registrados</span>
+            <strong class="ss-kpi-value">{{ s.total_advisors }}</strong>
+        </article>
     </div>
 
     {# ── Fila 1: Género + Categoría ────────────────────────────── #}
@@ -79,7 +87,33 @@
         </article>
     </div>
 
-    {# ── Fila 3: Tamaño equipo + Logística ────────────────────── #}
+    {# ── Fila 3: Proyectos por sección + especialidad ─────────── #}
+    <div class="ss-chart-row ss-chart-row-2">
+        <article class="ss-chart-card">
+            <h4 class="ss-chart-title">Proyectos por sección</h4>
+            <div class="ss-chart-wrap">
+                <canvas id="chartProjSection"></canvas>
+            </div>
+        </article>
+        <article class="ss-chart-card">
+            <h4 class="ss-chart-title">Proyectos por especialidad</h4>
+            <div class="ss-chart-wrap">
+                <canvas id="chartProjSpecialty"></canvas>
+            </div>
+        </article>
+    </div>
+
+    {# ── Fila 4: Proyectos por tutor ──────────────────────────── #}
+    <div class="ss-chart-row" style="grid-template-columns: 1fr;">
+        <article class="ss-chart-card">
+            <h4 class="ss-chart-title">Proyectos por tutor</h4>
+            <div class="ss-chart-wrap">
+                <canvas id="chartAdvisor"></canvas>
+            </div>
+        </article>
+    </div>
+
+    {# ── Fila 5: Tamaño equipo + Logística ────────────────────── #}
     <div class="ss-chart-row ss-chart-row-2">
         <article class="ss-chart-card">
             <h4 class="ss-chart-title">Proyectos por tamaño de equipo</h4>
@@ -232,6 +266,27 @@
         {{ s.logistics_chart.labels | tojson }},
         {{ s.logistics_chart.data   | tojson }},
         LOGISTICS_COLORS
+    );
+
+    // Projects per section
+    hbar("chartProjSection",
+        {{ s.proj_section_chart.labels | tojson }},
+        [{ label: "Proyectos", data: {{ s.proj_section_chart.data | tojson }}, borderRadius: 5 }],
+        { multiColor: true }
+    );
+
+    // Projects per specialty
+    hbar("chartProjSpecialty",
+        {{ s.proj_specialty_chart.labels | tojson }},
+        [{ label: "Proyectos", data: {{ s.proj_specialty_chart.data | tojson }}, borderRadius: 5 }],
+        { multiColor: true }
+    );
+
+    // Projects per advisor
+    hbar("chartAdvisor",
+        {{ s.advisor_chart.labels | tojson }},
+        [{ label: "Proyectos", data: {{ s.advisor_chart.data | tojson }}, borderRadius: 5 }],
+        { multiColor: true }
     );
 })();
 </script>

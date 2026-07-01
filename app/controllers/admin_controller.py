@@ -6462,6 +6462,26 @@ def _build_students_stats(context: dict) -> dict:
     }
     logistics_counts = Counter(p.logistics_status or "pendiente_revision" for p in active_projects)
 
+    # projects by section (from project.section relationship)
+    proj_section_counts = Counter(
+        (p.section.name if p.section else "Sin sección") for p in active_projects
+    )
+    proj_sections_sorted = sorted(proj_section_counts.items(), key=lambda x: x[0])
+
+    # projects by specialty (from project.specialty_ref relationship or specialty text)
+    proj_specialty_counts = Counter(
+        (p.specialty_ref.name if p.specialty_ref else (p.specialty or "Sin especialidad")).strip()
+        for p in active_projects
+    )
+    top_proj_specialties = proj_specialty_counts.most_common(8)
+
+    # projects by advisor
+    advisor_proj: dict[str, int] = defaultdict(int)
+    for p in active_projects:
+        key = (p.advisor_name or "Sin tutor").strip()
+        advisor_proj[key] += 1
+    top_advisors = sorted(advisor_proj.items(), key=lambda x: -x[1])[:10]
+
     return {
         "total": total,
         "male": male,
@@ -6473,6 +6493,8 @@ def _build_students_stats(context: dict) -> dict:
         "english_pct": round(english / total * 100) if total else 0,
         "total_projects": len(active_projects),
         "avg_team": avg_team,
+        "total_sections": len(proj_section_counts),
+        "total_advisors": len(advisor_proj),
         "gender_chart": {
             "labels": ["Masculino", "Femenino", "No indicado"],
             "data": [male, female, other],
@@ -6497,6 +6519,18 @@ def _build_students_stats(context: dict) -> dict:
         "logistics_chart": {
             "labels": [logistics_labels.get(k, k) for k in logistics_counts],
             "data": list(logistics_counts.values()),
+        },
+        "proj_section_chart": {
+            "labels": [s[0] for s in proj_sections_sorted],
+            "data": [s[1] for s in proj_sections_sorted],
+        },
+        "proj_specialty_chart": {
+            "labels": [s[0] for s in top_proj_specialties],
+            "data": [s[1] for s in top_proj_specialties],
+        },
+        "advisor_chart": {
+            "labels": [a[0] for a in top_advisors],
+            "data": [a[1] for a in top_advisors],
         },
     }
 

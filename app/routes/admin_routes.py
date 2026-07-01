@@ -41,4 +41,5 @@ admin_bp.add_url_rule("/mantenimiento", view_func=admin_controller.maintenance_p
 admin_bp.add_url_rule("/base-datos", view_func=admin_controller.database_page, methods=["GET"])
 admin_bp.add_url_rule("/base-datos/respaldos/<path:filename>/descargar", view_func=admin_controller.database_backup_download, methods=["GET"])
 admin_bp.add_url_rule("/git", view_func=admin_controller.gitops_page, methods=["GET"])
+admin_bp.add_url_rule("/dependencias", view_func=admin_controller.dependencies_page, methods=["GET"])
 admin_bp.add_url_rule("/bitacora", view_func=admin_controller.logs_page, methods=["GET"])

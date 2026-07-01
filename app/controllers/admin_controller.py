@@ -129,6 +129,7 @@ ADMIN_MENU_ICONS = {
     "maintenance": "settings",
     "database": "box",
     "gitops": "settings",
+    "dependencies": "box",
     "logs": "doc",
 }
 
@@ -151,6 +152,7 @@ ADMIN_MENU_ITEMS = [
     ("maintenance", "admin.maintenance_page", "Mantenimiento"),
     ("database", "admin.database_page", "Base de datos"),
     ("gitops", "admin.gitops_page", "Mantenimiento Git"),
+    ("dependencies", "admin.dependencies_page", "Dependencias"),
     ("logs", "admin.logs_page", "Bitácora"),
 ]
 
@@ -159,7 +161,7 @@ ADMIN_MENU_GROUPS = [
     ("Documentos", ["documents"]),
     ("Operación", ["assignments", "judge_pool", "projects", "evaluations"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
-    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "logs"]),
+    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
@@ -255,6 +257,7 @@ ACTION_MODULE_MAP = {
     "gitops_test_remote": "gitops",
     "save_permissions_matrix": "permissions",
     "send_logistics_reminder": "projects",
+    "install_package": "dependencies",
 }
 
 
@@ -3377,6 +3380,34 @@ def _handle_action(action: str):
             db.session.commit()
             flash(f"Tutor actualizado en {len(affected)} proyecto(s).", "ok")
 
+    elif action == "install_package":
+        if not current_user.is_superadmin:
+            flash("Solo el superadministrador puede instalar dependencias.", "error")
+        else:
+            package_spec = request.form.get("package_spec", "").strip()
+            install_from_req = request.form.get("install_from_requirements") == "1"
+            if install_from_req:
+                req_path = Path(current_app.root_path).parent / "requirements.txt"
+                package_spec = f"-r {req_path}"
+            if not package_spec:
+                flash("Especifica un paquete para instalar.", "error")
+            else:
+                try:
+                    cmd = ["pip", "install"] + package_spec.split()
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                    output = (result.stdout + result.stderr).strip()
+                    status = "ok" if result.returncode == 0 else "error"
+                    session["dep_last_output"] = output[-4000:] if len(output) > 4000 else output
+                    session["dep_last_status"] = status
+                    if status == "ok":
+                        flash(f"Instalación completada: {package_spec}", "ok")
+                    else:
+                        flash(f"Error al instalar: {package_spec}", "error")
+                except subprocess.TimeoutExpired:
+                    flash("Tiempo de espera agotado (120s). El proceso puede seguir corriendo.", "error")
+                except Exception as exc:
+                    flash(f"Error inesperado: {exc}", "error")
+
     elif action == "auto_assign":
         max_per_project = request.form.get("max_per_project", type=int) or 2
         max_per_project = max(1, min(max_per_project, 10))
@@ -6377,6 +6408,69 @@ def database_backup_download(filename: str):
 @admin_module_required("gitops")
 def gitops_page():
     return _render("admin/gitops.html", "gitops")
+
+
+def _superadmin_required(view_func):
+    @wraps(view_func)
+    @login_required
+    def wrapped(*args, **kwargs):
+        if not current_user.has_admin_access or not current_user.is_superadmin:
+            flash("Solo el superadministrador puede acceder a esta sección.", "error")
+            return redirect(url_for("admin.overview"))
+        return view_func(*args, **kwargs)
+    wrapped.__name__ = view_func.__name__
+    return wrapped
+
+
+def _pip_list_installed() -> list[dict]:
+    try:
+        result = subprocess.run(
+            ["pip", "list", "--format=freeze"],
+            capture_output=True, text=True, timeout=30,
+        )
+        packages = []
+        for line in result.stdout.strip().splitlines():
+            if "==" in line:
+                name, version = line.split("==", 1)
+                packages.append({"name": name.strip(), "version": version.strip()})
+        return sorted(packages, key=lambda p: p["name"].lower())
+    except Exception:
+        return []
+
+
+def _requirements_packages() -> list[dict]:
+    req_path = Path(current_app.root_path).parent / "requirements.txt"
+    packages = []
+    if req_path.exists():
+        for line in req_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                if "==" in line:
+                    name, version = line.split("==", 1)
+                    packages.append({"name": name.strip(), "version": version.strip(), "spec": line})
+                else:
+                    packages.append({"name": line, "version": "", "spec": line})
+    return packages
+
+
+@_superadmin_required
+def dependencies_page():
+    installed = _pip_list_installed()
+    installed_map = {p["name"].lower(): p["version"] for p in installed}
+    requirements = _requirements_packages()
+    for req in requirements:
+        req["installed_version"] = installed_map.get(req["name"].lower(), "")
+        req["up_to_date"] = req["installed_version"] == req["version"] if req["version"] else bool(req["installed_version"])
+    last_output = session.pop("dep_last_output", None)
+    last_status = session.pop("dep_last_status", None)
+    context = _base_context("dependencies")
+    context.update({
+        "installed_packages": installed,
+        "requirements": requirements,
+        "last_output": last_output,
+        "last_status": last_status,
+    })
+    return render_template("admin/dependencies.html", **context)
 
 
 def judge_form_webhook():

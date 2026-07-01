@@ -1,0 +1,99 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section maintenance-page">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Sistema</p>
+            <h3>Dependencias Python</h3>
+            <p>Instala o actualiza paquetes en el entorno del servidor. Solo superadministradores.</p>
+        </div>
+    </div>
+
+    {% if last_output %}
+    <div class="dep-output-panel {{ 'dep-output-ok' if last_status == 'ok' else 'dep-output-error' }}">
+        <p class="dep-output-label">{{ 'Instalación completada' if last_status == 'ok' else 'Error en instalación' }}</p>
+        <pre class="dep-output-pre">{{ last_output }}</pre>
+    </div>
+    {% endif %}
+
+    <div class="dep-install-row">
+        <form method="post" action="{{ action_url }}" class="dep-install-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="install_package">
+            <label class="dep-install-label">
+                Instalar paquete
+                <input type="text" name="package_spec" placeholder="openpyxl==3.1.5 o flask --upgrade" class="dep-install-input">
+            </label>
+            <button type="submit" class="secondary-btn">Instalar</button>
+        </form>
+
+        <form method="post" action="{{ action_url }}"
+              onsubmit="return confirm('Instalar todos los paquetes de requirements.txt?')">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="install_package">
+            <input type="hidden" name="install_from_requirements" value="1">
+            <button type="submit" class="outline-btn">Instalar desde requirements.txt</button>
+        </form>
+    </div>
+
+    <h4 class="dep-section-title">requirements.txt</h4>
+    <div class="dep-req-table-wrap">
+        <table class="dep-table">
+            <thead>
+                <tr>
+                    <th>Paquete</th>
+                    <th>Requerido</th>
+                    <th>Instalado</th>
+                    <th>Estado</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requirements %}
+                <tr>
+                    <td><strong>{{ req.name }}</strong></td>
+                    <td class="dep-version">{{ req.version or 'cualquiera' }}</td>
+                    <td class="dep-version">{{ req.installed_version or '—' }}</td>
+                    <td>
+                        {% if req.installed_version %}
+                            <span class="tag {{ 'ok' if req.up_to_date else 'warning' }}">
+                                {{ 'Al día' if req.up_to_date else 'Diferente' }}
+                            </span>
+                        {% else %}
+                            <span class="tag off">No instalado</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="post" action="{{ action_url }}" class="inline-form">
+                            <input type="hidden" name="next" value="{{ next_url }}">
+                            <input type="hidden" name="action" value="install_package">
+                            <input type="hidden" name="package_spec" value="{{ req.spec }}">
+                            <button type="submit" class="ghost-btn dep-install-one-btn">Instalar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <details class="dep-all-panel">
+        <summary>Ver todos los paquetes instalados ({{ installed_packages|length }})</summary>
+        <div class="dep-req-table-wrap">
+            <table class="dep-table">
+                <thead>
+                    <tr><th>Paquete</th><th>Versión</th></tr>
+                </thead>
+                <tbody>
+                    {% for pkg in installed_packages %}
+                    <tr>
+                        <td>{{ pkg.name }}</td>
+                        <td class="dep-version">{{ pkg.version }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </details>
+</section>
+{% endblock %}

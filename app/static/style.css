@@ -3338,6 +3338,130 @@ dialog.maintenance-dialog::backdrop {
     color: #7a96b0;
 }
 
+.dep-output-panel {
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    border: 1px solid #d7e5f5;
+}
+
+.dep-output-ok  { background: #f0fff4; border-color: #86d9a0; }
+.dep-output-error { background: #fff5f5; border-color: #f5a0a0; }
+
+.dep-output-label {
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin: 0 0 0.4rem;
+    color: #2d6a4f;
+}
+
+.dep-output-error .dep-output-label { color: #9b2222; }
+
+.dep-output-pre {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 320px;
+    overflow-y: auto;
+    color: #1a2e1a;
+}
+
+.dep-output-error .dep-output-pre { color: #6b1a1a; }
+
+.dep-install-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: flex-end;
+}
+
+.dep-install-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    flex: 1 1 320px;
+}
+
+.dep-install-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #3a5a7a;
+    flex: 1;
+}
+
+.dep-install-input {
+    width: 100%;
+}
+
+.dep-section-title {
+    margin: 0.2rem 0 0.1rem;
+    font-size: 0.95rem;
+    color: #1a4a7a;
+}
+
+.dep-req-table-wrap {
+    overflow-x: auto;
+}
+
+.dep-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.dep-table th,
+.dep-table td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #e8f0f9;
+    text-align: left;
+}
+
+.dep-table th {
+    background: #f0f7ff;
+    color: #5d7897;
+    font-size: 0.73rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.dep-table tbody tr:hover td { background: #f5faff; }
+
+.dep-version {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: #4a6a8a;
+}
+
+.dep-install-one-btn {
+    padding: 0.2rem 0.55rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.dep-all-panel {
+    border: 1px solid #d7e5f5;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.dep-all-panel summary {
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #1a4a7a;
+    background: #f5faff;
+    list-style: none;
+}
+
+.dep-all-panel summary::-webkit-details-marker { display: none; }
+.dep-all-panel[open] summary { border-bottom: 1px solid #d7e5f5; }
+
 .advisor-stats-panel {
     border: 1px solid #d7e5f5;
     border-radius: 14px;

@@ -19,6 +19,8 @@
             <button type="button" class="outline-btn" data-dialog-open="create-assignment-dialog">Asignaci&oacute;n masiva</button>
             <button type="button" class="project-action-btn action-members" data-dialog-open="auto-assign-dialog">Asignar autom&aacute;ticamente</button>
             <button type="button" class="outline-btn" data-dialog-open="load-report-dialog">Reporte de carga</button>
+            <a class="outline-btn" href="{{ url_for('admin.assignments_report_pdf') }}" target="_blank">Exportar PDF</a>
+            <a class="outline-btn" href="{{ url_for('admin.assignments_report_csv') }}">Exportar Excel</a>
         </div>
     </div>
 

@@ -6002,6 +6002,118 @@ def evaluation_report_judge_download(judge_id: int):
     )
 
 
+def _build_assignments_report_rows(context: dict) -> list[dict]:
+    judges = [j for j in context.get("judges", []) if j.effective_role == Judge.ROLE_JUDGE]
+    project_map = {p.id: p for p in context.get("projects", [])}
+    category_map = context.get("category_map", {})
+    rows = []
+    for judge in judges:
+        assignments = [
+            a for a in context.get("assignments", [])
+            if a.judge_id == judge.id
+        ]
+        for a in assignments:
+            project = project_map.get(a.project_id)
+            rows.append({
+                "judge_name": judge.full_name,
+                "judge_email": judge.email,
+                "eval_scope": judge.evaluation_scope_label,
+                "category_scope": judge.category_scope_label,
+                "project_title": project.title if project else f"Proyecto #{a.project_id}",
+                "project_category": category_map.get(project.category, project.category) if project else "—",
+                "status": "Borrador" if a.is_draft else "Confirmado",
+            })
+    rows.sort(key=lambda r: (r["judge_name"], r["project_title"]))
+    return rows
+
+
+@admin_module_required("assignments")
+def assignments_report_csv():
+    import csv, io
+    context = _base_context("assignments")
+    rows = _build_assignments_report_rows(context)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Juez", "Correo", "Alcance evaluación", "Alcance categoría", "Proyecto", "Categoría", "Estado"])
+    for r in rows:
+        writer.writerow([r["judge_name"], r["judge_email"], r["eval_scope"], r["category_scope"],
+                         r["project_title"], r["project_category"], r["status"]])
+    output.seek(0)
+    return send_file(
+        BytesIO(output.getvalue().encode("utf-8-sig")),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name="asignaciones_por_juez.csv",
+    )
+
+
+@admin_module_required("assignments")
+def assignments_report_pdf():
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.assignments_page"))
+    context = _base_context("assignments")
+    rows = _build_assignments_report_rows(context)
+    institution = _institution_name()
+    buffer = BytesIO()
+
+    from reportlab.lib.pagesizes import landscape, letter
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+
+    doc = SimpleDocTemplate(buffer, pagesize=landscape(letter),
+                            leftMargin=1.5*cm, rightMargin=1.5*cm,
+                            topMargin=1.5*cm, bottomMargin=1.5*cm)
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle("title", parent=styles["Heading1"], fontSize=13, spaceAfter=4)
+    sub_style = ParagraphStyle("sub", parent=styles["Normal"], fontSize=9, textColor=colors.HexColor("#5d7897"), spaceAfter=10)
+    cell_style = ParagraphStyle("cell", parent=styles["Normal"], fontSize=8, leading=10)
+
+    elements = [
+        Paragraph(_pdf_normalize_text(f"Reporte de Asignaciones por Juez"), title_style),
+        Paragraph(_pdf_normalize_text(institution), sub_style),
+    ]
+
+    header = ["Juez", "Correo", "Alcance evaluación", "Categoría", "Proyecto", "Estado"]
+    col_widths = [4*cm, 5.5*cm, 3.5*cm, 2.8*cm, 9*cm, 2.5*cm]
+    table_data = [header]
+    for r in rows:
+        table_data.append([
+            Paragraph(_pdf_normalize_text(r["judge_name"]), cell_style),
+            Paragraph(r["judge_email"], cell_style),
+            Paragraph(_pdf_normalize_text(r["eval_scope"]), cell_style),
+            Paragraph(_pdf_normalize_text(r["project_category"]), cell_style),
+            Paragraph(_pdf_normalize_text(r["project_title"]), cell_style),
+            Paragraph(_pdf_normalize_text(r["status"]), cell_style),
+        ])
+
+    table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1a4a7a")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, 0), 8),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f2f8ff")]),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#c8ddf0")),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    elements.append(table)
+    doc.build(elements)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="asignaciones_por_juez.pdf",
+    )
+
+
 @admin_module_required("documents")
 def participation_certificates_preview():
     certificate_context = _build_participation_certificate_context()

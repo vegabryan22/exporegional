@@ -13,6 +13,38 @@
         <span class="tag ok">{{ projects|length }} proyectos</span>
     </div>
 
+    {% if advisor_stats %}
+    <details class="advisor-stats-panel">
+        <summary>Proyectos por tutor <span class="tag neutral">{{ advisor_stats|length }} tutores</span></summary>
+        <div class="advisor-stats-wrap">
+            <table class="advisor-stats-table">
+                <thead>
+                    <tr>
+                        <th>Tutor</th>
+                        <th>Cédula</th>
+                        <th>Correo</th>
+                        <th>STEAM</th>
+                        <th>Emprend.</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in advisor_stats %}
+                    <tr>
+                        <td>{{ row.name }}</td>
+                        <td class="muted-cell">{{ row.identity or '—' }}</td>
+                        <td class="muted-cell">{{ row.email or '—' }}</td>
+                        <td>{{ row.steam or '—' }}</td>
+                        <td>{{ row.emprendimiento or '—' }}</td>
+                        <td><strong>{{ row.total }}</strong></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </details>
+    {% endif %}
+
     <div class="projects-filter-bar">
         <div class="projects-filter-row">
             <label class="projects-filter-field projects-filter-search">

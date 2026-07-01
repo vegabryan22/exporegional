@@ -5770,8 +5770,30 @@ def rubrics_page():
 
 
 @admin_module_required("projects")
+def _build_advisor_stats(projects):
+    from collections import defaultdict
+    buckets = defaultdict(lambda: {"name": "", "email": "", "steam": 0, "emprendimiento": 0, "total": 0})
+    for p in projects:
+        key = (p.advisor_identity or "").strip() or (p.advisor_name or "sin_cedula").strip()
+        if not key:
+            continue
+        b = buckets[key]
+        b["name"] = p.advisor_name or "Sin nombre"
+        b["email"] = p.advisor_email or ""
+        b["identity"] = p.advisor_identity or ""
+        cat = (p.category or "").lower()
+        if "steam" in cat:
+            b["steam"] += 1
+        elif "emprend" in cat:
+            b["emprendimiento"] += 1
+        b["total"] += 1
+    return sorted(buckets.values(), key=lambda r: -r["total"])
+
+
 def projects_page():
-    return _render("admin/projects.html", "projects")
+    context = _base_context("projects")
+    context["advisor_stats"] = _build_advisor_stats(context.get("projects", []))
+    return render_template("admin/projects.html", **context)
 
 
 @admin_module_required("projects")

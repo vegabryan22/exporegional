@@ -3338,6 +3338,76 @@ dialog.maintenance-dialog::backdrop {
     color: #7a96b0;
 }
 
+.advisor-stats-panel {
+    border: 1px solid #d7e5f5;
+    border-radius: 14px;
+    background: #f8fbff;
+    overflow: hidden;
+}
+
+.advisor-stats-panel summary {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1rem;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--primary);
+    user-select: none;
+    list-style: none;
+}
+
+.advisor-stats-panel summary::-webkit-details-marker { display: none; }
+
+.advisor-stats-panel[open] summary {
+    border-bottom: 1px solid #d7e5f5;
+}
+
+.advisor-stats-wrap {
+    overflow-x: auto;
+}
+
+.advisor-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.advisor-stats-table th,
+.advisor-stats-table td {
+    padding: 0.45rem 0.85rem;
+    text-align: left;
+    border-bottom: 1px solid #e8f0f9;
+}
+
+.advisor-stats-table th {
+    color: #5d7897;
+    font-size: 0.73rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: #f0f7ff;
+}
+
+.advisor-stats-table td:nth-child(4),
+.advisor-stats-table td:nth-child(5),
+.advisor-stats-table td:nth-child(6),
+.advisor-stats-table th:nth-child(4),
+.advisor-stats-table th:nth-child(5),
+.advisor-stats-table th:nth-child(6) {
+    text-align: center;
+}
+
+.advisor-stats-table tbody tr:hover td {
+    background: #f0f7ff;
+}
+
+.advisor-stats-table .muted-cell {
+    color: #7a96b0;
+    font-size: 0.83rem;
+}
+
 .judge-filter-panel {
     display: grid;
     grid-template-columns: minmax(220px, 1.5fr) repeat(4, minmax(150px, 1fr));

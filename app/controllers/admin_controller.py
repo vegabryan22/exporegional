@@ -6462,9 +6462,10 @@ def _build_students_stats(context: dict) -> dict:
     }
     logistics_counts = Counter(p.logistics_status or "pendiente_revision" for p in active_projects)
 
-    # projects by section (from project.section relationship)
+    # projects by section (derived from first member's section_name)
     proj_section_counts = Counter(
-        (p.section.name if p.section else "Sin sección") for p in active_projects
+        (p.members[0].section_name if p.members and p.members[0].section_name else "Sin sección").strip()
+        for p in active_projects
     )
     proj_sections_sorted = sorted(proj_section_counts.items(), key=lambda x: x[0])
 

@@ -5,22 +5,28 @@
 {% set confirmed_assignments = assignments|selectattr('status', 'equalto', 'confirmed')|selectattr('project_id', 'in', active_project_ids)|list %}
 {% set draft_assignments = assignments|selectattr('status', 'equalto', 'draft')|list %}
 <section class="card admin-section maintenance-page assignments-page">
-    <div class="page-head">
-        <div>
+    <div class="assignments-page-head">
+        <div class="assignments-page-title">
             <p class="maintenance-kicker">Asignaci&oacute;n</p>
             <h3>Asignaciones de jueces</h3>
             <p class="table-subtext">Vista resumida por proyecto para resolver cambios r&aacute;pidos desde un modal.</p>
         </div>
-        <div class="page-head-actions assignment-head-actions">
+        <div class="assignments-stats-strip">
             <span class="tag ok">{{ confirmed_assignments|length }} confirmadas</span>
             {% if draft_assignments %}<span class="tag warning">{{ draft_assignments|length }} borrador</span>{% endif %}
-            <span class="tag">{{ active_projects|length }} proyectos</span>
-            <button type="button" class="secondary-btn" data-dialog-open="quick-judge-dialog">Juez nuevo r&aacute;pido</button>
-            <button type="button" class="outline-btn" data-dialog-open="create-assignment-dialog">Asignaci&oacute;n masiva</button>
-            <button type="button" class="project-action-btn action-members" data-dialog-open="auto-assign-dialog">Asignar autom&aacute;ticamente</button>
-            <button type="button" class="outline-btn" data-dialog-open="load-report-dialog">Reporte de carga</button>
-            <a class="outline-btn" href="{{ url_for('admin.assignments_report_pdf') }}" target="_blank">Exportar PDF</a>
-            <a class="outline-btn" href="{{ url_for('admin.assignments_report_excel') }}">Exportar Excel</a>
+            <span class="tag neutral">{{ active_projects|length }} proyectos activos</span>
+        </div>
+        <div class="assignments-action-strip">
+            <div class="assignments-action-group">
+                <button type="button" class="outline-btn" data-dialog-open="quick-judge-dialog">Juez r&aacute;pido</button>
+                <button type="button" class="outline-btn" data-dialog-open="create-assignment-dialog">Asignaci&oacute;n masiva</button>
+                <button type="button" class="outline-btn" data-dialog-open="auto-assign-dialog">Asignar autom&aacute;ticamente</button>
+                <button type="button" class="outline-btn" data-dialog-open="load-report-dialog">Reporte de carga</button>
+            </div>
+            <div class="assignments-action-group">
+                <a class="outline-btn" href="{{ url_for('admin.assignments_report_pdf') }}" target="_blank">Exportar PDF</a>
+                <a class="outline-btn" href="{{ url_for('admin.assignments_report_excel') }}">Exportar Excel</a>
+            </div>
         </div>
     </div>
 

@@ -34,6 +34,7 @@ from app.models.level import Level
 from app.models.project import Project
 from app.models.project_member_change import ProjectMemberChange
 from app.models.project_member import ProjectMember
+from app.models.project_member_edit_request import ProjectMemberEditRequest
 from app.models.project_type import ProjectType
 from app.models.rubric_criterion import RubricCriterion
 from app.models.section import Section
@@ -205,6 +206,8 @@ ACTION_MODULE_MAP = {
     "replace_project_document": "projects",
     "approve_document_revision": "projects",
     "reject_document_revision": "projects",
+    "approve_member_edit": "projects",
+    "reject_member_edit": "projects",
     "upload_project_logo": "projects",
     "delete_project": "projects",
     "upload_member_photo": "projects",
@@ -4006,6 +4009,70 @@ def _handle_action(action: str):
             db.session.commit()
             flash(f"Solicitud rechazada. El documento oficial del proyecto '{project.title}' no fue modificado.", "success")
 
+    elif action == "approve_member_edit":
+        import json as _json
+        req_id = request.form.get("edit_request_id", type=int)
+        edit_req = ProjectMemberEditRequest.query.get(req_id) if req_id else None
+        if not edit_req:
+            flash("Solicitud no encontrada.", "error")
+        elif edit_req.status != ProjectMemberEditRequest.STATUS_PENDING:
+            flash("Esta solicitud ya fue procesada.", "error")
+        else:
+            member = edit_req.member
+            if not member:
+                flash("El integrante ya no existe en el sistema.", "error")
+            else:
+                new_vals = _json.loads(edit_req.changes_json)
+                member.full_name = new_vals.get("full_name") or member.full_name
+                member.identity_number = new_vals.get("identity_number") or None
+                if new_vals.get("birth_date"):
+                    from datetime import date as _date
+                    try:
+                        member.birth_date = _date.fromisoformat(new_vals["birth_date"])
+                    except (ValueError, TypeError):
+                        pass
+                member.gender = new_vals.get("gender") or None
+                member.specialty = new_vals.get("specialty") or None
+                member.section_name = new_vals.get("section_name") or None
+                member.has_dining_scholarship = bool(new_vals.get("has_dining_scholarship"))
+                member.participates_in_english = bool(new_vals.get("participates_in_english"))
+                member.phone = new_vals.get("phone") or None
+                member.email = new_vals.get("email") or None
+                member.role = new_vals.get("role") or None
+                edit_req.status = ProjectMemberEditRequest.STATUS_APPROVED
+                edit_req.reviewed_by_id = current_user.id
+                edit_req.reviewed_at = datetime.now()
+                log_event(
+                    "admin.project.member_edit.approve",
+                    "project_member",
+                    entity_id=member.id,
+                    detail=f"Solicitud #{edit_req.id} aprobada para integrante '{member.full_name}' del proyecto #{edit_req.project_id}",
+                )
+                db.session.commit()
+                flash(f"Cambios aprobados y aplicados a '{member.full_name}'.", "success")
+
+    elif action == "reject_member_edit":
+        req_id = request.form.get("edit_request_id", type=int)
+        edit_req = ProjectMemberEditRequest.query.get(req_id) if req_id else None
+        admin_notes = (request.form.get("admin_notes") or "").strip()
+        if not edit_req:
+            flash("Solicitud no encontrada.", "error")
+        elif edit_req.status != ProjectMemberEditRequest.STATUS_PENDING:
+            flash("Esta solicitud ya fue procesada.", "error")
+        else:
+            edit_req.status = ProjectMemberEditRequest.STATUS_REJECTED
+            edit_req.admin_notes = admin_notes or None
+            edit_req.reviewed_by_id = current_user.id
+            edit_req.reviewed_at = datetime.now()
+            log_event(
+                "admin.project.member_edit.reject",
+                "project_member",
+                entity_id=edit_req.member_id,
+                detail=f"Solicitud #{edit_req.id} rechazada. Motivo: {admin_notes or 'sin motivo indicado'}",
+            )
+            db.session.commit()
+            flash("Solicitud rechazada. Los datos del integrante no fueron modificados.", "success")
+
     elif action == "send_logistics_reminder":
         if not smtp_is_configured():
             flash("El servidor SMTP no está configurado. Ve a Ajustes → SMTP antes de enviar correos.", "error")
@@ -5402,6 +5469,7 @@ def _base_context(active_page: str, **kwargs):
         exposition_evaluation_types = []
         documentation_evaluation_types = []
         pending_document_revisions = []
+        pending_member_edit_requests = []
         smtp_settings = {"host": "", "port": "587", "username": "", "from_email": "", "use_tls": True, "use_ssl": False}
         institution_settings = {
             "name": "CTP Roberto Gamboa Valverde",
@@ -5474,6 +5542,13 @@ def _base_context(active_page: str, **kwargs):
             .options(joinedload(ProjectDocumentRevision.project))
             .filter(ProjectDocumentRevision.status == ProjectDocumentRevision.STATUS_PENDING)
             .order_by(ProjectDocumentRevision.created_at.asc())
+            .all()
+        )
+        pending_member_edit_requests = (
+            ProjectMemberEditRequest.query
+            .options(joinedload(ProjectMemberEditRequest.project), joinedload(ProjectMemberEditRequest.member))
+            .filter(ProjectMemberEditRequest.status == ProjectMemberEditRequest.STATUS_PENDING)
+            .order_by(ProjectMemberEditRequest.created_at.asc())
             .all()
         )
         assignments = Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project)).order_by(Assignment.id.desc()).all()
@@ -5649,6 +5724,7 @@ def _base_context(active_page: str, **kwargs):
         "logistics_statuses": LOGISTICS_STATUSES,
         "logistics_status_map": {code: label for code, label in LOGISTICS_STATUSES},
         "pending_document_revisions": pending_document_revisions,
+        "pending_member_edit_requests": pending_member_edit_requests,
         "permission_modules": permission_modules,
         "permission_matrix": permission_matrix,
         "is_superadmin": current_user.is_superadmin,

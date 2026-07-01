@@ -17,6 +17,7 @@ from app.models.level import Level
 from app.models.project import Project
 from app.models.project_document_revision import ProjectDocumentRevision
 from app.models.project_member import ProjectMember
+from app.models.project_member_edit_request import ProjectMemberEditRequest
 from app.models.project_type import ProjectType
 from app.models.assignment import Assignment
 from app.models.section import Section
@@ -1530,3 +1531,98 @@ def evaluate_project_entry(project_id: int):
 
     selected = next((item for item in evaluation_types if item.code == "escrito"), evaluation_types[0])
     return redirect(url_for("judge.evaluate", project_id=project.id, type=selected.code))
+
+
+def submit_member_edit(project_id: int, member_id: int):
+    import json as _json
+    project = (
+        Project.query.options(joinedload(Project.members))
+        .filter(Project.id == project_id)
+        .first_or_404()
+    )
+    member = next((m for m in project.members if m.id == member_id), None)
+    if not member:
+        flash("Integrante no encontrado.", "error")
+        return redirect(url_for("public.project_documents", project_id=project_id))
+
+    if not project.is_active:
+        flash("Este proyecto no está activo.", "error")
+        return redirect(url_for("public.project_documents", project_id=project_id))
+
+    pending = ProjectMemberEditRequest.query.filter_by(
+        member_id=member_id,
+        status=ProjectMemberEditRequest.STATUS_PENDING,
+    ).first()
+
+    past_requests = (
+        ProjectMemberEditRequest.query
+        .filter_by(member_id=member_id)
+        .order_by(ProjectMemberEditRequest.created_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    if request.method == "POST":
+        if pending:
+            flash("Ya existe una solicitud pendiente para este integrante. Espera a que sea procesada.", "error")
+            return redirect(url_for("public.project_member_edit", project_id=project_id, member_id=member_id))
+
+        new_vals = {
+            "full_name":               (request.form.get("full_name") or "").strip(),
+            "identity_number":         (request.form.get("identity_number") or "").strip(),
+            "birth_date":              (request.form.get("birth_date") or "").strip(),
+            "gender":                  (request.form.get("gender") or "").strip(),
+            "specialty":               (request.form.get("specialty") or "").strip(),
+            "section_name":            (request.form.get("section_name") or "").strip(),
+            "has_dining_scholarship":  request.form.get("has_dining_scholarship") == "1",
+            "participates_in_english": request.form.get("participates_in_english") == "1",
+            "phone":                   (request.form.get("phone") or "").strip(),
+            "email":                   (request.form.get("email") or "").strip(),
+            "role":                    (request.form.get("role") or "").strip(),
+        }
+
+        snapshot = {
+            "full_name":               member.full_name or "",
+            "identity_number":         member.identity_number or "",
+            "birth_date":              str(member.birth_date) if member.birth_date else "",
+            "gender":                  member.gender or "",
+            "specialty":               member.specialty or "",
+            "section_name":            member.section_name or "",
+            "has_dining_scholarship":  bool(member.has_dining_scholarship),
+            "participates_in_english": bool(member.participates_in_english),
+            "phone":                   member.phone or "",
+            "email":                   member.email or "",
+            "role":                    member.role or "",
+        }
+
+        if not new_vals["full_name"]:
+            flash("El nombre completo es obligatorio.", "error")
+            return render_template("public/project_member_edit.html", project=project, member=member,
+                                   pending=pending, past_requests=past_requests)
+
+        edit_req = ProjectMemberEditRequest(
+            project_id=project_id,
+            member_id=member_id,
+            submitted_by_name=new_vals["full_name"],
+            changes_json=_json.dumps(new_vals, ensure_ascii=False),
+            snapshot_json=_json.dumps(snapshot, ensure_ascii=False),
+            status=ProjectMemberEditRequest.STATUS_PENDING,
+        )
+        db.session.add(edit_req)
+        log_event(
+            "public.project.member_edit.submit",
+            "project_member",
+            entity_id=member_id,
+            detail=f"Solicitud de edición de datos enviada para integrante '{member.full_name}' del proyecto #{project_id}",
+        )
+        db.session.commit()
+        flash("Solicitud enviada. La organización revisará los cambios y te notificará si son aprobados.", "success")
+        return redirect(url_for("public.project_documents", project_id=project_id))
+
+    return render_template(
+        "public/project_member_edit.html",
+        project=project,
+        member=member,
+        pending=pending,
+        past_requests=past_requests,
+    )

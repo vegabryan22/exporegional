@@ -180,6 +180,86 @@
     </section>
     {% endif %}
 
+    {% if pending_member_edit_requests %}
+    <section class="doc-revision-admin-section">
+        <div class="page-head">
+            <div>
+                <p class="maintenance-kicker">Requiere atenci&oacute;n</p>
+                <h4>Solicitudes de correci&oacute;n de datos de integrantes</h4>
+                <p class="table-subtext">{{ pending_member_edit_requests | length }} solicitud{{ 'es' if pending_member_edit_requests | length != 1 else '' }} pendiente{{ 's' if pending_member_edit_requests | length != 1 else '' }}. Los datos <strong>no cambian</strong> hasta que apruebes la solicitud.</p>
+            </div>
+        </div>
+        <div class="doc-revision-admin-list">
+            {% for req in pending_member_edit_requests %}
+            {% set req_member = req.member %}
+            {% set req_project = req.project %}
+            {% set old_vals = req.snapshot_json | from_json %}
+            {% set new_vals = req.changes_json | from_json %}
+            <article class="doc-revision-admin-card member-edit-admin-card">
+                <div class="doc-revision-admin-main">
+                    <span class="maintenance-kicker">{{ req_project.title }}</span>
+                    <p class="doc-revision-admin-by">
+                        Integrante: <strong>{{ req_member.full_name if req_member else '(eliminado)' }}</strong>
+                        &middot; {{ req.created_at | local_datetime }}
+                    </p>
+                    <table class="member-edit-diff-table">
+                        <thead>
+                            <tr><th>Campo</th><th>Valor actual</th><th>Valor solicitado</th></tr>
+                        </thead>
+                        <tbody>
+                            {% set labels = {
+                                'full_name': 'Nombre completo',
+                                'identity_number': 'Cédula',
+                                'birth_date': 'Fecha de nacimiento',
+                                'gender': 'Género',
+                                'specialty': 'Especialidad',
+                                'section_name': 'Sección',
+                                'has_dining_scholarship': 'Beca comedor',
+                                'participates_in_english': 'Expone en inglés',
+                                'phone': 'Teléfono',
+                                'email': 'Correo',
+                                'role': 'Rol'
+                            } %}
+                            {% for field, label in labels.items() %}
+                            {% set old_v = old_vals.get(field, '') %}
+                            {% set new_v = new_vals.get(field, '') %}
+                            {% if old_v != new_v %}
+                            <tr class="member-edit-diff-changed">
+                                <td>{{ label }}</td>
+                                <td class="diff-old">
+                                    {% if old_v is sameas true %}Sí{% elif old_v is sameas false %}No{% else %}{{ old_v or '—' }}{% endif %}
+                                </td>
+                                <td class="diff-new">
+                                    {% if new_v is sameas true %}Sí{% elif new_v is sameas false %}No{% else %}{{ new_v or '—' }}{% endif %}
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="doc-revision-admin-actions">
+                    <form method="POST" action="{{ action_url }}">
+                        <input type="hidden" name="action" value="approve_member_edit">
+                        <input type="hidden" name="edit_request_id" value="{{ req.id }}">
+                        <input type="hidden" name="next" value="{{ next_url }}">
+                        <button type="submit" class="table-link-btn approve-btn"
+                            onclick="return confirm('¿Aprobar y aplicar estos cambios al integrante?')">Aprobar</button>
+                    </form>
+                    <form method="POST" action="{{ action_url }}" class="doc-revision-reject-form">
+                        <input type="hidden" name="action" value="reject_member_edit">
+                        <input type="hidden" name="edit_request_id" value="{{ req.id }}">
+                        <input type="hidden" name="next" value="{{ next_url }}">
+                        <textarea name="admin_notes" class="doc-revision-reject-notes" placeholder="Motivo del rechazo (opcional)..." rows="2"></textarea>
+                        <button type="submit" class="table-link-btn ghost reject-btn">Rechazar</button>
+                    </form>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <div id="projects-list" class="projects-card-list">
         {% for project in projects %}
             {% set member_count = project.members|length %}

@@ -84,6 +84,15 @@ def register_template_filters(app):
         local_value = _to_local_datetime(value)
         return local_value.strftime(fmt) if local_value else "N/D"
 
+    @app.template_filter("from_json")
+    def from_json(value):
+        if not value:
+            return {}
+        try:
+            return json.loads(value)
+        except (ValueError, TypeError):
+            return {}
+
 
 def _is_retryable_schema_error(error: OperationalError) -> bool:
     message = str(error).lower()

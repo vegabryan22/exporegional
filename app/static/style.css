@@ -11676,6 +11676,71 @@ body {
     min-width: 160px;
 }
 
+/* ── Member edit request: diff table ─────────────────────────────────────── */
+.member-edit-diff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    margin-top: 0.4rem;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.member-edit-diff-table thead th {
+    background: #f0f4fa;
+    color: #3a5a7a;
+    font-weight: 700;
+    padding: 0.35rem 0.6rem;
+    text-align: left;
+    border-bottom: 1px solid #d0dde8;
+}
+.member-edit-diff-table td {
+    padding: 0.3rem 0.6rem;
+    border-bottom: 1px solid #eef0f4;
+    vertical-align: top;
+}
+.member-edit-diff-table .diff-old { color: #b03030; text-decoration: line-through; }
+.member-edit-diff-table .diff-new { color: #1a7a3a; font-weight: 600; }
+.member-edit-diff-changed td:first-child { color: #3a5a7a; font-weight: 600; }
+
+/* ── Member edit: public form ────────────────────────────────────────────── */
+.member-edit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.8rem 1.2rem;
+}
+.member-edit-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 0.8rem;
+    padding: 0.8rem 1rem;
+    background: #f4f8ff;
+    border-radius: 10px;
+    border: 1px solid #d0ddf0;
+}
+.member-edit-check-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #2a4a7a;
+    cursor: pointer;
+}
+.member-edit-current-data {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+}
+.member-edit-link {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    padding: 0.3rem 0.7rem;
+}
+
 .doc-revision-reject-form {
     display: grid;
     gap: 0.4rem;

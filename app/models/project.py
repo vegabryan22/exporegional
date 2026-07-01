@@ -64,6 +64,12 @@ class Project(db.Model):
     evaluations = db.relationship("Evaluation", back_populates="project")
     members = db.relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
     member_changes = db.relationship("ProjectMemberChange", back_populates="project", cascade="all, delete-orphan")
+    member_edit_requests = db.relationship(
+        "ProjectMemberEditRequest",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="ProjectMemberEditRequest.created_at",
+    )
     document_revisions = db.relationship(
         "ProjectDocumentRevision",
         back_populates="project",

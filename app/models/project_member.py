@@ -27,3 +27,4 @@ class ProjectMember(db.Model):
     project = db.relationship("Project", back_populates="members")
     specialty_ref = db.relationship("Specialty")
     changes = db.relationship("ProjectMemberChange", back_populates="member", passive_deletes=True)
+    edit_requests = db.relationship("ProjectMemberEditRequest", back_populates="member", passive_deletes=True)

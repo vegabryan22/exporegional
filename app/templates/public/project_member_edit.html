@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="project-documents-shell">
+    <div class="project-documents-head">
+        <p class="maintenance-kicker">Editar datos del integrante</p>
+        <h2>{{ project.title }}</h2>
+        <p>Solicita la corrección de los datos de <strong>{{ member.full_name }}</strong>. La organización revisará los cambios antes de aplicarlos.</p>
+    </div>
+
+    <a class="doc-revision-back" href="{{ url_for('public.project_documents', project_id=project.id) }}">&larr; Volver a documentos del proyecto</a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if pending %}
+    <div class="doc-revision-pending-notice">
+        <div class="doc-revision-pending-icon">&#9203;</div>
+        <div>
+            <strong>Solicitud en espera de revisión</strong>
+            <p>Ya enviaste una solicitud de cambio el {{ pending.created_at | local_datetime }}. La organización la revisará pronto. No puedes enviar otra hasta que la actual sea procesada.</p>
+        </div>
+    </div>
+    {% else %}
+
+    <div class="doc-revision-info-grid">
+        <article class="doc-revision-info-card">
+            <h4>¿Qué ocurre al enviar?</h4>
+            <ol>
+                <li>Tu solicitud queda registrada con fecha y hora.</li>
+                <li>La organización revisa los cambios solicitados.</li>
+                <li>Si son aprobados, se actualizan los datos oficiales del integrante.</li>
+                <li>Si son rechazados, los datos originales se conservan sin cambios.</li>
+            </ol>
+        </article>
+        <article class="doc-revision-info-card">
+            <h4>Datos actuales registrados</h4>
+            <ul class="member-edit-current-data">
+                <li><strong>Nombre:</strong> {{ member.full_name }}</li>
+                <li><strong>Cédula:</strong> {{ member.identity_number or '—' }}</li>
+                <li><strong>Género:</strong> {{ member.gender or '—' }}</li>
+                <li><strong>Sección:</strong> {{ member.section_name or '—' }}</li>
+                <li><strong>Especialidad:</strong> {{ member.specialty or '—' }}</li>
+                <li><strong>Beca comedor:</strong> {{ 'Sí' if member.has_dining_scholarship else 'No' }}</li>
+                <li><strong>Expone en inglés:</strong> {{ 'Sí' if member.participates_in_english else 'No' }}</li>
+                <li><strong>Teléfono:</strong> {{ member.phone or '—' }}</li>
+                <li><strong>Correo:</strong> {{ member.email or '—' }}</li>
+                <li><strong>Rol:</strong> {{ member.role or '—' }}</li>
+            </ul>
+        </article>
+    </div>
+
+    <form method="POST" class="doc-revision-form member-edit-form" novalidate>
+        <fieldset>
+            <legend>Datos corregidos</legend>
+
+            <div class="member-edit-grid">
+                <div class="form-field">
+                    <label for="full_name">Nombre completo <span class="required">*</span></label>
+                    <input type="text" id="full_name" name="full_name" value="{{ member.full_name }}" required maxlength="120">
+                </div>
+
+                <div class="form-field">
+                    <label for="identity_number">Número de cédula</label>
+                    <input type="text" id="identity_number" name="identity_number" value="{{ member.identity_number or '' }}" maxlength="40">
+                </div>
+
+                <div class="form-field">
+                    <label for="birth_date">Fecha de nacimiento</label>
+                    <input type="date" id="birth_date" name="birth_date" value="{{ member.birth_date | string if member.birth_date else '' }}">
+                </div>
+
+                <div class="form-field">
+                    <label for="gender">Género</label>
+                    <select id="gender" name="gender">
+                        <option value="">— Sin especificar —</option>
+                        <option value="Masculino" {{ 'selected' if (member.gender or '').lower() == 'masculino' }}>Masculino</option>
+                        <option value="Femenino"  {{ 'selected' if (member.gender or '').lower() == 'femenino'  }}>Femenino</option>
+                        <option value="Otro"      {{ 'selected' if member.gender and (member.gender.lower() not in ['masculino','femenino']) }}>Otro</option>
+                    </select>
+                </div>
+
+                <div class="form-field">
+                    <label for="specialty">Especialidad</label>
+                    <input type="text" id="specialty" name="specialty" value="{{ member.specialty or '' }}" maxlength="140">
+                </div>
+
+                <div class="form-field">
+                    <label for="section_name">Sección</label>
+                    <input type="text" id="section_name" name="section_name" value="{{ member.section_name or '' }}" maxlength="30">
+                </div>
+
+                <div class="form-field">
+                    <label for="phone">Teléfono</label>
+                    <input type="tel" id="phone" name="phone" value="{{ member.phone or '' }}" maxlength="40">
+                </div>
+
+                <div class="form-field">
+                    <label for="email">Correo electrónico</label>
+                    <input type="email" id="email" name="email" value="{{ member.email or '' }}" maxlength="120">
+                </div>
+
+                <div class="form-field">
+                    <label for="role">Rol en el proyecto</label>
+                    <input type="text" id="role" name="role" value="{{ member.role or '' }}" maxlength="120">
+                </div>
+            </div>
+
+            <div class="member-edit-checks">
+                <label class="member-edit-check-label">
+                    <input type="hidden" name="has_dining_scholarship" value="0">
+                    <input type="checkbox" name="has_dining_scholarship" value="1" {{ 'checked' if member.has_dining_scholarship }}>
+                    Tiene beca de comedor
+                </label>
+                <label class="member-edit-check-label">
+                    <input type="hidden" name="participates_in_english" value="0">
+                    <input type="checkbox" name="participates_in_english" value="1" {{ 'checked' if member.participates_in_english }}>
+                    Desea exponer en inglés
+                </label>
+            </div>
+        </fieldset>
+
+        <div class="doc-revision-form-actions">
+            <a class="ghost-btn" href="{{ url_for('public.project_documents', project_id=project.id) }}">Cancelar</a>
+            <button type="submit" class="project-action">Enviar solicitud de cambio</button>
+        </div>
+    </form>
+    {% endif %}
+
+    {% if past_requests %}
+    <section class="doc-revision-history">
+        <h3>Historial de solicitudes de cambio</h3>
+        <div class="doc-revision-history-list">
+            {% for req in past_requests %}
+            <article class="doc-revision-history-card {{ req.status }}">
+                <div class="doc-revision-history-meta">
+                    <span class="doc-revision-status-badge {{ req.status }}">
+                        {% if req.status == 'aprobado' %}Aprobado{% elif req.status == 'rechazado' %}Rechazado{% else %}Pendiente&#8230;{% endif %}
+                    </span>
+                    <span class="doc-revision-history-date">{{ req.created_at | local_datetime }}</span>
+                </div>
+                {% if req.admin_notes %}
+                <p class="doc-revision-history-admin-note"><strong>Nota de la organización:</strong> {{ req.admin_notes }}</p>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</section>
+{% endblock %}

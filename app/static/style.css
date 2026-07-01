@@ -3338,6 +3338,90 @@ dialog.maintenance-dialog::backdrop {
     color: #7a96b0;
 }
 
+/* ── Students stats dashboard ─────────────────────────────────── */
+.students-stats-page { gap: 1.1rem; }
+
+.ss-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.7rem;
+}
+
+.ss-kpi-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.18rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid #d4e5f5;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fff 0%, #f2f8ff 100%);
+}
+
+.ss-kpi-primary { border-color: #1a6fba; background: linear-gradient(135deg, #1a6fba 0%, #1458a0 100%); }
+.ss-kpi-primary .ss-kpi-label,
+.ss-kpi-primary .ss-kpi-value { color: #fff; }
+
+.ss-kpi-accent { border-color: #f5a623; background: linear-gradient(135deg, #fff8ee 0%, #fff3d6 100%); }
+.ss-kpi-green  { border-color: #2ecc71; background: linear-gradient(135deg, #f0fff6 0%, #d6f5e3 100%); }
+
+.ss-kpi-label {
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #607998;
+}
+
+.ss-kpi-value {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.ss-kpi-sub {
+    font-size: 0.78rem;
+    color: #7a96b0;
+    font-weight: 600;
+}
+
+.ss-chart-row {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.ss-chart-row-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.ss-chart-card {
+    border: 1px solid #d4e5f5;
+    border-radius: 14px;
+    background: #fff;
+    padding: 1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.ss-chart-title {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1a4a7a;
+}
+
+.ss-chart-wrap {
+    position: relative;
+    height: 240px;
+}
+
+.ss-chart-donut { height: 260px; }
+
+@media (max-width: 860px) {
+    .ss-chart-row-2 { grid-template-columns: 1fr; }
+    .ss-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Dependencies page ─────────────────────────────────────────── */
 .dep-output-panel {
     border-radius: 12px;
     padding: 0.85rem 1rem;

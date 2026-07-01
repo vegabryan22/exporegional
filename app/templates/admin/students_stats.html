@@ -1,0 +1,204 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+{% set s = stats %}
+<section class="card admin-section students-stats-page">
+    <div class="maintenance-banner">
+        <div>
+            <p class="maintenance-kicker">Estadísticas</p>
+            <h3>Estudiantes participantes</h3>
+            <p>Datos de los {{ s.total_projects }} proyectos activos registrados en la edición actual.</p>
+        </div>
+    </div>
+
+    {# ── KPI strip ─────────────────────────────────────────────── #}
+    <div class="ss-kpi-grid">
+        <article class="ss-kpi-card ss-kpi-primary">
+            <span class="ss-kpi-label">Total estudiantes</span>
+            <strong class="ss-kpi-value">{{ s.total }}</strong>
+        </article>
+        <article class="ss-kpi-card">
+            <span class="ss-kpi-label">Masculino</span>
+            <strong class="ss-kpi-value">{{ s.male }}</strong>
+            <span class="ss-kpi-sub">{{ ((s.male / s.total * 100)|round|int) if s.total else 0 }}%</span>
+        </article>
+        <article class="ss-kpi-card">
+            <span class="ss-kpi-label">Femenino</span>
+            <strong class="ss-kpi-value">{{ s.female }}</strong>
+            <span class="ss-kpi-sub">{{ ((s.female / s.total * 100)|round|int) if s.total else 0 }}%</span>
+        </article>
+        <article class="ss-kpi-card ss-kpi-accent">
+            <span class="ss-kpi-label">Becados (comedor)</span>
+            <strong class="ss-kpi-value">{{ s.scholarship }}</strong>
+            <span class="ss-kpi-sub">{{ s.scholarship_pct }}% del total</span>
+        </article>
+        <article class="ss-kpi-card ss-kpi-green">
+            <span class="ss-kpi-label">Exponen en inglés</span>
+            <strong class="ss-kpi-value">{{ s.english }}</strong>
+            <span class="ss-kpi-sub">{{ s.english_pct }}% del total</span>
+        </article>
+        <article class="ss-kpi-card">
+            <span class="ss-kpi-label">Proyectos activos</span>
+            <strong class="ss-kpi-value">{{ s.total_projects }}</strong>
+        </article>
+        <article class="ss-kpi-card">
+            <span class="ss-kpi-label">Promedio por equipo</span>
+            <strong class="ss-kpi-value">{{ s.avg_team }}</strong>
+            <span class="ss-kpi-sub">estudiantes</span>
+        </article>
+    </div>
+
+    {# ── Fila 1: Género + Categoría ────────────────────────────── #}
+    <div class="ss-chart-row ss-chart-row-2">
+        <article class="ss-chart-card">
+            <h4 class="ss-chart-title">Género</h4>
+            <div class="ss-chart-wrap ss-chart-donut">
+                <canvas id="chartGender"></canvas>
+            </div>
+        </article>
+        <article class="ss-chart-card">
+            <h4 class="ss-chart-title">Estudiantes por categoría</h4>
+            <div class="ss-chart-wrap">
+                <canvas id="chartCategory"></canvas>
+            </div>
+        </article>
+    </div>
+
+    {# ── Fila 2: Especialidad + Sección ───────────────────────── #}
+    <div class="ss-chart-row ss-chart-row-2">
+        <article class="ss-chart-card">
+            <h4 class="ss-chart-title">Top especialidades</h4>
+            <div class="ss-chart-wrap">
+                <canvas id="chartSpecialty"></canvas>
+            </div>
+        </article>
+        <article class="ss-chart-card">
+            <h4 class="ss-chart-title">Distribución por sección</h4>
+            <div class="ss-chart-wrap">
+                <canvas id="chartSection"></canvas>
+            </div>
+        </article>
+    </div>
+
+    {# ── Fila 3: Tamaño equipo + Logística ────────────────────── #}
+    <div class="ss-chart-row ss-chart-row-2">
+        <article class="ss-chart-card">
+            <h4 class="ss-chart-title">Proyectos por tamaño de equipo</h4>
+            <div class="ss-chart-wrap ss-chart-donut">
+                <canvas id="chartTeamSize"></canvas>
+            </div>
+        </article>
+        <article class="ss-chart-card">
+            <h4 class="ss-chart-title">Estado logístico de proyectos</h4>
+            <div class="ss-chart-wrap ss-chart-donut">
+                <canvas id="chartLogistics"></canvas>
+            </div>
+        </article>
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(() => {
+    const PALETTE = ["#1a6fba","#f5a623","#2ecc71","#e74c3c","#9b59b6","#1abc9c","#e67e22","#34495e"];
+    const GENDER_COLORS  = ["#1a6fba","#e84393","#b0b0b0"];
+    const LOGISTICS_COLORS = ["#f5a623","#1a6fba","#2ecc71","#e74c3c"];
+
+    const defaults = {
+        font: { family: "'Inter','Segoe UI',sans-serif", size: 12 },
+        color: "#3a5a7a",
+    };
+    Chart.defaults.font = defaults.font;
+    Chart.defaults.color = defaults.color;
+
+    function donut(id, labels, data, colors) {
+        new Chart(document.getElementById(id), {
+            type: "doughnut",
+            data: { labels, datasets: [{ data, backgroundColor: colors || PALETTE, borderWidth: 2, borderColor: "#fff", hoverOffset: 6 }] },
+            options: {
+                cutout: "62%",
+                plugins: {
+                    legend: { position: "bottom", labels: { padding: 14, boxWidth: 14, font: { size: 12 } } },
+                    tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } },
+                },
+            },
+        });
+    }
+
+    function hbar(id, labels, datasets) {
+        new Chart(document.getElementById(id), {
+            type: "bar",
+            data: { labels, datasets },
+            options: {
+                indexAxis: "y",
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: datasets.length > 1, position: "bottom" } },
+                scales: {
+                    x: { grid: { color: "#e8f0f9" }, ticks: { precision: 0 } },
+                    y: { grid: { display: false } },
+                },
+            },
+        });
+    }
+
+    function vbar(id, labels, datasets) {
+        new Chart(document.getElementById(id), {
+            type: "bar",
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: datasets.length > 1, position: "bottom" } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: "#e8f0f9" }, ticks: { precision: 0 } },
+                },
+            },
+        });
+    }
+
+    // Gender donut
+    donut("chartGender",
+        {{ s.gender_chart.labels | tojson }},
+        {{ s.gender_chart.data   | tojson }},
+        GENDER_COLORS
+    );
+
+    // Category grouped bar
+    vbar("chartCategory",
+        {{ s.category_chart.labels  | tojson }},
+        [
+            { label: "Total estudiantes", data: {{ s.category_chart.data    | tojson }}, backgroundColor: "#1a6fba", borderRadius: 6 },
+            { label: "Exponen en inglés", data: {{ s.category_chart.english | tojson }}, backgroundColor: "#f5a623", borderRadius: 6 },
+        ]
+    );
+
+    // Specialty horizontal bar
+    hbar("chartSpecialty",
+        {{ s.specialty_chart.labels | tojson }},
+        [{ label: "Estudiantes", data: {{ s.specialty_chart.data | tojson }},
+           backgroundColor: PALETTE, borderRadius: 5 }]
+    );
+
+    // Section horizontal bar
+    hbar("chartSection",
+        {{ s.section_chart.labels | tojson }},
+        [{ label: "Estudiantes", data: {{ s.section_chart.data | tojson }},
+           backgroundColor: "#1a6fba", borderRadius: 5 }]
+    );
+
+    // Team size donut
+    donut("chartTeamSize",
+        {{ s.team_size_chart.labels | tojson }},
+        {{ s.team_size_chart.data   | tojson }}
+    );
+
+    // Logistics donut
+    donut("chartLogistics",
+        {{ s.logistics_chart.labels | tojson }},
+        {{ s.logistics_chart.data   | tojson }},
+        LOGISTICS_COLORS
+    );
+})();
+</script>
+{% endblock %}

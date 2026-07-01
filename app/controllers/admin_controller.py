@@ -131,6 +131,7 @@ ADMIN_MENU_ICONS = {
     "gitops": "settings",
     "dependencies": "box",
     "logs": "doc",
+    "students_stats": "chart",
 }
 
 # Override mojibake labels with clean UTF-8 text.
@@ -154,12 +155,13 @@ ADMIN_MENU_ITEMS = [
     ("gitops", "admin.gitops_page", "Mantenimiento Git"),
     ("dependencies", "admin.dependencies_page", "Dependencias"),
     ("logs", "admin.logs_page", "Bitácora"),
+    ("students_stats", "admin.students_stats_page", "Estadísticas de estudiantes"),
 ]
 
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Documentos", ["documents"]),
-    ("Operación", ["assignments", "judge_pool", "projects", "evaluations"]),
+    ("Operación", ["assignments", "judge_pool", "projects", "evaluations", "students_stats"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
@@ -6409,6 +6411,101 @@ def database_backup_download(filename: str):
 @admin_module_required("gitops")
 def gitops_page():
     return _render("admin/gitops.html", "gitops")
+
+
+def _build_students_stats(context: dict) -> dict:
+    from collections import Counter, defaultdict
+    active_projects = [p for p in context.get("projects", []) if p.is_active]
+    active_ids = {p.id for p in active_projects}
+    members = [m for p in active_projects for m in p.members]
+
+    total = len(members)
+    gender_counts = Counter((m.gender or "No indicado").lower() for m in members)
+    male   = gender_counts.get("masculino", 0)
+    female = gender_counts.get("femenino", 0)
+    other  = total - male - female
+    scholarship = sum(1 for m in members if m.has_dining_scholarship)
+    english     = sum(1 for m in members if m.participates_in_english)
+
+    # by category
+    cat_counts: dict[str, int] = defaultdict(int)
+    cat_english: dict[str, int] = defaultdict(int)
+    for p in active_projects:
+        cat = (p.category or "Sin categoría").capitalize()
+        for m in p.members:
+            cat_counts[cat] += 1
+            if m.participates_in_english:
+                cat_english[cat] += 1
+
+    # by specialty (top 8)
+    spec_counts = Counter(
+        (m.specialty or "Sin especialidad").strip() for m in members
+    )
+    top_specs = spec_counts.most_common(8)
+
+    # by section
+    section_counts = Counter(
+        (m.section_name or "Sin sección").strip() for m in members
+    )
+    top_sections = sorted(section_counts.items(), key=lambda x: x[0])
+
+    # team size distribution
+    team_sizes = Counter(len(p.members) for p in active_projects)
+    avg_team = round(total / len(active_projects), 1) if active_projects else 0
+
+    # projects by logistics status
+    logistics_labels = {
+        "pendiente_revision": "Pendiente revisión",
+        "en_revision": "En revisión",
+        "aprobado": "Aprobado",
+        "rechazado": "Rechazado",
+    }
+    logistics_counts = Counter(p.logistics_status or "pendiente_revision" for p in active_projects)
+
+    return {
+        "total": total,
+        "male": male,
+        "female": female,
+        "other_gender": other,
+        "scholarship": scholarship,
+        "scholarship_pct": round(scholarship / total * 100) if total else 0,
+        "english": english,
+        "english_pct": round(english / total * 100) if total else 0,
+        "total_projects": len(active_projects),
+        "avg_team": avg_team,
+        "gender_chart": {
+            "labels": ["Masculino", "Femenino", "No indicado"],
+            "data": [male, female, other],
+        },
+        "category_chart": {
+            "labels": list(cat_counts.keys()),
+            "data": list(cat_counts.values()),
+            "english": [cat_english.get(c, 0) for c in cat_counts],
+        },
+        "specialty_chart": {
+            "labels": [s[0] for s in top_specs],
+            "data": [s[1] for s in top_specs],
+        },
+        "section_chart": {
+            "labels": [s[0] for s in top_sections],
+            "data": [s[1] for s in top_sections],
+        },
+        "team_size_chart": {
+            "labels": [f"{k} integrante{'s' if k != 1 else ''}" for k in sorted(team_sizes)],
+            "data": [team_sizes[k] for k in sorted(team_sizes)],
+        },
+        "logistics_chart": {
+            "labels": [logistics_labels.get(k, k) for k in logistics_counts],
+            "data": list(logistics_counts.values()),
+        },
+    }
+
+
+@admin_module_required("students_stats")
+def students_stats_page():
+    context = _base_context("students_stats")
+    context["stats"] = _build_students_stats(context)
+    return render_template("admin/students_stats.html", **context)
 
 
 def _superadmin_required(view_func):

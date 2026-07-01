@@ -11401,6 +11401,20 @@ body {
     color: #7a6020;
 }
 
+.member-edit-search-action {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid #e8eef4;
+}
+.member-edit-search-action:first-child { border-top: none; }
+.member-edit-search-name {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #2a4a7a;
+}
+
 .search-revision-empty {
     background: #f7f9fc;
     border: 1px solid #d0dde8;

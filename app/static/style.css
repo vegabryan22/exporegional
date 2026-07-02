@@ -8122,11 +8122,13 @@ dialog.maintenance-dialog::backdrop {
 
 /* ── Project detail — redesigned layout ─────────────────────────────────── */
 .project-detail.card {
-    display: flex;
     flex-direction: column;
     gap: 0;
     padding: 0;
     overflow: hidden;
+}
+.project-detail.card.active {
+    display: flex;
 }
 
 /* Hero */
@@ -8277,6 +8279,10 @@ dialog.maintenance-dialog::backdrop {
     font-weight: 800;
     color: #0d2a4a;
     line-height: 1.25;
+    min-height: 2.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .pd-member-specialty {
     margin: 0;

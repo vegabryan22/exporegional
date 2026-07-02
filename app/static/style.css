@@ -5972,6 +5972,20 @@ dialog.maintenance-dialog::backdrop {
     line-height: 1.1;
 }
 
+.pill-english-badge {
+    display: inline-block;
+    background: #1a7f4b;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    padding: 0.05rem 0.35rem;
+    border-radius: 999px;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+    line-height: 1.4;
+}
+
 .assignment-pill-draft {
     background: #fff8e8;
     color: #7a4f00;

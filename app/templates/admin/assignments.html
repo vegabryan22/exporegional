@@ -80,6 +80,7 @@
                             {% for assignment in ns.confirmed %}
                                 <span class="assignment-summary-pill">
                                     {{ assignment.judge.full_name }}
+                                    {% if assignment.judge.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
                                     <small>{{ assignment.scope_label }}</small>
                                 </span>
                             {% endfor %}
@@ -93,6 +94,7 @@
                             {% for assignment in ns.drafts %}
                                 <span class="assignment-summary-pill assignment-pill-draft">
                                     {{ assignment.judge.full_name }}
+                                    {% if assignment.judge.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
                                     <small>{{ assignment.scope_label }}</small>
                                 </span>
                             {% endfor %}

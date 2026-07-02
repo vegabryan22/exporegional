@@ -6916,9 +6916,9 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .projects-showcase-page .project-sidebar {
-    top: calc(var(--fixed-header-height, 96px) + 0.75rem);
-    height: calc(100vh - var(--fixed-header-height, 96px) - 1.5rem);
-    max-height: calc(100vh - var(--fixed-header-height, 96px) - 1.5rem);
+    top: calc(var(--fixed-header-height, 96px) + 0.25rem);
+    height: calc(100vh - var(--fixed-header-height, 96px) - 0.5rem);
+    max-height: calc(100vh - var(--fixed-header-height, 96px) - 0.5rem);
 }
 
 .project-sidebar {

@@ -4,6 +4,21 @@ from email.message import EmailMessage
 from app.models.system_setting import SystemSetting
 
 
+def _log_email(to_email: str, subject: str, ok: bool, error: str | None):
+    try:
+        from app.services.audit_service import log_event
+        from app.extensions import db
+        status = "enviado" if ok else f"error: {error}"
+        log_event(
+            "system.email.send",
+            "email",
+            detail=f"Para: {to_email} | Asunto: {subject} | Estado: {status}",
+        )
+        db.session.commit()
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def get_smtp_config():
     return {
         "host": SystemSetting.get_value("smtp_host", ""),
@@ -47,6 +62,8 @@ def send_email(to_email: str, subject: str, body: str, html_body: str | None = N
                 server.login(config["username"], config["password"])
             server.send_message(message)
     except Exception as error:  # noqa: BLE001
+        _log_email(to_email, subject, ok=False, error=str(error))
         return False, str(error)
 
+    _log_email(to_email, subject, ok=True, error=None)
     return True, None

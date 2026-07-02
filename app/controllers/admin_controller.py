@@ -200,6 +200,8 @@ ACTION_MODULE_MAP = {
     "delete_judge": "judges",
     "save_judge_form_settings": "judges",
     "rotate_judge_form_secret": "judges",
+    "send_attendance_invitation": "judges",
+    "send_all_attendance_invitations": "judges",
     "update_advisor": "projects",
     "update_project": "projects",
     "update_project_logistics": "projects",
@@ -3847,6 +3849,83 @@ def _handle_action(action: str):
         log_event("admin.forms.judge_secret.rotate", "system_setting", detail="Token webhook Microsoft Forms rotado")
         db.session.commit()
         flash("Token del webhook rotado correctamente.", "success")
+
+    elif action == "send_attendance_invitation":
+        judge_id = request.form.get("judge_id", type=int)
+        judge = Judge.query.get(judge_id) if judge_id else None
+        if not judge:
+            flash("Juez no encontrado.", "error")
+        else:
+            judge.attendance_token = secrets.token_urlsafe(40)
+            db.session.commit()
+            confirm_url = url_for("public.judge_attendance_confirm", token=judge.attendance_token, _external=True)
+            subject = "Confirmación de asistencia — ExpoTécnica CTPRGV"
+            body = (
+                f"Estimado/a {judge.full_name},\n\n"
+                "Le invitamos a confirmar su asistencia como evaluador en la ExpoTécnica CTPRGV.\n\n"
+                f"Por favor complete el formulario de confirmación en el siguiente enlace:\n{confirm_url}\n\n"
+                "Este enlace es personal e intransferible.\n\nGracias por su colaboración."
+            )
+            html_body = f"""
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:2rem;border:1px solid #dce8f4;border-radius:12px">
+                <h2 style="color:#0d2a4a;margin-bottom:0.5rem">ExpoTécnica CTPRGV</h2>
+                <p style="color:#3a5a7a">Confirmación de asistencia como evaluador</p>
+                <hr style="border:none;border-top:1px solid #e4edf6;margin:1rem 0">
+                <p>Estimado/a <strong>{judge.full_name}</strong>,</p>
+                <p>Le invitamos a confirmar su participación como evaluador en la ExpoTécnica institucional.</p>
+                <div style="text-align:center;margin:2rem 0">
+                    <a href="{confirm_url}" style="background:#1a4a7a;color:#fff;padding:0.85rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:1rem">
+                        Confirmar asistencia
+                    </a>
+                </div>
+                <p style="font-size:0.85rem;color:#607798">Si el botón no funciona, copie y pegue este enlace en su navegador:<br><a href="{confirm_url}">{confirm_url}</a></p>
+                <p style="font-size:0.8rem;color:#aac0d8;margin-top:2rem">Este enlace es personal e intransferible. No lo comparta con terceros.</p>
+            </div>
+            """
+            ok, err = send_email(judge.email, subject, body, html_body=html_body)
+            if ok:
+                log_event("admin.judge.attendance_invite", "judge", entity_id=judge.id, detail=f"Invitación de asistencia enviada a {judge.email}")
+                flash(f"Invitación enviada a {judge.email}.", "success")
+            else:
+                flash(f"Error al enviar correo: {err}", "error")
+
+    elif action == "send_all_attendance_invitations":
+        judges = Judge.query.filter_by(role=Judge.ROLE_JUDGE, is_active_user=True).all()
+        sent, failed = 0, 0
+        for judge in judges:
+            judge.attendance_token = secrets.token_urlsafe(40)
+        db.session.commit()
+        for judge in judges:
+            confirm_url = url_for("public.judge_attendance_confirm", token=judge.attendance_token, _external=True)
+            subject = "Confirmación de asistencia — ExpoTécnica CTPRGV"
+            body = (
+                f"Estimado/a {judge.full_name},\n\n"
+                "Le invitamos a confirmar su asistencia como evaluador en la ExpoTécnica CTPRGV.\n\n"
+                f"Por favor complete el formulario en:\n{confirm_url}\n\nGracias."
+            )
+            html_body = f"""
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:2rem;border:1px solid #dce8f4;border-radius:12px">
+                <h2 style="color:#0d2a4a;margin-bottom:0.5rem">ExpoTécnica CTPRGV</h2>
+                <p style="color:#3a5a7a">Confirmación de asistencia como evaluador</p>
+                <hr style="border:none;border-top:1px solid #e4edf6;margin:1rem 0">
+                <p>Estimado/a <strong>{judge.full_name}</strong>,</p>
+                <p>Le invitamos a confirmar su participación como evaluador en la ExpoTécnica institucional.</p>
+                <div style="text-align:center;margin:2rem 0">
+                    <a href="{confirm_url}" style="background:#1a4a7a;color:#fff;padding:0.85rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:1rem">
+                        Confirmar asistencia
+                    </a>
+                </div>
+                <p style="font-size:0.85rem;color:#607798">Si el botón no funciona copie este enlace:<br><a href="{confirm_url}">{confirm_url}</a></p>
+                <p style="font-size:0.8rem;color:#aac0d8;margin-top:2rem">Enlace personal e intransferible.</p>
+            </div>
+            """
+            ok, _ = send_email(judge.email, subject, body, html_body=html_body)
+            if ok:
+                sent += 1
+            else:
+                failed += 1
+        log_event("admin.judge.attendance_invite_all", "judge", detail=f"Invitaciones masivas: {sent} enviadas, {failed} fallidas")
+        flash(f"Invitaciones enviadas: {sent} exitosas, {failed} con error.", "success" if failed == 0 else "warning")
 
     elif action == "update_project":
         project_id = request.form.get("project_id", type=int)

@@ -10,6 +10,11 @@
         <div class="page-head-actions judge-pool-actions">
             <a class="action-btn outline-btn" href="{{ url_for('admin.assignments_page') }}">Asignar proyectos</a>
             <a class="action-btn secondary-btn" href="{{ url_for('admin.judges_page') }}">Gestionar cuentas</a>
+            <form method="post" action="{{ action_url }}" onsubmit="return confirm('¿Enviar invitación de confirmación de asistencia a todos los jueces activos?')">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="send_all_attendance_invitations">
+                <button type="submit" class="action-btn project-action-btn">Enviar invitación a todos</button>
+            </form>
         </div>
     </div>
 
@@ -153,6 +158,25 @@
                     <p>Sin alertas</p>
                 {% endif %}
                 <button type="button" class="outline-btn" data-dialog-open="judge-availability-{{ judge.id }}">Editar</button>
+            </div>
+
+            <div class="judge-pool-attendance">
+                <span>Asistencia</span>
+                <span class="tag {{ judge.attendance_status_tag }}">{{ judge.attendance_status_label }}</span>
+                {% if judge.attendance_confirmed == true and judge.needs_parking %}
+                    <span class="tag neutral">Parqueo</span>
+                {% endif %}
+                {% if judge.attendance_responded_at %}
+                    <small>{{ judge.attendance_responded_at | local_datetime }}</small>
+                {% endif %}
+                <form method="post" action="{{ action_url }}" style="margin-top:0.4rem">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="action" value="send_attendance_invitation">
+                    <input type="hidden" name="judge_id" value="{{ judge.id }}">
+                    <button type="submit" class="ghost-btn" style="font-size:0.78rem">
+                        {{ 'Reenviar invitación' if judge.attendance_token else 'Enviar invitación' }}
+                    </button>
+                </form>
             </div>
 
             {% if row.assignments %}

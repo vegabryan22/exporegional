@@ -289,6 +289,14 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE judges ADD COLUMN must_change_password BOOLEAN NOT NULL DEFAULT 0"))
         if "last_login_at" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN last_login_at DATETIME NULL"))
+        if "attendance_token" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN attendance_token VARCHAR(64) NULL"))
+        if "attendance_confirmed" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN attendance_confirmed TINYINT(1) NULL"))
+        if "needs_parking" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN needs_parking TINYINT(1) NOT NULL DEFAULT 0"))
+        if "attendance_responded_at" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN attendance_responded_at DATETIME NULL"))
         connection.execute(
             text(
                 """

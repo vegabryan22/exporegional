@@ -24,6 +24,7 @@ from app.models.section import Section
 from app.models.specialty import Specialty
 from app.models.system_setting import SystemSetting
 from app.models.thematic_axis import ThematicAxis
+from app.models.judge import Judge
 from app.services.audit_service import log_event
 from app.services.parameter_service import get_active_evaluation_types
 
@@ -1749,4 +1750,35 @@ def submit_member_edit(project_id: int, member_id: int):
         member=member,
         pending=pending,
         past_requests=past_requests,
+    )
+
+
+def judge_attendance_confirm(token: str):
+    from datetime import datetime as _dt
+    judge = Judge.query.filter_by(attendance_token=token).first()
+    if not judge:
+        return render_template("public/attendance_invalid.html"), 404
+
+    already_responded = judge.attendance_confirmed is not None
+
+    if request.method == "POST":
+        confirmed = request.form.get("attendance") == "yes"
+        needs_parking = request.form.get("needs_parking") == "1"
+        judge.attendance_confirmed = confirmed
+        judge.needs_parking = needs_parking
+        judge.attendance_responded_at = _dt.utcnow()
+        if not confirmed:
+            judge.is_active_user = False
+        db.session.commit()
+        return render_template(
+            "public/attendance_thanks.html",
+            judge=judge,
+            confirmed=confirmed,
+            needs_parking=needs_parking,
+        )
+
+    return render_template(
+        "public/attendance_confirm.html",
+        judge=judge,
+        already_responded=already_responded,
     )

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="project-documents-shell attendance-shell">
+    <div class="attendance-card">
+        <div class="attendance-logo-row">
+            <span class="attendance-expo-label">ExpoTécnica CTPRGV</span>
+        </div>
+
+        <h2 class="attendance-title">Confirmación de asistencia</h2>
+        <p class="attendance-subtitle">Estimado/a <strong>{{ judge.full_name | title }}</strong>, por favor indique si podrá asistir como evaluador.</p>
+
+        {% if already_responded %}
+        <div class="attendance-already">
+            <span class="tag {{ judge.attendance_status_tag }}">{{ judge.attendance_status_label }}</span>
+            <p>Ya registró su respuesta anteriormente. Puede actualizarla a continuación.</p>
+        </div>
+        {% endif %}
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="" class="attendance-form">
+            <fieldset class="attendance-fieldset">
+                <legend>¿Podrá asistir a la ExpoTécnica?</legend>
+                <label class="attendance-option attendance-option-yes">
+                    <input type="radio" name="attendance" value="yes" required
+                        {% if judge.attendance_confirmed == true %}checked{% endif %}>
+                    <span class="attendance-option-icon">✓</span>
+                    <span class="attendance-option-label">Sí, confirmo mi asistencia</span>
+                </label>
+                <label class="attendance-option attendance-option-no">
+                    <input type="radio" name="attendance" value="no"
+                        {% if judge.attendance_confirmed == false %}checked{% endif %}>
+                    <span class="attendance-option-icon">✗</span>
+                    <span class="attendance-option-label">No podré asistir</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="attendance-fieldset">
+                <legend>¿Requiere espacio de parqueo?</legend>
+                <label class="attendance-parking-check">
+                    <input type="checkbox" name="needs_parking" value="1"
+                        {% if judge.needs_parking %}checked{% endif %}>
+                    <span>Sí, necesito parqueo</span>
+                </label>
+            </fieldset>
+
+            <div class="attendance-actions">
+                <button type="submit" class="project-action-btn attendance-submit-btn">Enviar confirmación</button>
+            </div>
+        </form>
+
+        <p class="attendance-note">Este formulario es personal. Su respuesta quedará registrada automáticamente.</p>
+    </div>
+</section>
+{% endblock %}

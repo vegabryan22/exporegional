@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="project-documents-shell attendance-shell">
+    <div class="attendance-card attendance-thanks-card">
+        <div class="attendance-thanks-icon">{{ '✓' if confirmed else '✗' }}</div>
+        <h2 class="attendance-title">{{ '¡Gracias por confirmar!' if confirmed else 'Respuesta registrada' }}</h2>
+
+        {% if confirmed %}
+            <p class="attendance-subtitle">Su asistencia ha sido confirmada exitosamente.</p>
+            {% if needs_parking %}
+            <div class="attendance-detail-badge">
+                <span class="tag ok">Parqueo solicitado</span>
+                <p>Se ha tomado nota de que requiere espacio de parqueo.</p>
+            </div>
+            {% else %}
+            <div class="attendance-detail-badge">
+                <span class="tag neutral">Sin parqueo</span>
+                <p>No requiere espacio de parqueo.</p>
+            </div>
+            {% endif %}
+        {% else %}
+            <p class="attendance-subtitle">Lamentamos que no pueda asistir. Su cuenta ha sido actualizada.</p>
+            <p class="attendance-note">Si cambia de opinión, comuníquese con la organización para reactivar su participación.</p>
+        {% endif %}
+
+        <a href="/" class="table-link-btn" style="margin-top:1.5rem">Volver al inicio</a>
+    </div>
+</section>
+{% endblock %}

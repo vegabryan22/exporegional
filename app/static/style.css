@@ -3792,6 +3792,27 @@ dialog.maintenance-dialog::backdrop {
     padding: 0.9rem;
 }
 
+.judge-pool-attendance {
+    border: 1px solid #d7e5f5;
+    border-radius: 16px;
+    background: #f8fbff;
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.judge-pool-attendance > span:first-child {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7a9ab8;
+}
+.judge-pool-attendance small {
+    font-size: 0.72rem;
+    color: #9ab5cc;
+}
+
 .judge-pool-identity h4,
 .judge-pool-identity p,
 .judge-pool-profile p,
@@ -4536,6 +4557,116 @@ dialog.maintenance-dialog::backdrop {
     gap: 1rem;
     max-width: 1080px;
     margin: 0 auto;
+}
+
+/* ── Attendance confirmation ─────────────────────────────────────────────── */
+.attendance-shell { max-width: 560px; }
+
+.attendance-card {
+    background: #fff;
+    border: 1px solid #d0dff0;
+    border-radius: 18px;
+    padding: 2.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    box-shadow: 0 8px 28px rgba(12,50,90,0.08);
+}
+
+.attendance-logo-row {
+    text-align: center;
+}
+.attendance-expo-label {
+    font-size: 0.75rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #7a9ab8;
+}
+.attendance-title {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #0d2a4a;
+    text-align: center;
+}
+.attendance-subtitle {
+    margin: 0;
+    color: #3a5a7a;
+    text-align: center;
+}
+.attendance-already {
+    background: #f0f7ff;
+    border: 1px solid #c8dff5;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-start;
+}
+.attendance-form { display: flex; flex-direction: column; gap: 1rem; }
+.attendance-fieldset {
+    border: 1px solid #d0dff0;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+.attendance-fieldset legend {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #1a4a7a;
+    letter-spacing: 0.04em;
+    padding: 0 0.3rem;
+}
+.attendance-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid #d0dff0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    font-weight: 600;
+    color: #1a4a7a;
+}
+.attendance-option:has(input:checked) { border-color: #1a4a7a; background: #f0f7ff; }
+.attendance-option-yes:has(input:checked) { border-color: #1a7f4b; background: #f0fff6; }
+.attendance-option-no:has(input:checked) { border-color: #c0392b; background: #fff5f5; }
+.attendance-option input[type="radio"] { width: 1.1rem; height: 1.1rem; accent-color: #1a4a7a; }
+.attendance-option-icon { font-size: 1.1rem; }
+.attendance-option-yes .attendance-option-icon { color: #1a7f4b; }
+.attendance-option-no .attendance-option-icon { color: #c0392b; }
+.attendance-parking-check {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    color: #1a4a7a;
+    cursor: pointer;
+}
+.attendance-parking-check input { width: 1.1rem; height: 1.1rem; accent-color: #1a4a7a; }
+.attendance-actions { display: flex; justify-content: center; }
+.attendance-submit-btn { min-width: 200px; }
+.attendance-note {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #9ab5cc;
+    text-align: center;
+}
+.attendance-thanks-card { align-items: center; text-align: center; padding: 3rem 2rem; }
+.attendance-thanks-icon {
+    font-size: 3rem;
+    color: #1a7f4b;
+    line-height: 1;
+}
+.attendance-detail-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
 }
 
 .project-documents-head {

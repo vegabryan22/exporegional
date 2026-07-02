@@ -102,3 +102,10 @@ public_bp.add_url_rule(
     view_func=admin_controller.judge_form_webhook,
     methods=["POST"],
 )
+
+public_bp.add_url_rule(
+    "/juez/confirmar/<token>",
+    endpoint="judge_attendance_confirm",
+    view_func=project_controller.judge_attendance_confirm,
+    methods=["GET", "POST"],
+)

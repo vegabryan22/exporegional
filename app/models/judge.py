@@ -37,6 +37,31 @@ class Judge(UserMixin, db.Model):
     must_change_password = db.Column(db.Boolean, default=False, nullable=False)
     last_login_at = db.Column(db.DateTime, nullable=True)
 
+    attendance_token = db.Column(db.String(64), unique=True, nullable=True)
+    attendance_confirmed = db.Column(db.Boolean, nullable=True)
+    needs_parking = db.Column(db.Boolean, default=False, nullable=False)
+    attendance_responded_at = db.Column(db.DateTime, nullable=True)
+
+    ATTENDANCE_PENDING = None
+    ATTENDANCE_YES = True
+    ATTENDANCE_NO = False
+
+    @property
+    def attendance_status_label(self):
+        if self.attendance_confirmed is True:
+            return "Confirmado"
+        if self.attendance_confirmed is False:
+            return "No asiste"
+        return "Pendiente"
+
+    @property
+    def attendance_status_tag(self):
+        if self.attendance_confirmed is True:
+            return "ok"
+        if self.attendance_confirmed is False:
+            return "off"
+        return "neutral"
+
     assignments = db.relationship("Assignment", back_populates="judge", cascade="all, delete-orphan")
     evaluations = db.relationship("Evaluation", back_populates="judge")
 

@@ -8260,7 +8260,7 @@ dialog.maintenance-dialog::backdrop {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.9rem;
+    justify-content: space-between;
     text-align: center;
 }
 .pd-member-photo {
@@ -8271,18 +8271,15 @@ dialog.maintenance-dialog::backdrop {
     border-radius: 14px;
     background: #dce8f4;
     display: block;
+    flex-shrink: 0;
 }
-.pd-member-info { display: flex; flex-direction: column; gap: 0.2rem; }
+.pd-member-info { display: flex; flex-direction: column; gap: 0.2rem; padding-top: 0.9rem; }
 .pd-member-name {
     margin: 0;
     font-size: 1rem;
     font-weight: 800;
     color: #0d2a4a;
     line-height: 1.25;
-    min-height: 2.5em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 .pd-member-specialty {
     margin: 0;

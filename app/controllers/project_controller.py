@@ -1790,6 +1790,8 @@ def submit_member_edit(project_id: int, member_id: int):
             errors.append("El nombre completo es obligatorio.")
         if not justification or len(justification) < 10:
             errors.append("Debes indicar el motivo del cambio (mínimo 10 caracteres).")
+        if new_vals == snapshot:
+            errors.append("No se detectó ningún cambio en los datos. Modifica al menos un campo antes de enviar la solicitud.")
         if errors:
             for e in errors:
                 flash(e, "error")

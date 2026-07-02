@@ -8254,7 +8254,7 @@ dialog.maintenance-dialog::backdrop {
     display: grid;
     gap: 1.5rem;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    align-items: stretch;
+    align-items: start;
 }
 
 .pd-member-card {
@@ -8266,15 +8266,14 @@ dialog.maintenance-dialog::backdrop {
 }
 .pd-member-photo {
     width: 100%;
-    flex: 1 1 0;
-    min-height: 160px;
+    aspect-ratio: 3 / 4;
     object-fit: cover;
     object-position: top center;
     border-radius: 14px;
     background: #dce8f4;
     display: block;
 }
-.pd-member-info { display: flex; flex-direction: column; gap: 0.2rem; flex-shrink: 0; width: 100%; }
+.pd-member-info { display: flex; flex-direction: column; gap: 0.2rem; width: 100%; }
 .pd-member-name {
     margin: 0;
     font-size: 1rem;

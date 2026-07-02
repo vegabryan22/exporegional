@@ -432,11 +432,19 @@
                         <span class="check-card-title">Formulario firmado</span>
                         <span class="check-card-help">Inscripcion fisica recibida con firmas.</span>
                     </label>
-                    <label class="logistics-check-card">
-                        <input type="checkbox" name="logistics_student_consents_signed_ok" value="1" {% if project.logistics_student_consents_signed_ok %}checked{% endif %}>
-                        <span class="check-card-title">Consentimientos firmados</span>
-                        <span class="check-card-help">Autorizaciones fisicas de estudiantes completas.</span>
-                    </label>
+                    <div class="logistics-check-card logistics-consent-card">
+                        <span class="check-card-title">Consentimientos informados (ExpoTEC-2)</span>
+                        <span class="check-card-help">Marcar solo los que ya fueron entregados firmados.</span>
+                        <div class="logistics-consent-list">
+                            {% for member in project.members | sort(attribute='student_number') %}
+                            <label class="logistics-consent-member">
+                                <input type="checkbox" name="consent_member_{{ member.id }}" value="1" {% if member.consent_signed_ok %}checked{% endif %}>
+                                <span class="logistics-consent-name">{{ member.full_name }}</span>
+                                {% if member.section_name %}<em class="logistics-consent-section">{{ member.section_name }}</em>{% endif %}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
                     <label class="logistics-check-card">
                         <input type="checkbox" name="logistics_requirements_reviewed_ok" value="1" {% if project.logistics_requirements_reviewed_ok %}checked{% endif %}>
                         <span class="check-card-title">Requisitos revisados</span>

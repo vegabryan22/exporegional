@@ -888,8 +888,9 @@ def _project_logistics_missing_items(project):
         missing.append("fotos de integrantes")
     if not project.logistics_registration_form_signed_ok:
         missing.append("formulario fisico firmado")
-    if not project.logistics_student_consents_signed_ok:
-        missing.append("consentimientos fisicos firmados")
+    missing_consents = [m.full_name for m in project.members if not m.consent_signed_ok]
+    if missing_consents:
+        missing.append("consentimiento de: " + ", ".join(missing_consents))
     if not project.logistics_requirements_reviewed_ok:
         missing.append("revision de requisitos")
     return missing
@@ -903,8 +904,10 @@ def _project_logistics_group_missing(project):
         missing.append("Documento escrito")
     if not project.logistics_registration_form_signed_ok:
         missing.append("Formulario físico de inscripción firmado")
-    if not project.logistics_student_consents_signed_ok:
-        missing.append("Consentimientos físicos estudiantiles firmados")
+    missing_consents = [m.full_name for m in project.members if not m.consent_signed_ok]
+    if missing_consents:
+        for name in missing_consents:
+            missing.append(f"Consentimiento de {name}")
     if not project.logistics_requirements_reviewed_ok:
         missing.append("Revisión de requisitos completada")
     return missing
@@ -3897,8 +3900,11 @@ def _handle_action(action: str):
                 project.logistics_logo_ok = _str_to_bool(request.form.get("logistics_logo_ok"))
                 project.logistics_photos_ok = _str_to_bool(request.form.get("logistics_photos_ok"))
                 project.logistics_registration_form_signed_ok = _str_to_bool(request.form.get("logistics_registration_form_signed_ok"))
-                project.logistics_student_consents_signed_ok = _str_to_bool(request.form.get("logistics_student_consents_signed_ok"))
                 project.logistics_requirements_reviewed_ok = _str_to_bool(request.form.get("logistics_requirements_reviewed_ok"))
+                # per-member consent checkboxes
+                for member in project.members:
+                    member.consent_signed_ok = _str_to_bool(request.form.get(f"consent_member_{member.id}"))
+                project.logistics_student_consents_signed_ok = all(m.consent_signed_ok for m in project.members) if project.members else False
                 missing_items = _project_logistics_missing_items(project)
                 forced_incomplete = False
                 if status == "completo" and missing_items:

@@ -848,6 +848,15 @@ def ensure_schema_updates():
                     )
                 )
 
+        if "project_members" in inspector.get_table_names():
+            pm_cols = {c["name"] for c in inspector.get_columns("project_members")}
+            if "consent_signed_ok" not in pm_cols:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE project_members ADD COLUMN consent_signed_ok TINYINT(1) NOT NULL DEFAULT 0",
+                    "project_members.consent_signed_ok",
+                )
+
         if "project_member_edit_requests" in inspector.get_table_names():
             mer_cols = {c["name"] for c in inspector.get_columns("project_member_edit_requests")}
             if "justification" not in mer_cols:

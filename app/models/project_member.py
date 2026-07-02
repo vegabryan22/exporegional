@@ -18,6 +18,7 @@ class ProjectMember(db.Model):
     section_name = db.Column(db.String(30), nullable=True)
     has_dining_scholarship = db.Column(db.Boolean, default=False, nullable=False)
     participates_in_english = db.Column(db.Boolean, default=False, nullable=False)
+    consent_signed_ok = db.Column(db.Boolean, default=False, nullable=False)
     phone = db.Column(db.String(40), nullable=True)
     email = db.Column(db.String(120), nullable=True)
     role = db.Column(db.String(120), nullable=True)

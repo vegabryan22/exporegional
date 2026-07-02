@@ -127,7 +127,7 @@
                         {% if project.advisor_name %}
                         <div>
                             <dt>Tutor</dt>
-                            <dd>{{ " ".join(w.capitalize() for w in project.advisor_name.split()) }}</dd>
+                            <dd>{{ project.advisor_name | title }}</dd>
                         </div>
                         {% endif %}
                     </dl>
@@ -148,7 +148,7 @@
                                 <article class="pd-member-card">
                                     <img src="{{ photo_src }}" alt="Foto de {{ member.full_name }}" class="pd-member-photo">
                                     <div class="pd-member-info">
-                                        <h4 class="pd-member-name">{{ " ".join(w.capitalize() for w in member.full_name.split()) }}</h4>
+                                        <h4 class="pd-member-name">{{ member.full_name | title }}</h4>
                                         {% if member.specialty %}<p class="pd-member-specialty">{{ member.specialty }}</p>{% endif %}
                                         {% if member.section_name %}<p class="pd-member-section">Sección {{ member.section_name }}</p>{% endif %}
                                     </div>

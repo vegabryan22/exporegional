@@ -6193,7 +6193,16 @@ def logistics_reminder_page():
 @admin_module_required("evaluations")
 def evaluations_page():
     context = _base_context("evaluations")
-    context.update(build_admin_evaluation_overview())
+    overview = build_admin_evaluation_overview()
+    # Pre-compute total projects per category so the template avoids namespace tricks
+    cat_totals = {}
+    for row in overview["project_rows"]:
+        if row.get("category"):
+            code = row["category"].code
+            cat_totals[code] = cat_totals.get(code, 0) + 1
+    for item in overview["category_winners"]:
+        item["total_projects"] = cat_totals.get(item["category"].code, 0)
+    context.update(overview)
     return render_template("admin/evaluations.html", **context)
 
 

@@ -12658,3 +12658,33 @@ body {
     .ev2-winner-list { flex-direction: column; }
     .ev2-filter-input { min-width: 140px; }
 }
+
+/* ev2 — ancho fijo para columna de titulo en cards de seguimiento */
+.ev2-summary .project-tracking-main {
+    width: 260px;
+    min-width: 160px;
+    max-width: 260px;
+    flex-shrink: 0;
+}
+
+.ev2-summary .project-tracking-main strong {
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.ev2-summary .project-tracking-main span {
+    font-size: 0.78rem;
+}
+
+@media (max-width: 900px) {
+    .ev2-summary .project-tracking-main {
+        width: 100%;
+        max-width: 100%;
+    }
+    .ev2-summary .project-tracking-main strong {
+        white-space: normal;
+    }
+}

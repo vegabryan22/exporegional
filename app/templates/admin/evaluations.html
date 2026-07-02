@@ -1,353 +1,366 @@
-{% extends "admin/layout.html" %}
+﻿{% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section maintenance-page">
-    <div class="maintenance-banner">
-        <div>
-            <p class="maintenance-kicker">Seguimiento</p>
-            <h3>Estado de evaluaciones</h3>
-            <p>Monitorea avance, puntajes acumulados y líderes por categoría.</p>
-        </div>
-        <div class="report-banner-actions">
-            <span class="tag ok">{{ summary_cards.projects }} proyectos</span>
-            <a href="{{ url_for('admin.documents_page') }}" class="table-link-btn ghost">Actas y certificados</a>
-            <a href="{{ url_for('admin.evaluation_report_all_preview') }}" class="table-link-btn">Ver acta general</a>
-            <a href="{{ url_for('admin.evaluation_report_all_download') }}" class="table-link-btn secondary">Descargar PDF</a>
-        </div>
+
+{% set sc = summary_cards %}
+{% set completion_pct = (sc.completion_percentage | int) %}
+{% set completed_proj_pct = ((sc.completed_projects / sc.projects * 100) | int) if sc.projects > 0 else 0 %}
+{% set english_count = english_ranking | length %}
+
+<div class="ov2-shell">
+
+  {# ── HEADER ── #}
+  <div class="ov2-header">
+    <div>
+      <p class="maintenance-kicker">Seguimiento</p>
+      <h3>Estado de evaluaciones</h3>
+      <p>Monitorea avance, puntajes acumulados y líderes por categoría.</p>
     </div>
-
-    <div class="admin-stats evaluation-stats">
-        <article><strong>{{ summary_cards.completed_projects }}</strong><span>Proyectos completos</span></article>
-        <article><strong>{{ summary_cards.completed_evaluations }}/{{ summary_cards.expected_evaluations }}</strong><span>Evaluaciones registradas</span></article>
-        <article><strong>{{ "%.2f"|format(summary_cards.completion_percentage) }}%</strong><span>Avance global</span></article>
-        <article><strong>{{ category_winners|length }}</strong><span>Categorías revisadas</span></article>
+    <div class="ov2-header-actions">
+      <a data-no-iconify href="{{ url_for('admin.overview_page') }}" class="ov2-shortcut outline">Panel</a>
+      <a data-no-iconify href="{{ url_for('admin.documents_page') }}" class="ov2-shortcut outline">Actas</a>
+      <a data-no-iconify href="{{ url_for('admin.evaluation_report_all_preview') }}" class="ov2-shortcut">Ver acta general</a>
+      <a data-no-iconify href="{{ url_for('admin.evaluation_report_all_download') }}" class="ov2-shortcut outline">Descargar PDF</a>
     </div>
-</section>
+  </div>
 
-<section class="card admin-section maintenance-page">
-    <div class="maintenance-banner">
-        <div>
-            <p class="maintenance-kicker">Ganadores</p>
-            <h3>Resultado por categoría</h3>
-            <p>Se ordena por nota final calculada con Rúbrica 1 + Rúbrica 2.</p>
-        </div>
+  {# ── KPI STRIP ── #}
+  <div class="ov2-kpi-strip">
+    <div class="ov2-kpi">
+      <strong>{{ sc.projects }}</strong>
+      <span>Proyectos</span>
     </div>
-
-    <div class="winner-grid">
-        {% for item in category_winners %}
-        <article class="winner-card">
-            <h4>{{ item.category.name }}</h4>
-            {% if item.winner %}
-                <p class="winner-project">{{ item.winner.project.title }}</p>
-                <p><strong>Equipo:</strong> {{ item.winner.project.team_name }}</p>
-                <p><strong>Nota final:</strong> {{ "%.2f"|format(item.winner.final_grade) }}</p>
-                <p><strong>Avance:</strong> {{ item.winner.completed_evaluations }}/{{ item.winner.expected_evaluations }}</p>
-                {% if item.runner_up %}
-                    <p class="winner-runner-up"><strong>Siguiente:</strong> {{ item.runner_up.project.title }} ({{ "%.2f"|format(item.runner_up.final_grade) }})</p>
-                {% endif %}
-            {% else %}
-                <p class="muted-empty">Sin evaluaciones completas para esta categoría.</p>
-            {% endif %}
-        </article>
-        {% endfor %}
+    <div class="ov2-kpi">
+      <strong>{{ sc.completed_projects }}</strong>
+      <span>Completamente evaluados</span>
     </div>
-</section>
-
-{% if english_ranking %}
-<section class="card admin-section maintenance-page">
-    <div class="maintenance-banner">
-        <div>
-            <p class="maintenance-kicker">Inglés</p>
-            <h3>Top 5 de exposición en inglés</h3>
-            <p>Este ranking es independiente y compara estudiantes, no proyectos completos.</p>
-        </div>
+    <div class="ov2-kpi">
+      <strong>{{ sc.completed_evaluations }}/{{ sc.expected_evaluations }}</strong>
+      <span>Evaluaciones registradas</span>
     </div>
-
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Estudiante</th>
-                    <th>Proyecto</th>
-                    <th>Categoría</th>
-                    <th>Equipo</th>
-                    <th>Puntaje inglés</th>
-                    <th>Avance</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for row in english_ranking[:5] %}
-                <tr>
-                    <td class="table-cell-center">{{ loop.index }}</td>
-                    <td class="table-cell-center">{{ row.member.full_name if row.member else 'N/D' }}</td>
-                    <td class="table-cell-center">{{ row.project.title }}</td>
-                    <td class="table-cell-center">
-                        <span class="tag category-badge">{{ row.category.name if row.category else 'N/D' }}</span>
-                    </td>
-                    <td class="table-cell-center">
-                        <span class="tag assignment-team-badge">{{ row.project.team_name }}</span>
-                    </td>
-                    <td class="table-cell-center">
-                        <span class="tag english-score-badge">{{ "%.2f"|format(row.english_score) }}</span>
-                    </td>
-                    <td class="table-cell-center">
-                        <span class="tag progress-badge">{{ row.completed_evaluations }}/{{ row.expected_evaluations }}</span>
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+    <div class="ov2-kpi">
+      <strong>{{ "%.1f"|format(sc.completion_percentage) }}%</strong>
+      <span>Avance global</span>
     </div>
-</section>
-{% endif %}
-
-<section class="card admin-section maintenance-page">
-    <div class="maintenance-banner">
-        <div>
-            <p class="maintenance-kicker">Detalle</p>
-            <h3>Seguimiento por proyecto</h3>
-            <p>Revisa estado de avance y promedios por rúbrica durante el proceso.</p>
-        </div>
+    <div class="ov2-kpi">
+      <strong>{{ category_winners | length }}</strong>
+      <span>Categorías</span>
     </div>
-
-    <div class="projects-filter-bar tracking-filter-bar">
-        <div class="projects-filter-row tracking-filter-row">
-            <label class="projects-filter-field projects-filter-search">
-                <span>Buscar</span>
-                <input type="text" id="tracking-filter-text" placeholder="Proyecto, equipo o categoría">
-            </label>
-            <button type="button" class="ghost-btn projects-filter-clear" id="tracking-filter-clear">Limpiar</button>
-        </div>
-        <p id="tracking-filter-count" class="filter-count projects-filter-count"></p>
+    <div class="ov2-kpi">
+      <strong>{{ english_count }}</strong>
+      <span>Ranking inglés</span>
     </div>
+  </div>
 
-    <div class="project-tracking-list" id="project-tracking-list">
-        {% for row in project_rows %}
-        <details
-            class="project-tracking-card tracking-project-card"
-            data-project-title="{{ row.project.title|lower }}"
-            data-project-team="{{ row.project.team_name|lower }}"
-            data-project-category="{{ (row.category.name if row.category else row.project.category)|lower }}"
-        >
-            <summary class="project-tracking-summary">
-                <div class="project-tracking-main">
-                    <strong>{{ row.project.title }}</strong>
-                    <span>{{ row.project.team_name }}</span>
-                </div>
-                <div class="project-tracking-metrics">
-                    <div class="tracking-metric tracking-metric-category">
-                        <small>Categoría</small>
-                        <strong>{{ row.category.name if row.category else row.project.category }}</strong>
-                    </div>
-                    <div class="tracking-metric">
-                        <small>Jueces</small>
-                        <strong>{{ row.assigned_judges }}</strong>
-                    </div>
-                    <div class="tracking-metric">
-                        <small>Avance</small>
-                        <strong>{{ row.completed_evaluations }}/{{ row.expected_evaluations }}</strong>
-                        <span>{{ "%.2f"|format(row.completion_percentage) }}%</span>
-                    </div>
-                    <div class="tracking-metric">
-                        <small>{{ row.rubric_1_label }}</small>
-                        <strong>
-                            {% if row.rubric_1_score is not none %}
-                                {{ "%.2f"|format(row.rubric_1_score) }}
-                            {% else %}
-                                N/D
-                            {% endif %}
-                        </strong>
-                        <span>
-                            {% if row.rubric_1_score is not none and row.rubric_1_weight_percentage is not none %}
-                                Aporte: {{ "%.2f"|format((row.rubric_1_score * row.rubric_1_weight_percentage) / 100) }}/{{ "%.0f"|format(row.rubric_1_weight_percentage) }}
-                            {% endif %}
-                        </span>
-                    </div>
-                    <div class="tracking-metric">
-                        <small>{{ row.rubric_2_label }}</small>
-                        <strong>
-                            {% if row.rubric_2_score is not none %}
-                                {{ "%.2f"|format(row.rubric_2_score) }}
-                            {% else %}
-                                N/D
-                            {% endif %}
-                        </strong>
-                        <span>
-                            {% if row.rubric_2_score is not none and row.rubric_2_weight_percentage is not none %}
-                                Aporte: {{ "%.2f"|format((row.rubric_2_score * row.rubric_2_weight_percentage) / 100) }}/{{ "%.0f"|format(row.rubric_2_weight_percentage) }}
-                            {% endif %}
-                        </span>
-                    </div>
-                    <div class="tracking-metric">
-                        <small>Inglés</small>
-                        <strong>{{ "%.2f"|format(row.english_score) if row.english_score is not none else 'N/D' }}</strong>
-                        {% if row.english_member_count %}
-                            <span>{{ row.english_member_count }} estudiante(s)</span>
-                        {% endif %}
-                    </div>
-                    <div class="tracking-metric tracking-metric-final">
-                        <small>Nota final</small>
-                        <strong>{{ "%.2f"|format(row.final_grade) if row.final_grade is not none else 'N/D' }}</strong>
-                    </div>
-                </div>
-            </summary>
+  {# ── PROGRESS CHARTS ── #}
+  <div class="ov2-charts-row">
 
-            <div class="project-tracking-detail">
-                <div class="project-report-actions">
-                    <a href="{{ url_for('admin.evaluation_report_project_preview', project_id=row.project.id) }}" class="table-link-btn">Ver acta</a>
-                    <a href="{{ url_for('admin.evaluation_report_project_download', project_id=row.project.id) }}" class="table-link-btn secondary">Descargar PDF</a>
-                    <a href="{{ url_for('admin.evaluation_report_project_pdf', project_id=row.project.id) }}" class="table-link-btn ghost">Ver PDF</a>
-                </div>
-                <section class="tracking-block">
-                    <h4>Estado por rúbrica</h4>
-                    <div class="project-rubric-status">
-                        {% for progress in row.progress_by_type %}
-                            <div class="rubric-progress-item">
-                                <span>{{ progress.name }}</span>
-                                <strong>{{ progress.completed }}/{{ progress.expected }}</strong>
-                                <em>{{ "%.2f"|format(progress.average_score) if progress.average_score is not none else 'N/D' }}</em>
-                                {% if progress.english_member_count %}
-                                    <small>{{ progress.english_member_count }} estudiante(s) en ingl&eacute;s</small>
-                                {% endif %}
-                            </div>
-                        {% else %}
-                            <span class="muted-empty">Sin rúbricas asignadas</span>
-                        {% endfor %}
-                    </div>
-                </section>
-
-                <section class="tracking-block">
-                    <h4>Evaluaciones registradas</h4>
-                    <div class="project-evaluation-records">
-                        {% for record in row.evaluation_records %}
-                            <div class="evaluation-record-item">
-                                <div>
-                                    <strong>{{ record.evaluation_type }}</strong>
-                                    {% if record.project_member_name %}
-                                        <small>{{ record.project_member_name }}</small>
-                                    {% endif %}
-                                    <span>{{ record.judge_name }}</span>
-                                    <em>{{ "%.2f"|format(record.percentage) if record.percentage is not none else 'N/D' }}</em>
-                                </div>
-                                <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar esta evaluación?')">
-                                    <input type="hidden" name="next" value="{{ next_url }}">
-                                    <input type="hidden" name="action" value="delete_evaluation">
-                                    <input type="hidden" name="evaluation_id" value="{{ record.id }}">
-                                    <button type="submit" class="danger-btn" data-no-iconify>Eliminar</button>
-                                </form>
-                            </div>
-                        {% else %}
-                            <span class="muted-empty">Sin evaluaciones registradas</span>
-                        {% endfor %}
-                    </div>
-                </section>
-            </div>
-        </details>
+    <div class="ov2-chart-card">
+      <div class="ov2-donut" style="--pct:{{ completion_pct }};--clr:#1d7a22;">
+        <span>{{ completion_pct }}%</span>
+      </div>
+      <div class="ov2-chart-info">
+        <strong>Avance global</strong>
+        <p>{{ sc.completed_evaluations }} de {{ sc.expected_evaluations }} evaluaciones</p>
+        {% if sc.projects - sc.completed_projects > 0 %}
+        <span class="ov2-chart-sub warn">{{ sc.projects - sc.completed_projects }} proyectos pendientes</span>
         {% else %}
-            <p class="muted-empty">No hay proyectos registrados.</p>
-        {% endfor %}
+        <span class="ov2-chart-sub ok">Todos evaluados</span>
+        {% endif %}
+      </div>
     </div>
+
+    <div class="ov2-chart-card">
+      <div class="ov2-donut" style="--pct:{{ completed_proj_pct }};--clr:#0d5fa6;">
+        <span>{{ completed_proj_pct }}%</span>
+      </div>
+      <div class="ov2-chart-info">
+        <strong>Proyectos completos</strong>
+        <p>{{ sc.completed_projects }} de {{ sc.projects }} proyectos</p>
+        {% if sc.completed_projects == sc.projects and sc.projects > 0 %}
+        <span class="ov2-chart-sub ok">Todos completos</span>
+        {% else %}
+        <span class="ov2-chart-sub warn">{{ sc.projects - sc.completed_projects }} sin completar</span>
+        {% endif %}
+      </div>
+    </div>
+
+    {% for item in category_winners %}
+    {% set ns = namespace(cat_total=0) %}
+    {% for row in project_rows %}{% if row.category and row.category.code == item.category.code %}{% set ns.cat_total = ns.cat_total + 1 %}{% endif %}{% endfor %}
+    {% set cat_pct = ((item.project_count / ns.cat_total * 100) | int) if ns.cat_total > 0 else 0 %}
+    <div class="ov2-chart-card">
+      <div class="ov2-donut" style="--pct:{{ cat_pct }};--clr:#8b4cf7;">
+        <span>{{ cat_pct }}%</span>
+      </div>
+      <div class="ov2-chart-info">
+        <strong>{{ item.category.name }}</strong>
+        <p>{{ item.project_count }} de {{ ns.cat_total }} con nota</p>
+        {% if item.winner %}
+        <span class="ov2-chart-sub ok">Líder: {{ item.winner.project.title[:18] }}{% if item.winner.project.title | length > 18 %}&hellip;{% endif %}</span>
+        {% else %}
+        <span class="ov2-chart-sub">Sin ganador aún</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+
+  {# ── WINNERS + ENGLISH ── #}
+  <div class="ov2-work-grid">
+
+    <section class="ov2-block ev2-winners-block">
+      <div class="ov2-block-head">
+        <h4>Ganadores por categoría</h4>
+        <span class="ov2-block-count">Rúbrica 1 + Rúbrica 2</span>
+      </div>
+      <div class="ev2-winner-list">
+        {% for item in category_winners %}
+        <div class="ev2-winner-card">
+          <div class="ev2-winner-cat-header">
+            <span class="ev2-winner-cat-name">{{ item.category.name }}</span>
+            <span class="ev2-winner-cat-count">{{ item.project_count }} con nota</span>
+          </div>
+          {% if item.winner %}
+          <div class="ev2-winner-top">
+            <span class="ev2-rank-badge ev2-rank-1">1°</span>
+            <div class="ev2-winner-detail">
+              <strong title="{{ item.winner.project.title }}">{{ item.winner.project.title }}</strong>
+              <span>{{ item.winner.project.team_name }}</span>
+            </div>
+            <span class="ev2-score">{{ "%.2f"|format(item.winner.final_grade) }}</span>
+          </div>
+          {% if item.runner_up %}
+          <div class="ev2-winner-runner">
+            <span class="ev2-rank-badge ev2-rank-2">2°</span>
+            <div class="ev2-winner-detail">
+              <small title="{{ item.runner_up.project.title }}">{{ item.runner_up.project.title }}</small>
+            </div>
+            <span class="ev2-score-sm">{{ "%.2f"|format(item.runner_up.final_grade) }}</span>
+          </div>
+          {% endif %}
+          {% else %}
+          <p class="ov2-empty">Sin evaluaciones completas.</p>
+          {% endif %}
+        </div>
+        {% else %}
+        <p class="ov2-empty">No hay categorías configuradas.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if english_ranking %}
+    <section class="ov2-block">
+      <div class="ov2-block-head">
+        <h4>Top 5 — Inglés</h4>
+        <span class="ov2-block-count">Por estudiante</span>
+      </div>
+      <table class="ov2-table">
+        <thead>
+          <tr><th>#</th><th>Estudiante</th><th>Proyecto</th><th>Puntaje</th><th>Avance</th></tr>
+        </thead>
+        <tbody>
+          {% for row in english_ranking[:5] %}
+          <tr>
+            <td class="table-cell-center"><strong>{{ loop.index }}</strong></td>
+            <td>{{ row.member.full_name if row.member else 'N/D' }}</td>
+            <td><small>{{ row.project.title }}</small></td>
+            <td class="table-cell-center"><span class="tag ok">{{ "%.2f"|format(row.english_score) }}</span></td>
+            <td class="table-cell-center"><small>{{ row.completed_evaluations }}/{{ row.expected_evaluations }}</small></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+  </div>
+
+  {# ── PER-PROJECT TRACKING ── #}
+  <section class="ov2-block ov2-full">
+    <div class="ov2-block-head">
+      <h4>Seguimiento por proyecto</h4>
+      <div class="ev2-filter-row">
+        <input type="text" id="ev2-filter-text" class="ev2-filter-input" placeholder="Proyecto, equipo o categoría…">
+        <button type="button" class="ghost-btn" id="ev2-filter-clear">Limpiar</button>
+      </div>
+      <span class="ov2-block-count" id="ev2-filter-count"></span>
+    </div>
+
+    <div class="project-tracking-list" id="ev2-tracking-list">
+      {% for row in project_rows %}
+      <details
+        class="project-tracking-card tracking-project-card ev2-tracking-card"
+        data-project-title="{{ row.project.title|lower }}"
+        data-project-team="{{ row.project.team_name|lower }}"
+        data-project-category="{{ (row.category.name if row.category else row.project.category)|lower }}"
+      >
+        <summary class="project-tracking-summary ev2-summary">
+          <div class="project-tracking-main">
+            <strong>{{ row.project.title }}</strong>
+            <span>{{ row.project.team_name }}</span>
+          </div>
+          <div class="ev2-summary-metrics">
+            <div class="ev2-metric ev2-metric-cat">
+              <small>Categoría</small>
+              <span class="tag category-badge">{{ row.category.name if row.category else row.project.category }}</span>
+            </div>
+            <div class="ev2-metric">
+              <small>Jueces</small>
+              <strong>{{ row.assigned_judges }}</strong>
+            </div>
+            <div class="ev2-metric ev2-metric-bar">
+              <small>Avance {{ row.completed_evaluations }}/{{ row.expected_evaluations }}</small>
+              <div class="ov2-mini-bar">
+                <div class="ov2-mini-bar-fill" style="width:{{ row.completion_percentage | int }}%"></div>
+              </div>
+              <span class="ev2-pct-label">{{ row.completion_percentage | int }}%</span>
+            </div>
+            <div class="ev2-metric">
+              <small>{{ row.rubric_1_label }}</small>
+              <strong class="{{ 'ev2-score-val' if row.rubric_1_score is not none else 'ev2-score-nd' }}">
+                {{ "%.2f"|format(row.rubric_1_score) if row.rubric_1_score is not none else 'N/D' }}
+              </strong>
+            </div>
+            <div class="ev2-metric">
+              <small>{{ row.rubric_2_label }}</small>
+              <strong class="{{ 'ev2-score-val' if row.rubric_2_score is not none else 'ev2-score-nd' }}">
+                {{ "%.2f"|format(row.rubric_2_score) if row.rubric_2_score is not none else 'N/D' }}
+              </strong>
+            </div>
+            {% if row.english_member_count %}
+            <div class="ev2-metric">
+              <small>Inglés</small>
+              <strong class="{{ 'ev2-score-val' if row.english_score is not none else 'ev2-score-nd' }}">
+                {{ "%.2f"|format(row.english_score) if row.english_score is not none else 'N/D' }}
+              </strong>
+            </div>
+            {% endif %}
+            <div class="ev2-metric ev2-metric-final">
+              <small>Nota final</small>
+              <strong>{{ "%.2f"|format(row.final_grade) if row.final_grade is not none else '—' }}</strong>
+            </div>
+          </div>
+        </summary>
+
+        <div class="project-tracking-detail">
+          <div class="project-report-actions">
+            <a href="{{ url_for('admin.evaluation_report_project_preview', project_id=row.project.id) }}" class="table-link-btn">Ver acta</a>
+            <a href="{{ url_for('admin.evaluation_report_project_download', project_id=row.project.id) }}" class="table-link-btn secondary">Descargar PDF</a>
+            <a href="{{ url_for('admin.evaluation_report_project_pdf', project_id=row.project.id) }}" class="table-link-btn ghost">Ver PDF</a>
+          </div>
+          <section class="tracking-block">
+            <h4>Estado por rúbrica</h4>
+            <div class="project-rubric-status">
+              {% for progress in row.progress_by_type %}
+              <div class="rubric-progress-item">
+                <span>{{ progress.name }}</span>
+                <strong>{{ progress.completed }}/{{ progress.expected }}</strong>
+                <em>{{ "%.2f"|format(progress.average_score) if progress.average_score is not none else 'N/D' }}</em>
+                {% if progress.english_member_count %}
+                <small>{{ progress.english_member_count }} estudiante(s) en ingl&eacute;s</small>
+                {% endif %}
+              </div>
+              {% else %}
+              <span class="muted-empty">Sin rúbricas asignadas</span>
+              {% endfor %}
+            </div>
+          </section>
+
+          <section class="tracking-block">
+            <h4>Evaluaciones registradas</h4>
+            <div class="project-evaluation-records">
+              {% for record in row.evaluation_records %}
+              <div class="evaluation-record-item">
+                <div>
+                  <strong>{{ record.evaluation_type }}</strong>
+                  {% if record.project_member_name %}
+                  <small>{{ record.project_member_name }}</small>
+                  {% endif %}
+                  <span>{{ record.judge_name }}</span>
+                  <em>{{ "%.2f"|format(record.percentage) if record.percentage is not none else 'N/D' }}</em>
+                </div>
+                <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar esta evaluación?')">
+                  <input type="hidden" name="next" value="{{ next_url }}">
+                  <input type="hidden" name="action" value="delete_evaluation">
+                  <input type="hidden" name="evaluation_id" value="{{ record.id }}">
+                  <button type="submit" class="danger-btn" data-no-iconify>Eliminar</button>
+                </form>
+              </div>
+              {% else %}
+              <span class="muted-empty">Sin evaluaciones registradas</span>
+              {% endfor %}
+            </div>
+          </section>
+        </div>
+      </details>
+      {% else %}
+      <p class="ov2-empty">No hay proyectos registrados.</p>
+      {% endfor %}
+    </div>
+
     {% if project_rows %}
     <div class="table-pager tracking-pager">
-        <span class="table-subtext" id="tracking-page-status">Página 1 de 1</span>
-        <div class="page-head-actions">
-            <button type="button" class="table-link-btn ghost" id="tracking-prev">Anterior</button>
-            <button type="button" class="table-link-btn" id="tracking-next">Siguiente</button>
-        </div>
+      <span class="table-subtext" id="ev2-page-status">Página 1 de 1</span>
+      <div class="page-head-actions">
+        <button type="button" class="table-link-btn ghost" id="ev2-prev">Anterior</button>
+        <button type="button" class="table-link-btn" id="ev2-next">Siguiente</button>
+      </div>
     </div>
     {% endif %}
-</section>
+  </section>
+
+</div>
+
 <script>
-    (function () {
-        var searchInput = document.getElementById('tracking-filter-text');
-        var clearBtn = document.getElementById('tracking-filter-clear');
-        var countLabel = document.getElementById('tracking-filter-count');
-        var pageStatus = document.getElementById('tracking-page-status');
-        var prevBtn = document.getElementById('tracking-prev');
-        var nextBtn = document.getElementById('tracking-next');
-        var cards = Array.prototype.slice.call(document.querySelectorAll('.tracking-project-card'));
-        var perPage = 10;
-        var currentPage = 1;
-        var filteredCards = cards.slice();
+(function () {
+    var searchInput = document.getElementById('ev2-filter-text');
+    var clearBtn    = document.getElementById('ev2-filter-clear');
+    var countLabel  = document.getElementById('ev2-filter-count');
+    var pageStatus  = document.getElementById('ev2-page-status');
+    var prevBtn     = document.getElementById('ev2-prev');
+    var nextBtn     = document.getElementById('ev2-next');
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.ev2-tracking-card'));
+    var perPage = 10;
+    var currentPage = 1;
+    var filteredCards = cards.slice();
 
-        if (!cards.length) {
-            return;
-        }
+    if (!cards.length) { return; }
 
-        function applyFilters() {
-            var text = (searchInput && searchInput.value ? searchInput.value : '').trim().toLowerCase();
-            filteredCards = cards.filter(function (card) {
-                if (!text) {
-                    return true;
-                }
-                var haystack = [
-                    card.getAttribute('data-project-title') || '',
-                    card.getAttribute('data-project-team') || '',
-                    card.getAttribute('data-project-category') || ''
-                ].join(' ');
-                return haystack.indexOf(text) !== -1;
-            });
-            currentPage = 1;
-            renderPage();
-        }
+    function applyFilters() {
+        var text = (searchInput && searchInput.value ? searchInput.value : '').trim().toLowerCase();
+        filteredCards = cards.filter(function (card) {
+            if (!text) { return true; }
+            var haystack = [
+                card.getAttribute('data-project-title') || '',
+                card.getAttribute('data-project-team') || '',
+                card.getAttribute('data-project-category') || ''
+            ].join(' ');
+            return haystack.indexOf(text) !== -1;
+        });
+        currentPage = 1;
+        renderPage();
+    }
 
-        function renderPage() {
-            var total = filteredCards.length;
-            var totalPages = Math.max(1, Math.ceil(total / perPage));
-            currentPage = Math.min(Math.max(1, currentPage), totalPages);
-            var start = (currentPage - 1) * perPage;
-            var end = start + perPage;
+    function renderPage() {
+        var total = filteredCards.length;
+        var totalPages = Math.max(1, Math.ceil(total / perPage));
+        currentPage = Math.min(Math.max(1, currentPage), totalPages);
+        var start = (currentPage - 1) * perPage;
+        var end = start + perPage;
+        cards.forEach(function (card) { card.style.display = 'none'; if (card.open) { card.open = false; } });
+        filteredCards.slice(start, end).forEach(function (card) { card.style.display = ''; });
+        if (countLabel) { countLabel.textContent = total + ' de ' + cards.length + ' proyectos'; }
+        if (pageStatus) { pageStatus.textContent = 'Página ' + currentPage + ' de ' + totalPages; }
+        if (prevBtn) { prevBtn.disabled = currentPage === 1; }
+        if (nextBtn) { nextBtn.disabled = currentPage === totalPages; }
+    }
 
-            cards.forEach(function (card) {
-                card.style.display = 'none';
-                if (card.open) {
-                    card.open = false;
-                }
-            });
-
-            filteredCards.slice(start, end).forEach(function (card) {
-                card.style.display = '';
-            });
-
-            if (countLabel) {
-                countLabel.textContent = total + ' de ' + cards.length + ' proyectos visibles';
-            }
-            if (pageStatus) {
-                pageStatus.textContent = 'Página ' + currentPage + ' de ' + totalPages;
-            }
-            if (prevBtn) {
-                prevBtn.disabled = currentPage === 1;
-            }
-            if (nextBtn) {
-                nextBtn.disabled = currentPage === totalPages;
-            }
-        }
-
-        if (searchInput) {
-            searchInput.addEventListener('input', applyFilters);
-        }
-        if (clearBtn) {
-            clearBtn.addEventListener('click', function () {
-                if (searchInput) {
-                    searchInput.value = '';
-                }
-                applyFilters();
-            });
-        }
-        if (prevBtn) {
-            prevBtn.addEventListener('click', function () {
-                currentPage -= 1;
-                renderPage();
-            });
-        }
-        if (nextBtn) {
-            nextBtn.addEventListener('click', function () {
-                currentPage += 1;
-                renderPage();
-            });
-        }
-
-        applyFilters();
-    })();
+    if (searchInput) { searchInput.addEventListener('input', applyFilters); }
+    if (clearBtn) { clearBtn.addEventListener('click', function () { if (searchInput) { searchInput.value = ''; } applyFilters(); }); }
+    if (prevBtn) { prevBtn.addEventListener('click', function () { currentPage -= 1; renderPage(); }); }
+    if (nextBtn) { nextBtn.addEventListener('click', function () { currentPage += 1; renderPage(); }); }
+    applyFilters();
+})();
 </script>
 {% endblock %}

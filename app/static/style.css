@@ -12462,3 +12462,199 @@ body {
 @media (max-width: 900px) {
     .reminder-two-col { grid-template-columns: 1fr; }
 }
+
+/* ── Evaluations redesign (ev2) ──────────────────────────────────────────── */
+
+.ev2-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.ev2-filter-input {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.83rem;
+    background: #fff;
+    min-width: 200px;
+    color: var(--primary);
+}
+
+.ev2-winners-block {
+    grid-column: 1 / -1;
+}
+
+.ev2-winner-list {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.ev2-winner-card {
+    flex: 1 1 200px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.ev2-winner-cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.ev2-winner-cat-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary);
+}
+
+.ev2-winner-cat-count {
+    font-size: 0.7rem;
+    color: #999;
+}
+
+.ev2-winner-top,
+.ev2-winner-runner {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.ev2-rank-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 0.7rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.ev2-rank-1 { background: #ffe566; color: #5a3e00; }
+.ev2-rank-2 { background: #e0e0e0; color: #555; }
+
+.ev2-winner-detail {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.ev2-winner-detail strong {
+    font-size: 0.88rem;
+    color: var(--primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.ev2-winner-detail span {
+    font-size: 0.73rem;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.ev2-winner-detail small {
+    font-size: 0.82rem;
+    color: var(--primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.ev2-score {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1d7a22;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ev2-score-sm {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #666;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Summary row in accordion */
+.ev2-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.ev2-summary-metrics {
+    display: flex;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    flex: 1;
+}
+
+.ev2-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 0.12rem;
+    min-width: 60px;
+}
+
+.ev2-metric small {
+    font-size: 0.68rem;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.ev2-metric strong {
+    font-size: 0.9rem;
+    color: var(--primary);
+}
+
+.ev2-metric-final strong {
+    font-size: 1rem;
+    color: #1d7a22;
+    font-weight: 800;
+}
+
+.ev2-metric-bar {
+    min-width: 110px;
+}
+
+.ev2-pct-label {
+    font-size: 0.72rem;
+    color: #888;
+}
+
+.ev2-score-val { color: #1d7a22; }
+.ev2-score-nd  { color: #bbb; font-weight: 400; font-size: 0.82rem; }
+
+@media (max-width: 800px) {
+    .ev2-summary-metrics { gap: 0.6rem; }
+    .ev2-winner-list { flex-direction: column; }
+    .ev2-filter-input { min-width: 140px; }
+}

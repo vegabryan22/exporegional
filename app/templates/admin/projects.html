@@ -145,6 +145,11 @@
                 <h4>Solicitudes de actualizaci&oacute;n de documento</h4>
                 <p class="table-subtext">{{ pending_document_revisions | length }} solicitud{{ 'es' if pending_document_revisions | length != 1 else '' }} pendiente{{ 's' if pending_document_revisions | length != 1 else '' }} de revisi&oacute;n. El documento oficial <strong>no cambia</strong> hasta que apruebes la solicitud.</p>
             </div>
+            <form method="POST" action="{{ action_url }}" onsubmit="return confirm('¿Enviar correos de notificación a todos los proyectos con revisiones ya resueltas sin notificar?')">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="send_pending_revision_notifications">
+                <button type="submit" class="action-btn outline-btn">Notificar revisiones anteriores</button>
+            </form>
         </div>
         <div class="doc-revision-admin-list">
             {% for revision in pending_document_revisions %}
@@ -432,16 +437,27 @@
                         <span class="check-card-title">Formulario firmado</span>
                         <span class="check-card-help">Inscripcion fisica recibida con firmas.</span>
                     </label>
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="logistics_cedula_tutor_ok" value="1" {% if project.logistics_cedula_tutor_ok %}checked{% endif %}>
+                        <span class="check-card-title">Cédula del tutor</span>
+                        <span class="check-card-help">Fotocopia de cédula del docente tutor recibida con el formulario.</span>
+                    </label>
                     <div class="logistics-check-card logistics-consent-card">
                         <span class="check-card-title">Consentimientos informados (ExpoTEC-2)</span>
-                        <span class="check-card-help">Marcar solo los que ya fueron entregados firmados.</span>
+                        <span class="check-card-help">Marcar consentimiento y cédulas (estudiante + encargado) por cada estudiante.</span>
                         <div class="logistics-consent-list">
                             {% for member in project.members | sort(attribute='student_number') %}
-                            <label class="logistics-consent-member">
-                                <input type="checkbox" name="consent_member_{{ member.id }}" value="1" {% if member.consent_signed_ok %}checked{% endif %}>
-                                <span class="logistics-consent-name">{{ member.full_name }}</span>
-                                {% if member.section_name %}<em class="logistics-consent-section">{{ member.section_name }}</em>{% endif %}
-                            </label>
+                            <div class="logistics-consent-member-row">
+                                <label class="logistics-consent-member">
+                                    <input type="checkbox" name="consent_member_{{ member.id }}" value="1" {% if member.consent_signed_ok %}checked{% endif %}>
+                                    <span class="logistics-consent-name">{{ member.full_name }}</span>
+                                    {% if member.section_name %}<em class="logistics-consent-section">{{ member.section_name }}</em>{% endif %}
+                                </label>
+                                <label class="logistics-consent-cedula">
+                                    <input type="checkbox" name="cedula_member_{{ member.id }}" value="1" {% if member.cedula_copies_ok %}checked{% endif %}>
+                                    <span>Cédulas</span>
+                                </label>
+                            </div>
                             {% endfor %}
                         </div>
                     </div>

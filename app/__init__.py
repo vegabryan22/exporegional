@@ -609,6 +609,8 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN logistics_registration_form_signed_ok BOOLEAN NOT NULL DEFAULT 0"))
         if "logistics_student_consents_signed_ok" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN logistics_student_consents_signed_ok BOOLEAN NOT NULL DEFAULT 0"))
+        if "logistics_cedula_tutor_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN logistics_cedula_tutor_ok BOOLEAN NOT NULL DEFAULT 0"))
         if "logistics_requirements_reviewed_ok" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN logistics_requirements_reviewed_ok BOOLEAN NOT NULL DEFAULT 0"))
         if "logistics_status" in project_columns:
@@ -830,6 +832,12 @@ def ensure_schema_updates():
                     "ALTER TABLE project_document_revisions ADD COLUMN replaced_document_path VARCHAR(300) NULL",
                     "project_document_revisions.replaced_document_path",
                 )
+            if "notification_sent" not in doc_rev_columns:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE project_document_revisions ADD COLUMN notification_sent TINYINT(1) NOT NULL DEFAULT 0",
+                    "project_document_revisions.notification_sent",
+                )
 
         if "project_member_changes" in inspector.get_table_names():
             member_change_fks = inspector.get_foreign_keys("project_member_changes")
@@ -863,6 +871,12 @@ def ensure_schema_updates():
                     connection,
                     "ALTER TABLE project_members ADD COLUMN consent_signed_ok TINYINT(1) NOT NULL DEFAULT 0",
                     "project_members.consent_signed_ok",
+                )
+            if "cedula_copies_ok" not in pm_cols:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE project_members ADD COLUMN cedula_copies_ok TINYINT(1) NOT NULL DEFAULT 0",
+                    "project_members.cedula_copies_ok",
                 )
 
         if "project_member_edit_requests" in inspector.get_table_names():

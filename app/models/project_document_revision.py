@@ -20,6 +20,7 @@ class ProjectDocumentRevision(db.Model):
     reviewed_by_id = db.Column(db.Integer, db.ForeignKey("judges.id", ondelete="SET NULL"), nullable=True)
     reviewed_at = db.Column(db.DateTime, nullable=True)
     replaced_document_path = db.Column(db.String(300), nullable=True)
+    notification_sent = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     project = db.relationship("Project", back_populates="document_revisions")

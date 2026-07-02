@@ -56,6 +56,7 @@ class Project(db.Model):
     logistics_photos_ok = db.Column(db.Boolean, nullable=False, default=False)
     logistics_registration_form_signed_ok = db.Column(db.Boolean, nullable=False, default=False)
     logistics_student_consents_signed_ok = db.Column(db.Boolean, nullable=False, default=False)
+    logistics_cedula_tutor_ok = db.Column(db.Boolean, nullable=False, default=False)
     logistics_requirements_reviewed_ok = db.Column(db.Boolean, nullable=False, default=False)
     consent_terms = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

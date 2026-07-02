@@ -208,6 +208,7 @@ ACTION_MODULE_MAP = {
     "replace_project_document": "projects",
     "approve_document_revision": "projects",
     "reject_document_revision": "projects",
+    "send_pending_revision_notifications": "projects",
     "approve_member_edit": "projects",
     "reject_member_edit": "projects",
     "upload_project_logo": "projects",
@@ -2530,6 +2531,37 @@ def _run_expotecnica_cleanup():
     return before, deleted_files
 
 
+def _send_change_decision_email(*, to_email: str, requester_name: str, project_title: str, request_type: str, approved: bool, notes: str = ""):
+    estado = "aprobada" if approved else "rechazada"
+    color = "#1d7a22" if approved else "#b01c1c"
+    subject = f"Solicitud {estado}: {request_type} – ExpoTécnica"
+    plain = (
+        f"Hola {requester_name},\n\n"
+        f"Tu solicitud de {request_type} para el proyecto «{project_title}» fue {estado}.\n"
+        + (f"Observaciones: {notes}\n" if notes else "")
+        + "\nExpoTécnica"
+    )
+    notes_block = f'<p style="margin:12px 0 0;font-size:14px;color:#3a5a7a;"><strong>Observaciones:</strong> {notes}</p>' if notes else ""
+    html = f"""\
+<!doctype html><html lang="es"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#eef5fb;font-family:Arial,Helvetica,sans-serif;color:#123f6b;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef5fb;padding:28px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;background:#fff;border:1px solid #cfe0f1;border-radius:18px;overflow:hidden;">
+        <tr><td style="background:{color};padding:20px 26px;color:#fff;font-size:20px;font-weight:800;">ExpoTécnica &mdash; Solicitud {estado}</td></tr>
+        <tr><td style="padding:28px 26px;">
+          <p style="margin:0 0 10px;font-size:16px;">Hola <strong>{requester_name}</strong>,</p>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Tu solicitud de <strong>{request_type}</strong> para el proyecto <strong>&laquo;{project_title}&raquo;</strong> fue <strong style="color:{color};">{estado}</strong>.</p>
+          {notes_block}
+        </td></tr>
+        <tr><td style="background:#f0f6fd;padding:14px 26px;font-size:12px;color:#8aaecc;border-top:1px solid #ddeaf7;">ExpoTécnica &mdash; Sistema de gestión de proyectos</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>"""
+    send_email(to_email, subject, plain, html_body=html)
+
+
 def _send_judge_credentials_email(judge: Judge, plain_password: str):
     if not smtp_is_configured():
         return False
@@ -3979,10 +4011,12 @@ def _handle_action(action: str):
                 project.logistics_logo_ok = _str_to_bool(request.form.get("logistics_logo_ok"))
                 project.logistics_photos_ok = _str_to_bool(request.form.get("logistics_photos_ok"))
                 project.logistics_registration_form_signed_ok = _str_to_bool(request.form.get("logistics_registration_form_signed_ok"))
+                project.logistics_cedula_tutor_ok = _str_to_bool(request.form.get("logistics_cedula_tutor_ok"))
                 project.logistics_requirements_reviewed_ok = _str_to_bool(request.form.get("logistics_requirements_reviewed_ok"))
-                # per-member consent checkboxes
+                # per-member consent and cedula checkboxes
                 for member in project.members:
                     member.consent_signed_ok = _str_to_bool(request.form.get(f"consent_member_{member.id}"))
+                    member.cedula_copies_ok = _str_to_bool(request.form.get(f"cedula_member_{member.id}"))
                 project.logistics_student_consents_signed_ok = all(m.consent_signed_ok for m in project.members) if project.members else False
                 missing_items = _project_logistics_missing_items(project)
                 forced_incomplete = False
@@ -4066,6 +4100,16 @@ def _handle_action(action: str):
                 ),
             )
             db.session.commit()
+            if smtp_is_configured() and project.representative_email:
+                _send_change_decision_email(
+                    to_email=project.representative_email,
+                    requester_name=revision.submitted_by_name,
+                    project_title=project.title,
+                    request_type="actualización de documento",
+                    approved=True,
+                )
+                revision.notification_sent = True
+                db.session.commit()
             flash(f"Documento aprobado y activado como version oficial del proyecto '{project.title}'.", "success")
 
     elif action == "reject_document_revision":
@@ -4092,7 +4136,49 @@ def _handle_action(action: str):
                 ),
             )
             db.session.commit()
+            if smtp_is_configured() and project.representative_email:
+                _send_change_decision_email(
+                    to_email=project.representative_email,
+                    requester_name=revision.submitted_by_name,
+                    project_title=project.title,
+                    request_type="actualización de documento",
+                    approved=False,
+                    notes=admin_notes,
+                )
+                revision.notification_sent = True
+                db.session.commit()
             flash(f"Solicitud rechazada. El documento oficial del proyecto '{project.title}' no fue modificado.", "success")
+
+    elif action == "send_pending_revision_notifications":
+        if not smtp_is_configured():
+            flash("SMTP no está configurado. No se pueden enviar correos.", "error")
+        else:
+            pending_notifs = ProjectDocumentRevision.query.filter(
+                ProjectDocumentRevision.status.in_([ProjectDocumentRevision.STATUS_APPROVED, ProjectDocumentRevision.STATUS_REJECTED]),
+                ProjectDocumentRevision.notification_sent == False,  # noqa: E712
+            ).all()
+            sent = 0
+            skipped = 0
+            for rev in pending_notifs:
+                proj = rev.project
+                if not proj or not proj.representative_email:
+                    skipped += 1
+                    continue
+                _send_change_decision_email(
+                    to_email=proj.representative_email,
+                    requester_name=rev.submitted_by_name,
+                    project_title=proj.title,
+                    request_type="actualización de documento",
+                    approved=rev.status == ProjectDocumentRevision.STATUS_APPROVED,
+                    notes=rev.admin_notes or "",
+                )
+                rev.notification_sent = True
+                sent += 1
+            db.session.commit()
+            if skipped:
+                flash(f"Se enviaron {sent} notificaciones. {skipped} sin correo registrado.", "warning")
+            else:
+                flash(f"Se enviaron {sent} notificaciones retroactivas correctamente.", "success")
 
     elif action == "approve_member_edit":
         import json as _json
@@ -4134,6 +4220,15 @@ def _handle_action(action: str):
                     detail=f"Solicitud #{edit_req.id} aprobada para integrante '{member.full_name}' del proyecto #{edit_req.project_id}",
                 )
                 db.session.commit()
+                recipient = member.email or edit_req.project.representative_email if edit_req.project else member.email
+                if smtp_is_configured() and recipient:
+                    _send_change_decision_email(
+                        to_email=recipient,
+                        requester_name=member.full_name,
+                        project_title=edit_req.project.title if edit_req.project else "",
+                        request_type="actualización de datos de integrante",
+                        approved=True,
+                    )
                 flash(f"Cambios aprobados y aplicados a '{member.full_name}'.", "success")
 
     elif action == "reject_member_edit":
@@ -4156,6 +4251,18 @@ def _handle_action(action: str):
                 detail=f"Solicitud #{edit_req.id} rechazada. Motivo: {admin_notes or 'sin motivo indicado'}",
             )
             db.session.commit()
+            member_ref = edit_req.member
+            project_ref = edit_req.project
+            recipient = (member_ref.email if member_ref else None) or (project_ref.representative_email if project_ref else None)
+            if smtp_is_configured() and recipient:
+                _send_change_decision_email(
+                    to_email=recipient,
+                    requester_name=edit_req.submitted_by_name,
+                    project_title=project_ref.title if project_ref else "",
+                    request_type="actualización de datos de integrante",
+                    approved=False,
+                    notes=admin_notes,
+                )
             flash("Solicitud rechazada. Los datos del integrante no fueron modificados.", "success")
 
     elif action == "send_logistics_reminder":

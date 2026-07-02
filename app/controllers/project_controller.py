@@ -26,6 +26,7 @@ from app.models.system_setting import SystemSetting
 from app.models.thematic_axis import ThematicAxis
 from app.models.judge import Judge
 from app.services.audit_service import log_event
+from app.services.mail_service import send_email, smtp_is_configured
 from app.services.parameter_service import get_active_evaluation_types
 
 try:
@@ -1533,6 +1534,14 @@ def submit_document_revision(project_id: int):
             ),
         )
         db.session.commit()
+        if smtp_is_configured() and project.representative_email:
+            _send_request_received_email(
+                to_email=project.representative_email,
+                requester_name=submitted_by_name,
+                project_title=project.title,
+                request_type="actualización de documento",
+                detail=f"Justificación: {justification}",
+            )
         flash("Solicitud enviada. La organización revisará tu documento actualizado y te notificará si es aprobado.", "success")
         return redirect(url_for("public.project_documents", project_id=project_id))
 
@@ -1541,6 +1550,69 @@ def submit_document_revision(project_id: int):
         project=project,
         pending_revision=pending_revision,
     )
+
+
+def _send_request_received_email(*, to_email: str, requester_name: str, project_title: str, request_type: str, detail: str):
+    subject = f"Solicitud recibida: {request_type} – ExpoTécnica"
+    plain = (
+        f"Hola {requester_name},\n\n"
+        f"Tu solicitud de {request_type} para el proyecto «{project_title}» fue recibida exitosamente.\n"
+        f"{detail}\n\n"
+        "La organización de ExpoTécnica revisará tu solicitud y recibirás una notificación con el resultado.\n\n"
+        "ExpoTécnica"
+    )
+    html = f"""\
+<!doctype html><html lang="es"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#eef5fb;font-family:Arial,Helvetica,sans-serif;color:#123f6b;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef5fb;padding:28px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;background:#fff;border:1px solid #cfe0f1;border-radius:18px;overflow:hidden;">
+        <tr><td style="background:#123f6b;padding:20px 26px;color:#fff;font-size:20px;font-weight:800;">ExpoTécnica — Solicitud recibida</td></tr>
+        <tr><td style="padding:28px 26px;">
+          <p style="margin:0 0 10px;font-size:16px;">Hola <strong>{requester_name}</strong>,</p>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Tu solicitud de <strong>{request_type}</strong> para el proyecto <strong>«{project_title}»</strong> fue recibida exitosamente.</p>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f8fd;border:1px solid #d6e7f7;border-radius:12px;margin:0 0 18px;">
+            <tr><td style="padding:14px 18px;font-size:14px;color:#3a5a7a;">{detail}</td></tr>
+          </table>
+          <p style="margin:0;font-size:14px;color:#607998;">La organización revisará tu solicitud y recibirás un correo con el resultado.</p>
+        </td></tr>
+        <tr><td style="background:#f0f6fd;padding:14px 26px;font-size:12px;color:#8aaecc;border-top:1px solid #ddeaf7;">ExpoTécnica — Sistema de gestión de proyectos</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>"""
+    send_email(to_email, subject, plain, html_body=html)
+
+
+def _send_request_decision_email(*, to_email: str, requester_name: str, project_title: str, request_type: str, approved: bool, notes: str = ""):
+    estado = "aprobada" if approved else "rechazada"
+    color = "#1d7a22" if approved else "#b01c1c"
+    subject = f"Solicitud {estado}: {request_type} – ExpoTécnica"
+    plain = (
+        f"Hola {requester_name},\n\n"
+        f"Tu solicitud de {request_type} para el proyecto «{project_title}» fue {estado}.\n"
+        + (f"Observaciones: {notes}\n" if notes else "")
+        + "\nExpoTécnica"
+    )
+    notes_block = f'<p style="margin:12px 0 0;font-size:14px;color:#3a5a7a;"><strong>Observaciones:</strong> {notes}</p>' if notes else ""
+    html = f"""\
+<!doctype html><html lang="es"><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#eef5fb;font-family:Arial,Helvetica,sans-serif;color:#123f6b;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef5fb;padding:28px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:620px;background:#fff;border:1px solid #cfe0f1;border-radius:18px;overflow:hidden;">
+        <tr><td style="background:{color};padding:20px 26px;color:#fff;font-size:20px;font-weight:800;">ExpoTécnica — Solicitud {estado}</td></tr>
+        <tr><td style="padding:28px 26px;">
+          <p style="margin:0 0 10px;font-size:16px;">Hola <strong>{requester_name}</strong>,</p>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Tu solicitud de <strong>{request_type}</strong> para el proyecto <strong>«{project_title}»</strong> fue <strong style="color:{color};">{estado}</strong>.</p>
+          {notes_block}
+        </td></tr>
+        <tr><td style="background:#f0f6fd;padding:14px 26px;font-size:12px;color:#8aaecc;border-top:1px solid #ddeaf7;">ExpoTécnica — Sistema de gestión de proyectos</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>"""
+    send_email(to_email, subject, plain, html_body=html)
 
 
 def _save_revision_document(document_file):
@@ -1741,6 +1813,15 @@ def submit_member_edit(project_id: int, member_id: int):
             detail=f"Solicitud de edición de datos enviada para integrante '{member.full_name}' del proyecto #{project_id}",
         )
         db.session.commit()
+        recipient = member.email or project.representative_email
+        if smtp_is_configured() and recipient:
+            _send_request_received_email(
+                to_email=recipient,
+                requester_name=new_vals["full_name"],
+                project_title=project.title,
+                request_type="actualización de datos de integrante",
+                detail=f"Integrante: {member.full_name}. Motivo: {justification}",
+            )
         flash("Solicitud enviada. La organización revisará los cambios y te notificará si son aprobados.", "success")
         return redirect(url_for("public.project_documents", project_id=project_id))
 

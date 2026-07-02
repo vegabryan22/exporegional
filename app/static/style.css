@@ -8120,6 +8120,189 @@ dialog.maintenance-dialog::backdrop {
     background: #0f3557;
 }
 
+/* ── Project detail — redesigned layout ─────────────────────────────────── */
+.project-detail.card {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Hero */
+.pd-hero {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 2rem;
+    align-items: start;
+    padding: 2rem 2rem 1.5rem;
+}
+
+.pd-logo-wrap {
+    width: 200px;
+    height: 200px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #f4f8ff;
+    border: 1px solid #d8e6f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.pd-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 0.5rem;
+}
+.pd-logo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    font-size: 4rem;
+    font-weight: 900;
+    color: #fff;
+    background: linear-gradient(135deg, #1a6fba 0%, #0d3f7a 100%);
+}
+
+.pd-hero-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding-top: 0.25rem;
+}
+
+.pd-category-badge {
+    display: inline-block;
+    background: #e4f0ff;
+    color: #1a5a9a;
+    font-weight: 800;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.22rem 0.75rem;
+    border-radius: 100px;
+    width: fit-content;
+}
+
+.pd-title {
+    margin: 0;
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: #0d2a4a;
+    line-height: 1.25;
+}
+
+.pd-description {
+    margin: 0;
+    color: #3a5a7a;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.pd-doc-btn { margin-top: 0.4rem; width: fit-content; }
+
+/* Metadata strip */
+.pd-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 0;
+    margin: 0;
+    padding: 0 2rem;
+    border-top: 1px solid #e8eef4;
+    border-bottom: 1px solid #e8eef4;
+    background: #f8fafd;
+}
+.pd-meta div {
+    padding: 1rem 1rem 1rem 0;
+    border-right: 1px solid #e8eef4;
+}
+.pd-meta div:last-child { border-right: none; }
+.pd-meta dt {
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8aabcc;
+    margin-bottom: 0.3rem;
+}
+.pd-meta dd {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #0d2a4a;
+    line-height: 1.3;
+}
+
+/* Members */
+.pd-members {
+    padding: 1.75rem 2rem 2rem;
+}
+.pd-members-title {
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #8aabcc;
+    margin: 0 0 1.25rem;
+}
+.pd-members-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.pd-member-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.9rem;
+    text-align: center;
+}
+.pd-member-photo {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    object-position: top center;
+    border-radius: 14px;
+    background: #dce8f4;
+    display: block;
+}
+.pd-member-info { display: flex; flex-direction: column; gap: 0.2rem; }
+.pd-member-name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0d2a4a;
+    line-height: 1.25;
+}
+.pd-member-specialty {
+    margin: 0;
+    font-size: 0.82rem;
+    color: #3a5a7a;
+    font-weight: 600;
+}
+.pd-member-section {
+    margin: 0;
+    font-size: 0.78rem;
+    color: #7a9ab8;
+}
+
+@media (max-width: 680px) {
+    .pd-hero {
+        grid-template-columns: 1fr;
+    }
+    .pd-logo-wrap {
+        width: 120px;
+        height: 120px;
+    }
+    .pd-members-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    }
+}
+
 @media (max-width: 1100px) {
     .home-intro-block {
         grid-template-columns: 1fr;

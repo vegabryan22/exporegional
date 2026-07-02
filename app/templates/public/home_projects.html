@@ -83,77 +83,81 @@
                     {% set principal_is_logo = true %}
                 {% endif %}
 
-                <article class="project-detail card {% if project.members|length > 1 %}has-many-members{% endif %} {% if project.members|length == 3 %}has-three-members{% endif %} {% if ns.first_id == project.id|string %}active{% endif %}" data-project-panel="{{ project.id }}">
-                    <div class="project-main">
-                        <div class="project-visual">
-                            {% if principal_photo %}
-                                <img src="{{ principal_photo }}" alt="Imagen de {{ project.title }}" class="project-main-image {% if principal_is_logo %}project-main-logo{% endif %}">
+                <article class="project-detail card {% if ns.first_id == project.id|string %}active{% endif %}" data-project-panel="{{ project.id }}">
+
+                    {# ── Hero: logo + título + descripción ─────────────────── #}
+                    <div class="pd-hero">
+                        <div class="pd-logo-wrap">
+                            {% if project.has_real_logo %}
+                                <img src="{{ principal_photo }}" alt="Logo de {{ project.title }}" class="pd-logo-img">
                             {% else %}
-                                <div class="project-main-placeholder">{{ project.title[:1] }}</div>
+                                <div class="pd-logo-placeholder">{{ project.title[:1] }}</div>
                             {% endif %}
                         </div>
-                        <div class="project-content">
-                            <h2>{{ project.title }}</h2>
-                            <dl class="project-main-meta">
-                                <div>
-                                    <dt>Categoría</dt>
-                                    <dd>{{ category_label }}</dd>
-                                </div>
-                                <div>
-                                    <dt>Equipo</dt>
-                                    <dd>{{ project.team_name }}</dd>
-                                </div>
-                                <div>
-                                    <dt>Eje temático</dt>
-                                    <dd>{{ project.thematic_axis.name if project.thematic_axis else 'N/D' }}</dd>
-                                </div>
-                                {% if project.advisor_name %}
-                                <div>
-                                    <dt>Tutor</dt>
-                                    <dd>{{ project.advisor_name }}</dd>
-                                </div>
-                                {% endif %}
-                            </dl>
+                        <div class="pd-hero-body">
+                            <span class="pd-category-badge">{{ category_label }}</span>
+                            <h2 class="pd-title">{{ project.title }}</h2>
                             {% if project.description and project.description != 'Proyecto registrado por formulario ExpoTEC-1.' %}
-                                <p class="project-main-description">{{ project.description }}</p>
+                                <p class="pd-description">{{ project.description }}</p>
                             {% endif %}
-                            <div class="project-main-actions">
-                                {% if project.project_document_path %}
-                                    <a href="{{ url_for('static', filename=project.project_document_path) }}" class="project-action" target="_blank">Ver documentación</a>
-                                {% else %}
-                                    <span class="project-action disabled">Sin documentación</span>
-                                {% endif %}
-                            </div>
+                            {% if project.project_document_path %}
+                                <a href="{{ url_for('static', filename=project.project_document_path) }}" class="project-action pd-doc-btn" target="_blank">Ver documentación</a>
+                            {% endif %}
                         </div>
-
-                        <section class="project-members-panel">
-                            <h3>Integrantes</h3>
-                            {% if project.members %}
-                                <div class="integrants-grid">
-                                    {% for member in project.members %}
-                                        {% if member.photo_url and (member.photo_url.startswith('http://') or member.photo_url.startswith('https://')) %}
-                                            {% set photo_src = member.photo_url %}
-                                        {% elif member.photo_url %}
-                                            {% set photo_src = url_for('static', filename=member.photo_url) %}
-                                        {% else %}
-                                            {% set photo_src = female_member_placeholder if member.gender == 'femenino' else male_member_placeholder %}
-                                        {% endif %}
-
-                                        <article class="integrant-card">
-                                            <img src="{{ photo_src }}" alt="{% if member.photo_url %}Foto de {{ member.full_name }}{% else %}Sin foto de {{ member.full_name }}{% endif %}" class="integrant-photo">
-                                            <div>
-                                                <h4>{{ member.full_name }}</h4>
-                                                <p>{% if member.section_name %}Sección: {{ member.section_name }}{% else %}Sección no registrada{% endif %}</p>
-                                                <p>{{ member.specialty or 'Especialidad no registrada' }}</p>
-                                            </div>
-                                        </article>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <p class="project-members-empty">Sin integrantes registrados.</p>
-                            {% endif %}
-                        </section>
                     </div>
+
+                    {# ── Metadata ───────────────────────────────────────────── #}
+                    <dl class="pd-meta">
+                        <div>
+                            <dt>Equipo</dt>
+                            <dd>{{ project.team_name }}</dd>
+                        </div>
+                        {% if project.thematic_axis %}
+                        <div>
+                            <dt>Eje temático</dt>
+                            <dd>{{ project.thematic_axis.name }}</dd>
+                        </div>
+                        {% endif %}
+                        {% if project.specialty %}
+                        <div>
+                            <dt>Especialidad técnica</dt>
+                            <dd>{{ project.specialty }}</dd>
+                        </div>
+                        {% endif %}
+                        {% if project.advisor_name %}
+                        <div>
+                            <dt>Tutor</dt>
+                            <dd>{{ " ".join(w.capitalize() for w in project.advisor_name.split()) }}</dd>
+                        </div>
+                        {% endif %}
+                    </dl>
+
+                    {# ── Integrantes ────────────────────────────────────────── #}
+                    {% if project.members %}
+                    <section class="pd-members">
+                        <h3 class="pd-members-title">Integrantes</h3>
+                        <div class="pd-members-grid pd-members-{{ project.members|length }}">
+                            {% for member in project.members | sort(attribute='student_number') %}
+                                {% if member.photo_url and (member.photo_url.startswith('http://') or member.photo_url.startswith('https://')) %}
+                                    {% set photo_src = member.photo_url %}
+                                {% elif member.photo_url %}
+                                    {% set photo_src = url_for('static', filename=member.photo_url) %}
+                                {% else %}
+                                    {% set photo_src = female_member_placeholder if (member.gender or '')|lower == 'femenino' else male_member_placeholder %}
+                                {% endif %}
+                                <article class="pd-member-card">
+                                    <img src="{{ photo_src }}" alt="Foto de {{ member.full_name }}" class="pd-member-photo">
+                                    <div class="pd-member-info">
+                                        <h4 class="pd-member-name">{{ " ".join(w.capitalize() for w in member.full_name.split()) }}</h4>
+                                        {% if member.specialty %}<p class="pd-member-specialty">{{ member.specialty }}</p>{% endif %}
+                                        {% if member.section_name %}<p class="pd-member-section">Sección {{ member.section_name }}</p>{% endif %}
+                                    </div>
+                                </article>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    {% endif %}
+
                 </article>
             {% endfor %}
         {% endfor %}

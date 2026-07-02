@@ -11719,6 +11719,115 @@ body {
 
 .photos-modal-link { justify-self: start; font-size: 0.85rem; }
 
+/* ── Admin overview v2 ───────────────────────────────────────────────────── */
+.ov2-shell { display: flex; flex-direction: column; gap: 1.4rem; padding: 1.6rem 1.8rem; }
+
+.ov2-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.ov2-header h3 { margin: 0; font-size: 1.7rem; color: #0d2f52; }
+.ov2-header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.ov2-shortcut { padding: 0.45rem 1rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700;
+    background: #073d70; color: #fff; text-decoration: none; transition: background 120ms; }
+.ov2-shortcut:hover { background: #0a52a0; }
+.ov2-shortcut.outline { background: transparent; border: 1.5px solid #073d70; color: #073d70; }
+.ov2-shortcut.outline:hover { background: #eaf3fb; }
+
+/* KPI strip */
+.ov2-kpi-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; }
+.ov2-kpi { background: #fff; border: 1px solid #d6e8f7; border-radius: 14px; padding: 1rem 1.2rem;
+    display: flex; flex-direction: column; gap: 0.2rem; }
+.ov2-kpi strong { font-size: 1.55rem; font-weight: 800; color: #073d70; line-height: 1; }
+.ov2-kpi span { font-size: 0.78rem; color: #607998; font-weight: 600; }
+
+/* Alerts */
+.ov2-alerts { background: #fff8ed; border: 1.5px solid #f5c060; border-radius: 14px; padding: 0.9rem 1.2rem; }
+.ov2-alerts-label { font-size: 0.73rem; font-weight: 800; text-transform: uppercase; letter-spacing: .09em;
+    color: #a06010; margin: 0 0 0.6rem; }
+.ov2-alert-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ov2-alert-chip { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.35rem 0.85rem;
+    border-radius: 20px; font-size: 0.82rem; font-weight: 700; text-decoration: none; transition: opacity 120ms; }
+.ov2-alert-chip:hover { opacity: .82; }
+.ov2-alert-chip strong { font-size: 1rem; }
+.ov2-alert-chip.critical { background: #fde8e8; color: #b01c1c; border: 1.5px solid #f5a0a0; }
+.ov2-alert-chip.warning  { background: #fff3cd; color: #8a5c00; border: 1.5px solid #f5c060; }
+.ov2-alert-chip.neutral  { background: #eaf3fb; color: #1a4f80; border: 1.5px solid #b8d8f0; }
+
+/* Donut charts */
+.ov2-charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; }
+.ov2-chart-card { background: #fff; border: 1px solid #d6e8f7; border-radius: 16px;
+    padding: 1.1rem 1.3rem; display: flex; align-items: center; gap: 1.1rem; }
+.ov2-donut {
+    --pct: 0; --clr: #073d70;
+    width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%;
+    background: conic-gradient(var(--clr) calc(var(--pct) * 1%), #e8f0f8 0);
+    display: flex; align-items: center; justify-content: center; position: relative;
+}
+.ov2-donut::after {
+    content: ''; position: absolute; inset: 10px; border-radius: 50%; background: #fff;
+}
+.ov2-donut span { position: relative; z-index: 1; font-size: 0.78rem; font-weight: 800; color: #0d2f52; }
+.ov2-chart-info { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.ov2-chart-info strong { font-size: 0.95rem; color: #0d2f52; font-weight: 800; }
+.ov2-chart-info p { font-size: 0.78rem; color: #4f6680; margin: 0; }
+.ov2-chart-sub { font-size: 0.72rem; font-weight: 700; }
+.ov2-chart-sub.ok   { color: #1d7a22; }
+.ov2-chart-sub.warn { color: #a07020; }
+
+/* Work grid */
+.ov2-work-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.ov2-block { background: #fff; border: 1px solid #d6e8f7; border-radius: 16px; padding: 1.1rem 1.3rem;
+    display: flex; flex-direction: column; gap: 0.8rem; }
+.ov2-full { grid-column: 1 / -1; }
+.ov2-block-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.ov2-block-head h4 { margin: 0; font-size: 0.95rem; color: #0d2f52; font-weight: 800; }
+.ov2-block-link { font-size: 0.78rem; font-weight: 700; color: #0d5fa6; text-decoration: none; white-space: nowrap; }
+.ov2-block-link:hover { text-decoration: underline; }
+.ov2-block-count { font-size: 0.78rem; color: #607998; }
+.ov2-empty { font-size: 0.82rem; color: #8aaecc; font-style: italic; margin: 0; }
+
+/* Tables inside blocks */
+.ov2-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.ov2-table th { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em;
+    color: #607998; padding: 0.3rem 0.4rem; border-bottom: 1.5px solid #e0edf7; text-align: left; }
+.ov2-table td { padding: 0.45rem 0.4rem; border-bottom: 1px solid #f0f5fa; color: #1a3a5a; vertical-align: middle; }
+.ov2-table tr:last-child td { border-bottom: none; }
+
+/* Mini progress bar */
+.ov2-mini-bar { height: 6px; background: #e0edf7; border-radius: 4px; width: 80px; margin-bottom: 2px; }
+.ov2-mini-bar-fill { height: 100%; background: #1d7a22; border-radius: 4px; transition: width .3s; }
+
+/* Attendance bars */
+.ov2-attendance-bars { display: flex; flex-direction: column; gap: 0.7rem; }
+.ov2-att-row { display: flex; align-items: center; gap: 0.6rem; }
+.ov2-att-label { font-size: 0.78rem; color: #4f6680; width: 90px; flex-shrink: 0; }
+.ov2-bar-track { flex: 1; height: 10px; background: #e8f0f8; border-radius: 6px; overflow: hidden; }
+.ov2-bar-fill { height: 100%; border-radius: 6px; transition: width .4s; }
+.ov2-bar-fill.confirmed { background: #1d7a22; }
+.ov2-bar-fill.pending   { background: #e0a020; }
+.ov2-bar-fill.rejected  { background: #c03030; }
+.ov2-att-row > strong { font-size: 0.88rem; color: #0d2f52; width: 24px; text-align: right; flex-shrink: 0; }
+
+/* Logistics chips */
+.ov2-logistics-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; }
+.ov2-req-chip { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border-radius: 12px; padding: 0.7rem 0.5rem; text-align: center; gap: 0.15rem; border: 1.5px solid; }
+.ov2-req-chip.ok  { background: #f0fff4; border-color: #b7e4c0; }
+.ov2-req-chip.bad { background: #fff4f4; border-color: #f5b0b0; }
+.ov2-req-chip strong { font-size: 1.3rem; font-weight: 800; }
+.ov2-req-chip.ok  strong { color: #1d7a22; }
+.ov2-req-chip.bad strong { color: #b01c1c; }
+.ov2-req-chip span { font-size: 0.7rem; font-weight: 700; color: #607998; }
+
+@media (max-width: 800px) {
+    .ov2-shell { padding: 1rem; gap: 1rem; }
+    .ov2-logistics-chips { grid-template-columns: repeat(2, 1fr); }
+    .ov2-charts-row { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+    .ov2-charts-row { grid-template-columns: 1fr; }
+    .ov2-work-grid { grid-template-columns: 1fr; }
+    .ov2-logistics-chips { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ── Public: search project for revision ────────────────────────────────── */
 .search-revision-form {
     background: #f7fbff;

@@ -973,7 +973,7 @@ def _render_logistics_reminder_email(member, project, missing_group, missing_ind
     )
 
 
-def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_per_page=5, pending_revisions=None):
+def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_per_page=5, pending_revisions=None, judges=None, pending_member_edits=None):
     active_projects = [project for project in projects if project.is_active]
     active_project_ids = {project.id for project in active_projects}
     active_assignments = [assignment for assignment in assignments if assignment.project_id in active_project_ids]
@@ -1034,9 +1034,28 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     logistics_start = 0
     logistics_end = min(logistics_per_page, pending_logistics_total)
 
+    # — Judge stats —
+    judge_list = [j for j in (judges or []) if getattr(j, "effective_role", None) == Judge.ROLE_JUDGE]
+    active_judges = [j for j in judge_list if j.is_active_user]
+    judges_confirmed   = sum(1 for j in active_judges if j.attendance_confirmed is True)
+    judges_rejected    = sum(1 for j in active_judges if j.attendance_confirmed is False)
+    judges_pending_att = sum(1 for j in active_judges if j.attendance_confirmed is None)
+    judges_with_assignments = len({a.judge_id for a in active_assignments if a.judge_id})
+    judges_without_assignments = max(0, len(active_judges) - judges_with_assignments)
+
+    # — Category breakdown —
+    steam_projects = [p for p in active_projects if "steam" in (p.category or "").lower()]
+    emp_projects   = [p for p in active_projects if "emprend" in (p.category or "").lower()]
+    english_members = sum(1 for m in active_members if m.participates_in_english)
+    english_projects = sum(1 for p in active_projects if any(m.participates_in_english for m in p.members))
+
+    # — Logistics completeness —
+    logistics_complete = sum(1 for p in active_projects if p.logistics_status == "completo" and not _project_logistics_missing_items(p))
+
     return {
         "active_projects": len(active_projects),
         "active_assignments": len(active_assignments),
+        "total_members": len(active_members),
         "members_without_photo": len([member for member in active_members if not member.photo_url]),
         "projects_without_logo": len([project for project in active_projects if not project.has_real_logo]),
         "projects_without_document": len([project for project in active_projects if not project.project_document_path]),
@@ -1044,14 +1063,15 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "projects_pending_evaluations": len(projects_with_pending_evaluations),
         "projects_pending_review": len([project for project in active_projects if project.logistics_status == "pendiente_revision"]),
         "projects_incomplete_logistics": len([project for project in active_projects if project.logistics_status == "incompleto" or _project_logistics_missing_items(project)]),
+        "logistics_complete": logistics_complete,
         "completed_evaluations": total_completed_evaluations,
         "expected_evaluations": total_expected_evaluations,
-        "urgent_projects": sorted(projects_without_judges, key=lambda item: item.created_at, reverse=True)[:5],
+        "urgent_projects": sorted(projects_without_judges, key=lambda item: item.created_at, reverse=True)[:8],
         "pending_evaluation_rows": sorted(
             projects_with_pending_evaluations,
             key=lambda item: (item["expected"] - item["completed"], item["project"].created_at),
             reverse=True,
-        )[:5],
+        )[:8],
         "pending_logistics_total": pending_logistics_total,
         "pending_logistics_displayed": logistics_end,
         "pending_logistics_projects": pending_logistics_rows,
@@ -1065,6 +1085,19 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "pending_logistics_end": logistics_end,
         "pending_logistics_per_page": logistics_per_page,
         "pending_document_revisions_count": len(pending_revisions) if pending_revisions is not None else 0,
+        "pending_member_edits_count": len(pending_member_edits) if pending_member_edits is not None else 0,
+        # judge
+        "total_active_judges": len(active_judges),
+        "judges_confirmed": judges_confirmed,
+        "judges_rejected": judges_rejected,
+        "judges_pending_att": judges_pending_att,
+        "judges_with_assignments": judges_with_assignments,
+        "judges_without_assignments": judges_without_assignments,
+        # category
+        "steam_projects": len(steam_projects),
+        "emp_projects": len(emp_projects),
+        "english_projects": english_projects,
+        "english_members": english_members,
     }
 
 
@@ -5865,6 +5898,8 @@ def _base_context(active_page: str, **kwargs):
         assignments,
         logistics_page=kwargs.get("logistics_page", 1),
         pending_revisions=pending_document_revisions if not (restore_safe_mode or database_light_mode) else [],
+        judges=judges if not (restore_safe_mode or database_light_mode) else [],
+        pending_member_edits=pending_member_edit_requests if not (restore_safe_mode or database_light_mode) else [],
     )
 
     return {

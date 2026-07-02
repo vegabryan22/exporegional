@@ -1,277 +1,340 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section maintenance-page admin-overview-page">
-    <div class="page-head overview-hero">
-        <div>
-            <p class="maintenance-kicker">Centro de operaciones</p>
-            <h3>Panel administrativo</h3>
-            <p class="table-subtext">Prioriza pendientes reales del sistema, jueces, evaluaciones y logística.</p>
-        </div>
-        <div class="overview-hero-status">
-            <strong>{{ overview_metrics.active_projects }}</strong>
-            <span>proyectos activos</span>
-        </div>
+
+{% set m = overview_metrics %}
+{% set eval_pct = ((m.completed_evaluations / m.expected_evaluations * 100) | int) if m.expected_evaluations > 0 else 0 %}
+{% set logistics_pct = ((m.logistics_complete / m.active_projects * 100) | int) if m.active_projects > 0 else 0 %}
+{% set assign_pct = ((m.judges_with_assignments / m.total_active_judges * 100) | int) if m.total_active_judges > 0 else 0 %}
+{% set att_pct = ((m.judges_confirmed / m.total_active_judges * 100) | int) if m.total_active_judges > 0 else 0 %}
+
+<div class="ov2-shell">
+
+  {# ── HEADER ── #}
+  <div class="ov2-header">
+    <div>
+      <p class="maintenance-kicker">Centro de operaciones</p>
+      <h3>Panel administrativo</h3>
     </div>
-
-    <div class="overview-action-strip">
-        <a data-no-iconify href="{{ url_for('admin.assignments_page') }}"><span>Asignar</span><strong>Jueces</strong></a>
-        <a data-no-iconify href="{{ url_for('admin.projects_page') }}"><span>Revisar</span><strong>Proyectos</strong></a>
-        <a data-no-iconify href="{{ url_for('admin.evaluations_page') }}"><span>Ver</span><strong>Evaluaciones</strong></a>
-        <a data-no-iconify href="{{ url_for('admin.institution_page') }}"><span>Ajustar</span><strong>Identidad</strong></a>
-        <a data-no-iconify href="{{ url_for('admin.campaigns_page') }}"><span>Gestionar</span><strong>Campañas</strong></a>
+    <div class="ov2-header-actions">
+      <a data-no-iconify href="{{ url_for('admin.assignments_page') }}" class="ov2-shortcut">Asignar jueces</a>
+      <a data-no-iconify href="{{ url_for('admin.projects_page') }}" class="ov2-shortcut">Revisar proyectos</a>
+      <a data-no-iconify href="{{ url_for('admin.evaluations_page') }}" class="ov2-shortcut">Evaluaciones</a>
+      <a data-no-iconify href="{{ url_for('admin.logistics_reminder_page') }}" class="ov2-shortcut outline">Recordatorio</a>
     </div>
+  </div>
 
-    <div class="overview-metrics-grid">
-        <section class="overview-metric-panel critical">
-            <p class="maintenance-kicker">Operación crítica</p>
-            <h4>Atención inmediata</h4>
-            <div class="overview-metric-list">
-                <article><strong>{{ overview_metrics.projects_without_judges }}</strong><span>Sin jueces</span></article>
-                <article><strong>{{ overview_metrics.projects_pending_evaluations }}</strong><span>Evaluación pendiente</span></article>
-                <article><strong>{{ overview_metrics.projects_pending_review }}</strong><span>Pendientes de revisión</span></article>
-            </div>
-        </section>
-
-        <section class="overview-metric-panel logistics">
-            <div class="overview-metric-panel-head">
-                <div>
-                    <p class="maintenance-kicker">Control logístico</p>
-                    <h4>Requisitos por completar</h4>
-                </div>
-                <a href="{{ url_for('admin.logistics_reminder_page') }}" class="table-link-btn ghost overview-reminder-btn">Enviar recordatorio</a>
-            </div>
-            <div class="overview-metric-list compact">
-                <article><strong>{{ overview_metrics.members_without_photo }}</strong><span>Sin foto</span></article>
-                <article><strong>{{ overview_metrics.projects_without_logo }}</strong><span>Sin logo</span></article>
-                <article><strong>{{ overview_metrics.projects_without_document }}</strong><span>Sin documento</span></article>
-                <article><strong>{{ overview_metrics.projects_incomplete_logistics }}</strong><span>Logística incompleta</span></article>
-                {% if overview_metrics.pending_document_revisions_count > 0 %}
-                <article class="metric-alert">
-                    <strong>{{ overview_metrics.pending_document_revisions_count }}</strong>
-                    <span>Doc. por revisar</span>
-                    <a class="metric-alert-link" href="{{ url_for('admin.projects_page') }}">Revisar</a>
-                </article>
-                {% endif %}
-            </div>
-        </section>
+  {# ── KPI STRIP ── #}
+  <div class="ov2-kpi-strip">
+    <div class="ov2-kpi">
+      <strong>{{ m.active_projects }}</strong>
+      <span>Proyectos activos</span>
     </div>
-
-    <div class="admin-overview-grid overview-work-grid">
-        <section class="admin-overview-block">
-            <div class="page-head">
-                <div>
-                    <h4>Proyectos urgentes</h4>
-                    <p class="table-subtext">Proyectos activos que todavía no tienen ningún juez asignado.</p>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Proyecto</th>
-                            <th>Categoría</th>
-                            <th>Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for project in overview_metrics.urgent_projects %}
-                            <tr>
-                                <td>{{ project.title }}</td>
-                                <td class="table-cell-center"><span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span></td>
-                                <td class="table-cell-center"><span class="tag off">Sin jueces</span></td>
-                            </tr>
-                        {% else %}
-                            <tr><td colspan="3">No hay proyectos urgentes en este momento.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section class="admin-overview-block">
-            <div class="page-head">
-                <div>
-                    <h4>Evaluaciones pendientes</h4>
-                    <p class="table-subtext">{{ overview_metrics.completed_evaluations }}/{{ overview_metrics.expected_evaluations }} evaluaciones registradas en proyectos activos.</p>
-                </div>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Proyecto</th>
-                            <th>Avance</th>
-                            <th>Faltantes</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in overview_metrics.pending_evaluation_rows %}
-                            <tr>
-                                <td>{{ row.project.title }}</td>
-                                <td class="table-cell-center"><span class="tag progress-badge">{{ row.completed }}/{{ row.expected }}</span></td>
-                                <td class="table-cell-center"><span class="tag off">{{ row.expected - row.completed }}</span></td>
-                            </tr>
-                        {% else %}
-                            <tr><td colspan="3">No hay proyectos con evaluaciones pendientes.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+    <div class="ov2-kpi">
+      <strong>{{ m.total_members }}</strong>
+      <span>Estudiantes</span>
     </div>
+    <div class="ov2-kpi">
+      <strong>{{ m.total_active_judges }}</strong>
+      <span>Jueces activos</span>
+    </div>
+    <div class="ov2-kpi">
+      <strong>{{ m.completed_evaluations }}/{{ m.expected_evaluations }}</strong>
+      <span>Evaluaciones</span>
+    </div>
+    <div class="ov2-kpi">
+      <strong>{{ m.english_projects }}</strong>
+      <span>Proyectos inglés</span>
+    </div>
+    <div class="ov2-kpi">
+      <strong>{{ m.steam_projects }} / {{ m.emp_projects }}</strong>
+      <span>STEAM / Emprendimiento</span>
+    </div>
+  </div>
 
-    <section class="admin-overview-block">
-        <div class="page-head">
-            <div>
-                <h4>Pendientes de logística</h4>
-                <p class="table-subtext" id="pending-logistics-subtext">Proyectos activos con alguna pendiente logística. Mostrando {{ overview_metrics.pending_logistics_start }}-{{ overview_metrics.pending_logistics_end }} de {{ overview_metrics.pending_logistics_total }}.</p>
-            </div>
-        </div>
-        <div class="pending-logistics-list" id="pending-logistics-body" data-page="1" data-per-page="{{ overview_metrics.pending_logistics_per_page }}">
-            {% for row in overview_metrics.pending_logistics_projects %}
-                {% set project = row.project %}
-                {% set physical_ok = project.logistics_registration_form_signed_ok and project.logistics_student_consents_signed_ok %}
-                <article class="pending-logistics-card pending-logistics-row" data-row-index="{{ loop.index }}">
-                    <div class="pending-logistics-main">
-                        <span class="maintenance-kicker">Proyecto</span>
-                        <h5>{{ project.title }}</h5>
-                        <p>{{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}</p>
-                    </div>
-                    <div class="pending-logistics-checks" aria-label="Estado log&iacute;stico">
-                        <span class="logistics-mini-check {{ 'is-ok' if project.logistics_logo_ok else 'is-missing' }}">
-                            <strong>Logo</strong>
-                            <em>{{ 'OK' if project.logistics_logo_ok else 'Falta' }}</em>
-                        </span>
-                        <span class="logistics-mini-check {{ 'is-ok' if project.logistics_document_ok else 'is-missing' }}">
-                            <strong>Documento</strong>
-                            <em>{{ 'OK' if project.logistics_document_ok else 'Falta' }}</em>
-                        </span>
-                        <span class="logistics-mini-check {{ 'is-ok' if physical_ok else 'is-missing' }}">
-                            <strong>F&iacute;sicos</strong>
-                            <em>{% if not physical_ok %}{% if not project.logistics_registration_form_signed_ok and not project.logistics_student_consents_signed_ok %}Form + Consentim.{% elif not project.logistics_registration_form_signed_ok %}Formulario{% else %}Consentim.{% endif %}{% else %}OK{% endif %}</em>
-                        </span>
-                        <span class="logistics-mini-check {{ 'is-ok' if project.logistics_requirements_reviewed_ok else 'is-missing' }}">
-                            <strong>Requisitos</strong>
-                            <em>{{ 'OK' if project.logistics_requirements_reviewed_ok else 'Falta' }}</em>
-                        </span>
-                        {% if row.members_without_photos %}
-                        <button
-                            type="button"
-                            class="logistics-mini-check is-warning logistics-photos-btn"
-                            data-modal="photos-modal-{{ project.id }}"
-                            aria-haspopup="dialog"
-                        >
-                            <strong>Fotos</strong>
-                            <em>{{ row.missing_member_photos }} pendiente{{ 's' if row.missing_member_photos != 1 else '' }}</em>
-                        </button>
-                        {% else %}
-                        <span class="logistics-mini-check is-ok">
-                            <strong>Fotos</strong>
-                            <em>OK</em>
-                        </span>
-                        {% endif %}
-                    </div>
-                    <a class="table-link-btn logistics-control-link pending-logistics-action" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Verificar</a>
-                </article>
-            {% else %}
-                <p class="muted-empty">No hay pendientes log&iacute;sticos registrados.</p>
-            {% endfor %}
-        </div>
-        {% if overview_metrics.pending_logistics_pages > 1 %}
-        <div class="table-pager">
-            <span class="table-subtext" id="pending-logistics-status">Página {{ overview_metrics.pending_logistics_page }} de {{ overview_metrics.pending_logistics_pages }}</span>
-            <div class="page-head-actions">
-                <button type="button" class="table-link-btn ghost" id="pending-logistics-prev">Anterior</button>
-                <button type="button" class="table-link-btn" id="pending-logistics-next">Siguiente</button>
-            </div>
-        </div>
+  {# ── ALERTS ── #}
+  {% set alert_count = m.projects_without_judges + m.pending_document_revisions_count + m.pending_member_edits_count %}
+  {% if alert_count > 0 %}
+  <div class="ov2-alerts">
+    <p class="ov2-alerts-label">Requieren atención inmediata</p>
+    <div class="ov2-alert-list">
+      {% if m.projects_without_judges > 0 %}
+      <a href="{{ url_for('admin.assignments_page') }}" class="ov2-alert-chip critical">
+        <strong>{{ m.projects_without_judges }}</strong> sin jueces
+      </a>
+      {% endif %}
+      {% if m.pending_document_revisions_count > 0 %}
+      <a href="{{ url_for('admin.projects_page') }}" class="ov2-alert-chip warning">
+        <strong>{{ m.pending_document_revisions_count }}</strong> doc. por revisar
+      </a>
+      {% endif %}
+      {% if m.pending_member_edits_count > 0 %}
+      <a href="{{ url_for('admin.projects_page') }}" class="ov2-alert-chip warning">
+        <strong>{{ m.pending_member_edits_count }}</strong> edición de datos pendiente
+      </a>
+      {% endif %}
+      {% if m.projects_incomplete_logistics > 0 %}
+      <a href="{{ url_for('admin.projects_page') }}" class="ov2-alert-chip neutral">
+        <strong>{{ m.projects_incomplete_logistics }}</strong> logística incompleta
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── PROGRESS CHARTS ── #}
+  <div class="ov2-charts-row">
+
+    <div class="ov2-chart-card">
+      <div class="ov2-donut" style="--pct:{{ eval_pct }};--clr:#1d7a22;">
+        <span>{{ eval_pct }}%</span>
+      </div>
+      <div class="ov2-chart-info">
+        <strong>Evaluaciones</strong>
+        <p>{{ m.completed_evaluations }} de {{ m.expected_evaluations }} completadas</p>
+        {% if m.projects_pending_evaluations > 0 %}
+        <span class="ov2-chart-sub warn">{{ m.projects_pending_evaluations }} proyectos pendientes</span>
+        {% else %}
+        <span class="ov2-chart-sub ok">Al día</span>
         {% endif %}
+      </div>
+    </div>
+
+    <div class="ov2-chart-card">
+      <div class="ov2-donut" style="--pct:{{ logistics_pct }};--clr:#0d5fa6;">
+        <span>{{ logistics_pct }}%</span>
+      </div>
+      <div class="ov2-chart-info">
+        <strong>Logística</strong>
+        <p>{{ m.logistics_complete }} de {{ m.active_projects }} completos</p>
+        {% if m.projects_incomplete_logistics > 0 %}
+        <span class="ov2-chart-sub warn">{{ m.projects_incomplete_logistics }} con pendientes</span>
+        {% else %}
+        <span class="ov2-chart-sub ok">Todo en orden</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="ov2-chart-card">
+      <div class="ov2-donut" style="--pct:{{ assign_pct }};--clr:#8b4cf7;">
+        <span>{{ assign_pct }}%</span>
+      </div>
+      <div class="ov2-chart-info">
+        <strong>Asignaciones</strong>
+        <p>{{ m.judges_with_assignments }} de {{ m.total_active_judges }} jueces asignados</p>
+        {% if m.judges_without_assignments > 0 %}
+        <span class="ov2-chart-sub warn">{{ m.judges_without_assignments }} sin asignar</span>
+        {% else %}
+        <span class="ov2-chart-sub ok">Todos asignados</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="ov2-chart-card">
+      <div class="ov2-donut" style="--pct:{{ att_pct }};--clr:#c34d0a;">
+        <span>{{ att_pct }}%</span>
+      </div>
+      <div class="ov2-chart-info">
+        <strong>Asistencia</strong>
+        <p>{{ m.judges_confirmed }} confirmados de {{ m.total_active_judges }}</p>
+        <span class="ov2-chart-sub">
+          {{ m.judges_rejected }} no asisten &middot; {{ m.judges_pending_att }} sin responder
+        </span>
+      </div>
+    </div>
+
+  </div>
+
+  {# ── WORK GRID ── #}
+  <div class="ov2-work-grid">
+
+    {# Proyectos sin jueces #}
+    <section class="ov2-block">
+      <div class="ov2-block-head">
+        <h4>Sin jueces asignados</h4>
+        <a href="{{ url_for('admin.assignments_page') }}" class="ov2-block-link">Asignar &rarr;</a>
+      </div>
+      {% if m.urgent_projects %}
+      <table class="ov2-table">
+        <thead><tr><th>Proyecto</th><th>Categoría</th></tr></thead>
+        <tbody>
+          {% for project in m.urgent_projects %}
+          <tr>
+            <td>{{ project.title }}</td>
+            <td><span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="ov2-empty">Todos los proyectos tienen jueces asignados.</p>
+      {% endif %}
     </section>
-</section>
-<script>
-    (function () {
-        var tbody = document.getElementById('pending-logistics-body');
-        if (!tbody) {
-            return;
-        }
 
-        var rows = Array.prototype.slice.call(document.querySelectorAll('.pending-logistics-row'));
-        var perPage = parseInt(tbody.getAttribute('data-per-page') || '5', 10);
-        var total = rows.length;
-        var totalPages = Math.max(1, Math.ceil(total / perPage));
-        var currentPage = 1;
-        var statusLabel = document.getElementById('pending-logistics-status');
-        var subtext = document.getElementById('pending-logistics-subtext');
-        var prevBtn = document.getElementById('pending-logistics-prev');
-        var nextBtn = document.getElementById('pending-logistics-next');
+    {# Evaluaciones pendientes #}
+    <section class="ov2-block">
+      <div class="ov2-block-head">
+        <h4>Evaluaciones pendientes</h4>
+        <a href="{{ url_for('admin.evaluations_page') }}" class="ov2-block-link">Ver todas &rarr;</a>
+      </div>
+      {% if m.pending_evaluation_rows %}
+      <table class="ov2-table">
+        <thead><tr><th>Proyecto</th><th>Avance</th><th>Faltan</th></tr></thead>
+        <tbody>
+          {% for row in m.pending_evaluation_rows %}
+          <tr>
+            <td>{{ row.project.title }}</td>
+            <td>
+              <div class="ov2-mini-bar">
+                <div class="ov2-mini-bar-fill" style="width:{{ ((row.completed/row.expected)*100)|int if row.expected else 0 }}%"></div>
+              </div>
+              <small>{{ row.completed }}/{{ row.expected }}</small>
+            </td>
+            <td><span class="tag off">{{ row.expected - row.completed }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="ov2-empty">No hay evaluaciones pendientes.</p>
+      {% endif %}
+    </section>
 
-        function renderPage(page) {
-            currentPage = Math.min(Math.max(1, page), totalPages);
-            var start = (currentPage - 1) * perPage;
-            var end = Math.min(start + perPage, total);
-
-            rows.forEach(function (row, index) {
-                row.style.display = index >= start && index < end ? '' : 'none';
-            });
-
-            if (statusLabel) {
-                statusLabel.textContent = 'Página ' + currentPage + ' de ' + totalPages;
-            }
-            if (subtext) {
-                var startLabel = total ? (start + 1) : 0;
-                var endLabel = total ? end : 0;
-                subtext.textContent = 'Proyectos activos con alguna pendiente logística. Mostrando ' + startLabel + '-' + endLabel + ' de ' + total + '.';
-            }
-            if (prevBtn) {
-                prevBtn.disabled = currentPage === 1;
-            }
-            if (nextBtn) {
-                nextBtn.disabled = currentPage === totalPages;
-            }
-        }
-
-        if (prevBtn) {
-            prevBtn.addEventListener('click', function () {
-                renderPage(currentPage - 1);
-            });
-        }
-        if (nextBtn) {
-            nextBtn.addEventListener('click', function () {
-                renderPage(currentPage + 1);
-            });
-        }
-
-        renderPage(1);
-    })();
-</script>
-{% for row in overview_metrics.pending_logistics_projects %}
-    {% if row.members_without_photos %}
-    {% set project = row.project %}
-    <dialog class="photos-modal" id="photos-modal-{{ project.id }}" aria-label="Integrantes sin foto — {{ project.title }}">
-        <div class="photos-modal-inner">
-            <div class="photos-modal-head">
-                <div>
-                    <p class="maintenance-kicker">Sin foto</p>
-                    <h4>{{ project.title }}</h4>
-                </div>
-                <button type="button" class="photos-modal-close" data-close-modal aria-label="Cerrar">&times;</button>
-            </div>
-            <ul class="photos-modal-list">
-                {% for member in row.members_without_photos %}
-                <li>
-                    <strong>{{ member.full_name }}</strong>
-                    {% if member.section_name %}<span>{{ member.section_name }}</span>{% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-            <a class="table-link-btn photos-modal-link" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Ir al proyecto</a>
+    {# Asistencia de jueces #}
+    <section class="ov2-block">
+      <div class="ov2-block-head">
+        <h4>Asistencia de jueces</h4>
+        <a href="{{ url_for('admin.judge_pool_page') }}" class="ov2-block-link">Gestionar &rarr;</a>
+      </div>
+      <div class="ov2-attendance-bars">
+        <div class="ov2-att-row">
+          <span class="ov2-att-label">Confirmados</span>
+          <div class="ov2-bar-track">
+            <div class="ov2-bar-fill confirmed" style="width:{{ att_pct }}%"></div>
+          </div>
+          <strong>{{ m.judges_confirmed }}</strong>
         </div>
-    </dialog>
+        <div class="ov2-att-row">
+          <span class="ov2-att-label">Sin responder</span>
+          <div class="ov2-bar-track">
+            <div class="ov2-bar-fill pending" style="width:{{ ((m.judges_pending_att / m.total_active_judges * 100)|int) if m.total_active_judges else 0 }}%"></div>
+          </div>
+          <strong>{{ m.judges_pending_att }}</strong>
+        </div>
+        <div class="ov2-att-row">
+          <span class="ov2-att-label">No asisten</span>
+          <div class="ov2-bar-track">
+            <div class="ov2-bar-fill rejected" style="width:{{ ((m.judges_rejected / m.total_active_judges * 100)|int) if m.total_active_judges else 0 }}%"></div>
+          </div>
+          <strong>{{ m.judges_rejected }}</strong>
+        </div>
+      </div>
+    </section>
+
+    {# Requisitos logísticos #}
+    <section class="ov2-block">
+      <div class="ov2-block-head">
+        <h4>Requisitos logísticos</h4>
+        <a href="{{ url_for('admin.logistics_reminder_page') }}" class="ov2-block-link">Recordatorio &rarr;</a>
+      </div>
+      <div class="ov2-logistics-chips">
+        <div class="ov2-req-chip {{ 'ok' if m.members_without_photo == 0 else 'bad' }}">
+          <strong>{{ m.members_without_photo }}</strong><span>Sin foto</span>
+        </div>
+        <div class="ov2-req-chip {{ 'ok' if m.projects_without_logo == 0 else 'bad' }}">
+          <strong>{{ m.projects_without_logo }}</strong><span>Sin logo</span>
+        </div>
+        <div class="ov2-req-chip {{ 'ok' if m.projects_without_document == 0 else 'bad' }}">
+          <strong>{{ m.projects_without_document }}</strong><span>Sin documento</span>
+        </div>
+        <div class="ov2-req-chip {{ 'ok' if m.projects_incomplete_logistics == 0 else 'bad' }}">
+          <strong>{{ m.projects_incomplete_logistics }}</strong><span>Logística incompleta</span>
+        </div>
+        <div class="ov2-req-chip {{ 'ok' if m.pending_document_revisions_count == 0 else 'bad' }}">
+          <strong>{{ m.pending_document_revisions_count }}</strong><span>Doc. por revisar</span>
+        </div>
+        <div class="ov2-req-chip {{ 'ok' if m.pending_member_edits_count == 0 else 'bad' }}">
+          <strong>{{ m.pending_member_edits_count }}</strong><span>Edic. pendientes</span>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  {# ── PENDING LOGISTICS LIST ── #}
+  {% if m.pending_logistics_projects %}
+  <section class="ov2-block ov2-full">
+    <div class="ov2-block-head">
+      <h4>Pendientes de logística</h4>
+      <span class="ov2-block-count">{{ m.pending_logistics_total }} proyectos</span>
+    </div>
+    <div class="pending-logistics-list" id="pending-logistics-body" data-per-page="{{ m.pending_logistics_per_page }}">
+      {% for row in m.pending_logistics_projects %}
+      {% set project = row.project %}
+      {% set physical_ok = project.logistics_registration_form_signed_ok and project.logistics_student_consents_signed_ok %}
+      <article class="pending-logistics-card pending-logistics-row" data-row-index="{{ loop.index }}">
+        <div class="pending-logistics-main">
+          <span class="maintenance-kicker">{{ category_map.get(project.category, project.category) }}</span>
+          <h5>{{ project.title }}</h5>
+          <p>{{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}</p>
+        </div>
+        <div class="pending-logistics-checks">
+          <span class="logistics-mini-check {{ 'is-ok' if project.logistics_logo_ok else 'is-missing' }}"><strong>Logo</strong><em>{{ 'OK' if project.logistics_logo_ok else 'Falta' }}</em></span>
+          <span class="logistics-mini-check {{ 'is-ok' if project.logistics_document_ok else 'is-missing' }}"><strong>Documento</strong><em>{{ 'OK' if project.logistics_document_ok else 'Falta' }}</em></span>
+          <span class="logistics-mini-check {{ 'is-ok' if physical_ok else 'is-missing' }}"><strong>Físicos</strong><em>{% if not physical_ok %}{% if not project.logistics_registration_form_signed_ok and not project.logistics_student_consents_signed_ok %}Form + Consentim.{% elif not project.logistics_registration_form_signed_ok %}Formulario{% else %}Consentim.{% endif %}{% else %}OK{% endif %}</em></span>
+          <span class="logistics-mini-check {{ 'is-ok' if project.logistics_cedula_tutor_ok else 'is-missing' }}"><strong>Céd. tutor</strong><em>{{ 'OK' if project.logistics_cedula_tutor_ok else 'Falta' }}</em></span>
+          <span class="logistics-mini-check {{ 'is-ok' if project.logistics_requirements_reviewed_ok else 'is-missing' }}"><strong>Requisitos</strong><em>{{ 'OK' if project.logistics_requirements_reviewed_ok else 'Falta' }}</em></span>
+          {% if row.members_without_photos %}
+          <button type="button" class="logistics-mini-check is-warning logistics-photos-btn" data-modal="photos-modal-{{ project.id }}">
+            <strong>Fotos</strong><em>{{ row.missing_member_photos }} pendiente{{ 's' if row.missing_member_photos != 1 else '' }}</em>
+          </button>
+          {% else %}
+          <span class="logistics-mini-check is-ok"><strong>Fotos</strong><em>OK</em></span>
+          {% endif %}
+        </div>
+        <a class="table-link-btn logistics-control-link" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Verificar</a>
+      </article>
+      {% endfor %}
+    </div>
+    {% if m.pending_logistics_pages > 1 %}
+    <div class="table-pager">
+      <span id="pending-logistics-status">Página 1 de {{ m.pending_logistics_pages }}</span>
+      <div class="page-head-actions">
+        <button type="button" class="table-link-btn ghost" id="pending-logistics-prev">Anterior</button>
+        <button type="button" class="table-link-btn" id="pending-logistics-next">Siguiente</button>
+      </div>
+    </div>
     {% endif %}
-{% endfor %}
+  </section>
+  {% endif %}
+
+</div>
 
 <script>
 (function () {
+    var tbody = document.getElementById('pending-logistics-body');
+    if (!tbody) return;
+    var rows = Array.prototype.slice.call(document.querySelectorAll('.pending-logistics-row'));
+    var perPage = parseInt(tbody.getAttribute('data-per-page') || '8', 10);
+    var total = rows.length;
+    var totalPages = Math.max(1, Math.ceil(total / perPage));
+    var currentPage = 1;
+    function render(page) {
+        currentPage = Math.min(Math.max(1, page), totalPages);
+        var start = (currentPage - 1) * perPage;
+        rows.forEach(function (r, i) { r.style.display = (i >= start && i < start + perPage) ? '' : 'none'; });
+        var el = document.getElementById('pending-logistics-status');
+        if (el) el.textContent = 'Página ' + currentPage + ' de ' + totalPages;
+        var prev = document.getElementById('pending-logistics-prev');
+        var next = document.getElementById('pending-logistics-next');
+        if (prev) prev.disabled = currentPage === 1;
+        if (next) next.disabled = currentPage === totalPages;
+    }
+    var prev = document.getElementById('pending-logistics-prev');
+    var next = document.getElementById('pending-logistics-next');
+    if (prev) prev.addEventListener('click', function () { render(currentPage - 1); });
+    if (next) next.addEventListener('click', function () { render(currentPage + 1); });
+    render(1);
+
     document.querySelectorAll('.logistics-photos-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var modal = document.getElementById(btn.getAttribute('data-modal'));
@@ -279,17 +342,32 @@
         });
     });
     document.querySelectorAll('[data-close-modal]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            btn.closest('dialog').close();
-        });
+        btn.addEventListener('click', function () { btn.closest('dialog').close(); });
     });
     document.querySelectorAll('.photos-modal').forEach(function (modal) {
-        modal.addEventListener('click', function (e) {
-            if (e.target === modal) modal.close();
-        });
+        modal.addEventListener('click', function (e) { if (e.target === modal) modal.close(); });
     });
 })();
 </script>
+
+{% for row in m.pending_logistics_projects %}
+{% if row.members_without_photos %}
+{% set project = row.project %}
+<dialog class="photos-modal" id="photos-modal-{{ project.id }}">
+    <div class="photos-modal-inner">
+        <div class="photos-modal-head">
+            <div><p class="maintenance-kicker">Sin foto</p><h4>{{ project.title }}</h4></div>
+            <button type="button" class="photos-modal-close" data-close-modal>&times;</button>
+        </div>
+        <ul class="photos-modal-list">
+            {% for member in row.members_without_photos %}
+            <li><strong>{{ member.full_name }}</strong>{% if member.section_name %} <span>{{ member.section_name }}</span>{% endif %}</li>
+            {% endfor %}
+        </ul>
+        <a class="table-link-btn" href="{{ url_for('admin.projects_page') }}#logistics-project-{{ project.id }}">Ir al proyecto</a>
+    </div>
+</dialog>
+{% endif %}
+{% endfor %}
+
 {% endblock %}
-
-

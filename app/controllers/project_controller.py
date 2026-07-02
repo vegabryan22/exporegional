@@ -1349,6 +1349,57 @@ def project_documents_packet(project_id: int):
     )
 
 
+def search_project_for_forms():
+    query = (request.args.get("q") or "").strip()
+    results = []
+    searched = False
+
+    if query and len(query) >= 3:
+        searched = True
+        normalized = re.sub(r"[\s\-]+", "", query).upper()
+
+        members_by_identity = (
+            ProjectMember.query
+            .options(joinedload(ProjectMember.project).joinedload(Project.members))
+            .filter(
+                func.upper(func.replace(func.replace(ProjectMember.identity_number, "-", ""), " ", "")) == normalized
+            )
+            .all()
+        )
+        members_by_name = (
+            ProjectMember.query
+            .options(joinedload(ProjectMember.project).joinedload(Project.members))
+            .filter(ProjectMember.full_name.ilike(f"%{query}%"))
+            .all()
+        )
+        all_project_ids = {m.project_id for m in members_by_identity} | {m.project_id for m in members_by_name}
+
+        if all_project_ids:
+            projects = (
+                Project.query
+                .options(joinedload(Project.members))
+                .filter(Project.id.in_(all_project_ids), Project.is_active.is_(True))
+                .order_by(Project.title.asc())
+                .all()
+            )
+            for project in projects:
+                matching_members = [
+                    m for m in project.members
+                    if (
+                        re.sub(r"[\s\-]+", "", m.identity_number or "").upper() == normalized
+                        or query.lower() in (m.full_name or "").lower()
+                    )
+                ]
+                results.append({"project": project, "matching_members": matching_members})
+
+    return render_template(
+        "public/search_project_forms.html",
+        query=query,
+        results=results,
+        searched=searched,
+    )
+
+
 def search_project_for_revision():
     query = (request.args.get("q") or "").strip()
     results = []

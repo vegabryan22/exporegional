@@ -42,6 +42,13 @@ public_bp.add_url_rule(
 )
 
 public_bp.add_url_rule(
+    "/formularios",
+    endpoint="search_project_forms",
+    view_func=project_controller.search_project_for_forms,
+    methods=["GET"],
+)
+
+public_bp.add_url_rule(
     "/actualizar-documento",
     endpoint="search_project_revision",
     view_func=project_controller.search_project_for_revision,

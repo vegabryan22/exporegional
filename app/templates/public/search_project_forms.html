@@ -2,9 +2,9 @@
 {% block content %}
 <section class="project-documents-shell">
     <div class="project-documents-head">
-        <p class="maintenance-kicker">Actualización de documento escrito</p>
-        <h2>Enviar documento actualizado</h2>
-        <p>Ingresa tu número de cédula o tu nombre completo para encontrar tu proyecto y enviar una versión corregida del documento escrito.</p>
+        <p class="maintenance-kicker">Documentos de inscripción</p>
+        <h2>Descargar formularios</h2>
+        <p>Ingresa tu número de cédula o tu nombre completo para encontrar tu proyecto y descargar el paquete de documentos imprimibles.</p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -40,7 +40,9 @@
     {% if searched %}
         {% if results %}
         <div class="search-revision-results">
-            <p class="search-revision-count">{{ results | length }} proyecto{{ 's' if results | length != 1 else '' }} encontrado{{ 's' if results | length != 1 else '' }} para <strong>{{ query }}</strong>.</p>
+            <p class="search-revision-count">
+                {{ results | length }} proyecto{{ 's' if results | length != 1 else '' }} encontrado{{ 's' if results | length != 1 else '' }} para <strong>{{ query }}</strong>.
+            </p>
             {% for row in results %}
             {% set project = row.project %}
             <article class="search-revision-card">
@@ -57,13 +59,9 @@
                     </div>
                 </div>
                 <div class="search-revision-card-action">
-                    {% if row.has_pending_revision %}
-                    <span class="search-revision-pending-badge">Solicitud pendiente</span>
-                    <p class="search-revision-pending-note">Ya existe una solicitud en revisión. Espera a que sea procesada.</p>
-                    <a class="table-link-btn ghost" href="{{ url_for('public.project_document_revision', project_id=project.id) }}">Ver estado</a>
-                    {% else %}
-                    <a class="project-action" href="{{ url_for('public.project_document_revision', project_id=project.id) }}">Enviar documento actualizado &rarr;</a>
-                    {% endif %}
+                    <a class="project-action" href="{{ url_for('public.project_documents', project_id=project.id) }}">
+                        Ver mis documentos &rarr;
+                    </a>
                 </div>
             </article>
             {% endfor %}

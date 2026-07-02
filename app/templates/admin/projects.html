@@ -228,10 +228,12 @@
                                 'email': 'Correo',
                                 'role': 'Rol'
                             } %}
+                            {% set ns = namespace(has_changes=false) %}
                             {% for field, label in labels.items() %}
                             {% set old_v = old_vals.get(field, '') %}
                             {% set new_v = new_vals.get(field, '') %}
                             {% if old_v != new_v %}
+                            {% set ns.has_changes = true %}
                             <tr class="member-edit-diff-changed">
                                 <td>{{ label }}</td>
                                 <td class="diff-old">
@@ -243,6 +245,9 @@
                             </tr>
                             {% endif %}
                             {% endfor %}
+                            {% if not ns.has_changes %}
+                            <tr><td colspan="3" style="color:#a07020;font-style:italic;padding:0.5rem 0.6rem;">El solicitante no modificó ningún campo — revisa la justificación y edita manualmente si aplica.</td></tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>

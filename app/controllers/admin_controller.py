@@ -4305,10 +4305,16 @@ def _handle_action(action: str):
         if not smtp_is_configured():
             flash("El servidor SMTP no está configurado. Ve a Ajustes → SMTP antes de enviar correos.", "error")
         else:
-            from datetime import timedelta
+            from datetime import timedelta, date as _date
             active_campaign = Campaign.query.filter_by(is_active=True).first()
             deadline = None
-            if active_campaign and active_campaign.end_date:
+            custom_deadline_str = request.form.get("custom_deadline", "").strip()
+            if custom_deadline_str:
+                try:
+                    deadline = _date.fromisoformat(custom_deadline_str)
+                except ValueError:
+                    pass
+            if deadline is None and active_campaign and active_campaign.end_date:
                 deadline = active_campaign.end_date - timedelta(days=1)
             institution_name = SystemSetting.get_value("school_name", "ExpoTécnica")
             active_projects = (

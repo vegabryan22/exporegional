@@ -66,9 +66,15 @@
             a integrantes de <strong>{{ reminder_data.total_projects }}</strong> proyecto(s) con pendientes.
             Los integrantes sin correo registrado ser&aacute;n omitidos autom&aacute;ticamente.
         </p>
-        <form method="POST" action="{{ action_url }}" class="page-head-actions">
+        <form method="POST" action="{{ action_url }}" class="page-head-actions reminder-send-form">
             <input type="hidden" name="action" value="send_logistics_reminder">
             <input type="hidden" name="next" value="{{ request.path }}">
+            <label class="reminder-deadline-field">
+                <span>Fecha l&iacute;mite en correo</span>
+                <input type="date" name="custom_deadline"
+                       value="{{ reminder_data.deadline.strftime('%Y-%m-%d') if reminder_data.deadline else '' }}"
+                       title="Deja en blanco para omitir la fecha en el correo">
+            </label>
             <button
                 type="submit"
                 class="table-link-btn logistics-control-link"

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { margin: 0; padding: 20px; background: #f6f9fd; font-family: Arial, Helvetica, sans-serif; font-size: 14px; color: #55565a; }
+  .wrap { max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #d7e2ef; border-radius: 12px; overflow: hidden; }
+  .hdr { background: linear-gradient(180deg, #123f6b 0%, #0f3557 100%); padding: 24px 28px 20px; }
+  .hdr-kicker { margin: 0 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #7eb8d8; font-weight: 700; }
+  .hdr h2 { margin: 0; font-size: 18px; color: #ffffff; font-weight: 800; line-height: 1.25; }
+  .body { padding: 24px 28px; }
+  .greeting { font-size: 15px; color: #123f6b; font-weight: 700; margin: 0 0 12px; }
+  .body p { margin: 0 0 14px; line-height: 1.6; }
+  .project-name { color: #123f6b; font-weight: 800; }
+  .deadline { color: #842029; font-weight: 800; }
+  .section { border: 1px solid #d7e2ef; border-radius: 10px; padding: 16px 18px; margin: 16px 0; background: #f6f9fd; }
+  .section-title { margin: 0 0 10px; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #1f8fb5; }
+  ul.group-list { margin: 0; padding: 0 0 0 18px; }
+  ul.group-list li { margin: 5px 0; color: #842029; font-weight: 600; }
+  table.members-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+  table.members-table th { text-align: left; font-size: 12px; color: #8fa0b4; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 8px; border-bottom: 1px solid #e2eaf4; }
+  table.members-table td { padding: 8px 8px; border-bottom: 1px solid #eef2f8; vertical-align: top; }
+  table.members-table tr:last-child td { border-bottom: none; }
+  .member-name { font-weight: 700; color: #123f6b; font-size: 13px; }
+  .member-items { margin: 0; padding: 0 0 0 14px; }
+  .member-items li { color: #842029; font-size: 13px; font-weight: 600; margin: 3px 0; }
+  .sign { margin: 20px 0 0; font-size: 13px; color: #55565a; line-height: 1.7; }
+  .sign strong { color: #123f6b; }
+  .footer { background: #f6f9fd; border-top: 1px solid #d7e2ef; padding: 14px 28px; font-size: 11px; color: #8fa0b4; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <p class="hdr-kicker">ExpoT&eacute;cnica &mdash; Control log&iacute;stico</p>
+    <h2>Requisitos pendientes de su proyecto</h2>
+  </div>
+  <div class="body">
+    <p class="greeting">Estimado/a {{ project.advisor_name or 'tutor' }},</p>
+    <p>
+      Le informamos que el proyecto <span class="project-name">&ldquo;{{ project.title }}&rdquo;</span>
+      tiene requisitos log&iacute;sticos pendientes que deben ser completados
+      {% if deadline %}
+        antes del <span class="deadline">{{ deadline.strftime('%d de %B de %Y') }}</span>.
+      {% else %}
+        a la brevedad posible.
+      {% endif %}
+    </p>
+
+    {% if missing_group %}
+    <div class="section">
+      <p class="section-title">&#128203; Requisitos grupales del proyecto</p>
+      <p style="margin:0 0 8px;font-size:13px;color:#55565a;">Los siguientes requisitos aplican al proyecto en su conjunto:</p>
+      <ul class="group-list">
+        {% for item in missing_group %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if member_missing %}
+    <div class="section">
+      <p class="section-title">&#128100; Requisitos individuales por estudiante</p>
+      <table class="members-table">
+        <thead>
+          <tr>
+            <th>Estudiante</th>
+            <th>Pendientes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in member_missing %}
+          <tr>
+            <td class="member-name">{{ row.member.full_name }}</td>
+            <td>
+              <ul class="member-items">
+                {% for item in row.items %}<li>{{ item }}</li>{% endfor %}
+              </ul>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <p>
+      Por favor gestione la entrega de estos documentos con sus estudiantes para garantizar
+      la participaci&oacute;n del proyecto sin contratiempos.
+    </p>
+
+    <div class="sign">
+      Atentamente,<br>
+      <strong>Organizaci&oacute;n ExpoT&eacute;cnica</strong><br>
+      {{ institution_name }}
+    </div>
+  </div>
+  <div class="footer">
+    Correo generado autom&aacute;ticamente &mdash; por favor no respondas a este mensaje.
+  </div>
+</div>
+</body>
+</html>

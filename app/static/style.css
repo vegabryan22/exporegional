@@ -11670,6 +11670,45 @@ body {
     line-height: 1.05;
 }
 
+.tutor-reminder-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.2rem 0.2rem;
+    border-top: 1px dashed #d7e2ef;
+    margin-top: 0.5rem;
+}
+.tutor-reminder-form {
+    margin: 0;
+}
+.btn-tutor-reminder {
+    background: #0d5fa6;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 0.45rem 1rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.btn-tutor-reminder:hover {
+    background: #0a4d88;
+}
+.tutor-reminder-email {
+    font-size: 0.78rem;
+    color: #8fa0b4;
+    font-style: italic;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tutor-no-email-note {
+    font-size: 0.78rem;
+    color: #aab8c8;
+    font-style: italic;
+}
+
 .photos-modal {
     border: none;
     border-radius: 18px;

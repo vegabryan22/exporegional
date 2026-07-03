@@ -501,6 +501,20 @@
             <div class="actions-row"><button type="submit">Guardar control logistico</button></div>
         </form>
 
+        <div class="tutor-reminder-bar">
+            {% if project.advisor_email %}
+            <form method="post" action="{{ action_url }}" class="tutor-reminder-form">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="send_tutor_logistics_reminder">
+                <input type="hidden" name="project_id" value="{{ project.id }}">
+                <button type="submit" class="btn-tutor-reminder">Enviar requisitos faltantes al tutor</button>
+            </form>
+            <span class="tutor-reminder-email">{{ project.advisor_email }}</span>
+            {% else %}
+            <span class="tutor-no-email-note">Sin correo de tutor registrado</span>
+            {% endif %}
+        </div>
+
         {% set all_revisions = project.document_revisions | sort(attribute='created_at', reverse=True) %}
         {% if all_revisions %}
         <div class="section-block">

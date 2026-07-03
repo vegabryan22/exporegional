@@ -265,6 +265,7 @@ ACTION_MODULE_MAP = {
     "gitops_test_remote": "gitops",
     "save_permissions_matrix": "permissions",
     "send_logistics_reminder": "projects",
+    "send_tutor_logistics_reminder": "projects",
     "install_package": "dependencies",
 }
 
@@ -4363,6 +4364,82 @@ def _handle_action(action: str):
                 detail=f"Recordatorio logístico: {sent} enviados, {failed} fallos, {skipped} sin correo",
             )
             flash(". ".join(parts) + ".", "success" if not failed else "warning")
+
+    elif action == "send_tutor_logistics_reminder":
+        project_id = request.form.get("project_id", type=int)
+        project = Project.query.get(project_id) if project_id else None
+        if not project:
+            flash("Proyecto no encontrado.", "error")
+        elif not project.advisor_email or not project.advisor_email.strip():
+            flash("El tutor no tiene correo electrónico registrado.", "error")
+        elif not smtp_is_configured():
+            flash("El servidor SMTP no está configurado. Ve a Ajustes → SMTP.", "error")
+        else:
+            missing_group = []
+            if not project.has_real_logo or not project.logistics_logo_ok:
+                missing_group.append("Logo del proyecto")
+            if not project.logistics_document_ok:
+                missing_group.append("Documento escrito")
+            if not project.logistics_registration_form_signed_ok:
+                missing_group.append("Formulario físico de inscripción firmado")
+            if not project.logistics_cedula_tutor_ok:
+                missing_group.append("Cédula del tutor")
+            if not project.logistics_requirements_reviewed_ok:
+                missing_group.append("Revisión de requisitos")
+            member_missing = []
+            for member in sorted(project.members, key=lambda m: m.student_number or 0):
+                items = []
+                if not member.consent_signed_ok:
+                    items.append("Consentimiento informado")
+                if not member.cedula_encargado_ok:
+                    items.append("Cédula del encargado")
+                if not member.cedula_estudiante_ok:
+                    items.append("Cédula del estudiante")
+                if not member.photo_url:
+                    items.append("Foto de perfil")
+                if items:
+                    member_missing.append({"member": member, "items": items})
+            if not missing_group and not member_missing:
+                flash("No hay requisitos pendientes — no se envió correo.", "info")
+            else:
+                from datetime import timedelta
+                institution_name = SystemSetting.get_value("school_name", "ExpoTécnica")
+                active_campaign = Campaign.query.filter_by(is_active=True).first()
+                deadline = None
+                if active_campaign and active_campaign.end_date:
+                    deadline = active_campaign.end_date - timedelta(days=1)
+                html_body = render_template(
+                    "admin/email_tutor_logistics_reminder.html",
+                    project=project,
+                    missing_group=missing_group,
+                    member_missing=member_missing,
+                    deadline=deadline,
+                    institution_name=institution_name,
+                )
+                plain_lines = [
+                    f"Estimado/a {project.advisor_name or 'tutor'},",
+                    f"",
+                    f"El proyecto \"{project.title}\" tiene requisitos logísticos pendientes.",
+                    f"",
+                ]
+                if missing_group:
+                    plain_lines.append("Grupales: " + ", ".join(missing_group))
+                for row in member_missing:
+                    plain_lines.append(f"{row['member'].full_name}: " + ", ".join(row["items"]))
+                plain_lines += ["", "Organización ExpoTécnica", institution_name]
+                plain_body = "\n".join(plain_lines)
+                subject = f"Requisitos logísticos pendientes — {project.title}"
+                ok, err = send_email(project.advisor_email.strip(), subject, plain_body, html_body=html_body)
+                if ok:
+                    log_event(
+                        "admin.project.tutor_reminder_sent",
+                        "project",
+                        entity_id=project.id,
+                        detail=f"Aviso de pendientes enviado a tutor {project.advisor_email} del proyecto #{project.id}",
+                    )
+                    flash(f"Correo enviado a {project.advisor_email}.", "success")
+                else:
+                    flash(f"Error al enviar correo: {err}", "error")
 
     elif action == "upload_project_logo":
         project_id = request.form.get("project_id", type=int)

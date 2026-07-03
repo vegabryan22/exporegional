@@ -447,9 +447,15 @@
                         <span class="check-card-title">Cédula del tutor</span>
                         <span class="check-card-help">Fotocopia de cédula del docente tutor recibida con el formulario.</span>
                     </label>
-                    <div class="logistics-check-card logistics-consent-card">
-                        <span class="check-card-title">Consentimientos informados (ExpoTEC-2)</span>
-                        <span class="check-card-help">Marcar consentimiento y cédulas (estudiante + encargado) por cada estudiante.</span>
+                    <div class="logistics-check-card logistics-consent-card" data-consent-card="project-{{ project.id }}">
+                        <label class="logistics-consent-master-label">
+                            <input type="checkbox" class="logistics-consent-master" data-project="{{ project.id }}"
+                                {% if project.members and project.members | selectattr('consent_signed_ok') | list | length == project.members | length
+                                   and project.members | selectattr('cedula_encargado_ok') | list | length == project.members | length
+                                   and project.members | selectattr('cedula_estudiante_ok') | list | length == project.members | length %}checked{% endif %}>
+                            <span class="check-card-title">Consentimientos informados (ExpoTEC-2)</span>
+                        </label>
+                        <span class="check-card-help">Marcar consentimiento y cédulas (encargado + estudiante) por cada estudiante. El check general se activa cuando todos están completos.</span>
                         <div class="logistics-consent-list">
                             {% for member in project.members | sort(attribute='student_number') %}
                             <div class="logistics-consent-member-row">
@@ -933,6 +939,40 @@
 
         window.addEventListener('hashchange', focusProjectFromHash);
         focusProjectFromHash();
+
+        // ── Consent master checkbox sync ──────────────────────────────────
+        document.querySelectorAll('.logistics-consent-master').forEach(function (master) {
+            var projectId = master.getAttribute('data-project');
+            var card = master.closest('[data-consent-card]');
+            if (!card) { return; }
+
+            function getChildren() {
+                return Array.prototype.slice.call(
+                    card.querySelectorAll('input[name^="consent_member_"], input[name^="cedula_encargado_"], input[name^="cedula_estudiante_"]')
+                );
+            }
+
+            function syncMaster() {
+                var children = getChildren();
+                if (!children.length) { return; }
+                var allChecked = children.every(function (c) { return c.checked; });
+                master.checked = allChecked;
+                master.indeterminate = !allChecked && children.some(function (c) { return c.checked; });
+            }
+
+            // Check all → master triggers children
+            master.addEventListener('change', function () {
+                getChildren().forEach(function (c) { c.checked = master.checked; });
+                master.indeterminate = false;
+            });
+
+            // Any child → update master
+            getChildren().forEach(function (child) {
+                child.addEventListener('change', syncMaster);
+            });
+
+            syncMaster();
+        });
     })();
 </script>
 {% endblock %}

@@ -20,6 +20,8 @@ class ProjectMember(db.Model):
     participates_in_english = db.Column(db.Boolean, default=False, nullable=False)
     consent_signed_ok = db.Column(db.Boolean, default=False, nullable=False)
     cedula_copies_ok = db.Column(db.Boolean, default=False, nullable=False)
+    cedula_encargado_ok = db.Column(db.Boolean, default=False, nullable=False)
+    cedula_estudiante_ok = db.Column(db.Boolean, default=False, nullable=False)
     phone = db.Column(db.String(40), nullable=True)
     email = db.Column(db.String(120), nullable=True)
     role = db.Column(db.String(120), nullable=True)

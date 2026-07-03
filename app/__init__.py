@@ -878,6 +878,18 @@ def ensure_schema_updates():
                     "ALTER TABLE project_members ADD COLUMN cedula_copies_ok TINYINT(1) NOT NULL DEFAULT 0",
                     "project_members.cedula_copies_ok",
                 )
+            if "cedula_encargado_ok" not in pm_cols:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE project_members ADD COLUMN cedula_encargado_ok TINYINT(1) NOT NULL DEFAULT 0",
+                    "project_members.cedula_encargado_ok",
+                )
+            if "cedula_estudiante_ok" not in pm_cols:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE project_members ADD COLUMN cedula_estudiante_ok TINYINT(1) NOT NULL DEFAULT 0",
+                    "project_members.cedula_estudiante_ok",
+                )
 
         if "project_member_edit_requests" in inspector.get_table_names():
             mer_cols = {c["name"] for c in inspector.get_columns("project_member_edit_requests")}

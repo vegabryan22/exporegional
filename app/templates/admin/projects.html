@@ -458,10 +458,16 @@
                                     <span class="logistics-consent-name">{{ member.full_name }}</span>
                                     {% if member.section_name %}<em class="logistics-consent-section">{{ member.section_name }}</em>{% endif %}
                                 </label>
-                                <label class="logistics-consent-cedula">
-                                    <input type="checkbox" name="cedula_member_{{ member.id }}" value="1" {% if member.cedula_copies_ok %}checked{% endif %}>
-                                    <span>Cédulas</span>
-                                </label>
+                                <div class="logistics-consent-cedulas">
+                                    <label class="logistics-consent-cedula">
+                                        <input type="checkbox" name="cedula_encargado_{{ member.id }}" value="1" {% if member.cedula_encargado_ok %}checked{% endif %}>
+                                        <span>Céd. encargado</span>
+                                    </label>
+                                    <label class="logistics-consent-cedula">
+                                        <input type="checkbox" name="cedula_estudiante_{{ member.id }}" value="1" {% if member.cedula_estudiante_ok %}checked{% endif %}>
+                                        <span>Céd. estudiante</span>
+                                    </label>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>

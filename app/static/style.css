@@ -2561,9 +2561,16 @@ th {
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    flex-wrap: wrap;
 }
 .logistics-consent-member-row .logistics-consent-member {
     flex: 1;
+    min-width: 160px;
+}
+.logistics-consent-cedulas {
+    display: flex;
+    gap: 0.35rem;
+    flex-shrink: 0;
 }
 .logistics-consent-cedula {
     display: flex;

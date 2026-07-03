@@ -4049,7 +4049,9 @@ def _handle_action(action: str):
                 # per-member consent and cedula checkboxes
                 for member in project.members:
                     member.consent_signed_ok = _str_to_bool(request.form.get(f"consent_member_{member.id}"))
-                    member.cedula_copies_ok = _str_to_bool(request.form.get(f"cedula_member_{member.id}"))
+                    member.cedula_encargado_ok = _str_to_bool(request.form.get(f"cedula_encargado_{member.id}"))
+                    member.cedula_estudiante_ok = _str_to_bool(request.form.get(f"cedula_estudiante_{member.id}"))
+                    member.cedula_copies_ok = member.cedula_encargado_ok and member.cedula_estudiante_ok
                 project.logistics_student_consents_signed_ok = all(m.consent_signed_ok for m in project.members) if project.members else False
                 missing_items = _project_logistics_missing_items(project)
                 forced_incomplete = False

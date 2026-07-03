@@ -12688,3 +12688,64 @@ body {
         white-space: normal;
     }
 }
+
+/* ── Overview logistics compact summary ─────────────────────────────────── */
+.ov2-block-head-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.ov2-log-progress-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0.6rem 0 0.5rem;
+}
+
+.ov2-log-bar {
+    flex: 1;
+    height: 8px;
+    border-radius: 6px;
+}
+
+.ov2-log-progress-label {
+    font-size: 0.78rem;
+    color: #607998;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ov2-log-mini-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 0.65rem;
+    margin-top: 0.55rem;
+}
+
+.ov2-log-item {
+    font-size: 0.78rem;
+    color: #607998;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.ov2-log-item strong {
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.ov2-log-item.ok strong { color: #1d7a22; }
+.ov2-log-item.bad strong { color: #b01c1c; }
+
+.ov2-log-cta {
+    display: inline-block;
+    margin-top: 0.7rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #0d5fa6;
+    text-decoration: none;
+}
+
+.ov2-log-cta:hover { text-decoration: underline; }

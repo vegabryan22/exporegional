@@ -903,3 +903,44 @@ def ensure_schema_updates():
                     "ALTER TABLE project_member_edit_requests ADD COLUMN justification TEXT NULL",
                     "project_member_edit_requests.justification",
                 )
+
+        # Sincronizar errores de invitación de asistencia desde la bitácora
+        if "system_audit_logs" in inspector.get_table_names() and judge_columns and "attendance_invitation_error" in judge_columns:
+            connection.execute(
+                text(
+                    """
+                    UPDATE judges j
+                    SET attendance_invitation_error = (
+                        SELECT SUBSTRING(sal.detail, 1, 500)
+                        FROM system_audit_logs sal
+                        WHERE sal.entity = 'judge'
+                        AND sal.entity_id = j.id
+                        AND (sal.detail LIKE '%could not be sent%' 
+                             OR sal.detail LIKE '%SMTP%'
+                             OR sal.detail LIKE '%exceeded%')
+                        ORDER BY sal.created_at DESC
+                        LIMIT 1
+                    ),
+                    attendance_invitation_sent_at = COALESCE(
+                        attendance_invitation_sent_at,
+                        (SELECT MAX(sal.created_at)
+                         FROM system_audit_logs sal
+                         WHERE sal.entity = 'judge'
+                         AND sal.entity_id = j.id
+                         AND (sal.detail LIKE '%could not be sent%'
+                              OR sal.detail LIKE '%SMTP%'
+                              OR sal.detail LIKE '%exceeded%')
+                         LIMIT 1)
+                    )
+                    WHERE attendance_invitation_error IS NULL
+                    AND EXISTS (
+                        SELECT 1 FROM system_audit_logs sal
+                        WHERE sal.entity = 'judge'
+                        AND sal.entity_id = j.id
+                        AND (sal.detail LIKE '%could not be sent%'
+                             OR sal.detail LIKE '%SMTP%'
+                             OR sal.detail LIKE '%exceeded%')
+                    )
+                    """
+                )
+            )

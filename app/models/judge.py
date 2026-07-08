@@ -41,6 +41,8 @@ class Judge(UserMixin, db.Model):
     attendance_confirmed = db.Column(db.Boolean, nullable=True)
     needs_parking = db.Column(db.Boolean, default=False, nullable=False)
     attendance_responded_at = db.Column(db.DateTime, nullable=True)
+    attendance_invitation_sent_at = db.Column(db.DateTime, nullable=True)
+    attendance_invitation_error = db.Column(db.Text, nullable=True)
 
     ATTENDANCE_PENDING = None
     ATTENDANCE_YES = True
@@ -61,6 +63,20 @@ class Judge(UserMixin, db.Model):
         if self.attendance_confirmed is False:
             return "off"
         return "neutral"
+
+    @property
+    def has_invitation_error(self) -> bool:
+        """Retorna True si el último envío de invitación tuvo error."""
+        return bool(self.attendance_invitation_error)
+
+    @property
+    def invitation_error_short(self) -> str:
+        """Retorna un resumen del error de invitación para mostrar en UI."""
+        if not self.attendance_invitation_error:
+            return ""
+        # Limita el error a los primeros 200 caracteres
+        error = self.attendance_invitation_error
+        return error[:200] + "..." if len(error) > 200 else error
 
     assignments = db.relationship("Assignment", back_populates="judge", cascade="all, delete-orphan")
     evaluations = db.relationship("Evaluation", back_populates="judge")

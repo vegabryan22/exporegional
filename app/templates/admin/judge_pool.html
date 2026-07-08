@@ -166,8 +166,17 @@
                 {% if judge.attendance_confirmed == true and judge.needs_parking %}
                     <span class="tag neutral">Parqueo</span>
                 {% endif %}
+                {% if judge.has_invitation_error %}
+                    <span class="tag off" title="{{ judge.attendance_invitation_error }}">❌ Error en envío</span>
+                {% endif %}
+                {% if judge.attendance_invitation_sent_at %}
+                    <small>Invitación: {{ judge.attendance_invitation_sent_at | local_datetime }}</small>
+                {% endif %}
                 {% if judge.attendance_responded_at %}
-                    <small>{{ judge.attendance_responded_at | local_datetime }}</small>
+                    <small>Respondió: {{ judge.attendance_responded_at | local_datetime }}</small>
+                {% endif %}
+                {% if judge.has_invitation_error %}
+                    <p style="color:#d32f2f;font-size:0.75rem;margin:0.3rem 0;max-width:90%">{{ judge.invitation_error_short }}</p>
                 {% endif %}
                 <form method="post" action="{{ action_url }}" style="margin-top:0.4rem">
                     <input type="hidden" name="next" value="{{ next_url }}">

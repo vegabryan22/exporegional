@@ -3950,9 +3950,14 @@ def _handle_action(action: str):
             """
             ok, err = send_email(judge.email, subject, body, html_body=html_body)
             if ok:
+                judge.attendance_invitation_sent_at = datetime.now()
+                judge.attendance_invitation_error = None
+                db.session.commit()
                 log_event("admin.judge.attendance_invite", "judge", entity_id=judge.id, detail=f"Invitación de asistencia enviada a {judge.email}")
                 flash(f"Invitación enviada a {judge.email}.", "success")
             else:
+                judge.attendance_invitation_error = err
+                db.session.commit()
                 flash(f"Error al enviar correo: {err}", "error")
 
     elif action == "send_all_attendance_invitations":

@@ -297,6 +297,10 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE judges ADD COLUMN needs_parking TINYINT(1) NOT NULL DEFAULT 0"))
         if "attendance_responded_at" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN attendance_responded_at DATETIME NULL"))
+        if "attendance_invitation_sent_at" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN attendance_invitation_sent_at DATETIME NULL"))
+        if "attendance_invitation_error" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN attendance_invitation_error TEXT NULL"))
         connection.execute(
             text(
                 """

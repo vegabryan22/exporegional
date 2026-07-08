@@ -3991,11 +3991,16 @@ def _handle_action(action: str):
                 <p style="font-size:0.8rem;color:#aac0d8;margin-top:2rem">Enlace personal e intransferible.</p>
             </div>
             """
-            ok, _ = send_email(judge.email, subject, body, html_body=html_body)
+            ok, err = send_email(judge.email, subject, body, html_body=html_body)
             if ok:
+                judge.attendance_invitation_sent_at = datetime.now()
+                judge.attendance_invitation_error = None
                 sent += 1
             else:
+                judge.attendance_invitation_sent_at = datetime.now()
+                judge.attendance_invitation_error = err
                 failed += 1
+        db.session.commit()
         log_event("admin.judge.attendance_invite_all", "judge", detail=f"Invitaciones masivas: {sent} enviadas, {failed} fallidas")
         flash(f"Invitaciones enviadas: {sent} exitosas, {failed} con error.", "success" if failed == 0 else "warning")
 

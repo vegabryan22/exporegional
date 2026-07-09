@@ -475,6 +475,10 @@ def ensure_schema_updates():
                 connection.execute(
                     text("ALTER TABLE assignments ADD COLUMN can_evaluate_exposition BOOLEAN NOT NULL DEFAULT 1")
                 )
+            if "notification_sent_at" not in assignment_columns:
+                connection.execute(text("ALTER TABLE assignments ADD COLUMN notification_sent_at DATETIME NULL"))
+            if "notification_error" not in assignment_columns:
+                connection.execute(text("ALTER TABLE assignments ADD COLUMN notification_error TEXT NULL"))
             connection.execute(
                 text(
                     """
@@ -826,6 +830,18 @@ def ensure_schema_updates():
                     connection,
                     "CREATE INDEX IF NOT EXISTS idx_assignments_status ON assignments (status)",
                     "assignments.status index",
+                )
+            if "notification_sent_at" not in assignment_columns:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE assignments ADD COLUMN notification_sent_at DATETIME NULL",
+                    "assignments.notification_sent_at",
+                )
+            if "notification_error" not in assignment_columns:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE assignments ADD COLUMN notification_error TEXT NULL",
+                    "assignments.notification_error",
                 )
 
         if "project_document_revisions" in inspector.get_table_names():

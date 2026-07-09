@@ -16,6 +16,8 @@ class Assignment(db.Model):
     can_evaluate_documentation = db.Column(db.Boolean, nullable=False, default=True)
     can_evaluate_exposition = db.Column(db.Boolean, nullable=False, default=True)
     status = db.Column(db.String(20), nullable=False, default=STATUS_CONFIRMED, index=True)
+    notification_sent_at = db.Column(db.DateTime, nullable=True)
+    notification_error = db.Column(db.Text, nullable=True)
 
     judge = db.relationship("Judge", back_populates="assignments")
     project = db.relationship("Project", back_populates="assignments")
@@ -33,4 +35,3 @@ class Assignment(db.Model):
         if self.can_evaluate_exposition:
             return "Solo exposición"
         return "Sin alcance"
-

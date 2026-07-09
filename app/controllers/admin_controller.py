@@ -192,6 +192,7 @@ ACTION_MODULE_MAP = {
     "auto_assign": "assignments",
     "confirm_draft_assignments": "assignments",
     "discard_draft_assignments": "assignments",
+    "send_confirmed_assignment_notifications": "assignments",
     "create_judge": "judges",
     "update_judge": "judges",
     "reset_judge_password": "judges",
@@ -3019,7 +3020,9 @@ def _create_or_update_judge_from_form(payload: dict):
 
 def _send_assignment_email(judge: Judge, project: Project, assignment: Assignment | None = None):
     if not smtp_is_configured():
-        return
+        if assignment:
+            assignment.notification_error = "SMTP no configurado"
+        return False
 
     scope_label = assignment.scope_label if assignment else "Documento y exposición"
     panel_url = url_for("judge.dashboard", _external=True)
@@ -3057,8 +3060,22 @@ def _send_assignment_email(judge: Judge, project: Project, assignment: Assignmen
         project_type_label=project_type_label,
     )
     ok, error = send_email(judge.email, subject, body, html_body=html_body)
+    if ok and assignment:
+        assignment.notification_sent_at = datetime.now()
+        assignment.notification_error = None
+    elif assignment:
+        assignment.notification_error = error
     if not ok:
         flash(f"No se pudo enviar correo de asignación: {error}", "error")
+    return ok
+
+
+def _send_assignment_email_if_allowed(judge: Judge, project: Project, assignment: Assignment | None = None):
+    if assignment and assignment.notification_sent_at:
+        return False
+    if judge.attendance_confirmed is not True:
+        return False
+    return _send_assignment_email(judge, project, assignment)
 
 
 def _build_assignment_email_html(
@@ -3442,7 +3459,8 @@ def _handle_action(action: str):
             if created_assignments:
                 db.session.commit()
                 for assignment in created_assignments:
-                    _send_assignment_email(judge, assignment.project, assignment)
+                    _send_assignment_email_if_allowed(judge, assignment.project, assignment)
+                db.session.commit()
                 flash(f"Asignaciones creadas: {len(created_assignments)}.", "success")
             elif skipped_projects:
                 flash("Las asignaciones seleccionadas ya existian.", "error")
@@ -3607,11 +3625,42 @@ def _handle_action(action: str):
             log_event(
                 "admin.assignment.confirm_drafts",
                 "assignment",
-                detail=f"Confirmadas {len(drafts)} asignaciones en borrador. Se envían correos.",
+                detail=f"Confirmadas {len(drafts)} asignaciones en borrador. Pendientes de notificación a jueces confirmados.",
             )
-            for assignment in drafts:
-                _send_assignment_email(assignment.judge, assignment.project, assignment)
-            flash(f"{len(drafts)} asignación(es) confirmadas. Se notificó a los jueces por correo.", "success")
+            flash(f"{len(drafts)} asignación(es) confirmadas. Usa 'Notificar confirmados' para enviar solo a jueces que confirmaron asistencia.", "success")
+
+    elif action == "send_confirmed_assignment_notifications":
+        pending_assignments = (
+            Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project))
+            .join(Judge, Judge.id == Assignment.judge_id)
+            .filter(
+                Assignment.status == Assignment.STATUS_CONFIRMED,
+                Assignment.notification_sent_at.is_(None),
+                Judge.attendance_confirmed == True,  # noqa: E712
+                Judge.is_active_user == True,  # noqa: E712
+            )
+            .all()
+        )
+        if not pending_assignments:
+            flash("No hay asignaciones pendientes de notificar a jueces con asistencia confirmada.", "warning")
+        else:
+            sent = 0
+            failed = 0
+            for assignment in pending_assignments:
+                if _send_assignment_email(assignment.judge, assignment.project, assignment):
+                    sent += 1
+                else:
+                    failed += 1
+            db.session.commit()
+            log_event(
+                "admin.assignment.notify_confirmed",
+                "assignment",
+                detail=f"Notificaciones de asignación a jueces confirmados: {sent} enviadas, {failed} fallidas.",
+            )
+            flash(
+                f"Notificaciones enviadas a jueces confirmados: {sent} exitosas, {failed} con error.",
+                "success" if failed == 0 else "warning",
+            )
 
     elif action == "discard_draft_assignments":
         deleted = Assignment.query.filter_by(status=Assignment.STATUS_DRAFT).delete()
@@ -3672,7 +3721,8 @@ def _handle_action(action: str):
             )
             db.session.commit()
             if judge and previous_judge.id != judge.id:
-                _send_assignment_email(judge, assignment.project, assignment)
+                _send_assignment_email_if_allowed(judge, assignment.project, assignment)
+                db.session.commit()
             flash("Asignacion actualizada correctamente.", "success")
 
     elif action == "quick_create_assignment_judge":
@@ -3742,7 +3792,8 @@ def _handle_action(action: str):
             )
             db.session.commit()
             _send_judge_credentials_email(judge, password_value)
-            _send_assignment_email(judge, project, assignment)
+            _send_assignment_email_if_allowed(judge, project, assignment)
+            db.session.commit()
             flash("Juez creado y asignado correctamente.", "success")
 
     elif action == "create_judge":

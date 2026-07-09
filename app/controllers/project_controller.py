@@ -1643,7 +1643,11 @@ def evaluate_project_entry(project_id: int):
     if getattr(current_user, "has_admin_access", False):
         return redirect(url_for("admin.projects_page"))
 
-    assignment = Assignment.query.filter_by(judge_id=current_user.id, project_id=project.id).first()
+    assignment = Assignment.query.filter_by(
+        judge_id=current_user.id,
+        project_id=project.id,
+        status=Assignment.STATUS_CONFIRMED,
+    ).first()
     if not assignment:
         flash("No tienes este proyecto asignado para evaluacion.", "error")
         return redirect(url_for("judge.dashboard"))
@@ -1847,11 +1851,46 @@ def judge_attendance_confirm(token: str):
     if request.method == "POST":
         confirmed = request.form.get("attendance") == "yes"
         needs_parking = request.form.get("needs_parking") == "1"
+        evaluation_scope = (request.form.get("evaluation_scope") or "ambas").strip().lower()
+        category_scope = (request.form.get("category_scope") or "ambas").strip().lower()
+        can_evaluate_english = request.form.get("can_evaluate_english") == "1"
+
+        if category_scope not in {"steam", "emprendimiento", "ambas"}:
+            category_scope = "ambas"
+        if evaluation_scope == "documento":
+            can_evaluate_documentation = True
+            can_evaluate_exposition = False
+        elif evaluation_scope == "exposicion":
+            can_evaluate_documentation = False
+            can_evaluate_exposition = True
+        else:
+            can_evaluate_documentation = True
+            can_evaluate_exposition = True
+
+        judge.job_title = (request.form.get("job_title") or "").strip()
+        judge.institution = (request.form.get("institution") or "").strip()
+        judge.phone = (request.form.get("phone") or "").strip()
+        judge.category_scope = category_scope
+        judge.can_evaluate_documentation = can_evaluate_documentation
+        judge.can_evaluate_exposition = can_evaluate_exposition
+        judge.can_evaluate_english = can_evaluate_english
         judge.attendance_confirmed = confirmed
         judge.needs_parking = needs_parking
         judge.attendance_responded_at = _dt.utcnow()
         if not confirmed:
             judge.is_active_user = False
+        else:
+            judge.is_active_user = True
+        log_event(
+            "judge.attendance.confirm",
+            "judge",
+            entity_id=judge.id,
+            detail=(
+                f"Asistencia={'si' if confirmed else 'no'}, categoria={judge.category_scope}, "
+                f"documento={judge.can_evaluate_documentation}, exposicion={judge.can_evaluate_exposition}, "
+                f"ingles={judge.can_evaluate_english}"
+            ),
+        )
         db.session.commit()
         return render_template(
             "public/attendance_thanks.html",

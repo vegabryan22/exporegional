@@ -3836,7 +3836,7 @@ dialog.maintenance-dialog::backdrop {
 
 .judge-pool-card {
     display: grid;
-    grid-template-columns: minmax(220px, 0.9fr) minmax(260px, 1.35fr) minmax(150px, 0.45fr);
+    grid-template-columns: minmax(220px, 0.9fr) minmax(260px, 1.35fr) minmax(150px, 0.45fr) minmax(190px, 0.55fr);
     gap: 0.85rem;
     align-items: stretch;
 }
@@ -3858,10 +3858,12 @@ dialog.maintenance-dialog::backdrop {
     border: 1px solid #d7e5f5;
     border-radius: 16px;
     background: #f8fbff;
-    padding: 0.9rem;
+    padding: 0.75rem 0.85rem;
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.28rem;
+    justify-content: center;
+    min-width: 0;
 }
 .judge-pool-attendance > span:first-child {
     font-size: 0.7rem;
@@ -3873,6 +3875,27 @@ dialog.maintenance-dialog::backdrop {
 .judge-pool-attendance small {
     font-size: 0.72rem;
     color: #9ab5cc;
+}
+
+.judge-pool-attendance .tag {
+    align-self: flex-start;
+}
+
+.judge-pool-attendance p {
+    color: #d32f2f;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    margin: 0.15rem 0 0;
+    overflow-wrap: anywhere;
+}
+
+.judge-pool-attendance form {
+    margin-top: 0.25rem !important;
+}
+
+.judge-pool-attendance .ghost-btn {
+    font-size: 0.74rem !important;
+    padding: 0.42rem 0.65rem;
 }
 
 .judge-pool-identity h4,
@@ -4701,6 +4724,24 @@ dialog.maintenance-dialog::backdrop {
 .attendance-option-icon { font-size: 1.1rem; }
 .attendance-option-yes .attendance-option-icon { color: #1a7f4b; }
 .attendance-option-no .attendance-option-icon { color: #c0392b; }
+.attendance-profile-grid {
+    display: grid;
+    gap: 0.7rem;
+}
+.attendance-profile-grid label {
+    display: grid;
+    gap: 0.35rem;
+    color: #1a4a7a;
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+.attendance-profile-grid input {
+    border: 1px solid #cbdced;
+    border-radius: 10px;
+    padding: 0.68rem 0.75rem;
+    color: #123b5f;
+    font: inherit;
+}
 .attendance-parking-check {
     display: flex;
     align-items: center;

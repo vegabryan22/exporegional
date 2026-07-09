@@ -65,7 +65,7 @@ def _resolve_scale(eval_type_obj, criteria):
 @login_required
 def dashboard():
     assignments = (
-        Assignment.query.filter_by(judge_id=current_user.id)
+        Assignment.query.filter_by(judge_id=current_user.id, status=Assignment.STATUS_CONFIRMED)
         .join(Project, Project.id == Assignment.project_id)
         .order_by(Project.created_at.desc())
         .all()
@@ -123,7 +123,11 @@ def profile():
 @login_required
 def project_document(project_id: int):
     project = Project.query.get_or_404(project_id)
-    assignment = Assignment.query.filter_by(judge_id=current_user.id, project_id=project_id).first()
+    assignment = Assignment.query.filter_by(
+        judge_id=current_user.id,
+        project_id=project_id,
+        status=Assignment.STATUS_CONFIRMED,
+    ).first()
     if not assignment:
         abort(403, "No tienes permiso para ver este documento.")
     if not project.project_document_path:
@@ -146,7 +150,11 @@ def evaluate(project_id: int):
     if eval_type not in eval_type_map:
         abort(400, "Tipo de evaluacion invalido.")
 
-    assignment = Assignment.query.filter_by(judge_id=current_user.id, project_id=project_id).first()
+    assignment = Assignment.query.filter_by(
+        judge_id=current_user.id,
+        project_id=project_id,
+        status=Assignment.STATUS_CONFIRMED,
+    ).first()
     if not assignment:
         abort(403, "No tienes permiso para evaluar este proyecto.")
     if not assignment_allows_evaluation_type(assignment, eval_type_map[eval_type]):

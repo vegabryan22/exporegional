@@ -44,6 +44,73 @@
             </fieldset>
 
             <fieldset class="attendance-fieldset">
+                <legend>Confirme sus datos profesionales</legend>
+                <div class="attendance-profile-grid">
+                    <label>Profesi&oacute;n o &aacute;rea t&eacute;cnica
+                        <input type="text" name="job_title" value="{{ judge.job_title or '' }}" required>
+                    </label>
+                    <label>Instituci&oacute;n o empresa
+                        <input type="text" name="institution" value="{{ judge.institution or '' }}" required>
+                    </label>
+                    <label>Tel&eacute;fono
+                        <input type="text" name="phone" value="{{ judge.phone or '' }}">
+                    </label>
+                </div>
+            </fieldset>
+
+            <fieldset class="attendance-fieldset">
+                <legend>&iquest;Qu&eacute; categor&iacute;as puede evaluar?</legend>
+                <label class="attendance-option">
+                    <input type="radio" name="category_scope" value="ambas" required
+                        {% if judge.category_scope_normalized == 'ambas' %}checked{% endif %}>
+                    <span class="attendance-option-label">Ambas categor&iacute;as</span>
+                </label>
+                <label class="attendance-option">
+                    <input type="radio" name="category_scope" value="steam"
+                        {% if judge.category_scope_normalized == 'steam' %}checked{% endif %}>
+                    <span class="attendance-option-label">Solo STEAM</span>
+                </label>
+                <label class="attendance-option">
+                    <input type="radio" name="category_scope" value="emprendimiento"
+                        {% if judge.category_scope_normalized == 'emprendimiento' %}checked{% endif %}>
+                    <span class="attendance-option-label">Solo Emprendimiento</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="attendance-fieldset">
+                <legend>&iquest;Qu&eacute; puede evaluar?</legend>
+                <label class="attendance-option">
+                    <input type="radio" name="evaluation_scope" value="ambas" required
+                        {% if judge.can_evaluate_documentation and judge.can_evaluate_exposition %}checked{% endif %}>
+                    <span class="attendance-option-label">Documento escrito y exposici&oacute;n oral</span>
+                </label>
+                <label class="attendance-option">
+                    <input type="radio" name="evaluation_scope" value="documento"
+                        {% if judge.can_evaluate_documentation and not judge.can_evaluate_exposition %}checked{% endif %}>
+                    <span class="attendance-option-label">Solo documento escrito</span>
+                </label>
+                <label class="attendance-option">
+                    <input type="radio" name="evaluation_scope" value="exposicion"
+                        {% if judge.can_evaluate_exposition and not judge.can_evaluate_documentation %}checked{% endif %}>
+                    <span class="attendance-option-label">Solo exposici&oacute;n oral</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="attendance-fieldset">
+                <legend>&iquest;Puede evaluar exposici&oacute;n en ingl&eacute;s?</legend>
+                <label class="attendance-option">
+                    <input type="radio" name="can_evaluate_english" value="1" required
+                        {% if judge.can_evaluate_english %}checked{% endif %}>
+                    <span class="attendance-option-label">S&iacute;, puedo evaluar en ingl&eacute;s</span>
+                </label>
+                <label class="attendance-option">
+                    <input type="radio" name="can_evaluate_english" value="0"
+                        {% if not judge.can_evaluate_english %}checked{% endif %}>
+                    <span class="attendance-option-label">No eval&uacute;o en ingl&eacute;s</span>
+                </label>
+            </fieldset>
+
+            <fieldset class="attendance-fieldset">
                 <legend>¿Requiere espacio de parqueo?</legend>
                 <label class="attendance-parking-check">
                     <input type="checkbox" name="needs_parking" value="1"

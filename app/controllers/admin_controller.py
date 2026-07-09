@@ -48,6 +48,7 @@ from app.services.evaluation_service import (
     ENGLISH_EVAL_TYPE_CODE,
     assignment_allows_evaluation_type,
     build_admin_evaluation_overview,
+    get_assignment_evaluation_entries,
     get_project_available_evaluation_types,
     infer_evaluation_type_kind,
 )
@@ -340,25 +341,33 @@ def _assignment_compatibility_error(
         return f"{judge.full_name} no indicó disponibilidad para evaluar documento escrito."
     if can_exposition and not judge.can_evaluate_exposition:
         return f"{judge.full_name} no indicó disponibilidad para evaluar exposición oral."
-    if _project_requires_english(project) and not judge.can_evaluate_english:
-        return f"{project.title} requiere evaluación en inglés y {judge.full_name} indicó que no evalúa inglés."
     if not judge.can_evaluate_category(project.category):
         return f"{judge.full_name} no está clasificado para la categoría {project.category}."
     return ""
 
 
 def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int, int]:
-    """Assign up to max_per_project judges per project ensuring both doc and expo
-    are covered collectively. Single-dimension judges are paired with complementary
-    ones. 'Ambos' judges are preferred. Soft cap of 3 projects per judge.
-    Returns (created_count, skipped_count)."""
+    """Create draft assignments prioritizing coverage and broad judge participation.
+
+    Rules:
+    - English projects get at least one English-capable exposition judge when possible.
+    - Documentation is assigned first to documentation-only judges when available.
+    - Projects covered only by documentation receive an exposition-capable judge next.
+    - Remaining slots are filled by least-loaded judges so more judges participate.
+    """
     SOFT_CAP = 3
 
     if replace_drafts:
         Assignment.query.filter_by(status=Assignment.STATUS_DRAFT).delete()
         db.session.flush()
 
-    active_projects = Project.query.filter(Project.is_active == True).all()  # noqa: E712
+    active_projects = (
+        Project.query.options(joinedload(Project.members), joinedload(Project.assignments).joinedload(Assignment.judge))
+        .filter(Project.is_active == True)  # noqa: E712
+        .all()
+    )
+    active_projects.sort(key=lambda project: (not _project_requires_english(project), project.created_at or datetime.min))
+
     eligible_judges = Judge.query.filter(
         Judge.is_active_user == True,  # noqa: E712
         Judge.role == Judge.ROLE_JUDGE,
@@ -367,103 +376,146 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
         return 0, 0
 
     judge_load: dict[int, int] = {
-        j.id: Assignment.query.filter_by(judge_id=j.id).count()
-        for j in eligible_judges
+        judge.id: Assignment.query.filter_by(judge_id=judge.id).count()
+        for judge in eligible_judges
     }
 
     created = 0
     skipped = 0
 
+    def assignment_covers_english(assignment: Assignment) -> bool:
+        return bool(
+            assignment.can_evaluate_exposition
+            and assignment.judge
+            and assignment.judge.can_evaluate_english
+        )
+
+    def specialty_rank(judge: Judge, preferred_scope: str) -> int:
+        doc_only = judge.can_evaluate_documentation and not judge.can_evaluate_exposition
+        expo_only = judge.can_evaluate_exposition and not judge.can_evaluate_documentation
+        both = judge.can_evaluate_documentation and judge.can_evaluate_exposition
+        if preferred_scope == "documentacion":
+            if doc_only:
+                return 0
+            if both:
+                return 1
+            return 2
+        if preferred_scope == "exposicion":
+            if expo_only:
+                return 0
+            if both:
+                return 1
+            return 2
+        if preferred_scope == "ingles":
+            if judge.can_evaluate_english and both:
+                return 0
+            if judge.can_evaluate_english:
+                return 1
+            return 2
+        return 0
+
+    def judge_sort_key(judge: Judge, preferred_scope: str):
+        load = judge_load.get(judge.id, 0)
+        has_load = 1 if load else 0
+        over_cap = 1 if load >= SOFT_CAP else 0
+        return (has_load, over_cap, specialty_rank(judge, preferred_scope), load, judge.full_name or "")
+
     for project in active_projects:
-        existing = Assignment.query.filter_by(project_id=project.id).all()
-        confirmed = [a for a in existing if a.status == Assignment.STATUS_CONFIRMED]
-        existing_drafts = [a for a in existing if a.status == Assignment.STATUS_DRAFT]
-        slots = max_per_project - len(confirmed) - len(existing_drafts)
+        existing = Assignment.query.options(joinedload(Assignment.judge)).filter_by(project_id=project.id).all()
+        confirmed = [assignment for assignment in existing if assignment.status == Assignment.STATUS_CONFIRMED]
+        existing_drafts = [assignment for assignment in existing if assignment.status == Assignment.STATUS_DRAFT]
+        active_existing = confirmed + existing_drafts
+        slots = max_per_project - len(active_existing)
         if slots <= 0:
             skipped += 1
             continue
 
-        # Running coverage counts from confirmed + existing drafts
-        doc_count = sum(1 for a in confirmed + existing_drafts if a.can_evaluate_documentation)
-        expo_count = sum(1 for a in confirmed + existing_drafts if a.can_evaluate_exposition)
-        already_assigned_ids = {a.judge_id for a in existing}
+        doc_count = sum(1 for assignment in active_existing if assignment.can_evaluate_documentation)
+        expo_count = sum(1 for assignment in active_existing if assignment.can_evaluate_exposition)
+        english_count = sum(1 for assignment in active_existing if assignment_covers_english(assignment))
+        already_assigned_ids = {assignment.judge_id for assignment in existing}
         needs_english = _project_requires_english(project)
         new_assignments: list[Assignment] = []
 
-        def compatible(j) -> bool:
-            if j.id in already_assigned_ids:
+        def compatible(judge: Judge, required_scope: str | None = None) -> bool:
+            if judge.id in already_assigned_ids:
                 return False
-            if not j.can_evaluate_category(project.category):
+            if not judge.can_evaluate_category(project.category):
                 return False
-            return bool(j.can_evaluate_documentation or j.can_evaluate_exposition)
+            if required_scope == "documentacion" and not judge.can_evaluate_documentation:
+                return False
+            if required_scope == "exposicion" and not judge.can_evaluate_exposition:
+                return False
+            if required_scope == "ingles" and not (judge.can_evaluate_english and judge.can_evaluate_exposition):
+                return False
+            return bool(judge.can_evaluate_documentation or judge.can_evaluate_exposition)
 
-        def base_sort(j):
-            over_cap = 1 if judge_load.get(j.id, 0) >= SOFT_CAP else 0
-            not_both = 0 if (j.can_evaluate_documentation and j.can_evaluate_exposition) else 1
-            no_english = 1 if (needs_english and not j.can_evaluate_english) else 0
-            return (over_cap, not_both, no_english, judge_load.get(j.id, 0))
+        def pick(required_scope: str | None = None, preferred_scope: str | None = None):
+            preferred = preferred_scope or required_scope or "general"
+            candidates = [judge for judge in eligible_judges if compatible(judge, required_scope)]
+            if not candidates:
+                return None
+            return sorted(candidates, key=lambda judge: judge_sort_key(judge, preferred))[0]
 
-        def pools():
-            cands = sorted([j for j in eligible_judges if compatible(j)], key=base_sort)
-            both = [j for j in cands if j.can_evaluate_documentation and j.can_evaluate_exposition]
-            doc  = [j for j in cands if j.can_evaluate_documentation and not j.can_evaluate_exposition]
-            expo = [j for j in cands if not j.can_evaluate_documentation and j.can_evaluate_exposition]
-            return both, doc, expo
-
-        def assign(judge):
-            nonlocal doc_count, expo_count, slots
-            a = Assignment(
+        def assign(judge: Judge):
+            nonlocal doc_count, expo_count, english_count, slots
+            can_documentation = bool(judge.can_evaluate_documentation)
+            can_exposition = bool(judge.can_evaluate_exposition)
+            assignment = Assignment(
                 judge_id=judge.id,
                 project_id=project.id,
-                can_evaluate_documentation=judge.can_evaluate_documentation,
-                can_evaluate_exposition=judge.can_evaluate_exposition,
+                can_evaluate_documentation=can_documentation,
+                can_evaluate_exposition=can_exposition,
                 status=Assignment.STATUS_DRAFT,
             )
-            db.session.add(a)
+            assignment.judge = judge
+            db.session.add(assignment)
             judge_load[judge.id] = judge_load.get(judge.id, 0) + 1
             already_assigned_ids.add(judge.id)
-            new_assignments.append(a)
+            new_assignments.append(assignment)
             slots -= 1
-            if judge.can_evaluate_documentation:
+            if can_documentation:
                 doc_count += 1
-            if judge.can_evaluate_exposition:
+            if can_exposition:
                 expo_count += 1
+            if can_exposition and judge.can_evaluate_english:
+                english_count += 1
 
-        # Phase 1: guarantee at least one judge covers doc
+        if needs_english and english_count == 0 and slots > 0:
+            english_judge = pick("ingles", "ingles")
+            if english_judge:
+                assign(english_judge)
+
         if doc_count == 0 and slots > 0:
-            both, doc, _ = pools()
-            pick = (both or doc or [None])[0]
-            if pick:
-                assign(pick)
+            doc_judge = pick("documentacion", "documentacion")
+            if doc_judge:
+                assign(doc_judge)
 
-        # Phase 2: guarantee at least one judge covers expo
         if expo_count == 0 and slots > 0:
-            both, _, expo = pools()
-            pick = (both or expo or [None])[0]
-            if pick:
-                assign(pick)
+            expo_judge = pick("exposicion", "exposicion")
+            if expo_judge:
+                assign(expo_judge)
 
-        # Phase 3: fill remaining slots with balanced doc/expo distribution
         while slots > 0:
-            both, doc, expo = pools()
-            if not both and not doc and not expo:
-                break
-            # Decide priority based on which dimension has less coverage
-            if doc_count <= expo_count:
-                # Need more doc coverage: prefer ambos, then doc-only, then expo-only
-                pick = (both or doc or expo or [None])[0]
+            if needs_english and english_count == 0:
+                next_judge = pick("ingles", "ingles")
+            elif doc_count <= expo_count:
+                next_judge = pick("documentacion", "documentacion") or pick("exposicion", "exposicion")
             else:
-                # Need more expo coverage: prefer ambos, then expo-only, then doc-only
-                pick = (both or expo or doc or [None])[0]
-            if pick is None:
+                next_judge = pick("exposicion", "exposicion") or pick("documentacion", "documentacion")
+            if not next_judge:
+                next_judge = pick(None, "general")
+            if not next_judge:
                 break
-            assign(pick)
+            assign(next_judge)
 
-        created += len(new_assignments)
+        if new_assignments:
+            created += len(new_assignments)
+        else:
+            skipped += 1
 
     db.session.commit()
     return created, skipped
-
 
 def _build_default_department_access():
     return {dept: sorted(modules) for dept, modules in ADMIN_DEPARTMENT_MODULE_ACCESS.items()}
@@ -3506,10 +3558,44 @@ def _handle_action(action: str):
             flash("No se generaron nuevas asignaciones. Verifica que haya jueces activos y proyectos disponibles.", "error")
 
     elif action == "confirm_draft_assignments":
-        drafts = Assignment.query.filter_by(status=Assignment.STATUS_DRAFT).all()
+        drafts = (
+            Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project).joinedload(Project.members))
+            .filter_by(status=Assignment.STATUS_DRAFT)
+            .all()
+        )
         if not drafts:
             flash("No hay asignaciones en borrador para confirmar.", "error")
         else:
+            draft_project_ids = {assignment.project_id for assignment in drafts}
+            english_projects_without_judge = []
+            for project_id in draft_project_ids:
+                project_assignments = (
+                    Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project).joinedload(Project.members))
+                    .filter(
+                        Assignment.project_id == project_id,
+                        Assignment.status.in_([Assignment.STATUS_CONFIRMED, Assignment.STATUS_DRAFT]),
+                    )
+                    .all()
+                )
+                project = project_assignments[0].project if project_assignments else None
+                if (
+                    project
+                    and _project_requires_english(project)
+                    and not any(
+                        assignment.can_evaluate_exposition
+                        and assignment.judge
+                        and assignment.judge.can_evaluate_english
+                        for assignment in project_assignments
+                    )
+                ):
+                    english_projects_without_judge.append(project.title)
+            if english_projects_without_judge:
+                flash(
+                    "No se pueden confirmar borradores: estos proyectos requieren al menos un juez de exposición en inglés: "
+                    + ", ".join(english_projects_without_judge[:5]),
+                    "error",
+                )
+                return
             for assignment in drafts:
                 assignment.status = Assignment.STATUS_CONFIRMED
             db.session.commit()
@@ -5887,7 +5973,14 @@ def _base_context(active_page: str, **kwargs):
             .order_by(ProjectMemberEditRequest.created_at.asc())
             .all()
         )
-        assignments = Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project)).order_by(Assignment.id.desc()).all()
+        assignments = (
+            Assignment.query.options(
+                joinedload(Assignment.judge),
+                joinedload(Assignment.project).joinedload(Project.members),
+            )
+            .order_by(Assignment.id.desc())
+            .all()
+        )
         evaluation_types = EvaluationType.query.options(joinedload(EvaluationType.rubric_criteria)).order_by(EvaluationType.sort_order.asc(), EvaluationType.name.asc()).all()
         exposition_evaluation_types = [
             eval_type
@@ -6469,16 +6562,42 @@ def _build_assignments_report_rows(context: dict) -> list[dict]:
             a for a in context.get("assignments", [])
             if a.judge_id == judge.id
         ]
-        for a in assignments:
-            project = project_map.get(a.project_id)
+        if not assignments:
             rows.append({
                 "judge_name": judge.full_name,
                 "judge_email": judge.email,
                 "eval_scope": judge.evaluation_scope_label,
                 "category_scope": judge.category_scope_label,
+                "assignment_scope": "Sin asignación",
+                "evaluation_items": "Sin evaluaciones asignadas",
+                "evaluates_documentation": "No",
+                "evaluates_exposition": "No",
+                "evaluates_english": "No",
+                "project_title": "Sin proyecto asignado",
+                "project_category": "—",
+                "project_english": "No",
+                "status": "Sin asignación",
+                "assignment_total": 0,
+            })
+        for a in assignments:
+            project = project_map.get(a.project_id)
+            evaluation_entries = get_assignment_evaluation_entries(a)
+            evaluation_labels = [entry["label"] for entry in evaluation_entries]
+            rows.append({
+                "judge_name": judge.full_name,
+                "judge_email": judge.email,
+                "eval_scope": judge.evaluation_scope_label,
+                "category_scope": judge.category_scope_label,
+                "assignment_scope": a.scope_label,
+                "evaluation_items": ", ".join(evaluation_labels) if evaluation_labels else "Sin evaluaciones disponibles",
+                "evaluates_documentation": "Sí" if a.can_evaluate_documentation else "No",
+                "evaluates_exposition": "Sí" if a.can_evaluate_exposition else "No",
+                "evaluates_english": "Sí" if any(entry["code"] == ENGLISH_EVAL_TYPE_CODE for entry in evaluation_entries) else "No",
                 "project_title": project.title if project else f"Proyecto #{a.project_id}",
                 "project_category": category_map.get(project.category, project.category) if project else "—",
+                "project_english": "Sí" if project and project.requires_english_evaluation else "No",
                 "status": "Borrador" if a.is_draft else "Confirmado",
+                "assignment_total": 1,
             })
     rows.sort(key=lambda r: (r["judge_name"], r["project_title"]))
     return rows
@@ -6504,8 +6623,8 @@ def assignments_report_excel():
     ws = wb.active
     ws.title = "Asignaciones"
 
-    headers = ["Juez", "Correo", "Alcance evaluación", "Alcance categoría", "Proyecto", "Categoría proyecto", "Estado"]
-    col_widths = [30, 36, 22, 20, 55, 20, 14]
+    headers = ["Juez", "Correo", "Disponibilidad juez", "Categorías juez", "Asignación evalúa", "Evaluaciones específicas", "Doc", "Expo", "Inglés", "Proyecto", "Categoría proyecto", "Proyecto inglés", "Estado"]
+    col_widths = [30, 36, 24, 20, 24, 48, 10, 10, 10, 55, 20, 16, 14]
 
     header_fill = PatternFill("solid", fgColor="1A4A7A")
     header_font = Font(bold=True, color="FFFFFF", size=10)
@@ -6528,8 +6647,9 @@ def assignments_report_excel():
     for row in rows:
         ws.append([
             row["judge_name"], row["judge_email"], row["eval_scope"],
-            row["category_scope"], row["project_title"],
-            row["project_category"], row["status"],
+            row["category_scope"], row["assignment_scope"], row["evaluation_items"],
+            row["evaluates_documentation"], row["evaluates_exposition"], row["evaluates_english"],
+            row["project_title"], row["project_category"], row["project_english"], row["status"],
         ])
         r = ws.max_row
         is_draft = row["status"] == "Borrador"
@@ -6557,16 +6677,25 @@ def assignments_report_excel():
     for row in rows:
         key = row["judge_name"]
         if key not in summary:
-            summary[key] = {"Juez": key, "Correo": row["judge_email"],
-                            "Alcance": row["eval_scope"], "Confirmadas": 0, "Borradores": 0, "Total": 0}
+            summary[key] = {
+                "Juez": key, "Correo": row["judge_email"], "Alcance": row["eval_scope"],
+                "Documentación": 0, "Exposición": 0, "Inglés": 0,
+                "Confirmadas": 0, "Borradores": 0, "Total": 0,
+            }
+        if row["evaluates_documentation"] == "Sí":
+            summary[key]["Documentación"] += 1
+        if row["evaluates_exposition"] == "Sí":
+            summary[key]["Exposición"] += 1
+        if row["evaluates_english"] == "Sí":
+            summary[key]["Inglés"] += 1
         if row["status"] == "Confirmado":
             summary[key]["Confirmadas"] += 1
-        else:
+        elif row["status"] == "Borrador":
             summary[key]["Borradores"] += 1
-        summary[key]["Total"] += 1
+        summary[key]["Total"] += row.get("assignment_total", 1)
 
-    summary_headers = ["Juez", "Correo", "Alcance", "Confirmadas", "Borradores", "Total"]
-    summary_widths  = [30, 36, 22, 14, 14, 10]
+    summary_headers = ["Juez", "Correo", "Alcance", "Documentación", "Exposición", "Inglés", "Confirmadas", "Borradores", "Total"]
+    summary_widths  = [30, 36, 22, 16, 14, 12, 14, 14, 10]
     ws2.append(summary_headers)
     for col_idx, (h, w) in enumerate(zip(summary_headers, summary_widths), start=1):
         cell = ws2.cell(row=1, column=col_idx)
@@ -6577,7 +6706,7 @@ def assignments_report_excel():
         ws2.column_dimensions[get_column_letter(col_idx)].width = w
 
     for s in sorted(summary.values(), key=lambda x: -x["Total"]):
-        ws2.append([s["Juez"], s["Correo"], s["Alcance"], s["Confirmadas"], s["Borradores"], s["Total"]])
+        ws2.append([s["Juez"], s["Correo"], s["Alcance"], s["Documentación"], s["Exposición"], s["Inglés"], s["Confirmadas"], s["Borradores"], s["Total"]])
         r = ws2.max_row
         for col_idx in range(1, len(summary_headers) + 1):
             ws2.cell(row=r, column=col_idx).border = border

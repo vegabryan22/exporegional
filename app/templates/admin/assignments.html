@@ -146,7 +146,7 @@
                                     <select name="judge_id" data-judge-scope-select>
                                         <option value="">Mantener juez actual</option>
                                         {% for judge in judges %}
-                                            {% if judge.is_active_user and judge.effective_role == 'judge' and (not project.requires_english_evaluation or judge.can_evaluate_english) %}
+                                            {% if judge.is_active_user and judge.effective_role == 'judge' %}
                                                 <option
                                                     value="{{ judge.id }}"
                                                     data-can-documentation="{{ 1 if judge.can_evaluate_documentation else 0 }}"
@@ -194,7 +194,7 @@
                             <select name="judge_id" required data-judge-scope-select>
                                 <option value="">Seleccione...</option>
                                 {% for judge in judges %}
-                                    {% if judge.is_active_user and judge.effective_role == 'judge' and (not project.requires_english_evaluation or judge.can_evaluate_english) %}
+                                    {% if judge.is_active_user and judge.effective_role == 'judge' %}
                                         <option
                                             value="{{ judge.id }}"
                                             data-can-documentation="{{ 1 if judge.can_evaluate_documentation else 0 }}"
@@ -500,31 +500,21 @@
         var judgeId = judgeSelect ? judgeSelect.value : '';
         var assignedProjects = assignmentMap[judgeId] || [];
         var assignedSet = new Set(assignedProjects.map(String));
-        var selectedJudge = judgeSelect && judgeSelect.selectedIndex >= 0 ? judgeSelect.options[judgeSelect.selectedIndex] : null;
-        var canEnglish = !selectedJudge || selectedJudge.dataset.canEnglish === '1';
-
         projectOptions.forEach(function (option) {
             var projectId = option.getAttribute('data-project-id');
             var checkbox = option.querySelector('input[type="checkbox"]');
             var badge = option.querySelector('[data-assigned-badge]');
             var isAssigned = assignedSet.has(projectId);
-            var requiresEnglish = option.dataset.requiresEnglish === '1';
-            var isEnglishBlocked = Boolean(judgeId) && requiresEnglish && !canEnglish;
 
             option.classList.toggle('is-assigned', isAssigned);
-            option.classList.toggle('is-incompatible', isEnglishBlocked);
+            option.classList.remove('is-incompatible');
             if (badge) {
                 badge.hidden = !isAssigned;
-                if (isEnglishBlocked) {
-                    badge.hidden = false;
-                    badge.textContent = 'Requiere inglés';
-                } else {
-                    badge.textContent = 'Ya asignado';
-                }
+                badge.textContent = 'Ya asignado';
             }
             if (checkbox) {
-                checkbox.disabled = isAssigned || isEnglishBlocked;
-                if (isAssigned || isEnglishBlocked) {
+                checkbox.disabled = isAssigned;
+                if (isAssigned) {
                     checkbox.checked = false;
                 }
             }

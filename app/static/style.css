@@ -11883,7 +11883,7 @@ body {
 .ov2-chart-sub.warn { color: #a07020; }
 
 /* Work grid */
-.ov2-work-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.ov2-work-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: start; }
 .ov2-block { background: #fff; border: 1px solid #d6e8f7; border-radius: 16px; padding: 1.1rem 1.3rem;
     display: flex; flex-direction: column; gap: 0.8rem; }
 .ov2-full { grid-column: 1 / -1; }
@@ -11900,6 +11900,25 @@ body {
     color: #607998; padding: 0.3rem 0.4rem; border-bottom: 1.5px solid #e0edf7; text-align: left; }
 .ov2-table td { padding: 0.45rem 0.4rem; border-bottom: 1px solid #f0f5fa; color: #1a3a5a; vertical-align: middle; }
 .ov2-table tr:last-child td { border-bottom: none; }
+
+.ov2-pending-block {
+    align-self: start;
+}
+
+.ov2-pending-block .ov2-table th:nth-child(2),
+.ov2-pending-block .ov2-table td:nth-child(2) {
+    width: 150px;
+}
+
+.ov2-pending-block .ov2-table th:nth-child(3),
+.ov2-pending-block .ov2-table td:nth-child(3) {
+    width: 70px;
+    text-align: center;
+}
+
+.ov2-pending-block .ov2-mini-bar {
+    width: 110px;
+}
 
 /* Mini progress bar */
 .ov2-mini-bar { height: 6px; background: #e0edf7; border-radius: 4px; width: 80px; margin-bottom: 2px; }

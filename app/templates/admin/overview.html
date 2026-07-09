@@ -170,35 +170,6 @@
       {% endif %}
     </section>
 
-    {# Evaluaciones pendientes #}
-    <section class="ov2-block">
-      <div class="ov2-block-head">
-        <h4>Evaluaciones pendientes</h4>
-        <a href="{{ url_for('admin.evaluations_page') }}" class="ov2-block-link">Ver todas &rarr;</a>
-      </div>
-      {% if m.pending_evaluation_rows %}
-      <table class="ov2-table">
-        <thead><tr><th>Proyecto</th><th>Avance</th><th>Faltan</th></tr></thead>
-        <tbody>
-          {% for row in m.pending_evaluation_rows %}
-          <tr>
-            <td>{{ row.project.title }}</td>
-            <td>
-              <div class="ov2-mini-bar">
-                <div class="ov2-mini-bar-fill" style="width:{{ ((row.completed/row.expected)*100)|int if row.expected else 0 }}%"></div>
-              </div>
-              <small>{{ row.completed }}/{{ row.expected }}</small>
-            </td>
-            <td><span class="tag off">{{ row.expected - row.completed }}</span></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p class="ov2-empty">No hay evaluaciones pendientes.</p>
-      {% endif %}
-    </section>
-
     {# Asistencia de jueces #}
     <section class="ov2-block">
       <div class="ov2-block-head">
@@ -278,6 +249,35 @@
     </section>
 
   </div>
+
+  {# Evaluaciones pendientes — fila independiente #}
+  <section class="ov2-block ov2-full ov2-pending-block">
+    <div class="ov2-block-head">
+      <h4>Evaluaciones pendientes</h4>
+      <a href="{{ url_for('admin.evaluations_page') }}" class="ov2-block-link">Ver todas &rarr;</a>
+    </div>
+    {% if m.pending_evaluation_rows %}
+    <table class="ov2-table">
+      <thead><tr><th>Proyecto</th><th>Avance</th><th>Faltan</th></tr></thead>
+      <tbody>
+        {% for row in m.pending_evaluation_rows %}
+        <tr>
+          <td>{{ row.project.title }}</td>
+          <td>
+            <div class="ov2-mini-bar">
+              <div class="ov2-mini-bar-fill" style="width:{{ ((row.completed/row.expected)*100)|int if row.expected else 0 }}%"></div>
+            </div>
+            <small>{{ row.completed }}/{{ row.expected }}</small>
+          </td>
+          <td><span class="tag off">{{ row.expected - row.completed }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="ov2-empty">No hay evaluaciones pendientes.</p>
+    {% endif %}
+  </section>
 
 </div>
 

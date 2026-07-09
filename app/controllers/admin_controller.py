@@ -6738,6 +6738,170 @@ def assignments_report_excel():
 
 
 @admin_module_required("assignments")
+def judge_presence_report_excel():
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.table import Table, TableStyleInfo
+    except ImportError:
+        flash("Instala openpyxl en el servidor para exportar Excel.", "error")
+        return redirect(url_for("admin.assignments_page"))
+
+    assignments = (
+        Assignment.query.options(
+            joinedload(Assignment.judge),
+            joinedload(Assignment.project).joinedload(Project.members),
+        )
+        .join(Project, Project.id == Assignment.project_id)
+        .filter(Project.is_active == True)  # noqa: E712
+        .order_by(Assignment.judge_id.asc(), Project.title.asc())
+        .all()
+    )
+    exposition_assignments = [assignment for assignment in assignments if assignment.can_evaluate_exposition]
+
+    rows_by_judge: dict[int, dict] = {}
+    for assignment in exposition_assignments:
+        judge = assignment.judge
+        project = assignment.project
+        if not judge or not project:
+            continue
+        row = rows_by_judge.setdefault(
+            judge.id,
+            {
+                "judge": judge,
+                "confirmed_expo": [],
+                "draft_expo": [],
+                "english_projects": [],
+            },
+        )
+        target = row["draft_expo"] if assignment.is_draft else row["confirmed_expo"]
+        target.append(project.title)
+        if project.requires_english_evaluation and judge.can_evaluate_english:
+            row["english_projects"].append(project.title)
+
+    report_rows = []
+    for item in rows_by_judge.values():
+        judge = item["judge"]
+        confirmed_count = len(item["confirmed_expo"])
+        draft_count = len(item["draft_expo"])
+        has_confirmed_expo = confirmed_count > 0
+        attendance_label = judge.attendance_status_label
+        will_attend = has_confirmed_expo and judge.attendance_confirmed is True
+        pending_attendance = has_confirmed_expo and judge.attendance_confirmed is None
+        report_rows.append({
+            "name": judge.full_name,
+            "email": judge.email,
+            "phone": judge.phone or "",
+            "attendance": attendance_label,
+            "will_attend": "Sí" if will_attend else "No",
+            "pending_attendance": "Sí" if pending_attendance else "No",
+            "parking": "Sí" if will_attend and judge.needs_parking else "No",
+            "confirmed_expo_count": confirmed_count,
+            "draft_expo_count": draft_count,
+            "english_expo_count": len(set(item["english_projects"])),
+            "confirmed_projects": ", ".join(item["confirmed_expo"]) if item["confirmed_expo"] else "—",
+            "draft_projects": ", ".join(item["draft_expo"]) if item["draft_expo"] else "—",
+            "english_projects": ", ".join(sorted(set(item["english_projects"]))) if item["english_projects"] else "—",
+            "responded_at": judge.attendance_responded_at.strftime("%Y-%m-%d %H:%M") if judge.attendance_responded_at else "",
+        })
+
+    report_rows.sort(key=lambda row: (row["attendance"] != "Confirmado", row["name"]))
+
+    confirmed_present = [row for row in report_rows if row["will_attend"] == "Sí"]
+    pending_present = [row for row in report_rows if row["pending_attendance"] == "Sí"]
+    rejected_present = [row for row in report_rows if row["attendance"] == "No asiste" and row["confirmed_expo_count"] > 0]
+    parking_confirmed = [row for row in confirmed_present if row["parking"] == "Sí"]
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Resumen"
+
+    header_fill = PatternFill("solid", fgColor="1A4A7A")
+    header_font = Font(bold=True, color="FFFFFF", size=10)
+    subheader_fill = PatternFill("solid", fgColor="EAF3FB")
+    thin = Side(style="thin", color="C8DDF0")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    wrap = Alignment(vertical="top", wrap_text=True)
+
+    summary_rows = [
+        ("Jueces con exposición confirmada y asistencia confirmada", len(confirmed_present), "Base para almuerzos y refrigerios presenciales"),
+        ("Jueces con exposición confirmada pendientes de responder", len(pending_present), "Posible aumento de alimentación si confirman"),
+        ("Jueces con exposición confirmada que no asisten", len(rejected_present), "No considerar para alimentación"),
+        ("Solicitaron parqueo y vienen presencial", len(parking_confirmed), "Base para estimar espacios de parqueo"),
+        ("Total jueces con alguna exposición asignada", len(report_rows), "Incluye confirmadas y borradores"),
+    ]
+    ws.append(["Métrica", "Cantidad", "Uso logístico"])
+    for col_idx, width in enumerate([54, 14, 58], start=1):
+        cell = ws.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws.column_dimensions[get_column_letter(col_idx)].width = width
+    for item in summary_rows:
+        ws.append(item)
+        row_idx = ws.max_row
+        for col_idx in range(1, 4):
+            ws.cell(row=row_idx, column=col_idx).border = border
+            ws.cell(row=row_idx, column=col_idx).alignment = wrap
+        ws.cell(row=row_idx, column=2).alignment = center
+        ws.cell(row=row_idx, column=2).font = Font(bold=True, color="0D2F52")
+
+    ws2 = wb.create_sheet("Detalle jueces")
+    headers = [
+        "Juez", "Correo", "Teléfono", "Asistencia", "Viene presencial", "Pendiente respuesta",
+        "Parqueo", "Expo confirmadas", "Expo borrador", "Expo inglés", "Proyectos expo confirmados",
+        "Proyectos expo borrador", "Proyectos inglés", "Respondió",
+    ]
+    widths = [30, 36, 16, 16, 16, 18, 12, 16, 14, 12, 55, 55, 45, 18]
+    ws2.append(headers)
+    for col_idx, (header, width) in enumerate(zip(headers, widths), start=1):
+        cell = ws2.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws2.column_dimensions[get_column_letter(col_idx)].width = width
+
+    for row in report_rows:
+        ws2.append([
+            row["name"], row["email"], row["phone"], row["attendance"], row["will_attend"], row["pending_attendance"],
+            row["parking"], row["confirmed_expo_count"], row["draft_expo_count"], row["english_expo_count"],
+            row["confirmed_projects"], row["draft_projects"], row["english_projects"], row["responded_at"],
+        ])
+        row_idx = ws2.max_row
+        for col_idx in range(1, len(headers) + 1):
+            cell = ws2.cell(row=row_idx, column=col_idx)
+            cell.border = border
+            cell.alignment = wrap
+        if row["will_attend"] == "Sí":
+            for col_idx in range(1, len(headers) + 1):
+                ws2.cell(row=row_idx, column=col_idx).fill = subheader_fill
+
+    if report_rows:
+        last_col = get_column_letter(len(headers))
+        table = Table(displayName="DetallePresencialJueces", ref=f"A1:{last_col}{ws2.max_row}")
+        table.tableStyleInfo = TableStyleInfo(
+            name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False,
+            showRowStripes=True, showColumnStripes=False,
+        )
+        ws2.add_table(table)
+    ws2.freeze_panes = "A2"
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="reporte_jueces_presenciales.xlsx",
+    )
+
+
+@admin_module_required("assignments")
 def assignments_report_pdf():
     if not REPORTLAB_AVAILABLE:
         flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")

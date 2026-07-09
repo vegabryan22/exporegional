@@ -56,9 +56,11 @@
 
     <div class="assignment-card-list">
         {% for project in active_projects|sort(attribute='title') %}
-            {% set ns = namespace(confirmed=[], drafts=[]) %}
+            {% set ns = namespace(confirmed=[], drafts=[], doc_total=0, expo_total=0) %}
             {% for assignment in assignments %}
                 {% if assignment.project_id == project.id %}
+                    {% if assignment.can_evaluate_documentation %}{% set ns.doc_total = ns.doc_total + 1 %}{% endif %}
+                    {% if assignment.can_evaluate_exposition %}{% set ns.expo_total = ns.expo_total + 1 %}{% endif %}
                     {% if assignment.status == 'confirmed' %}
                         {% set ns.confirmed = ns.confirmed + [assignment] %}
                     {% else %}
@@ -104,6 +106,8 @@
                 <div class="assignment-project-status">
                     <span class="tag {{ 'ok' if ns.confirmed else 'off' }}">{{ ns.confirmed|length }} confirmado(s)</span>
                     {% if ns.drafts %}<span class="tag warning">{{ ns.drafts|length }} borrador</span>{% endif %}
+                    <span class="tag {{ 'ok' if ns.doc_total >= 3 else 'warning' }}">Doc &middot; {{ ns.doc_total }}</span>
+                    <span class="tag {{ 'ok' if ns.expo_total >= 3 else 'warning' }}">Expo &middot; {{ ns.expo_total }}</span>
                     {% if project.requires_english_evaluation %}<span class="tag warning">Ingl&eacute;s &middot; {{ project.english_members_count }}</span>{% endif %}
                 </div>
                 <button type="button" class="secondary-btn assignment-manage-btn" data-dialog-open="manage-project-{{ project.id }}">Gestionar</button>
@@ -426,9 +430,9 @@
         <form method="post" action="{{ action_url }}" class="compact-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="auto_assign">
-            <p>El sistema asignar&aacute; jueces a proyectos respetando sus capacidades (categor&iacute;a, ingl&eacute;s, alcance). Las asignaciones se guardan como <strong>borrador</strong> sin enviar correos hasta que confirmes.</p>
-            <label>M&aacute;ximo de jueces por proyecto
-                <input type="number" name="max_per_project" value="2" min="1" max="10" required>
+            <p>El sistema asignar&aacute; jueces hasta cubrir la meta de evaluaciones de <strong>documento</strong> y <strong>exposici&oacute;n</strong> por proyecto. Las asignaciones se guardan como <strong>borrador</strong> sin enviar correos hasta que confirmes.</p>
+            <label>Evaluaciones m&iacute;nimas por tipo
+                <input type="number" name="max_per_project" value="3" min="1" max="10" required>
             </label>
             <label class="logistics-check-card" style="margin-top:0.5rem">
                 <input type="checkbox" name="replace_drafts" value="1">
@@ -439,11 +443,13 @@
                 <p class="maintenance-kicker" style="margin-bottom:0.3rem">Reglas aplicadas</p>
                 <ul>
                     <li>Solo STEAM &rarr; no se asigna a proyectos de emprendimiento (y viceversa).</li>
-                    <li>No eval&uacute;a ingl&eacute;s &rarr; no se asigna a proyectos con ingl&eacute;s.</li>
-                    <li>Solo documento &rarr; asignaci&oacute;n con alcance solo documento.</li>
-                    <li>Solo exposici&oacute;n &rarr; asignaci&oacute;n con alcance solo exposici&oacute;n.</li>
-                    <li>Ambos &rarr; asignaci&oacute;n completa (documento + exposici&oacute;n).</li>
-                    <li>Balance de carga: se prioriza el juez con menos asignaciones.</li>
+                    <li>Proyectos con ingl&eacute;s &rarr; deben tener al menos un juez de exposici&oacute;n que eval&uacute;e ingl&eacute;s.</li>
+                    <li>Jueces sin ingl&eacute;s &rarr; pueden apoyar documento o exposici&oacute;n general en proyectos con ingl&eacute;s.</li>
+                    <li>La meta num&eacute;rica aplica por rubro: 3 significa 3 evaluaciones de documento y 3 de exposici&oacute;n.</li>
+                    <li>Solo documento &rarr; se prioriza para cubrir documentaci&oacute;n.</li>
+                    <li>Solo exposici&oacute;n &rarr; se usa para complementar proyectos que solo tienen documentaci&oacute;n.</li>
+                    <li>Ambos &rarr; se usan para completar cobertura cuando falten documento o exposici&oacute;n.</li>
+                    <li>Participaci&oacute;n general &rarr; se priorizan jueces con menor carga o sin asignaciones.</li>
                 </ul>
             </div>
             <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Generar borrador</button></div>

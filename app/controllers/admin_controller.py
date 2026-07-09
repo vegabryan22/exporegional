@@ -346,16 +346,18 @@ def _assignment_compatibility_error(
     return ""
 
 
-def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int, int]:
-    """Create draft assignments prioritizing coverage and broad judge participation.
+def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[int, int]:
+    """Create draft assignments until each project has target doc/expo evaluations.
 
     Rules:
     - English projects get at least one English-capable exposition judge when possible.
+    - The numeric target means evaluations per aspect, not people per project.
     - Documentation is assigned first to documentation-only judges when available.
-    - Projects covered only by documentation receive an exposition-capable judge next.
-    - Remaining slots are filled by least-loaded judges so more judges participate.
+    - Exposition-only judges complement projects that need exposition evaluations.
+    - Remaining needs are filled by least-loaded judges so more judges participate.
     """
     SOFT_CAP = 3
+    target_evaluations = max(1, int(target_evaluations or 1))
 
     if replace_drafts:
         Assignment.query.filter_by(status=Assignment.STATUS_DRAFT).delete()
@@ -425,10 +427,6 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
         confirmed = [assignment for assignment in existing if assignment.status == Assignment.STATUS_CONFIRMED]
         existing_drafts = [assignment for assignment in existing if assignment.status == Assignment.STATUS_DRAFT]
         active_existing = confirmed + existing_drafts
-        slots = max_per_project - len(active_existing)
-        if slots <= 0:
-            skipped += 1
-            continue
 
         doc_count = sum(1 for assignment in active_existing if assignment.can_evaluate_documentation)
         expo_count = sum(1 for assignment in active_existing if assignment.can_evaluate_exposition)
@@ -436,6 +434,10 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
         already_assigned_ids = {assignment.judge_id for assignment in existing}
         needs_english = _project_requires_english(project)
         new_assignments: list[Assignment] = []
+
+        def target_met() -> bool:
+            english_ok = not needs_english or english_count > 0
+            return english_ok and doc_count >= target_evaluations and expo_count >= target_evaluations
 
         def compatible(judge: Judge, required_scope: str | None = None) -> bool:
             if judge.id in already_assigned_ids:
@@ -458,7 +460,7 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
             return sorted(candidates, key=lambda judge: judge_sort_key(judge, preferred))[0]
 
         def assign(judge: Judge):
-            nonlocal doc_count, expo_count, english_count, slots
+            nonlocal doc_count, expo_count, english_count
             can_documentation = bool(judge.can_evaluate_documentation)
             can_exposition = bool(judge.can_evaluate_exposition)
             assignment = Assignment(
@@ -473,7 +475,6 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
             judge_load[judge.id] = judge_load.get(judge.id, 0) + 1
             already_assigned_ids.add(judge.id)
             new_assignments.append(assignment)
-            slots -= 1
             if can_documentation:
                 doc_count += 1
             if can_exposition:
@@ -481,37 +482,29 @@ def _auto_assign_judges(max_per_project: int, replace_drafts: bool) -> tuple[int
             if can_exposition and judge.can_evaluate_english:
                 english_count += 1
 
-        if needs_english and english_count == 0 and slots > 0:
+        if needs_english and english_count == 0:
             english_judge = pick("ingles", "ingles")
             if english_judge:
                 assign(english_judge)
 
-        if doc_count == 0 and slots > 0:
-            doc_judge = pick("documentacion", "documentacion")
-            if doc_judge:
-                assign(doc_judge)
-
-        if expo_count == 0 and slots > 0:
-            expo_judge = pick("exposicion", "exposicion")
-            if expo_judge:
-                assign(expo_judge)
-
-        while slots > 0:
+        while not target_met():
             if needs_english and english_count == 0:
                 next_judge = pick("ingles", "ingles")
-            elif doc_count <= expo_count:
-                next_judge = pick("documentacion", "documentacion") or pick("exposicion", "exposicion")
+            elif doc_count < target_evaluations and doc_count <= expo_count:
+                next_judge = pick("documentacion", "documentacion")
+            elif expo_count < target_evaluations:
+                next_judge = pick("exposicion", "exposicion")
+            elif doc_count < target_evaluations:
+                next_judge = pick("documentacion", "documentacion")
             else:
-                next_judge = pick("exposicion", "exposicion") or pick("documentacion", "documentacion")
-            if not next_judge:
-                next_judge = pick(None, "general")
+                next_judge = None
             if not next_judge:
                 break
             assign(next_judge)
 
         if new_assignments:
             created += len(new_assignments)
-        else:
+        if not target_met():
             skipped += 1
 
     db.session.commit()
@@ -3539,23 +3532,23 @@ def _handle_action(action: str):
                     flash(f"Error inesperado: {exc}", "error")
 
     elif action == "auto_assign":
-        max_per_project = request.form.get("max_per_project", type=int) or 2
-        max_per_project = max(1, min(max_per_project, 10))
+        target_evaluations = request.form.get("max_per_project", type=int) or 3
+        target_evaluations = max(1, min(target_evaluations, 10))
         replace_drafts = request.form.get("replace_drafts") == "1"
-        created, skipped = _auto_assign_judges(max_per_project, replace_drafts)
+        created, skipped = _auto_assign_judges(target_evaluations, replace_drafts)
         if created:
             log_event(
                 "admin.assignment.auto_assign",
                 "assignment",
-                detail=f"Auto-asignacion generada: {created} borradores creados, {skipped} proyectos sin espacio, max={max_per_project}",
+                detail=f"Auto-asignacion generada: {created} borradores creados, {skipped} proyectos bajo meta, objetivo={target_evaluations} evaluaciones por tipo",
             )
             flash(
-                f"Se generaron {created} asignación(es) en borrador. "
+                f"Se generaron {created} asignación(es) en borrador para buscar {target_evaluations} evaluaciones de documento y {target_evaluations} de exposición por proyecto. "
                 "Revísalas y confirma para notificar a los jueces.",
                 "success",
             )
         else:
-            flash("No se generaron nuevas asignaciones. Verifica que haya jueces activos y proyectos disponibles.", "error")
+            flash("No se generaron nuevas asignaciones. Verifica que haya jueces activos y proyectos disponibles, o que la meta ya esté cubierta.", "error")
 
     elif action == "confirm_draft_assignments":
         drafts = (
@@ -3568,6 +3561,7 @@ def _handle_action(action: str):
         else:
             draft_project_ids = {assignment.project_id for assignment in drafts}
             english_projects_without_judge = []
+            projects_under_minimum = []
             for project_id in draft_project_ids:
                 project_assignments = (
                     Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project).joinedload(Project.members))
@@ -3578,6 +3572,10 @@ def _handle_action(action: str):
                     .all()
                 )
                 project = project_assignments[0].project if project_assignments else None
+                doc_total = sum(1 for assignment in project_assignments if assignment.can_evaluate_documentation)
+                expo_total = sum(1 for assignment in project_assignments if assignment.can_evaluate_exposition)
+                if project and (doc_total < 3 or expo_total < 3):
+                    projects_under_minimum.append(f"{project.title} (Doc {doc_total}/3, Expo {expo_total}/3)")
                 if (
                     project
                     and _project_requires_english(project)
@@ -3593,6 +3591,13 @@ def _handle_action(action: str):
                 flash(
                     "No se pueden confirmar borradores: estos proyectos requieren al menos un juez de exposición en inglés: "
                     + ", ".join(english_projects_without_judge[:5]),
+                    "error",
+                )
+                return
+            if projects_under_minimum:
+                flash(
+                    "No se pueden confirmar borradores: estos proyectos no alcanzan 3 evaluaciones por tipo: "
+                    + ", ".join(projects_under_minimum[:5]),
                     "error",
                 )
                 return

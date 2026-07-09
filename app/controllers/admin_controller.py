@@ -202,6 +202,7 @@ ACTION_MODULE_MAP = {
     "rotate_judge_form_secret": "judges",
     "send_attendance_invitation": "judges",
     "send_all_attendance_invitations": "judges",
+    "send_pending_attendance_invitations": "judges",
     "update_advisor": "projects",
     "update_project": "projects",
     "update_project_logistics": "projects",
@@ -3961,9 +3962,16 @@ def _handle_action(action: str):
                 db.session.commit()
                 flash(f"Error al enviar correo: {err}", "error")
 
-    elif action == "send_all_attendance_invitations":
-        judges = Judge.query.filter_by(role=Judge.ROLE_JUDGE, is_active_user=True).all()
+    elif action in {"send_all_attendance_invitations", "send_pending_attendance_invitations"}:
+        only_pending = action == "send_pending_attendance_invitations"
+        query = Judge.query.filter_by(role=Judge.ROLE_JUDGE, is_active_user=True)
+        if only_pending:
+            query = query.filter(Judge.attendance_confirmed.is_(None))
+        judges = query.all()
         sent, failed = 0, 0
+        if not judges:
+            flash("No hay jueces pendientes de confirmación.", "warning")
+            return
         for judge in judges:
             judge.attendance_token = secrets.token_urlsafe(40)
         db.session.commit()
@@ -4001,8 +4009,15 @@ def _handle_action(action: str):
                 judge.attendance_invitation_error = err
                 failed += 1
         db.session.commit()
-        log_event("admin.judge.attendance_invite_all", "judge", detail=f"Invitaciones masivas: {sent} enviadas, {failed} fallidas")
-        flash(f"Invitaciones enviadas: {sent} exitosas, {failed} con error.", "success" if failed == 0 else "warning")
+        log_action = "admin.judge.attendance_invite_pending" if only_pending else "admin.judge.attendance_invite_all"
+        log_detail = (
+            f"Reenvío a pendientes: {sent} enviadas, {failed} fallidas"
+            if only_pending
+            else f"Invitaciones masivas: {sent} enviadas, {failed} fallidas"
+        )
+        log_event(log_action, "judge", detail=log_detail)
+        flash_label = "Reenvíos a pendientes" if only_pending else "Invitaciones"
+        flash(f"{flash_label} enviados: {sent} exitosos, {failed} con error.", "success" if failed == 0 else "warning")
 
     elif action == "update_project":
         project_id = request.form.get("project_id", type=int)

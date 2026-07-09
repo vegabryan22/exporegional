@@ -10,10 +10,15 @@
         <div class="page-head-actions judge-pool-actions">
             <a class="action-btn outline-btn" href="{{ url_for('admin.assignments_page') }}">Asignar proyectos</a>
             <a class="action-btn secondary-btn" href="{{ url_for('admin.judges_page') }}">Gestionar cuentas</a>
-            <form method="post" action="{{ action_url }}" onsubmit="return confirm('¿Enviar invitación de confirmación de asistencia a todos los jueces activos?')">
+            <form method="post" action="{{ action_url }}" onsubmit="return confirm('&iquest;Enviar invitaci&oacute;n de confirmaci&oacute;n de asistencia a todos los jueces activos?')">
                 <input type="hidden" name="next" value="{{ next_url }}">
                 <input type="hidden" name="action" value="send_all_attendance_invitations">
-                <button type="submit" class="action-btn project-action-btn">Enviar invitación a todos</button>
+                <button type="submit" class="action-btn project-action-btn">Enviar invitaci&oacute;n a todos</button>
+            </form>
+            <form method="post" action="{{ action_url }}" onsubmit="return confirm('&iquest;Reenviar invitaci&oacute;n solo a jueces activos que todav&iacute;a no han confirmado?')">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="send_pending_attendance_invitations">
+                <button type="submit" class="action-btn outline-btn">Reenviar a pendientes</button>
             </form>
         </div>
     </div>

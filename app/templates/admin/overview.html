@@ -39,11 +39,11 @@
     </div>
     <div class="ov2-kpi">
       <strong>{{ m.completed_evaluations }}/{{ m.expected_evaluations }}</strong>
-      <span>Evaluaciones</span>
+      <span>Evaluaciones base</span>
     </div>
     <div class="ov2-kpi">
-      <strong>{{ m.english_projects }}</strong>
-      <span>Proyectos inglés</span>
+      <strong>{{ m.completed_english_evaluations }}/{{ m.expected_english_evaluations }}</strong>
+      <span>Eval. ingl&eacute;s</span>
     </div>
     <div class="ov2-kpi">
       <strong>{{ m.steam_projects }} / {{ m.emp_projects }}</strong>
@@ -89,8 +89,8 @@
         <span>{{ eval_pct }}%</span>
       </div>
       <div class="ov2-chart-info">
-        <strong>Evaluaciones</strong>
-        <p>{{ m.completed_evaluations }} de {{ m.expected_evaluations }} completadas</p>
+        <strong>Evaluaciones base</strong>
+        <p>{{ m.completed_evaluations }} de {{ m.expected_evaluations }} base completadas</p>
         {% if m.projects_pending_evaluations > 0 %}
         <span class="ov2-chart-sub warn">{{ m.projects_pending_evaluations }} proyectos pendientes</span>
         {% else %}

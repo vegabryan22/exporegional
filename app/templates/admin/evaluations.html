@@ -4,7 +4,6 @@
 {% set sc = summary_cards %}
 {% set completion_pct = (sc.completion_percentage | int) %}
 {% set completed_proj_pct = ((sc.completed_projects / sc.projects * 100) | int) if sc.projects > 0 else 0 %}
-{% set english_count = english_ranking | length %}
 
 <div class="ov2-shell">
 
@@ -35,19 +34,19 @@
     </div>
     <div class="ov2-kpi">
       <strong>{{ sc.completed_evaluations }}/{{ sc.expected_evaluations }}</strong>
-      <span>Evaluaciones registradas</span>
+      <span>Evaluaciones base</span>
     </div>
     <div class="ov2-kpi">
       <strong>{{ "%.1f"|format(sc.completion_percentage) }}%</strong>
-      <span>Avance global</span>
+      <span>Avance base</span>
     </div>
     <div class="ov2-kpi">
       <strong>{{ category_winners | length }}</strong>
       <span>Categor&iacute;as</span>
     </div>
     <div class="ov2-kpi">
-      <strong>{{ english_count }}</strong>
-      <span>Ranking ingl&eacute;s</span>
+      <strong>{{ sc.completed_english_evaluations }}/{{ sc.expected_english_evaluations }}</strong>
+      <span>Eval. ingl&eacute;s</span>
     </div>
   </div>
 
@@ -59,8 +58,8 @@
         <span>{{ completion_pct }}%</span>
       </div>
       <div class="ov2-chart-info">
-        <strong>Avance global</strong>
-        <p>{{ sc.completed_evaluations }} de {{ sc.expected_evaluations }} evaluaciones</p>
+        <strong>Avance base</strong>
+        <p>{{ sc.completed_evaluations }} de {{ sc.expected_evaluations }} evaluaciones base</p>
         {% if sc.projects - sc.completed_projects > 0 %}
         <span class="ov2-chart-sub warn">{{ sc.projects - sc.completed_projects }} proyectos pendientes</span>
         {% else %}

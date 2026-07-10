@@ -261,15 +261,28 @@ def build_admin_evaluation_overview():
     completed_projects = 0
     total_expected_evaluations = 0
     total_completed_evaluations = 0
+    total_expected_english_evaluations = 0
+    total_completed_english_evaluations = 0
 
     for project in projects:
         category = category_map.get((project.category or "").strip().lower())
         available_types = get_project_available_evaluation_types(project)
         assigned_judges = len(project.assignments)
-        completed_evaluations = len(project.evaluations)
-        expected_evaluations = sum(len(get_assignment_evaluation_entries(assignment)) for assignment in project.assignments)
+        expected_entries = [
+            entry
+            for assignment in project.assignments
+            for entry in get_assignment_evaluation_entries(assignment)
+        ]
+        expected_english_evaluations = len([entry for entry in expected_entries if entry["code"] == ENGLISH_EVAL_TYPE_CODE])
+        expected_evaluations = len(expected_entries) - expected_english_evaluations
+        completed_english_evaluations = len(
+            [evaluation for evaluation in project.evaluations if evaluation.evaluation_type == ENGLISH_EVAL_TYPE_CODE]
+        )
+        completed_evaluations = len(project.evaluations) - completed_english_evaluations
         total_expected_evaluations += expected_evaluations
         total_completed_evaluations += completed_evaluations
+        total_expected_english_evaluations += expected_english_evaluations
+        total_completed_english_evaluations += completed_english_evaluations
 
         eval_counts = defaultdict(int)
         for evaluation in project.evaluations:
@@ -417,6 +430,8 @@ def build_admin_evaluation_overview():
         "completed_projects": completed_projects,
         "expected_evaluations": total_expected_evaluations,
         "completed_evaluations": total_completed_evaluations,
+        "expected_english_evaluations": total_expected_english_evaluations,
+        "completed_english_evaluations": total_completed_english_evaluations,
         "completion_percentage": round((total_completed_evaluations / total_expected_evaluations) * 100, 2)
         if total_expected_evaluations
         else 0,

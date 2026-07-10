@@ -33,20 +33,20 @@
       <span>Completamente evaluados</span>
     </div>
     <div class="ov2-kpi">
-      <strong>{{ sc.completed_evaluations }}/{{ sc.expected_evaluations }}</strong>
-      <span>Evaluaciones base</span>
+      <strong>{{ sc.completed_documentation_evaluations }}/{{ sc.expected_documentation_evaluations }}</strong>
+      <span>Doc. escrito</span>
     </div>
     <div class="ov2-kpi">
-      <strong>{{ "%.1f"|format(sc.completion_percentage) }}%</strong>
-      <span>Avance base</span>
-    </div>
-    <div class="ov2-kpi">
-      <strong>{{ category_winners | length }}</strong>
-      <span>Categor&iacute;as</span>
+      <strong>{{ sc.completed_exposition_evaluations }}/{{ sc.expected_exposition_evaluations }}</strong>
+      <span>Exposici&oacute;n</span>
     </div>
     <div class="ov2-kpi">
       <strong>{{ sc.completed_english_evaluations }}/{{ sc.expected_english_evaluations }}</strong>
       <span>Eval. ingl&eacute;s</span>
+    </div>
+    <div class="ov2-kpi">
+      <strong>{{ "%.1f"|format(sc.completion_percentage) }}%</strong>
+      <span>Avance base</span>
     </div>
   </div>
 

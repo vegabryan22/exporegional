@@ -51,6 +51,7 @@ from app.services.evaluation_service import (
     get_assignment_evaluation_entries,
     get_project_available_evaluation_types,
     infer_evaluation_type_kind,
+    project_evaluation_count_summary,
 )
 from app.services.mail_service import send_email, smtp_is_configured
 
@@ -1033,27 +1034,27 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     projects_pending_logistics = []
     total_expected_evaluations = 0
     total_completed_evaluations = 0
+    total_expected_documentation_evaluations = 0
+    total_completed_documentation_evaluations = 0
+    total_expected_exposition_evaluations = 0
+    total_completed_exposition_evaluations = 0
     total_expected_english_evaluations = 0
     total_completed_english_evaluations = 0
 
     for project in active_projects:
         assigned_count = len(project.assignments)
-        expected_entries = [
-            entry
-            for assignment in project.assignments
-            for entry in get_assignment_evaluation_entries(assignment)
-        ]
-        expected_english_evaluations = len([entry for entry in expected_entries if entry["code"] == ENGLISH_EVAL_TYPE_CODE])
-        expected_evaluations = len(expected_entries) - expected_english_evaluations
-        completed_english_evaluations = len(
-            [evaluation for evaluation in project.evaluations if evaluation.evaluation_type == ENGLISH_EVAL_TYPE_CODE]
-        )
-        completed_evaluations = len(project.evaluations) - completed_english_evaluations
+        count_summary = project_evaluation_count_summary(project)
+        expected_evaluations = count_summary["expected_evaluations"]
+        completed_evaluations = count_summary["completed_evaluations"]
 
         total_expected_evaluations += expected_evaluations
         total_completed_evaluations += completed_evaluations
-        total_expected_english_evaluations += expected_english_evaluations
-        total_completed_english_evaluations += completed_english_evaluations
+        total_expected_documentation_evaluations += count_summary["expected_documentation_evaluations"]
+        total_completed_documentation_evaluations += count_summary["completed_documentation_evaluations"]
+        total_expected_exposition_evaluations += count_summary["expected_exposition_evaluations"]
+        total_completed_exposition_evaluations += count_summary["completed_exposition_evaluations"]
+        total_expected_english_evaluations += count_summary["expected_english_evaluations"]
+        total_completed_english_evaluations += count_summary["completed_english_evaluations"]
 
         if assigned_count == 0:
             projects_without_judges.append(project)
@@ -1124,6 +1125,10 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "logistics_complete": logistics_complete,
         "completed_evaluations": total_completed_evaluations,
         "expected_evaluations": total_expected_evaluations,
+        "completed_documentation_evaluations": total_completed_documentation_evaluations,
+        "expected_documentation_evaluations": total_expected_documentation_evaluations,
+        "completed_exposition_evaluations": total_completed_exposition_evaluations,
+        "expected_exposition_evaluations": total_expected_exposition_evaluations,
         "completed_english_evaluations": total_completed_english_evaluations,
         "expected_english_evaluations": total_expected_english_evaluations,
         "urgent_projects": sorted(projects_without_judges, key=lambda item: item.created_at, reverse=True)[:8],

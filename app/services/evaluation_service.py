@@ -155,6 +155,46 @@ def get_project_available_evaluation_entries(project):
     return entries
 
 
+def project_evaluation_count_summary(project):
+    expected = defaultdict(int)
+    completed = defaultdict(int)
+    available_types = get_project_available_evaluation_types(project)
+    type_by_code = {eval_type.code: eval_type for eval_type in available_types}
+
+    for assignment in getattr(project, "assignments", []):
+        for entry in get_assignment_evaluation_entries(assignment):
+            code = entry["code"]
+            if code == ENGLISH_EVAL_TYPE_CODE:
+                expected["english"] += 1
+                continue
+            rubric_kind = infer_evaluation_type_kind(entry["type"]) or "other"
+            expected[rubric_kind] += 1
+
+    for evaluation in getattr(project, "evaluations", []):
+        if evaluation.evaluation_type == ENGLISH_EVAL_TYPE_CODE:
+            completed["english"] += 1
+            continue
+        eval_type = type_by_code.get(evaluation.evaluation_type)
+        rubric_kind = infer_evaluation_type_kind(eval_type) or "other"
+        completed[rubric_kind] += 1
+
+    expected_base = expected["documentacion"] + expected["exposicion"] + expected["other"]
+    completed_base = completed["documentacion"] + completed["exposicion"] + completed["other"]
+
+    return {
+        "expected_documentation_evaluations": expected["documentacion"],
+        "completed_documentation_evaluations": completed["documentacion"],
+        "expected_exposition_evaluations": expected["exposicion"],
+        "completed_exposition_evaluations": completed["exposicion"],
+        "expected_english_evaluations": expected["english"],
+        "completed_english_evaluations": completed["english"],
+        "expected_other_evaluations": expected["other"],
+        "completed_other_evaluations": completed["other"],
+        "expected_evaluations": expected_base,
+        "completed_evaluations": completed_base,
+    }
+
+
 def get_project_evaluations_summary(project):
     category = get_project_category(project)
     if not category:
@@ -261,6 +301,10 @@ def build_admin_evaluation_overview():
     completed_projects = 0
     total_expected_evaluations = 0
     total_completed_evaluations = 0
+    total_expected_documentation_evaluations = 0
+    total_completed_documentation_evaluations = 0
+    total_expected_exposition_evaluations = 0
+    total_completed_exposition_evaluations = 0
     total_expected_english_evaluations = 0
     total_completed_english_evaluations = 0
 
@@ -268,21 +312,17 @@ def build_admin_evaluation_overview():
         category = category_map.get((project.category or "").strip().lower())
         available_types = get_project_available_evaluation_types(project)
         assigned_judges = len(project.assignments)
-        expected_entries = [
-            entry
-            for assignment in project.assignments
-            for entry in get_assignment_evaluation_entries(assignment)
-        ]
-        expected_english_evaluations = len([entry for entry in expected_entries if entry["code"] == ENGLISH_EVAL_TYPE_CODE])
-        expected_evaluations = len(expected_entries) - expected_english_evaluations
-        completed_english_evaluations = len(
-            [evaluation for evaluation in project.evaluations if evaluation.evaluation_type == ENGLISH_EVAL_TYPE_CODE]
-        )
-        completed_evaluations = len(project.evaluations) - completed_english_evaluations
+        count_summary = project_evaluation_count_summary(project)
+        expected_evaluations = count_summary["expected_evaluations"]
+        completed_evaluations = count_summary["completed_evaluations"]
         total_expected_evaluations += expected_evaluations
         total_completed_evaluations += completed_evaluations
-        total_expected_english_evaluations += expected_english_evaluations
-        total_completed_english_evaluations += completed_english_evaluations
+        total_expected_documentation_evaluations += count_summary["expected_documentation_evaluations"]
+        total_completed_documentation_evaluations += count_summary["completed_documentation_evaluations"]
+        total_expected_exposition_evaluations += count_summary["expected_exposition_evaluations"]
+        total_completed_exposition_evaluations += count_summary["completed_exposition_evaluations"]
+        total_expected_english_evaluations += count_summary["expected_english_evaluations"]
+        total_completed_english_evaluations += count_summary["completed_english_evaluations"]
 
         eval_counts = defaultdict(int)
         for evaluation in project.evaluations:
@@ -352,6 +392,12 @@ def build_admin_evaluation_overview():
             "assigned_judges": assigned_judges,
             "expected_evaluations": expected_evaluations,
             "completed_evaluations": completed_evaluations,
+            "expected_documentation_evaluations": count_summary["expected_documentation_evaluations"],
+            "completed_documentation_evaluations": count_summary["completed_documentation_evaluations"],
+            "expected_exposition_evaluations": count_summary["expected_exposition_evaluations"],
+            "completed_exposition_evaluations": count_summary["completed_exposition_evaluations"],
+            "expected_english_evaluations": count_summary["expected_english_evaluations"],
+            "completed_english_evaluations": count_summary["completed_english_evaluations"],
             "completion_percentage": round((completed_evaluations / expected_evaluations) * 100, 2)
             if expected_evaluations
             else 0,
@@ -430,6 +476,10 @@ def build_admin_evaluation_overview():
         "completed_projects": completed_projects,
         "expected_evaluations": total_expected_evaluations,
         "completed_evaluations": total_completed_evaluations,
+        "expected_documentation_evaluations": total_expected_documentation_evaluations,
+        "completed_documentation_evaluations": total_completed_documentation_evaluations,
+        "expected_exposition_evaluations": total_expected_exposition_evaluations,
+        "completed_exposition_evaluations": total_completed_exposition_evaluations,
         "expected_english_evaluations": total_expected_english_evaluations,
         "completed_english_evaluations": total_completed_english_evaluations,
         "completion_percentage": round((total_completed_evaluations / total_expected_evaluations) * 100, 2)

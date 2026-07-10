@@ -11373,6 +11373,31 @@ body {
     font-size: 0.84rem;
 }
 
+.judge-document-reminder {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid #f7c62f;
+    border-left: 6px solid #f59e0b;
+    border-radius: 16px;
+    background: #fff8ed;
+    padding: 0.85rem 1rem;
+    box-shadow: 0 10px 24px rgba(245, 158, 11, 0.12);
+}
+
+.judge-document-reminder h3 {
+    margin: 0.1rem 0 0.16rem;
+    color: #7a4f00;
+    font-size: 1.05rem;
+}
+
+.judge-document-reminder p {
+    margin: 0;
+    color: #5d728c;
+    font-size: 0.9rem;
+}
+
 .judge-availability-form {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

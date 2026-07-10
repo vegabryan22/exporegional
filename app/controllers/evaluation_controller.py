@@ -10,6 +10,7 @@ from app.models.evaluation import Evaluation
 from app.models.evaluation_score import EvaluationScore
 from app.models.project import Project
 from app.models.project_member import ProjectMember
+from app.models.system_setting import SystemSetting
 from app.services.audit_service import log_event
 from app.services.evaluation_service import (
     ENGLISH_EVAL_TYPE_CODE,
@@ -18,6 +19,7 @@ from app.services.evaluation_service import (
     get_assignment_available_evaluation_types,
     get_project_available_evaluation_types,
     get_project_evaluations_summary,
+    infer_evaluation_type_kind,
 )
 from app.services.parameter_service import get_active_evaluation_types, get_active_rubrics_map
 
@@ -78,10 +80,17 @@ def dashboard():
     project_eval_types = {}
     project_eval_entries = {}
     project_summaries = {}
+    pending_document_entries = []
     for assignment in assignments:
         project_eval_types[assignment.project_id] = get_assignment_available_evaluation_types(assignment)
         project_eval_entries[assignment.project_id] = get_assignment_evaluation_entries(assignment)
         project_summaries[assignment.project_id] = get_project_evaluations_summary(assignment.project)
+        for eval_entry in project_eval_entries[assignment.project_id]:
+            if infer_evaluation_type_kind(eval_entry.get("type")) != "documentacion":
+                continue
+            eval_key = (assignment.project_id, eval_entry["code"], eval_entry.get("project_member_id") or 0)
+            if eval_key not in evaluation_map:
+                pending_document_entries.append({"assignment": assignment, "entry": eval_entry})
     return render_template(
         "judge/dashboard.html",
         assignments=assignments,
@@ -90,6 +99,8 @@ def dashboard():
         project_eval_types=project_eval_types,
         project_eval_entries=project_eval_entries,
         project_summaries=project_summaries,
+        pending_document_entries=pending_document_entries,
+        document_reminder_deadline=SystemSetting.get_value("document_evaluation_reminder_deadline", ""),
     )
 
 

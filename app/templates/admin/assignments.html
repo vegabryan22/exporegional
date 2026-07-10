@@ -27,6 +27,7 @@
                 <a class="outline-btn" href="{{ url_for('admin.assignments_report_pdf') }}" target="_blank">Exportar PDF</a>
                 <a class="outline-btn" href="{{ url_for('admin.assignments_report_excel') }}">Exportar Excel</a>
                 <a class="outline-btn" href="{{ url_for('admin.judge_presence_report_excel') }}">Reporte presencial</a>
+                <button type="button" class="outline-btn" data-dialog-open="document-reminder-dialog">Recordar documento</button>
                 <form method="post" action="{{ action_url }}" style="display:contents">
                     <input type="hidden" name="next" value="{{ next_url }}">
                     <input type="hidden" name="action" value="send_confirmed_assignment_notifications">
@@ -427,6 +428,24 @@
             </table>
         </div>
         <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div>
+    </div>
+</dialog>
+
+<dialog id="document-reminder-dialog" class="maintenance-dialog">
+    <div class="dialog-card">
+        <div class="dialog-head"><h4>Recordatorio de documento escrito</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+        <form method="post" action="{{ action_url }}" class="compact-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="send_document_evaluation_reminders">
+            <p>Se enviar&aacute; solo a jueces con asistencia confirmada que tengan evaluaciones de <strong>documento escrito</strong> pendientes. Los jueces que ya evaluaron no reciben correo.</p>
+            <label>Fecha l&iacute;mite para completar documento escrito
+                <input type="date" name="document_deadline" required>
+            </label>
+            <div class="actions-row">
+                <button type="button" class="ghost-btn" data-dialog-close>Cancelar</button>
+                <button type="submit" onclick="return confirm('Enviar recordatorio solo a jueces con documento escrito pendiente?')">Enviar recordatorio</button>
+            </div>
+        </form>
     </div>
 </dialog>
 

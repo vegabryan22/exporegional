@@ -193,6 +193,7 @@ ACTION_MODULE_MAP = {
     "confirm_draft_assignments": "assignments",
     "discard_draft_assignments": "assignments",
     "send_confirmed_assignment_notifications": "assignments",
+    "send_document_evaluation_reminders": "assignments",
     "create_judge": "judges",
     "update_judge": "judges",
     "reset_judge_password": "judges",
@@ -3078,6 +3079,93 @@ def _send_assignment_email_if_allowed(judge: Judge, project: Project, assignment
     return _send_assignment_email(judge, project, assignment)
 
 
+def _pending_document_evaluations_by_judge() -> tuple[dict[int, dict], int]:
+    assignments = (
+        Assignment.query.options(
+            joinedload(Assignment.judge),
+            joinedload(Assignment.project).joinedload(Project.members),
+        )
+        .join(Judge, Judge.id == Assignment.judge_id)
+        .join(Project, Project.id == Assignment.project_id)
+        .filter(
+            Assignment.status == Assignment.STATUS_CONFIRMED,
+            Assignment.can_evaluate_documentation == True,  # noqa: E712
+            Judge.attendance_confirmed == True,  # noqa: E712
+            Judge.is_active_user == True,  # noqa: E712
+            Project.is_active == True,  # noqa: E712
+        )
+        .all()
+    )
+    pending_by_judge: dict[int, dict] = {}
+    total_pending = 0
+    for assignment in assignments:
+        for eval_entry in get_assignment_evaluation_entries(assignment):
+            if infer_evaluation_type_kind(eval_entry.get("type")) != "documentacion":
+                continue
+            exists = Evaluation.query.filter_by(
+                judge_id=assignment.judge_id,
+                project_id=assignment.project_id,
+                evaluation_type=eval_entry["code"],
+                project_member_id=eval_entry.get("project_member_id"),
+            ).first()
+            if exists:
+                continue
+            judge_row = pending_by_judge.setdefault(
+                assignment.judge_id,
+                {"judge": assignment.judge, "items": []},
+            )
+            judge_row["items"].append({"project": assignment.project, "entry": eval_entry})
+            total_pending += 1
+    return pending_by_judge, total_pending
+
+
+def _send_document_evaluation_reminder_email(judge: Judge, items: list[dict], deadline: str) -> bool:
+    if not smtp_is_configured() or not judge.email:
+        return False
+    panel_url = url_for("judge.dashboard", _external=True)
+    school_name = SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+    project_lines = "\n".join(f"- {item['project'].title} ({item['entry']['label']})" for item in items)
+    project_items = "".join(
+        f"<li><strong>{escape(item['project'].title)}</strong><br><span>{escape(item['entry']['label'])}</span></li>"
+        for item in items
+    )
+    subject = "Recordatorio: evaluacion de documento escrito - ExpoTecnica"
+    body = (
+        f"Hola {judge.full_name},\n\n"
+        "Tienes evaluaciones de documento escrito pendientes.\n"
+        f"Fecha limite: {deadline}\n\n"
+        f"{project_lines}\n\n"
+        f"Panel de juez: {panel_url}\n\n"
+        "Si ya completaste estas evaluaciones recientemente, puedes ignorar este mensaje.\n"
+    )
+    html_body = f"""\
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#eef5fb;font-family:Arial,Helvetica,sans-serif;color:#123f6b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef5fb;padding:28px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border:1px solid #cfe0f1;border-radius:22px;overflow:hidden;">
+        <tr><td style="background:#f59e0b;padding:22px 26px;color:#ffffff;font-size:22px;font-weight:900;">Recordatorio de documento escrito</td></tr>
+        <tr><td style="padding:26px;">
+          <p style="margin:0 0 12px;font-size:16px;">Hola <strong>{escape(judge.full_name or 'Juez')}</strong>,</p>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">Tienes evaluaciones de <strong>documento escrito</strong> pendientes. La fecha l&iacute;mite definida por la organizaci&oacute;n es:</p>
+          <div style="display:inline-block;background:#fff7d6;border:1px solid #f7c62f;border-radius:14px;padding:10px 16px;font-size:18px;font-weight:900;color:#7a4f00;">{escape(deadline)}</div>
+          <p style="margin:18px 0 8px;font-size:14px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;color:#607998;">Pendientes</p>
+          <ul style="margin:0 0 20px;padding-left:20px;color:#123f6b;line-height:1.6;">{project_items}</ul>
+          <a href="{escape(panel_url)}" style="display:inline-block;background:#123f6b;color:#ffffff;text-decoration:none;border-radius:999px;padding:12px 20px;font-weight:900;">Ir al panel de juez</a>
+        </td></tr>
+        <tr><td style="background:#f0f6fd;padding:14px 26px;font-size:12px;color:#8aaecc;border-top:1px solid #ddeaf7;">{escape(school_name)} &mdash; ExpoT&eacute;cnica</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>"""
+    ok, error = send_email(judge.email, subject, body, html_body=html_body)
+    if not ok:
+        flash(f"No se pudo enviar recordatorio a {judge.full_name}: {error}", "error")
+    return ok
+
+
 def _build_assignment_email_html(
     *,
     judge: Judge,
@@ -3659,6 +3747,39 @@ def _handle_action(action: str):
             )
             flash(
                 f"Notificaciones enviadas a jueces confirmados: {sent} exitosas, {failed} con error.",
+                "success" if failed == 0 else "warning",
+            )
+
+    elif action == "send_document_evaluation_reminders":
+        deadline = (request.form.get("document_deadline") or "").strip()
+        if not deadline:
+            flash("Debes indicar la fecha limite para el recordatorio de documento escrito.", "error")
+            return
+        pending_by_judge, total_pending = _pending_document_evaluations_by_judge()
+        if not pending_by_judge:
+            flash("No hay jueces confirmados con evaluaciones de documento escrito pendientes.", "warning")
+        else:
+            sent = 0
+            failed = 0
+            for row in pending_by_judge.values():
+                judge = row["judge"]
+                if _send_document_evaluation_reminder_email(judge, row["items"], deadline):
+                    sent += 1
+                else:
+                    failed += 1
+            SystemSetting.set_value("document_evaluation_reminder_deadline", deadline)
+            SystemSetting.set_value("document_evaluation_reminder_sent_at", datetime.now().isoformat(timespec="minutes"))
+            db.session.commit()
+            log_event(
+                "admin.assignment.document_reminders",
+                "assignment",
+                detail=(
+                    f"Recordatorio documento escrito: {sent} jueces notificados, "
+                    f"{failed} fallidos, {total_pending} evaluaciones pendientes, fecha limite {deadline}."
+                ),
+            )
+            flash(
+                f"Recordatorio enviado a {sent} juez(es); {failed} con error. Pendientes detectadas: {total_pending}.",
                 "success" if failed == 0 else "warning",
             )
 

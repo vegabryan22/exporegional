@@ -29,6 +29,17 @@
         </div>
     </div>
 
+    {% if document_reminder_deadline and pending_document_entries %}
+        <section class="judge-document-reminder">
+            <div>
+                <p class="maintenance-kicker">Recordatorio</p>
+                <h3>Evaluaci&oacute;n de documento escrito pendiente</h3>
+                <p>Fecha l&iacute;mite: <strong>{{ document_reminder_deadline }}</strong>. Completa estas evaluaciones desde los botones de cada proyecto.</p>
+            </div>
+            <span class="tag warning">{{ pending_document_entries|length }} pendiente(s)</span>
+        </section>
+    {% endif %}
+
     <details class="judge-availability-card">
         <summary>
             <span>

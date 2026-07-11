@@ -53,6 +53,7 @@ from app.services.evaluation_service import (
     get_project_available_evaluation_types,
     infer_evaluation_type_kind,
     project_evaluation_count_summary,
+    project_evaluation_target_summary,
 )
 from app.services.mail_service import send_email, smtp_is_configured
 
@@ -1046,16 +1047,17 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     for project in active_projects:
         assigned_count = len(project.assignments)
         count_summary = project_evaluation_count_summary(project)
-        expected_evaluations = count_summary["expected_evaluations"]
+        target_summary = project_evaluation_target_summary(project)
+        expected_evaluations = target_summary["expected_evaluations"]
         completed_evaluations = count_summary["completed_evaluations"]
 
         total_expected_evaluations += expected_evaluations
         total_completed_evaluations += completed_evaluations
-        total_expected_documentation_evaluations += count_summary["expected_documentation_evaluations"]
+        total_expected_documentation_evaluations += target_summary["expected_documentation_evaluations"]
         total_completed_documentation_evaluations += count_summary["completed_documentation_evaluations"]
-        total_expected_exposition_evaluations += count_summary["expected_exposition_evaluations"]
+        total_expected_exposition_evaluations += target_summary["expected_exposition_evaluations"]
         total_completed_exposition_evaluations += count_summary["completed_exposition_evaluations"]
-        total_expected_english_evaluations += count_summary["expected_english_evaluations"]
+        total_expected_english_evaluations += target_summary["expected_english_evaluations"]
         total_completed_english_evaluations += count_summary["completed_english_evaluations"]
 
         if assigned_count == 0:

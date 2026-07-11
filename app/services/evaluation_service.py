@@ -10,6 +10,7 @@ from app.models.project import Project
 
 
 ENGLISH_EVAL_TYPE_CODE = "english_project_performance"
+TARGET_EVALUATIONS_PER_SCOPE = 3
 
 
 def _normalize_label_source(*values):
@@ -195,6 +196,16 @@ def project_evaluation_count_summary(project):
     }
 
 
+def project_evaluation_target_summary(project):
+    english_target = len(get_project_english_members(project)) if project_has_english_exhibition(project) else 0
+    return {
+        "expected_documentation_evaluations": TARGET_EVALUATIONS_PER_SCOPE,
+        "expected_exposition_evaluations": TARGET_EVALUATIONS_PER_SCOPE,
+        "expected_english_evaluations": english_target,
+        "expected_evaluations": TARGET_EVALUATIONS_PER_SCOPE * 2,
+    }
+
+
 def get_project_evaluations_summary(project):
     category = get_project_category(project)
     if not category:
@@ -313,15 +324,16 @@ def build_admin_evaluation_overview():
         available_types = get_project_available_evaluation_types(project)
         assigned_judges = len(project.assignments)
         count_summary = project_evaluation_count_summary(project)
-        expected_evaluations = count_summary["expected_evaluations"]
+        target_summary = project_evaluation_target_summary(project)
+        expected_evaluations = target_summary["expected_evaluations"]
         completed_evaluations = count_summary["completed_evaluations"]
         total_expected_evaluations += expected_evaluations
         total_completed_evaluations += completed_evaluations
-        total_expected_documentation_evaluations += count_summary["expected_documentation_evaluations"]
+        total_expected_documentation_evaluations += target_summary["expected_documentation_evaluations"]
         total_completed_documentation_evaluations += count_summary["completed_documentation_evaluations"]
-        total_expected_exposition_evaluations += count_summary["expected_exposition_evaluations"]
+        total_expected_exposition_evaluations += target_summary["expected_exposition_evaluations"]
         total_completed_exposition_evaluations += count_summary["completed_exposition_evaluations"]
-        total_expected_english_evaluations += count_summary["expected_english_evaluations"]
+        total_expected_english_evaluations += target_summary["expected_english_evaluations"]
         total_completed_english_evaluations += count_summary["completed_english_evaluations"]
 
         eval_counts = defaultdict(int)
@@ -392,11 +404,11 @@ def build_admin_evaluation_overview():
             "assigned_judges": assigned_judges,
             "expected_evaluations": expected_evaluations,
             "completed_evaluations": completed_evaluations,
-            "expected_documentation_evaluations": count_summary["expected_documentation_evaluations"],
+            "expected_documentation_evaluations": target_summary["expected_documentation_evaluations"],
             "completed_documentation_evaluations": count_summary["completed_documentation_evaluations"],
-            "expected_exposition_evaluations": count_summary["expected_exposition_evaluations"],
+            "expected_exposition_evaluations": target_summary["expected_exposition_evaluations"],
             "completed_exposition_evaluations": count_summary["completed_exposition_evaluations"],
-            "expected_english_evaluations": count_summary["expected_english_evaluations"],
+            "expected_english_evaluations": target_summary["expected_english_evaluations"],
             "completed_english_evaluations": count_summary["completed_english_evaluations"],
             "completion_percentage": round((completed_evaluations / expected_evaluations) * 100, 2)
             if expected_evaluations

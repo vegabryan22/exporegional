@@ -26,6 +26,7 @@ from app.models.system_setting import SystemSetting
 from app.models.thematic_axis import ThematicAxis
 from app.models.judge import Judge
 from app.services.audit_service import log_event
+from app.services.assignment_service import reassign_absent_judge_assignments
 from app.services.mail_service import send_email, smtp_is_configured
 from app.services.parameter_service import get_active_evaluation_types
 
@@ -1877,7 +1878,9 @@ def judge_attendance_confirm(token: str):
         judge.attendance_confirmed = confirmed
         judge.needs_parking = needs_parking
         judge.attendance_responded_at = _dt.utcnow()
+        reassignment_summary = None
         if not confirmed:
+            reassignment_summary = reassign_absent_judge_assignments(judge)
             judge.is_active_user = False
         else:
             judge.is_active_user = True
@@ -1891,6 +1894,21 @@ def judge_attendance_confirm(token: str):
                 f"ingles={judge.can_evaluate_english}"
             ),
         )
+        if reassignment_summary:
+            failed = reassignment_summary.get("failed", [])
+            detail = (
+                f"Juez no asiste: {reassignment_summary.get('moved', 0)} asignacion(es) redistribuidas, "
+                f"{reassignment_summary.get('kept_documentation', 0)} documento(s) conservados, "
+                f"{len(failed)} sin reemplazo."
+            )
+            if failed:
+                detail += " Sin reemplazo: " + ", ".join(failed[:8])
+            log_event(
+                "judge.attendance.reassign_absent",
+                "judge",
+                entity_id=judge.id,
+                detail=detail,
+            )
         db.session.commit()
         return render_template(
             "public/attendance_thanks.html",

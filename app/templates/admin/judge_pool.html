@@ -20,6 +20,11 @@
                 <input type="hidden" name="action" value="send_pending_attendance_invitations">
                 <button type="submit" class="action-btn outline-btn">Reenviar a pendientes</button>
             </form>
+            <form method="post" action="{{ action_url }}" onsubmit="return confirm('&iquest;Reasignar proyectos pendientes de jueces que ya marcaron No asiste?')">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="reassign_absent_judges">
+                <button type="submit" class="action-btn outline-btn">Reasignar no asistentes</button>
+            </form>
         </div>
     </div>
 

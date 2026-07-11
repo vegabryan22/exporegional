@@ -44,6 +44,7 @@ from app.models.system_setting import SystemSetting
 from app.models.thematic_axis import ThematicAxis
 from app.models.workshop import Workshop
 from app.services.audit_service import log_event
+from app.services.assignment_service import reassign_absent_judge_assignments
 from app.services.evaluation_service import (
     ENGLISH_EVAL_TYPE_CODE,
     assignment_allows_evaluation_type,
@@ -207,6 +208,7 @@ ACTION_MODULE_MAP = {
     "send_attendance_invitation": "judges",
     "send_all_attendance_invitations": "judges",
     "send_pending_attendance_invitations": "judges",
+    "reassign_absent_judges": "judge_pool",
     "update_advisor": "projects",
     "update_project": "projects",
     "update_project_logistics": "projects",
@@ -4297,6 +4299,45 @@ def _handle_action(action: str):
         log_event(log_action, "judge", detail=log_detail)
         flash_label = "Reenvíos a pendientes" if only_pending else "Invitaciones"
         flash(f"{flash_label} enviados: {sent} exitosos, {failed} con error.", "success" if failed == 0 else "warning")
+
+    elif action == "reassign_absent_judges":
+        absent_judges = Judge.query.filter(
+            Judge.role == Judge.ROLE_JUDGE,
+            Judge.attendance_confirmed == False,  # noqa: E712
+        ).all()
+        if not absent_judges:
+            flash("No hay jueces marcados como no asistentes para reprocesar.", "warning")
+            return
+
+        total_moved = 0
+        total_kept_documentation = 0
+        total_failed = 0
+        failed_projects = []
+        for judge in absent_judges:
+            summary = reassign_absent_judge_assignments(judge)
+            total_moved += summary.get("moved", 0)
+            total_kept_documentation += summary.get("kept_documentation", 0)
+            failed = summary.get("failed", [])
+            total_failed += len(failed)
+            failed_projects.extend(failed)
+
+        detail = (
+            f"Reprocesados {len(absent_judges)} jueces no asistentes: "
+            f"{total_moved} asignacion(es) redistribuidas, "
+            f"{total_kept_documentation} documento(s) conservados, "
+            f"{total_failed} proyecto(s) sin reemplazo."
+        )
+        if failed_projects:
+            detail += " Sin reemplazo: " + ", ".join(failed_projects[:10])
+        log_event("admin.judge.reassign_absent", "judge", detail=detail)
+        db.session.commit()
+        flash(
+            (
+                f"No asistentes reprocesados: {total_moved} asignacion(es) redistribuidas, "
+                f"{total_kept_documentation} documento(s) conservados, {total_failed} sin reemplazo."
+            ),
+            "success" if total_failed == 0 else "warning",
+        )
 
     elif action == "update_project":
         project_id = request.form.get("project_id", type=int)

@@ -197,7 +197,19 @@ def project_evaluation_count_summary(project):
 
 
 def project_evaluation_target_summary(project):
-    english_target = len(get_project_english_members(project)) if project_has_english_exhibition(project) else 0
+    english_target = 0
+    english_member_count = len(get_project_english_members(project))
+    if english_member_count:
+        english_type = next(
+            (eval_type for eval_type in get_project_available_evaluation_types(project) if eval_type.code == ENGLISH_EVAL_TYPE_CODE),
+            None,
+        )
+        if english_type:
+            english_target = sum(
+                english_member_count
+                for assignment in getattr(project, "assignments", [])
+                if assignment_allows_evaluation_type(assignment, english_type)
+            )
     return {
         "expected_documentation_evaluations": TARGET_EVALUATIONS_PER_SCOPE,
         "expected_exposition_evaluations": TARGET_EVALUATIONS_PER_SCOPE,

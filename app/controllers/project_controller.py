@@ -1881,6 +1881,17 @@ def judge_attendance_confirm(token: str):
         reassignment_summary = None
         if not confirmed:
             reassignment_summary = reassign_absent_judge_assignments(judge)
+            from app.controllers.admin_controller import _send_assignment_email
+
+            for move in reassignment_summary.get("moves", []):
+                replacement_judge = move.get("judge")
+                replacement_project = move.get("project")
+                replacement_assignment = move.get("assignment")
+                if replacement_judge and replacement_project and replacement_assignment:
+                    notified = _send_assignment_email(replacement_judge, replacement_project, replacement_assignment)
+                    move["notification_status"] = "correo enviado" if notified else (replacement_assignment.notification_error or "correo fallido")
+                else:
+                    move["notification_status"] = "sin correo"
             judge.is_active_user = False
         else:
             judge.is_active_user = True
@@ -1896,13 +1907,22 @@ def judge_attendance_confirm(token: str):
         )
         if reassignment_summary:
             failed = reassignment_summary.get("failed", [])
+            moves = reassignment_summary.get("moves", [])
             detail = (
                 f"Juez no asiste: {reassignment_summary.get('moved', 0)} asignacion(es) redistribuidas, "
                 f"{reassignment_summary.get('kept_documentation', 0)} documento(s) conservados, "
                 f"{len(failed)} sin reemplazo."
             )
+            if moves:
+                detail += " Movimientos: " + "; ".join(
+                    f"{move.get('project_title')} -> {move.get('to_judge_name')} ({move.get('scope')}, {move.get('notification_status', 'sin correo')})"
+                    for move in moves[:8]
+                )
             if failed:
-                detail += " Sin reemplazo: " + ", ".join(failed[:8])
+                detail += " Sin reemplazo: " + ", ".join(
+                    f"{item.get('project_title')} ({item.get('scope')})"
+                    for item in failed[:8]
+                )
             log_event(
                 "judge.attendance.reassign_absent",
                 "judge",

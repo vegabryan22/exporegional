@@ -4312,6 +4312,9 @@ def _handle_action(action: str):
         total_moved = 0
         total_kept_documentation = 0
         total_failed = 0
+        total_notified = 0
+        total_notification_failed = 0
+        move_lines = []
         failed_projects = []
         for judge in absent_judges:
             summary = reassign_absent_judge_assignments(judge)
@@ -4320,21 +4323,49 @@ def _handle_action(action: str):
             failed = summary.get("failed", [])
             total_failed += len(failed)
             failed_projects.extend(failed)
+            for move in summary.get("moves", []):
+                replacement_judge = move.get("judge")
+                replacement_project = move.get("project")
+                replacement_assignment = move.get("assignment")
+                notified = False
+                if replacement_judge and replacement_project and replacement_assignment:
+                    notified = _send_assignment_email(replacement_judge, replacement_project, replacement_assignment)
+                if notified:
+                    total_notified += 1
+                    notification_status = "correo enviado"
+                else:
+                    total_notification_failed += 1
+                    notification_status = replacement_assignment.notification_error if replacement_assignment else "sin correo"
+                move_lines.append(
+                    f"{move.get('project_title')} -> {move.get('to_judge_name')} ({move.get('scope')}, {notification_status})"
+                )
 
         detail = (
             f"Reprocesados {len(absent_judges)} jueces no asistentes: "
             f"{total_moved} asignacion(es) redistribuidas, "
             f"{total_kept_documentation} documento(s) conservados, "
+            f"{total_notified} correo(s) enviados, "
+            f"{total_notification_failed} correo(s) fallidos, "
             f"{total_failed} proyecto(s) sin reemplazo."
         )
+        if move_lines:
+            detail += " Movimientos: " + "; ".join(move_lines[:12])
         if failed_projects:
-            detail += " Sin reemplazo: " + ", ".join(failed_projects[:10])
+            detail += " Sin reemplazo: " + ", ".join(
+                f"{item.get('project_title')} ({item.get('scope')})"
+                for item in failed_projects[:10]
+            )
         log_event("admin.judge.reassign_absent", "judge", detail=detail)
         db.session.commit()
+        if move_lines:
+            flash("Reasignaciones: " + "; ".join(move_lines[:6]), "info")
         flash(
             (
                 f"No asistentes reprocesados: {total_moved} asignacion(es) redistribuidas, "
-                f"{total_kept_documentation} documento(s) conservados, {total_failed} sin reemplazo."
+                f"{total_kept_documentation} documento(s) conservados, "
+                f"{total_notified} correo(s) enviados, "
+                f"{total_notification_failed} correo(s) fallidos, "
+                f"{total_failed} sin reemplazo."
             ),
             "success" if total_failed == 0 else "warning",
         )

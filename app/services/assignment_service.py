@@ -109,6 +109,8 @@ def _apply_reassignment(project, source_assignment: Assignment, can_documentatio
         notification_sent_at=None,
         notification_error=None,
     )
+    replacement.judge = candidate
+    replacement.project = project
     db.session.add(replacement)
     return replacement
 
@@ -129,6 +131,7 @@ def reassign_absent_judge_assignments(judge: Judge) -> dict:
         "kept_documentation": 0,
         "kept_exposition": 0,
         "unchanged": 0,
+        "moves": [],
         "failed": [],
     }
 
@@ -162,10 +165,27 @@ def reassign_absent_judge_assignments(judge: Judge) -> dict:
 
         replacement = _apply_reassignment(project, assignment, move_documentation, move_exposition)
         if not replacement:
-            summary["failed"].append(project.title)
+            summary["failed"].append(
+                {
+                    "project_title": project.title,
+                    "scope": _scope_label(move_documentation, move_exposition),
+                }
+            )
             continue
 
         summary["moved"] += 1
+        summary["moves"].append(
+            {
+                "project_title": project.title,
+                "from_judge_name": judge.full_name,
+                "to_judge_name": replacement.judge.full_name if replacement.judge else "",
+                "to_judge_email": replacement.judge.email if replacement.judge else "",
+                "scope": _scope_label(move_documentation, move_exposition),
+                "assignment": replacement,
+                "project": project,
+                "judge": replacement.judge,
+            }
+        )
         assignment.can_evaluate_documentation = keep_documentation
         assignment.can_evaluate_exposition = keep_exposition
         assignment.notification_sent_at = None
@@ -178,3 +198,13 @@ def reassign_absent_judge_assignments(judge: Judge) -> dict:
             db.session.delete(assignment)
 
     return summary
+
+
+def _scope_label(can_documentation: bool, can_exposition: bool) -> str:
+    if can_documentation and can_exposition:
+        return "Documento y exposicion"
+    if can_documentation:
+        return "Documento escrito"
+    if can_exposition:
+        return "Exposicion oral"
+    return "Sin alcance"

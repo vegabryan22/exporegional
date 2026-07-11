@@ -1111,6 +1111,17 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     emp_projects   = [p for p in active_projects if "emprend" in (p.category or "").lower()]
     english_members = sum(1 for m in active_members if m.participates_in_english)
     english_projects = sum(1 for p in active_projects if any(m.participates_in_english for m in p.members))
+    english_judge_ids = set()
+    for project in active_projects:
+        available_types = get_project_available_evaluation_types(project)
+        english_type = next((item for item in available_types if item.code == ENGLISH_EVAL_TYPE_CODE), None)
+        if not english_type:
+            continue
+        english_judge_ids.update(
+            assignment.judge_id
+            for assignment in project.assignments
+            if assignment_allows_evaluation_type(assignment, english_type)
+        )
 
     # — Logistics completeness —
     logistics_complete = sum(1 for p in active_projects if p.logistics_status == "completo" and not _project_logistics_missing_items(p))
@@ -1167,6 +1178,7 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "emp_projects": len(emp_projects),
         "english_projects": english_projects,
         "english_members": english_members,
+        "english_judges": len(english_judge_ids),
     }
 
 

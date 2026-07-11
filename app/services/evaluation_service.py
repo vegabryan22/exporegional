@@ -330,6 +330,8 @@ def build_admin_evaluation_overview():
     total_completed_exposition_evaluations = 0
     total_expected_english_evaluations = 0
     total_completed_english_evaluations = 0
+    total_english_members = 0
+    english_judge_ids = set()
 
     for project in projects:
         category = category_map.get((project.category or "").strip().lower())
@@ -337,6 +339,15 @@ def build_admin_evaluation_overview():
         assigned_judges = len(project.assignments)
         count_summary = project_evaluation_count_summary(project)
         target_summary = project_evaluation_target_summary(project)
+        english_members = get_project_english_members(project)
+        english_type = next((item for item in available_types if item.code == ENGLISH_EVAL_TYPE_CODE), None)
+        total_english_members += len(english_members)
+        if english_type:
+            english_judge_ids.update(
+                assignment.judge_id
+                for assignment in project.assignments
+                if assignment_allows_evaluation_type(assignment, english_type)
+            )
         expected_evaluations = target_summary["expected_evaluations"]
         completed_evaluations = count_summary["completed_evaluations"]
         total_expected_evaluations += expected_evaluations
@@ -428,8 +439,8 @@ def build_admin_evaluation_overview():
             "available_types": available_types,
             "progress_by_type": progress_by_type,
             "evaluation_records": evaluation_records,
-            "english_member_count": len(get_project_english_members(project)),
-            "english_members": get_project_english_members(project),
+            "english_member_count": len(english_members),
+            "english_members": english_members,
             **summary,
         }
         project_rows.append(row)
@@ -437,9 +448,8 @@ def build_admin_evaluation_overview():
         if category and summary["final_grade"] is not None:
             winner_candidates[category.code].append(row)
 
-        english_type = next((item for item in available_types if item.code == ENGLISH_EVAL_TYPE_CODE), None)
         if english_type:
-            for member in get_project_english_members(project):
+            for member in english_members:
                 member_values = [
                     evaluation.percentage
                     for evaluation in project.evaluations
@@ -506,6 +516,8 @@ def build_admin_evaluation_overview():
         "completed_exposition_evaluations": total_completed_exposition_evaluations,
         "expected_english_evaluations": total_expected_english_evaluations,
         "completed_english_evaluations": total_completed_english_evaluations,
+        "english_members": total_english_members,
+        "english_judges": len(english_judge_ids),
         "completion_percentage": round((total_completed_evaluations / total_expected_evaluations) * 100, 2)
         if total_expected_evaluations
         else 0,

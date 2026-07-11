@@ -5,7 +5,7 @@
 {% set eval_pct = ((m.completed_evaluations / m.expected_evaluations * 100) | int) if m.expected_evaluations > 0 else 0 %}
 {% set logistics_pct = ((m.logistics_complete / m.active_projects * 100) | int) if m.active_projects > 0 else 0 %}
 {% set assign_pct = ((m.judges_with_assignments / m.total_active_judges * 100) | int) if m.total_active_judges > 0 else 0 %}
-{% set att_pct = ((m.judges_confirmed / m.total_active_judges * 100) | int) if m.total_active_judges > 0 else 0 %}
+{% set att_pct = ((m.judges_confirmed / m.total_attendance_judges * 100) | int) if m.total_attendance_judges > 0 else 0 %}
 
 <div class="ov2-shell">
 
@@ -143,7 +143,7 @@
       </div>
       <div class="ov2-chart-info">
         <strong>Asistencia</strong>
-        <p>{{ m.judges_confirmed }} confirmados de {{ m.total_active_judges }}</p>
+        <p>{{ m.judges_confirmed }} confirmados de {{ m.total_attendance_judges }}</p>
         <span class="ov2-chart-sub">
           {{ m.judges_rejected }} no asisten &middot; {{ m.judges_pending_att }} sin responder
         </span>
@@ -195,14 +195,14 @@
         <div class="ov2-att-row">
           <span class="ov2-att-label">Sin responder</span>
           <div class="ov2-bar-track">
-            <div class="ov2-bar-fill pending" style="width:{{ ((m.judges_pending_att / m.total_active_judges * 100)|int) if m.total_active_judges else 0 }}%"></div>
+            <div class="ov2-bar-fill pending" style="width:{{ ((m.judges_pending_att / m.total_attendance_judges * 100)|int) if m.total_attendance_judges else 0 }}%"></div>
           </div>
           <strong>{{ m.judges_pending_att }}</strong>
         </div>
         <div class="ov2-att-row">
           <span class="ov2-att-label">No asisten</span>
           <div class="ov2-bar-track">
-            <div class="ov2-bar-fill rejected" style="width:{{ ((m.judges_rejected / m.total_active_judges * 100)|int) if m.total_active_judges else 0 }}%"></div>
+            <div class="ov2-bar-fill rejected" style="width:{{ ((m.judges_rejected / m.total_attendance_judges * 100)|int) if m.total_attendance_judges else 0 }}%"></div>
           </div>
           <strong>{{ m.judges_rejected }}</strong>
         </div>

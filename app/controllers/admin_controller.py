@@ -1100,9 +1100,14 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     # — Judge stats —
     judge_list = [j for j in (judges or []) if getattr(j, "effective_role", None) == Judge.ROLE_JUDGE]
     active_judges = [j for j in judge_list if j.is_active_user]
-    judges_confirmed   = sum(1 for j in active_judges if j.attendance_confirmed is True)
-    judges_rejected    = sum(1 for j in active_judges if j.attendance_confirmed is False)
-    judges_pending_att = sum(1 for j in active_judges if j.attendance_confirmed is None)
+    attendance_judges = [
+        j
+        for j in judge_list
+        if j.is_active_user or j.attendance_confirmed is not None
+    ]
+    judges_confirmed   = sum(1 for j in attendance_judges if j.attendance_confirmed is True)
+    judges_rejected    = sum(1 for j in attendance_judges if j.attendance_confirmed is False)
+    judges_pending_att = sum(1 for j in attendance_judges if j.attendance_confirmed is None)
     judges_with_assignments = len({a.judge_id for a in active_assignments if a.judge_id})
     judges_without_assignments = max(0, len(active_judges) - judges_with_assignments)
 
@@ -1168,6 +1173,7 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "pending_member_edits_count": len(pending_member_edits) if pending_member_edits is not None else 0,
         # judge
         "total_active_judges": len(active_judges),
+        "total_attendance_judges": len(attendance_judges),
         "judges_confirmed": judges_confirmed,
         "judges_rejected": judges_rejected,
         "judges_pending_att": judges_pending_att,

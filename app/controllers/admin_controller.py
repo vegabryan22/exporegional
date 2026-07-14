@@ -6459,6 +6459,34 @@ def _build_judge_pool_context(context: dict) -> dict:
     ]
     active_judge_users = [judge for judge in judge_users if judge.is_active_user]
     project_map = {project.id: project for project in context.get("projects", [])}
+
+    def _judge_evaluation_progress(judge: Judge, assignments: list[Assignment]) -> dict:
+        expected = 0
+        completed = 0
+        for assignment in assignments:
+            project = project_map.get(assignment.project_id) or assignment.project
+            if not project:
+                continue
+            assignment.project = project
+            entries = get_assignment_evaluation_entries(assignment)
+            expected += len(entries)
+            project_evaluations = getattr(project, "evaluations", []) or []
+            for entry in entries:
+                entry_member_id = entry.get("project_member_id")
+                if any(
+                    evaluation.judge_id == judge.id
+                    and evaluation.evaluation_type == entry["code"]
+                    and (evaluation.project_member_id or None) == (entry_member_id or None)
+                    and evaluation.percentage is not None
+                    for evaluation in project_evaluations
+                ):
+                    completed += 1
+        return {
+            "expected": expected,
+            "completed": completed,
+            "percentage": round((completed / expected) * 100) if expected else 0,
+        }
+
     rows = []
     for judge in judge_users:
         judge_assignments = [
@@ -6482,11 +6510,13 @@ def _build_judge_pool_context(context: dict) -> dict:
             )
             if warning:
                 warnings.append(warning)
+        evaluation_progress = _judge_evaluation_progress(judge, active_assignments)
         rows.append(
             {
                 "judge": judge,
                 "assignments": active_assignments,
                 "assignment_count": len(active_assignments),
+                "evaluation_progress": evaluation_progress,
                 "warning_count": len(warnings),
                 "warnings": warnings[:2],
             }

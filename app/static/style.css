@@ -3943,6 +3943,48 @@ dialog.maintenance-dialog::backdrop {
     line-height: 1;
 }
 
+.judge-eval-progress {
+    width: min(130px, 100%);
+    display: grid;
+    gap: 0.16rem;
+    margin: 0.15rem 0 0.1rem;
+}
+
+.judge-eval-progress-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.4rem;
+}
+
+.judge-eval-progress small,
+.judge-eval-progress b {
+    font-size: 0.72rem;
+    line-height: 1;
+}
+
+.judge-eval-progress small {
+    color: #6f8cab;
+}
+
+.judge-eval-progress b {
+    color: var(--primary);
+}
+
+.judge-eval-progress-track {
+    height: 6px;
+    border-radius: 999px;
+    background: #e3edf7;
+    overflow: hidden;
+}
+
+.judge-eval-progress-track span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: #1d7a22;
+}
+
 .judge-pool-load .outline-btn {
     margin-top: 0.4rem;
 }

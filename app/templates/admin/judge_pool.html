@@ -162,6 +162,16 @@
             <div class="judge-pool-load">
                 <span>Asignaciones</span>
                 <strong>{{ row.assignment_count }}</strong>
+                <div class="judge-eval-progress" title="{{ row.evaluation_progress.completed }} de {{ row.evaluation_progress.expected }} evaluaciones registradas">
+                    <div class="judge-eval-progress-head">
+                        <small>Eval.</small>
+                        <b>{{ row.evaluation_progress.percentage }}%</b>
+                    </div>
+                    <div class="judge-eval-progress-track">
+                        <span style="width:{{ row.evaluation_progress.percentage }}%"></span>
+                    </div>
+                    <small>{{ row.evaluation_progress.completed }}/{{ row.evaluation_progress.expected }}</small>
+                </div>
                 {% if row.warning_count %}
                     <p class="judge-warning">{{ row.warning_count }} alerta(s) de compatibilidad</p>
                 {% else %}

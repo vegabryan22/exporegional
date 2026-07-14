@@ -12668,15 +12668,6 @@ body {
     border-color: #bfdaf0;
 }
 
-.ev2-english-winner-block {
-    grid-column: 1 / -1;
-}
-
-.ev2-english-winner-card {
-    flex: none;
-    width: 100%;
-}
-
 .ev2-winner-list {
     display: flex;
     gap: 1rem;

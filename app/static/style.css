@@ -12650,6 +12650,31 @@ body {
     flex-wrap: wrap;
 }
 
+.ev2-tracking-head {
+    flex-wrap: nowrap;
+}
+
+.ev2-tracking-head .ev2-filter-row {
+    margin-left: auto;
+    flex-wrap: nowrap;
+}
+
+.ev2-tracking-head .ev2-filter-input {
+    width: min(350px, 32vw);
+    min-width: 240px;
+}
+
+.ev2-tracking-head .ghost-btn,
+.ev2-tracking-head .ov2-block-count {
+    flex-shrink: 0;
+}
+
+.ev2-tracking-head .ov2-block-count {
+    min-width: 130px;
+    text-align: right;
+    white-space: nowrap;
+}
+
 .ev2-filter-input {
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -12838,6 +12863,11 @@ body {
 @media (max-width: 800px) {
     .ev2-summary-metrics { gap: 0.6rem; }
     .ev2-winner-list { flex-direction: column; }
+    .ev2-tracking-head { flex-wrap: wrap; }
+    .ev2-tracking-head h4 { margin-right: auto; }
+    .ev2-tracking-head .ev2-filter-row { order: 3; width: 100%; margin-left: 0; }
+    .ev2-tracking-head .ev2-filter-input { flex: 1; min-width: 0; width: auto; }
+    .ev2-tracking-head .ov2-block-count { min-width: 0; }
     .ev2-filter-input { min-width: 140px; }
 }
 

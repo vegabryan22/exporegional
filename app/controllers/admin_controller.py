@@ -44,7 +44,7 @@ from app.models.system_setting import SystemSetting
 from app.models.thematic_axis import ThematicAxis
 from app.models.workshop import Workshop
 from app.services.audit_service import log_event
-from app.services.assignment_service import reassign_absent_judge_assignments
+from app.services.assignment_service import balance_assignments_to_judge, reassign_absent_judge_assignments
 from app.services.evaluation_service import (
     ENGLISH_EVAL_TYPE_CODE,
     assignment_allows_evaluation_type,
@@ -209,6 +209,7 @@ ACTION_MODULE_MAP = {
     "send_attendance_invitation": "judges",
     "send_all_attendance_invitations": "judges",
     "send_pending_attendance_invitations": "judges",
+    "balance_judge_assignments": "judge_pool",
     "reassign_absent_judges": "judge_pool",
     "update_advisor": "projects",
     "update_project": "projects",
@@ -4318,6 +4319,67 @@ def _handle_action(action: str):
         log_event(log_action, "judge", detail=log_detail)
         flash_label = "Reenvíos a pendientes" if only_pending else "Invitaciones"
         flash(f"{flash_label} enviados: {sent} exitosos, {failed} con error.", "success" if failed == 0 else "warning")
+
+    elif action == "balance_judge_assignments":
+        judge_id = request.form.get("judge_id", type=int)
+        judge = Judge.query.get(judge_id) if judge_id else None
+        if not judge or judge.role != Judge.ROLE_JUDGE:
+            flash("No se encontro el juez para equilibrar asignaciones.", "error")
+            return
+        summary = balance_assignments_to_judge(judge)
+        total_notified = 0
+        total_notification_failed = 0
+        move_lines = []
+        for move in summary.get("moves", []):
+            replacement_judge = move.get("judge")
+            replacement_project = move.get("project")
+            replacement_assignment = move.get("assignment")
+            notified = False
+            if replacement_judge and replacement_project and replacement_assignment:
+                notified = _send_assignment_email(replacement_judge, replacement_project, replacement_assignment)
+            if notified:
+                total_notified += 1
+                notification_status = "correo enviado"
+            else:
+                total_notification_failed += 1
+                notification_status = replacement_assignment.notification_error if replacement_assignment else "sin correo"
+            move_lines.append(
+                f"{move.get('project_title')} ({move.get('scope')}, desde {move.get('from_judge_name')}, {notification_status})"
+            )
+        detail = (
+            f"Equilibrio para juez #{judge.id} {judge.full_name}: "
+            f"{summary.get('moved', 0)} asignacion(es) movidas, "
+            f"carga {summary.get('target_load_before', 0)} -> {summary.get('target_load_after', 0)}, "
+            f"{total_notified} correo(s) enviados, {total_notification_failed} correo(s) fallidos."
+        )
+        if move_lines:
+            detail += " Movimientos: " + "; ".join(move_lines[:10])
+        if summary.get("failed"):
+            detail += " Compatibles no movidos: " + ", ".join(
+                f"{item.get('project_title')} ({item.get('scope')})"
+                for item in summary["failed"][:10]
+            )
+        log_event("admin.judge.balance_assignments", "judge", judge.id, detail=detail)
+        db.session.commit()
+        if move_lines:
+            flash("Equilibrado: " + "; ".join(move_lines[:5]), "info")
+        moved = summary.get("moved", 0)
+        if moved:
+            flash(
+                (
+                    f"{judge.full_name}: {moved} asignacion(es) redistribuidas. "
+                    f"Carga {summary.get('target_load_before', 0)} -> {summary.get('target_load_after', 0)}."
+                ),
+                "success" if total_notification_failed == 0 else "warning",
+            )
+        else:
+            flash(
+                (
+                    f"No se movieron asignaciones para {judge.full_name}: "
+                    "no hay proyectos pendientes compatibles sin evaluacion registrada."
+                ),
+                "warning",
+            )
 
     elif action == "reassign_absent_judges":
         absent_judges = Judge.query.filter(

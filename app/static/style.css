@@ -3989,6 +3989,14 @@ dialog.maintenance-dialog::backdrop {
     margin-top: 0.4rem;
 }
 
+.judge-balance-form {
+    margin: 0;
+}
+
+.judge-balance-form .outline-btn {
+    margin-top: 0.3rem;
+}
+
 .judge-warning {
     color: #9b263a;
     font-weight: 800;

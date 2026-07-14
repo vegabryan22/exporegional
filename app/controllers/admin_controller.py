@@ -1344,7 +1344,6 @@ def _build_judge_acta_context(judge_id: int):
         for evaluation in judge.evaluations
         if evaluation.project and evaluation.project.is_active
     ]
-    active_judge_users = [judge for judge in judge_users if judge.is_active_user]
     active_evaluations.sort(
         key=lambda item: (
             (item.project.title if item.project else "").lower(),

@@ -1648,6 +1648,54 @@ def _certificate_script_font():
     return "Helvetica-Oblique"
 
 
+def _format_certificate_person_name(value: str) -> str:
+    words = re.split(r"\s+", (value or "").strip())
+    lowercase_particles = {"de", "del", "la", "las", "los", "y"}
+    formatted = []
+    for index, word in enumerate(words):
+        cleaned = word.strip()
+        if not cleaned:
+            continue
+        lower = cleaned.lower()
+        if index > 0 and lower in lowercase_particles:
+            formatted.append(lower)
+            continue
+        pieces = [
+            piece[:1].upper() + piece[1:].lower() if piece else piece
+            for piece in lower.split("-")
+        ]
+        formatted.append("-".join(pieces))
+    return " ".join(formatted)
+
+
+def _draw_certificate_recipient_name(pdf, name: str, center_x: float, y: float, max_width: float, font_name: str):
+    display_name = _format_certificate_person_name(name)
+    font_size = 36
+    min_font_size = 24
+    while (
+        font_size > min_font_size
+        and pdfmetrics.stringWidth(_pdf_normalize_text(display_name), font_name, font_size) > max_width
+    ):
+        font_size -= 1
+
+    pdf.setFont(font_name, font_size)
+    if pdfmetrics.stringWidth(_pdf_normalize_text(display_name), font_name, font_size) <= max_width:
+        pdf.drawCentredString(center_x, y, _pdf_normalize_text(display_name))
+        return
+
+    lines = _pdf_wrap_text(display_name, max_width, font_name, font_size)
+    if len(lines) > 2:
+        font_size = min_font_size
+        pdf.setFont(font_name, font_size)
+        lines = _pdf_wrap_text(display_name, max_width, font_name, font_size)
+
+    line_gap = font_size * 0.9
+    start_y = y + (line_gap / 2 if len(lines) > 1 else 0)
+    for line in lines[:2]:
+        pdf.drawCentredString(center_x, start_y, line)
+        start_y -= line_gap
+
+
 def _pdf_new_page_with_header(pdf, width, height, title, subtitle):
     pdf.showPage()
     return _pdf_draw_header(pdf, width, height, title, subtitle)
@@ -2023,8 +2071,7 @@ def _render_participation_certificates_pdf(context):
         pdf.setFont("Helvetica-Bold", 15)
         pdf.drawCentredString(width / 2, 369, _pdf_normalize_text("Otorga el presente certificado a:"))
 
-        pdf.setFont(script_font, 42)
-        pdf.drawCentredString(width / 2, 312, _pdf_normalize_text(member.full_name))
+        _draw_certificate_recipient_name(pdf, member.full_name, width / 2, 312, width - 120, script_font)
 
         pdf.setFont("Helvetica", 18)
         pdf.drawCentredString(width / 2, 247, _pdf_normalize_text("Por su participaci\u00f3n en la:"))

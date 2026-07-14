@@ -1662,38 +1662,126 @@ def _pdf_draw_header(pdf, width, height, title, subtitle):
     pdf.drawString(38, height - 66, "EXPOTECNICA")
     pdf.setFillColor(colors.HexColor("#103f78"))
     pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawString(32, top - 48, _pdf_normalize_text(title))
+    title_y = top - 48
+    title_lines = _pdf_wrap_text(title, width - 64, "Helvetica-Bold", 14)
+    for line in title_lines:
+        pdf.drawString(32, title_y, line)
+        title_y -= 16
     pdf.setFont("Helvetica", 10)
     pdf.setFillColor(colors.HexColor("#385c88"))
-    pdf.drawString(32, top - 63, _pdf_normalize_text(subtitle))
-    return top - 84
+    pdf.drawString(32, title_y + 1, _pdf_normalize_text(subtitle))
+    return title_y - 20
+
+
+def _pdf_draw_label_value_row(pdf, label, value, x, y, label_width, value_width):
+    pdf.setFillColor(colors.HexColor("#6b7f99"))
+    pdf.setFont("Helvetica-Bold", 8)
+    pdf.drawString(x, y, _pdf_normalize_text(label).upper())
+    pdf.setFillColor(colors.HexColor("#153a63"))
+    return _pdf_draw_wrapped_line_set(pdf, value, x + label_width, y, value_width, "Helvetica", 9, 11)
+
+
+def _pdf_draw_project_criteria_table(pdf, rows, x, y, width, page_width, page_height, new_page):
+    columns = [
+        ("Seccion", 82),
+        ("Criterio", 250),
+        ("Puntaje", 52),
+        ("Observacion", width - 82 - 250 - 52),
+    ]
+    header_height = 18
+    line_gap = 9
+    padding_y = 6
+
+    def draw_header(current_y):
+        pdf.setFillColor(colors.HexColor("#103f78"))
+        pdf.roundRect(x, current_y - header_height, width, header_height, 4, stroke=0, fill=1)
+        pdf.setFillColor(colors.white)
+        pdf.setFont("Helvetica-Bold", 7.5)
+        col_x = x
+        for label, col_width in columns:
+            pdf.drawString(col_x + 5, current_y - 12, _pdf_normalize_text(label).upper())
+            col_x += col_width
+        return current_y - header_height
+
+    if y < 120:
+        y = new_page()
+    y = draw_header(y)
+
+    for index, criterion in enumerate(rows):
+        cell_values = [
+            criterion["section_name"] or "General",
+            criterion["criterion_name"],
+            f"{criterion['score']}/{criterion['max_score'] or 'N/D'}",
+            criterion["observation"] or "-",
+        ]
+        wrapped_cells = [
+            _pdf_wrap_text(value, columns[col_index][1] - 10, "Helvetica", 7.5)
+            for col_index, value in enumerate(cell_values)
+        ]
+        row_height = max(22, max(len(lines) for lines in wrapped_cells) * line_gap + padding_y * 2)
+        if y - row_height < 58:
+            y = new_page()
+            y = draw_header(y)
+
+        fill = "#f7fbff" if index % 2 == 0 else "#ffffff"
+        pdf.setFillColor(colors.HexColor(fill))
+        pdf.rect(x, y - row_height, width, row_height, stroke=0, fill=1)
+        pdf.setStrokeColor(colors.HexColor("#d7e5f5"))
+        pdf.line(x, y - row_height, x + width, y - row_height)
+
+        col_x = x
+        for col_index, lines in enumerate(wrapped_cells):
+            pdf.setFillColor(colors.HexColor("#153a63") if col_index != 2 else colors.HexColor("#1d7a22"))
+            pdf.setFont("Helvetica-Bold" if col_index == 2 else "Helvetica", 7.5)
+            text_y = y - padding_y - 7
+            for line in lines:
+                pdf.drawString(col_x + 5, text_y, line)
+                text_y -= line_gap
+            col_x += columns[col_index][1]
+        y -= row_height
+
+    return y - 10
 
 
 def _render_project_acta_pdf(acta_data):
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
+    project = acta_data["project"]
+
+    def new_project_page(subtitle="Continuacion"):
+        return _pdf_new_page_with_header(pdf, width, height, f"Acta de evaluacion: {project.title}", subtitle)
+
     y = _pdf_draw_header(
         pdf,
         width,
         height,
-        f"Acta de evaluacion del proyecto: {acta_data['project'].title}",
+        f"Acta de evaluacion del proyecto: {project.title}",
         f"Generado: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
     )
 
-    project = acta_data["project"]
     category_name = acta_data["category"].name if acta_data["category"] else (project.category or "N/D")
-    info_lines = [
-        f"Proyecto: {project.title}",
-        f"Equipo: {project.team_name}",
-        f"Categoria: {category_name}",
-        f"Promedio general: {acta_data['average_percentage'] if acta_data['average_percentage'] is not None else 'N/D'}",
-    ]
-    pdf.setFillColor(colors.black)
-    for line in info_lines:
-        y = _pdf_draw_wrapped_line_set(pdf, line, 32, y, width - 64, "Helvetica", 10, 13)
+    pdf.setFillColor(colors.HexColor("#f7fbff"))
+    pdf.roundRect(32, y - 76, width - 64, 66, 8, stroke=0, fill=1)
+    pdf.setStrokeColor(colors.HexColor("#d7e5f5"))
+    pdf.roundRect(32, y - 76, width - 64, 66, 8, stroke=1, fill=0)
+    card_y = y - 26
+    _pdf_draw_label_value_row(pdf, "Equipo", project.team_name or "N/D", 44, card_y, 58, 185)
+    _pdf_draw_label_value_row(pdf, "Categoria", category_name, 310, card_y, 70, 160)
+    card_y -= 24
+    _pdf_draw_label_value_row(
+        pdf,
+        "Promedio",
+        str(acta_data["average_percentage"] if acta_data["average_percentage"] is not None else "N/D"),
+        44,
+        card_y,
+        58,
+        120,
+    )
+    _pdf_draw_label_value_row(pdf, "Evaluaciones", str(acta_data["evaluations_count"]), 310, card_y, 82, 100)
+    y -= 96
 
-    y -= 4
+    pdf.setFillColor(colors.HexColor("#103f78"))
     pdf.setFont("Helvetica-Bold", 11)
     pdf.drawString(32, y, "Jueces asignados")
     y -= 14
@@ -1703,15 +1791,18 @@ def _render_project_acta_pdf(acta_data):
         y -= 14
     else:
         for judge in acta_data["assigned_judges"]:
-            judge_line = f"- {judge['name']} ({judge['email']}) {judge['submitted_count']}/{judge['expected_count']}"
-            y = _pdf_draw_wrapped_line_set(pdf, judge_line, 40, y, width - 80, "Helvetica", 9, 12)
+            judge_line = f"{judge['name']} | {judge['email']} | {judge['submitted_count']}/{judge['expected_count']}"
+            y = _pdf_draw_wrapped_line_set(pdf, judge_line, 40, y, width - 80, "Helvetica", 8.5, 11)
             if y < 80:
-                y = _pdf_new_page_with_header(pdf, width, height, f"Acta de evaluacion: {project.title}", "Continuacion")
+                y = new_project_page()
 
     y -= 2
+    if y < 100:
+        y = new_project_page()
     pdf.setFont("Helvetica-Bold", 11)
+    pdf.setFillColor(colors.HexColor("#103f78"))
     pdf.drawString(32, y, "Evaluaciones")
-    y -= 12
+    y -= 14
 
     if not acta_data["evaluations"]:
         pdf.setFont("Helvetica", 10)
@@ -1719,34 +1810,48 @@ def _render_project_acta_pdf(acta_data):
         y -= 14
     else:
         for item in acta_data["evaluations"]:
-            if y < 120:
-                y = _pdf_new_page_with_header(pdf, width, height, f"Acta de evaluacion: {project.title}", "Continuacion")
-            pdf.setFillColor(colors.HexColor("#e7f0fb"))
-            pdf.roundRect(30, y - 66, width - 60, 62, 6, stroke=0, fill=1)
+            if y < 150:
+                y = new_project_page()
+            card_height = 58
+            pdf.setFillColor(colors.HexColor("#eaf3fb"))
+            pdf.roundRect(32, y - card_height, width - 64, card_height - 4, 8, stroke=0, fill=1)
+            pdf.setStrokeColor(colors.HexColor("#cfe0f2"))
+            pdf.roundRect(32, y - card_height, width - 64, card_height - 4, 8, stroke=1, fill=0)
             pdf.setFillColor(colors.HexColor("#0f3c73"))
             pdf.setFont("Helvetica-Bold", 10)
-            pdf.drawString(38, y - 16, _pdf_normalize_text(item["evaluation_type_name"]))
+            pdf.drawString(42, y - 17, _pdf_normalize_text(item["evaluation_type_name"]))
             pdf.setFont("Helvetica", 9)
-            pdf.drawString(38, y - 30, _pdf_normalize_text(f"Juez: {item['judge_name']}"))
+            pdf.setFillColor(colors.HexColor("#153a63"))
+            pdf.drawString(42, y - 31, _pdf_normalize_text(f"Juez: {item['judge_name']}"))
             pdf.drawString(
-                38,
-                y - 44,
+                42,
+                y - 45,
                 _pdf_normalize_text(
                     f"Puntaje: {item['total_score']}/{item['max_score'] or 'N/D'} | Porcentaje: {item['percentage'] if item['percentage'] is not None else 'N/D'}"
                 ),
             )
-            y -= 74
+            y -= 68
             if item["comments"]:
-                y = _pdf_draw_wrapped_line_set(pdf, f"Comentarios: {item['comments']}", 38, y, width - 76, "Helvetica", 9, 11)
+                pdf.setFillColor(colors.HexColor("#103f78"))
+                pdf.setFont("Helvetica-Bold", 8.5)
+                pdf.drawString(38, y, "Comentarios")
+                y -= 12
+                y = _pdf_draw_wrapped_line_set(pdf, item["comments"], 38, y, width - 76, "Helvetica", 8.3, 10)
+                y -= 3
             if item["recommendations"]:
-                y = _pdf_draw_wrapped_line_set(pdf, f"Recomendaciones: {item['recommendations']}", 38, y, width - 76, "Helvetica", 9, 11)
+                pdf.setFillColor(colors.HexColor("#103f78"))
+                pdf.setFont("Helvetica-Bold", 8.5)
+                pdf.drawString(38, y, "Recomendaciones")
+                y -= 12
+                y = _pdf_draw_wrapped_line_set(pdf, item["recommendations"], 38, y, width - 76, "Helvetica", 8.3, 10)
+                y -= 3
             if item["criteria_rows"]:
-                for criterion in item["criteria_rows"]:
-                    criterion_label = f"- {criterion['criterion_name']}: {criterion['score']}/{criterion['max_score'] or 'N/D'}"
-                    y = _pdf_draw_wrapped_line_set(pdf, criterion_label, 46, y, width - 92, "Helvetica", 8, 10)
-                    if y < 80:
-                        y = _pdf_new_page_with_header(pdf, width, height, f"Acta de evaluacion: {project.title}", "Continuacion")
-            y -= 6
+                pdf.setFillColor(colors.HexColor("#103f78"))
+                pdf.setFont("Helvetica-Bold", 8.5)
+                pdf.drawString(38, y, "Evaluacion por criterios")
+                y -= 12
+                y = _pdf_draw_project_criteria_table(pdf, item["criteria_rows"], 38, y, width - 76, width, height, new_project_page)
+            y -= 8
 
     pdf.save()
     buffer.seek(0)

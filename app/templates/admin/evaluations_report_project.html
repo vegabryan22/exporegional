@@ -1,11 +1,11 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section maintenance-page">
-    <div class="maintenance-banner">
+<section class="card admin-section maintenance-page report-project-page">
+    <div class="maintenance-banner report-project-hero">
         <div>
             <p class="maintenance-kicker">EXPOTECNICA</p>
-            <h3>Acta de evaluación por proyecto</h3>
-            <p>Vista previa de evaluaciones por juez, con comentarios y puntajes.</p>
+            <h3>Acta de evaluaci&oacute;n por proyecto</h3>
+            <p title="{{ acta_data.project.title }}">{{ acta_data.project.title }}</p>
         </div>
         <div class="report-banner-actions">
             <a href="{{ url_for('admin.evaluations_page') }}" class="table-link-btn ghost">Volver</a>
@@ -14,18 +14,18 @@
         </div>
     </div>
 
-    <div class="admin-stats evaluation-stats">
-        <article><strong>{{ acta_data.project.title }}</strong><span>Proyecto</span></article>
+    <div class="admin-stats evaluation-stats report-project-stats">
         <article><strong>{{ acta_data.project.team_name }}</strong><span>Equipo</span></article>
-        <article><strong>{{ acta_data.category.name if acta_data.category else acta_data.project.category }}</strong><span>Categoría</span></article>
+        <article><strong>{{ acta_data.category.name if acta_data.category else acta_data.project.category }}</strong><span>Categor&iacute;a</span></article>
         <article><strong>{{ acta_data.average_percentage if acta_data.average_percentage is not none else "N/D" }}</strong><span>Promedio</span></article>
+        <article><strong>{{ acta_data.evaluations_count }}</strong><span>Evaluaciones</span></article>
     </div>
 </section>
 
-<section class="card admin-section maintenance-page">
+<section class="card admin-section maintenance-page report-project-page">
     <div class="maintenance-banner">
         <div>
-            <p class="maintenance-kicker">Asignacion</p>
+            <p class="maintenance-kicker">Asignaci&oacute;n</p>
             <h3>Jueces y cobertura</h3>
         </div>
     </div>
@@ -56,7 +56,7 @@
     </div>
 </section>
 
-<section class="card admin-section maintenance-page">
+<section class="card admin-section maintenance-page report-project-page">
     <div class="maintenance-banner">
         <div>
             <p class="maintenance-kicker">Detalle</p>
@@ -65,28 +65,43 @@
         <span class="tag ok">{{ acta_data.evaluations_count }} evaluaciones</span>
     </div>
 
-    <div class="project-tracking-list">
+    <div class="report-evaluation-list">
         {% for row in acta_data.evaluations %}
-            <article class="project-tracking-card">
-                <div class="project-tracking-detail">
-                    <p><strong>{{ row.evaluation_type_name }}</strong></p>
-                    <p>Juez: {{ row.judge_name }} ({{ row.judge_email }})</p>
-                    <p>Puntaje: {{ row.total_score }}/{{ row.max_score or "N/D" }} | Porcentaje: {{ row.percentage if row.percentage is not none else "N/D" }}</p>
+            <article class="report-evaluation-card">
+                <header class="report-evaluation-head">
+                    <div>
+                        <p class="maintenance-kicker">{{ row.evaluation_type_name }}</p>
+                        <h4>{{ row.judge_name }}</h4>
+                        <span>{{ row.judge_email }}</span>
+                    </div>
+                    <div class="report-score-pill">
+                        <strong>{{ row.percentage if row.percentage is not none else "N/D" }}</strong>
+                        <span>{{ row.total_score }}/{{ row.max_score or "N/D" }}</span>
+                    </div>
+                </header>
+
+                <div class="report-evaluation-body">
                     {% if row.comments %}
-                        <p><strong>Comentarios:</strong> {{ row.comments }}</p>
+                        <div class="report-note">
+                            <strong>Comentarios</strong>
+                            <p>{{ row.comments }}</p>
+                        </div>
                     {% endif %}
                     {% if row.recommendations %}
-                        <p><strong>Recomendaciones:</strong> {{ row.recommendations }}</p>
+                        <div class="report-note">
+                            <strong>Recomendaciones</strong>
+                            <p>{{ row.recommendations }}</p>
+                        </div>
                     {% endif %}
                     {% if row.criteria_rows %}
-                    <div class="table-wrap">
-                        <table>
+                    <div class="report-criteria-wrap">
+                        <table class="report-criteria-table">
                             <thead>
                                 <tr>
-                                    <th>Sección</th>
+                                    <th>Secci&oacute;n</th>
                                     <th>Criterio</th>
                                     <th>Puntaje</th>
-                                    <th>Observacion</th>
+                                    <th>Observaci&oacute;n</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -110,5 +125,3 @@
     </div>
 </section>
 {% endblock %}
-
-

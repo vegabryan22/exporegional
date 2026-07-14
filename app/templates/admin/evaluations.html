@@ -4,6 +4,8 @@
 {% set sc = summary_cards %}
 {% set completion_pct = (sc.completion_percentage | int) %}
 {% set completed_proj_pct = ((sc.completed_projects / sc.projects * 100) | int) if sc.projects > 0 else 0 %}
+{% set english_pct = ((sc.completed_english_evaluations / sc.expected_english_evaluations * 100) | int) if sc.expected_english_evaluations > 0 else 0 %}
+{% set english_winner = english_ranking[0] if english_ranking else none %}
 
 <div class="ov2-shell">
 
@@ -12,7 +14,7 @@
     <div>
       <p class="maintenance-kicker">Seguimiento</p>
       <h3>Estado de evaluaciones</h3>
-      <p>Monitorea avance, puntajes acumulados y l&iacute;deres por categor&iacute;a.</p>
+      <p>Monitorea avance, puntajes acumulados, l&iacute;deres por categor&iacute;a y ganador de ingl&eacute;s.</p>
     </div>
     <div class="ov2-header-actions">
       <a data-no-iconify href="{{ url_for('admin.overview') }}" class="ov2-shortcut outline">Panel</a>
@@ -109,9 +111,26 @@
     </div>
     {% endfor %}
 
+    <div class="ov2-chart-card ev2-english-chart">
+      <div class="ov2-donut" style="--pct:{{ english_pct }};--clr:#0d5fa6;">
+        <span>{{ english_pct }}%</span>
+      </div>
+      <div class="ov2-chart-info">
+        <strong>Ingl&eacute;s</strong>
+        <p>{{ sc.completed_english_evaluations }} de {{ sc.expected_english_evaluations }} evaluaciones</p>
+        {% if english_winner %}
+        <span class="ov2-chart-sub ok">L&iacute;der: {{ english_winner.member.full_name if english_winner.member else 'N/D' }}</span>
+        {% elif sc.expected_english_evaluations > 0 %}
+        <span class="ov2-chart-sub warn">Sin ganador a&uacute;n</span>
+        {% else %}
+        <span class="ov2-chart-sub">Sin estudiantes en ingl&eacute;s</span>
+        {% endif %}
+      </div>
+    </div>
+
   </div>
 
-  {# WINNERS + ENGLISH #}
+  {# WINNERS #}
   <div class="ov2-work-grid">
 
     <section class="ov2-block ev2-winners-block">
@@ -154,12 +173,40 @@
       </div>
     </section>
 
-    {% if english_ranking %}
-    <section class="ov2-block">
+    <section class="ov2-block ev2-english-winner-block">
       <div class="ov2-block-head">
-        <h4>Top 5 &mdash; Ingl&eacute;s</h4>
-        <span class="ov2-block-count">Por estudiante</span>
+        <h4>Ganador de ingl&eacute;s</h4>
+        <span class="ov2-block-count">Evaluaci&oacute;n independiente</span>
       </div>
+
+      <div class="ev2-winner-card ev2-english-winner-card">
+        <div class="ev2-winner-cat-header">
+          <span class="ev2-winner-cat-name">Ingl&eacute;s</span>
+          <span class="ev2-winner-cat-count">{{ english_ranking|length }} con nota</span>
+        </div>
+        {% if english_winner %}
+        <div class="ev2-winner-top">
+          <span class="ev2-rank-badge ev2-rank-1">1&deg;</span>
+          <div class="ev2-winner-detail">
+            <strong title="{{ english_winner.member.full_name if english_winner.member else 'N/D' }}">
+              {{ english_winner.member.full_name if english_winner.member else 'N/D' }}
+            </strong>
+            <span title="{{ english_winner.project.title }}">{{ english_winner.project.title }}</span>
+          </div>
+          <span class="ev2-score">{{ "%.2f"|format(english_winner.english_score) }}</span>
+        </div>
+        {% else %}
+        <p class="ov2-empty">
+          {% if sc.expected_english_evaluations > 0 %}
+          Sin evaluaciones de ingl&eacute;s completas.
+          {% else %}
+          No hay estudiantes registrados para exposici&oacute;n en ingl&eacute;s.
+          {% endif %}
+        </p>
+        {% endif %}
+      </div>
+
+      {% if english_ranking %}
       <table class="ov2-table">
         <thead>
           <tr><th>#</th><th>Estudiante</th><th>Proyecto</th><th>Puntaje</th><th>Avance</th></tr>
@@ -176,8 +223,8 @@
           {% endfor %}
         </tbody>
       </table>
+      {% endif %}
     </section>
-    {% endif %}
 
   </div>
 

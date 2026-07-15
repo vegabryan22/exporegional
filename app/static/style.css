@@ -3548,6 +3548,51 @@ dialog.maintenance-dialog::backdrop {
     min-width: 0;
 }
 
+.judge-public-status-form {
+    grid-column: 1 / -1;
+    margin-top: 0.25rem;
+}
+
+.judge-public-status-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.65rem;
+    align-items: center;
+    border: 1px solid #dbe8f5;
+    border-radius: 12px;
+    background: #f7fbff;
+    padding: 0.7rem;
+}
+
+.judge-public-status-label {
+    display: block;
+    color: #607998;
+    font-size: 0.76rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+}
+
+.judge-public-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: #123f6b;
+    font-size: 0.9rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.judge-public-switch input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: #1d7a22;
+}
+
+.judge-public-status-row .outline-btn {
+    padding: 0.62rem 0.9rem;
+}
+
 .users-table-section {
     display: grid;
     gap: 1rem;
@@ -4809,9 +4854,10 @@ dialog.maintenance-dialog::backdrop {
     }
 
     .users-action-card,
-    .users-public-link {
+    .users-public-link,
+    .judge-public-status-row {
+        grid-template-columns: minmax(0, 1fr);
         align-items: stretch;
-        flex-direction: column;
     }
 
     .judge-captcha-card {

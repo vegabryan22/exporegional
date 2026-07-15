@@ -210,6 +210,7 @@ def register_context_processors(app):
                 "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
             },
             "campaign_is_open": active_campaign is not None,
+            "judge_public_registration_enabled": SystemSetting.get_value("judge_public_registration_enabled", "1") == "1",
             "site_visibility": {
                 "maintenance_enabled": SystemSetting.get_value("maintenance_enabled", "0") == "1",
                 "maintenance_message": SystemSetting.get_value(

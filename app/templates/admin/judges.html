@@ -43,6 +43,22 @@
                 <h4>Formulario de jueces</h4>
                 <p>Enlace institucional del sistema. No se muestran integraciones externas ni datos técnicos en esta vista.</p>
             </div>
+            <form method="post" action="{{ action_url }}" class="inline-form">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="save_judge_form_settings">
+                <input type="hidden" name="judge_form_url" value="{{ judge_form_settings.form_url }}">
+                <input type="hidden" name="judge_form_enabled" value="{{ '1' if judge_form_settings.enabled else '0' }}">
+                <input type="hidden" name="judge_form_auto_send_email" value="{{ '1' if judge_form_settings.auto_send_email else '0' }}">
+                <label class="check-card" style="margin:0 0 12px;">
+                    <input type="checkbox" name="judge_public_registration_enabled" value="1" {% if judge_form_settings.public_registration_enabled %}checked{% endif %}>
+                    <input type="hidden" name="judge_public_registration_enabled" value="0">
+                    <span>
+                        <strong>Registro {{ 'activo' if judge_form_settings.public_registration_enabled else 'cerrado' }}</strong>
+                        <small>Controla manualmente si el formulario publico acepta jueces.</small>
+                    </span>
+                </label>
+                <button type="submit" class="secondary-btn">Guardar estado</button>
+            </form>
             <div class="users-public-link">
                 <input type="text" value="{{ judge_public_registration_url }}" readonly>
                 <a class="outline-btn" href="{{ url_for('public.judge_registration_short') }}" target="_blank" rel="noopener">Abrir</a>

@@ -2964,6 +2964,7 @@ def _judge_form_settings():
     return {
         "form_url": SystemSetting.get_value("judge_form_url", ""),
         "enabled": SystemSetting.get_value("judge_form_enabled", "0") == "1",
+        "public_registration_enabled": SystemSetting.get_value("judge_public_registration_enabled", "1") == "1",
         "auto_send_email": SystemSetting.get_value("judge_form_auto_send_email", "1") == "1",
         "has_secret": bool(secret),
         "secret": secret,
@@ -4346,11 +4347,18 @@ def _handle_action(action: str):
     elif action == "save_judge_form_settings":
         form_url = request.form.get("judge_form_url", "").strip()
         enabled = _str_to_bool(request.form.get("judge_form_enabled"))
+        public_registration_values = request.form.getlist("judge_public_registration_enabled")
+        public_registration_enabled = (
+            any(_str_to_bool(value) for value in public_registration_values)
+            if public_registration_values
+            else SystemSetting.get_value("judge_public_registration_enabled", "1") == "1"
+        )
         auto_send_email = _str_to_bool(request.form.get("judge_form_auto_send_email", "1"))
         manual_secret = request.form.get("judge_form_secret", "").strip()
 
         SystemSetting.set_value("judge_form_url", form_url)
         SystemSetting.set_value("judge_form_enabled", "1" if enabled else "0")
+        SystemSetting.set_value("judge_public_registration_enabled", "1" if public_registration_enabled else "0")
         SystemSetting.set_value("judge_form_auto_send_email", "1" if auto_send_email else "0")
         if manual_secret:
             SystemSetting.set_value("judge_form_webhook_secret", manual_secret)
@@ -4359,10 +4367,13 @@ def _handle_action(action: str):
         log_event(
             "admin.forms.judge_settings.save",
             "system_setting",
-            detail=f"Integracion Forms jueces actualizada: enabled={enabled}, auto_email={auto_send_email}",
+            detail=(
+                "Formulario de jueces actualizado: "
+                f"webhook_enabled={enabled}, public_enabled={public_registration_enabled}, auto_email={auto_send_email}"
+            ),
         )
         db.session.commit()
-        flash("Integracion de Microsoft Forms actualizada.", "success")
+        flash("Configuracion del formulario de jueces actualizada.", "success")
 
     elif action == "rotate_judge_form_secret":
         SystemSetting.set_value("judge_form_webhook_secret", secrets.token_urlsafe(32))
@@ -7912,6 +7923,11 @@ def _validate_judge_registration_captcha(answer):
 
 
 def public_judge_registration():
+    if SystemSetting.get_value("judge_public_registration_enabled", "1") != "1":
+        if request.method == "POST":
+            flash("El registro de jueces esta cerrado en este momento.", "warning")
+        return render_template("public/judge_registration_closed.html")
+
     if request.method == "POST":
         if request.form.get("website", "").strip():
             return redirect(url_for("public.judge_registration"))

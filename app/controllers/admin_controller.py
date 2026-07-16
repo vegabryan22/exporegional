@@ -1045,6 +1045,37 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     total_expected_english_evaluations = 0
     total_completed_english_evaluations = 0
 
+    def _project_pending_evaluation_detail(project):
+        detail = {
+            "documentacion": {"label": "Doc", "missing": 0, "items": []},
+            "exposicion": {"label": "Expo", "missing": 0, "items": []},
+            "english": {"label": "Ing", "missing": 0, "items": []},
+            "other": {"label": "Otro", "missing": 0, "items": []},
+        }
+        evaluations = getattr(project, "evaluations", []) or []
+        for assignment in getattr(project, "assignments", []) or []:
+            judge = getattr(assignment, "judge", None)
+            for entry in get_assignment_evaluation_entries(assignment):
+                member_id = entry.get("project_member_id")
+                exists = any(
+                    evaluation.judge_id == assignment.judge_id
+                    and evaluation.evaluation_type == entry["code"]
+                    and (evaluation.project_member_id or None) == (member_id or None)
+                    and evaluation.percentage is not None
+                    for evaluation in evaluations
+                )
+                if exists:
+                    continue
+                key = "english" if entry["code"] == ENGLISH_EVAL_TYPE_CODE else (infer_evaluation_type_kind(entry.get("type")) or "other")
+                row = detail.setdefault(key, {"label": key.title(), "missing": 0, "items": []})
+                row["missing"] += 1
+                judge_name = judge.full_name if judge else "Sin juez"
+                label = entry.get("short_name") or entry.get("label") or entry["code"]
+                if entry.get("project_member_name"):
+                    label = f"{label}: {entry['project_member_name']}"
+                row["items"].append(f"{judge_name} - {label}")
+        return [row for key, row in detail.items() if row["missing"] > 0]
+
     for project in active_projects:
         assigned_count = len(project.assignments)
         count_summary = project_evaluation_count_summary(project)
@@ -1070,6 +1101,7 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
                     "project": project,
                     "completed": completed_evaluations,
                     "expected": expected_evaluations,
+                    "pending_detail": _project_pending_evaluation_detail(project),
                 }
             )
 

@@ -12268,6 +12268,47 @@ body {
     width: 110px;
 }
 
+.ov2-pending-table td:first-child {
+    min-width: 0;
+}
+
+.ov2-pending-project {
+    display: grid;
+    gap: 0.35rem;
+    min-width: 0;
+}
+
+.ov2-pending-project > strong {
+    color: #0d2f52;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.25;
+}
+
+.ov2-pending-detail {
+    display: grid;
+    gap: 0.28rem;
+}
+
+.ov2-pending-scope {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 0.4rem;
+}
+
+.ov2-pending-scope .tag {
+    min-width: 58px;
+    text-align: center;
+}
+
+.ov2-pending-scope small {
+    color: #607998;
+    line-height: 1.25;
+}
+
 /* Mini progress bar */
 .ov2-mini-bar { height: 6px; background: #e0edf7; border-radius: 4px; width: 80px; margin-bottom: 2px; }
 .ov2-mini-bar-fill { height: 100%; background: #1d7a22; border-radius: 4px; transition: width .3s; }

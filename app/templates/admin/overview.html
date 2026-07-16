@@ -265,12 +265,29 @@
       <a href="{{ url_for('admin.evaluations_page') }}" class="ov2-block-link">Ver todas &rarr;</a>
     </div>
     {% if m.pending_evaluation_rows %}
-    <table class="ov2-table">
-      <thead><tr><th>Proyecto</th><th>Avance</th><th>Faltan</th></tr></thead>
+    <table class="ov2-table ov2-pending-table">
+      <thead><tr><th>Proyecto y pendientes</th><th>Avance</th><th>Faltan</th></tr></thead>
       <tbody>
         {% for row in m.pending_evaluation_rows %}
         <tr>
-          <td>{{ row.project.title }}</td>
+          <td>
+            <div class="ov2-pending-project">
+              <strong>{{ row.project.title }}</strong>
+              <div class="ov2-pending-detail">
+                {% for scope in row.pending_detail %}
+                  <div class="ov2-pending-scope">
+                    <span class="tag {{ 'warning' if scope.label == 'Expo' else ('ok' if scope.label == 'Doc' else 'neutral') }}">{{ scope.label }} {{ scope.missing }}</span>
+                    <small>
+                      {% for item in scope.items[:3] %}
+                        {{ item }}{% if not loop.last %}; {% endif %}
+                      {% endfor %}
+                      {% if scope.items|length > 3 %}; +{{ scope.items|length - 3 }} m&aacute;s{% endif %}
+                    </small>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </td>
           <td>
             <div class="ov2-mini-bar">
               <div class="ov2-mini-bar-fill" style="width:{{ ((row.completed/row.expected)*100)|int if row.expected else 0 }}%"></div>

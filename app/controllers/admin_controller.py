@@ -6886,6 +6886,234 @@ def judge_pool_page():
     return render_template("admin/judge_pool.html", **context)
 
 
+@admin_module_required("judge_pool")
+def pending_evaluations_report_excel():
+    try:
+        from collections import Counter, defaultdict
+
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.table import Table, TableStyleInfo
+    except ImportError:
+        flash("Instala openpyxl en el servidor para exportar Excel.", "error")
+        return redirect(url_for("admin.judge_pool_page"))
+
+    assignments = (
+        Assignment.query.options(
+            joinedload(Assignment.judge),
+            joinedload(Assignment.project).joinedload(Project.members),
+            joinedload(Assignment.project).joinedload(Project.evaluations),
+            joinedload(Assignment.project).joinedload(Project.thematic_axis),
+            joinedload(Assignment.project).joinedload(Project.project_type),
+        )
+        .join(Project, Project.id == Assignment.project_id)
+        .filter(Project.is_active == True)  # noqa: E712
+        .order_by(Project.title.asc(), Assignment.judge_id.asc(), Assignment.id.asc())
+        .all()
+    )
+
+    rows = []
+    summary_by_judge = defaultdict(lambda: {"judge": "", "email": "", "total": 0, "doc": 0, "expo": 0, "ingles": 0, "draft": 0})
+    summary_by_project = defaultdict(lambda: {"project": "", "category": "", "total": 0, "doc": 0, "expo": 0, "ingles": 0})
+    totals = Counter()
+
+    for assignment in assignments:
+        judge = assignment.judge
+        project = assignment.project
+        if not judge or not project:
+            continue
+        project_evaluations = getattr(project, "evaluations", []) or []
+        for entry in get_assignment_evaluation_entries(assignment):
+            member_id = entry.get("project_member_id")
+            completed = any(
+                evaluation.judge_id == assignment.judge_id
+                and evaluation.evaluation_type == entry["code"]
+                and (evaluation.project_member_id or None) == (member_id or None)
+                and evaluation.percentage is not None
+                for evaluation in project_evaluations
+            )
+            if completed:
+                continue
+
+            if entry["code"] == ENGLISH_EVAL_TYPE_CODE:
+                kind = "ingles"
+                kind_label = "Ingles"
+            else:
+                inferred_kind = infer_evaluation_type_kind(entry.get("type"))
+                kind = "doc" if inferred_kind == "documentacion" else ("expo" if inferred_kind == "exposicion" else "otro")
+                kind_label = "Documento" if kind == "doc" else ("Exposicion" if kind == "expo" else "Otro")
+
+            observation = "Pendiente por evaluar"
+            if assignment.is_draft:
+                observation = "Asignacion en borrador; confirmar antes de exigir evaluacion"
+            elif kind in {"expo", "ingles"} and judge.attendance_confirmed is False:
+                observation = "Juez marco no asiste; requiere reasignacion"
+            elif kind in {"expo", "ingles"} and judge.attendance_confirmed is None:
+                observation = "Juez sin confirmar participacion presencial"
+            elif not judge.is_active_user:
+                observation = "Juez inactivo"
+
+            row = {
+                "judge": judge.full_name or "",
+                "email": judge.email or "",
+                "phone": judge.phone or "",
+                "judge_active": "Si" if judge.is_active_user else "No",
+                "attendance": judge.attendance_status_label,
+                "assignment_status": "Borrador" if assignment.is_draft else "Confirmada",
+                "assignment_scope": assignment.scope_label,
+                "project": project.title,
+                "team": project.team_name or "",
+                "category": (project.category or "").strip().title(),
+                "axis": project.thematic_axis.name if project.thematic_axis else "",
+                "project_type": project.project_type.name if project.project_type else "",
+                "evaluation": entry.get("label") or entry["code"],
+                "kind": kind_label,
+                "student": entry.get("project_member_name") or "",
+                "project_english": "Si" if getattr(project, "requires_english_evaluation", False) else "No",
+                "observation": observation,
+            }
+            rows.append(row)
+
+            judge_key = judge.id
+            summary_by_judge[judge_key]["judge"] = row["judge"]
+            summary_by_judge[judge_key]["email"] = row["email"]
+            summary_by_judge[judge_key]["total"] += 1
+            summary_by_judge[judge_key][kind if kind in {"doc", "expo", "ingles"} else "doc"] += 1
+            if assignment.is_draft:
+                summary_by_judge[judge_key]["draft"] += 1
+
+            project_key = project.id
+            summary_by_project[project_key]["project"] = row["project"]
+            summary_by_project[project_key]["category"] = row["category"]
+            summary_by_project[project_key]["total"] += 1
+            summary_by_project[project_key][kind if kind in {"doc", "expo", "ingles"} else "doc"] += 1
+            totals[kind_label] += 1
+            totals["Borrador" if assignment.is_draft else "Confirmada"] += 1
+
+    wb = Workbook()
+    ws_summary = wb.active
+    ws_summary.title = "Resumen"
+
+    header_fill = PatternFill("solid", fgColor="1A4A7A")
+    subheader_fill = PatternFill("solid", fgColor="EAF3FB")
+    warning_fill = PatternFill("solid", fgColor="FFF3CD")
+    header_font = Font(bold=True, color="FFFFFF", size=10)
+    bold_font = Font(bold=True, color="0D2F52")
+    thin = Side(style="thin", color="C8DDF0")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    wrap = Alignment(vertical="top", wrap_text=True)
+
+    ws_summary.append(["Metrica", "Cantidad", "Uso"])
+    for col_idx, width in enumerate([42, 14, 70], start=1):
+        cell = ws_summary.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws_summary.column_dimensions[get_column_letter(col_idx)].width = width
+
+    summary_rows = [
+        ("Total evaluaciones pendientes", len(rows), "Todas las evaluaciones asignadas y aun no registradas."),
+        ("Pendientes de documento", totals["Documento"], "Trabajo virtual/remoto pendiente."),
+        ("Pendientes de exposicion", totals["Exposicion"], "Trabajo presencial pendiente."),
+        ("Pendientes de ingles", totals["Ingles"], "Evaluacion individual de estudiantes que exponen en ingles."),
+        ("Pendientes en asignaciones confirmadas", totals["Confirmada"], "Pendientes accionables."),
+        ("Pendientes en borrador", totals["Borrador"], "No exigir hasta confirmar asignacion."),
+    ]
+    for item in summary_rows:
+        ws_summary.append(item)
+        row_idx = ws_summary.max_row
+        for col_idx in range(1, 4):
+            cell = ws_summary.cell(row=row_idx, column=col_idx)
+            cell.border = border
+            cell.alignment = wrap
+        ws_summary.cell(row=row_idx, column=2).font = bold_font
+        ws_summary.cell(row=row_idx, column=2).alignment = center
+
+    ws_judges = wb.create_sheet("Resumen por juez")
+    judge_headers = ["Juez", "Correo", "Documento", "Exposicion", "Ingles", "Total", "En borrador"]
+    ws_judges.append(judge_headers)
+    for col_idx, width in enumerate([32, 36, 14, 14, 12, 12, 14], start=1):
+        cell = ws_judges.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws_judges.column_dimensions[get_column_letter(col_idx)].width = width
+    for item in sorted(summary_by_judge.values(), key=lambda row: (-row["total"], row["judge"])):
+        ws_judges.append([item["judge"], item["email"], item["doc"], item["expo"], item["ingles"], item["total"], item["draft"]])
+        for col_idx in range(1, len(judge_headers) + 1):
+            ws_judges.cell(row=ws_judges.max_row, column=col_idx).border = border
+
+    ws_projects = wb.create_sheet("Resumen por proyecto")
+    project_headers = ["Proyecto", "Categoria", "Documento", "Exposicion", "Ingles", "Total"]
+    ws_projects.append(project_headers)
+    for col_idx, width in enumerate([48, 18, 14, 14, 12, 12], start=1):
+        cell = ws_projects.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws_projects.column_dimensions[get_column_letter(col_idx)].width = width
+    for item in sorted(summary_by_project.values(), key=lambda row: (-row["total"], row["project"])):
+        ws_projects.append([item["project"], item["category"], item["doc"], item["expo"], item["ingles"], item["total"]])
+        for col_idx in range(1, len(project_headers) + 1):
+            ws_projects.cell(row=ws_projects.max_row, column=col_idx).border = border
+
+    ws_detail = wb.create_sheet("Detalle pendientes")
+    detail_headers = [
+        "Juez", "Correo", "Telefono", "Juez activo", "Participacion", "Estado asignacion",
+        "Alcance asignacion", "Proyecto", "Equipo", "Categoria", "Eje", "Tipo proyecto",
+        "Rubro pendiente", "Evaluacion pendiente", "Estudiante", "Proyecto ingles", "Observacion",
+    ]
+    detail_widths = [30, 36, 16, 12, 16, 18, 20, 48, 24, 18, 24, 24, 16, 38, 28, 14, 48]
+    ws_detail.append(detail_headers)
+    for col_idx, (header, width) in enumerate(zip(detail_headers, detail_widths), start=1):
+        cell = ws_detail.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws_detail.column_dimensions[get_column_letter(col_idx)].width = width
+
+    for row in sorted(rows, key=lambda item: (item["judge"].lower(), item["project"].lower(), item["kind"], item["evaluation"])):
+        ws_detail.append([
+            row["judge"], row["email"], row["phone"], row["judge_active"], row["attendance"], row["assignment_status"],
+            row["assignment_scope"], row["project"], row["team"], row["category"], row["axis"], row["project_type"],
+            row["kind"], row["evaluation"], row["student"], row["project_english"], row["observation"],
+        ])
+        row_idx = ws_detail.max_row
+        for col_idx in range(1, len(detail_headers) + 1):
+            cell = ws_detail.cell(row=row_idx, column=col_idx)
+            cell.border = border
+            cell.alignment = wrap
+        if row["assignment_status"] == "Borrador" or "reasignacion" in row["observation"]:
+            for col_idx in range(1, len(detail_headers) + 1):
+                ws_detail.cell(row=row_idx, column=col_idx).fill = warning_fill
+
+    for ws in [ws_judges, ws_projects, ws_detail]:
+        if ws.max_row > 1:
+            last_col = get_column_letter(ws.max_column)
+            table = Table(displayName=f"Tabla{ws.title.replace(' ', '')}", ref=f"A1:{last_col}{ws.max_row}")
+            table.tableStyleInfo = TableStyleInfo(
+                name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False, showRowStripes=True, showColumnStripes=False
+            )
+            ws.add_table(table)
+        ws.freeze_panes = "A2"
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="reporte_evaluaciones_pendientes.xlsx",
+    )
+
+
 @admin_module_required("judges")
 def judges_page():
     return _render("admin/judges.html", "judges")

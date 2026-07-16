@@ -159,7 +159,7 @@
                     <span class="tag {{ 'ok' if ns.expo_total >= 3 else 'warning' }}">Expo &middot; {{ ns.expo_total }}</span>
                     {% if project.requires_english_evaluation %}<span class="tag warning">Ingl&eacute;s &middot; {{ project.english_members_count }}</span>{% endif %}
                 </div>
-                <button type="button" class="secondary-btn assignment-manage-btn" data-dialog-open="manage-project-{{ project.id }}">Gestionar</button>
+                <button type="button" class="secondary-btn assignment-manage-btn" data-dialog-open="manage-project-{{ project.id }}"><svg aria-hidden="true"><use href="#ico-edit"></use></svg><span>Gestionar</span></button>
             </article>
         {% else %}
             <p class="muted-empty">No hay proyectos disponibles para asignaci&oacute;n.</p>

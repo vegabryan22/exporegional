@@ -13328,12 +13328,11 @@ body {
 
 /* Admin navigation stays fixed; only the content pane scrolls. */
 body.admin-page {
-    --admin-footer-height: 64px;
     overflow: hidden;
 }
 
 body.admin-page .container {
-    height: calc(100dvh - var(--fixed-header-height, 96px) - var(--admin-footer-height));
+    height: calc(100dvh - var(--fixed-header-height, 96px));
     overflow: hidden;
     padding-bottom: 0.5rem;
 }
@@ -13404,56 +13403,15 @@ body.admin-page .admin-main {
 }
 
 body.admin-page .site-footer {
-    position: fixed;
-    inset: auto 0 0 0;
-    z-index: 2500;
-    height: var(--admin-footer-height);
-    min-height: var(--admin-footer-height);
-    max-height: var(--admin-footer-height);
-    margin: 0;
-    overflow: hidden;
-    box-shadow: 0 -8px 22px rgba(13, 63, 107, 0.08);
-}
-
-body.admin-page .site-footer-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    height: 100%;
-    min-height: 0;
-    padding: 0.35rem 1rem;
-    overflow: hidden;
-}
-
-body.admin-page .site-footer p {
-    margin: 0;
-    font-size: 0.78rem;
-    line-height: 1.2;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: none;
 }
 
 @media (max-width: 900px) {
     body.admin-page .container {
-        height: calc(100dvh - var(--fixed-header-height, 68px) - var(--admin-footer-height));
+        height: calc(100dvh - var(--fixed-header-height, 68px));
     }
 
     body.admin-page .admin-sidebar {
         z-index: 1200;
-    }
-}
-
-@media (max-width: 640px) {
-    body.admin-page .site-footer-inner {
-        align-items: center;
-        flex-direction: row;
-        gap: 0.6rem;
-    }
-
-    body.admin-page .site-footer p:not(:first-child) {
-        display: none;
     }
 }

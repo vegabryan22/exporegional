@@ -7094,13 +7094,13 @@ def pending_evaluations_report_excel():
         for col_idx in range(1, len(project_headers) + 1):
             ws_projects.cell(row=ws_projects.max_row, column=col_idx).border = border
 
-    ws_detail = wb.create_sheet("Detalle pendientes")
+    ws_detail = wb.create_sheet("Quienes faltan")
     detail_headers = [
-        "Juez", "Correo", "Telefono", "Juez activo", "Participacion", "Estado asignacion",
-        "Alcance asignacion", "Proyecto", "Equipo", "Categoria", "Eje", "Tipo proyecto",
-        "Rubro pendiente", "Evaluacion pendiente", "Estudiante", "Proyecto ingles", "Observacion",
+        "Quien falta", "Que falta evaluar", "Proyecto", "Rubro", "Estudiante",
+        "Correo", "Telefono", "Participacion", "Estado asignacion", "Alcance asignacion",
+        "Equipo", "Categoria", "Eje", "Tipo proyecto", "Proyecto ingles", "Observacion",
     ]
-    detail_widths = [30, 36, 16, 12, 16, 18, 20, 48, 24, 18, 24, 24, 16, 38, 28, 14, 48]
+    detail_widths = [32, 42, 52, 16, 28, 36, 16, 16, 18, 20, 24, 18, 24, 24, 14, 52]
     ws_detail.append(detail_headers)
     for col_idx, (header, width) in enumerate(zip(detail_headers, detail_widths), start=1):
         cell = ws_detail.cell(row=1, column=col_idx)
@@ -7112,9 +7112,9 @@ def pending_evaluations_report_excel():
 
     for row in sorted(rows, key=lambda item: (item["judge"].lower(), item["project"].lower(), item["kind"], item["evaluation"])):
         ws_detail.append([
-            row["judge"], row["email"], row["phone"], row["judge_active"], row["attendance"], row["assignment_status"],
-            row["assignment_scope"], row["project"], row["team"], row["category"], row["axis"], row["project_type"],
-            row["kind"], row["evaluation"], row["student"], row["project_english"], row["observation"],
+            row["judge"], row["evaluation"], row["project"], row["kind"], row["student"],
+            row["email"], row["phone"], row["attendance"], row["assignment_status"], row["assignment_scope"],
+            row["team"], row["category"], row["axis"], row["project_type"], row["project_english"], row["observation"],
         ])
         row_idx = ws_detail.max_row
         for col_idx in range(1, len(detail_headers) + 1):
@@ -7125,10 +7125,13 @@ def pending_evaluations_report_excel():
             for col_idx in range(1, len(detail_headers) + 1):
                 ws_detail.cell(row=row_idx, column=col_idx).fill = warning_fill
 
-    for ws in [ws_judges, ws_projects, ws_detail]:
+    wb._sheets = [ws_detail, ws_judges, ws_projects, ws_summary]
+    wb.active = 0
+
+    for ws in [ws_detail, ws_judges, ws_projects, ws_summary]:
         if ws.max_row > 1:
             last_col = get_column_letter(ws.max_column)
-            table = Table(displayName=f"Tabla{ws.title.replace(' ', '')}", ref=f"A1:{last_col}{ws.max_row}")
+            table = Table(displayName=f"Tabla{re.sub(r'[^A-Za-z0-9]', '', ws.title)}", ref=f"A1:{last_col}{ws.max_row}")
             table.tableStyleInfo = TableStyleInfo(
                 name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False, showRowStripes=True, showColumnStripes=False
             )

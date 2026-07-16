@@ -13356,12 +13356,14 @@ body.admin-page .admin-shell > .admin-sidebar {
 }
 
 body.admin-page .admin-shell > .admin-sidebar .admin-menu {
-    flex: 0 0 auto;
-    min-height: auto;
+    flex: 1 1 auto;
+    min-height: 0;
     max-height: none;
-    overflow: visible;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     gap: 0.16rem;
-    padding-right: 0;
+    padding-right: 0.18rem;
+    padding-bottom: 1rem;
 }
 
 body.admin-page .admin-menu-group {

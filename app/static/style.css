@@ -13328,13 +13328,14 @@ body {
 
 /* Admin navigation stays fixed; only the content pane scrolls. */
 body.admin-page {
+    --admin-footer-height: 64px;
     overflow: hidden;
 }
 
 body.admin-page .container {
-    height: calc(100vh - var(--fixed-header-height, 96px) - 56px);
+    height: calc(100dvh - var(--fixed-header-height, 96px) - var(--admin-footer-height));
     overflow: hidden;
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
 }
 
 body.admin-page .admin-shell {
@@ -13363,7 +13364,7 @@ body.admin-page .admin-shell > .admin-sidebar .admin-menu {
     overscroll-behavior: contain;
     gap: 0.16rem;
     padding-right: 0.18rem;
-    padding-bottom: 1rem;
+    padding-bottom: 1.35rem;
 }
 
 body.admin-page .admin-menu-group {
@@ -13406,8 +13407,11 @@ body.admin-page .site-footer {
     position: fixed;
     inset: auto 0 0 0;
     z-index: 2500;
-    min-height: 56px;
+    height: var(--admin-footer-height);
+    min-height: var(--admin-footer-height);
+    max-height: var(--admin-footer-height);
     margin: 0;
+    overflow: hidden;
     box-shadow: 0 -8px 22px rgba(13, 63, 107, 0.08);
 }
 
@@ -13416,19 +13420,25 @@ body.admin-page .site-footer-inner {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    min-height: 56px;
-    padding: 0.45rem 1rem;
+    height: 100%;
+    min-height: 0;
+    padding: 0.35rem 1rem;
+    overflow: hidden;
 }
 
 body.admin-page .site-footer p {
     margin: 0;
     font-size: 0.78rem;
     line-height: 1.2;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 @media (max-width: 900px) {
     body.admin-page .container {
-        height: calc(100vh - var(--fixed-header-height, 68px) - 56px);
+        height: calc(100dvh - var(--fixed-header-height, 68px) - var(--admin-footer-height));
     }
 
     body.admin-page .admin-sidebar {
@@ -13438,8 +13448,12 @@ body.admin-page .site-footer p {
 
 @media (max-width: 640px) {
     body.admin-page .site-footer-inner {
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 0.15rem;
+        align-items: center;
+        flex-direction: row;
+        gap: 0.6rem;
+    }
+
+    body.admin-page .site-footer p:not(:first-child) {
+        display: none;
     }
 }

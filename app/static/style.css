@@ -13356,12 +13356,39 @@ body.admin-page .admin-shell > .admin-sidebar {
 }
 
 body.admin-page .admin-shell > .admin-sidebar .admin-menu {
-    flex: 1 1 auto;
-    min-height: 0;
+    flex: 0 0 auto;
+    min-height: auto;
     max-height: none;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding-right: 0.18rem;
+    overflow: visible;
+    gap: 0.16rem;
+    padding-right: 0;
+}
+
+body.admin-page .admin-menu-group {
+    margin: 0.28rem 0 0.05rem;
+    padding: 0.1rem 0.55rem;
+    font-size: 0.68rem;
+}
+
+body.admin-page .admin-menu a {
+    min-height: 32px;
+    padding: 0.34rem 0.55rem;
+    font-size: 0.92rem;
+    line-height: 1.05;
+}
+
+body.admin-page .admin-menu-icon {
+    width: 0.82rem;
+    height: 0.82rem;
+}
+
+body.admin-page .admin-sidebar-top h2 {
+    font-size: 1.35rem;
+    line-height: 1.1;
+}
+
+body.admin-page .admin-sidebar-top p {
+    margin-bottom: 0.35rem;
 }
 
 body.admin-page .admin-main {

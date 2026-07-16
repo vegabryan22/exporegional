@@ -6522,9 +6522,10 @@ dialog.maintenance-dialog::backdrop {
 
 .assignment-filter-panel {
     display: grid;
-    grid-template-columns: minmax(220px, 1.2fr) minmax(150px, 0.8fr) minmax(200px, 1fr) minmax(190px, 1fr) minmax(112px, auto) minmax(110px, auto);
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     align-items: end;
     gap: 0.65rem;
+    max-width: 100%;
     padding: 0.78rem;
     border: 1px solid #cfe0f3;
     border-radius: 14px;
@@ -6537,7 +6538,7 @@ dialog.maintenance-dialog::backdrop {
     justify-content: center;
     gap: 0.35rem;
     min-height: 39px;
-    min-width: 112px;
+    min-width: 0;
     padding: 0.42rem 0.75rem;
     white-space: nowrap;
     word-break: keep-all;
@@ -6546,6 +6547,11 @@ dialog.maintenance-dialog::backdrop {
 
 .assignment-filter-clear span {
     white-space: nowrap;
+}
+
+.assignment-filter-panel .projects-filter-field,
+.assignment-filter-panel .projects-filter-count {
+    min-width: 0;
 }
 
 .assignment-filter-clear svg {

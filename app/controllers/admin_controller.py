@@ -7094,41 +7094,50 @@ def pending_evaluations_report_excel():
         for col_idx in range(1, len(project_headers) + 1):
             ws_projects.cell(row=ws_projects.max_row, column=col_idx).border = border
 
-    ws_detail = wb.create_sheet("Quienes faltan")
     detail_headers = [
-        "Quien falta", "Que falta evaluar", "Proyecto", "Rubro", "Estudiante",
-        "Correo", "Telefono", "Participacion", "Estado asignacion", "Alcance asignacion",
+        "Quien falta", "Que falta evaluar", "Proyecto", "Estudiante",
+        "Correo", "Telefono", "Participacion", "Estado asignacion",
         "Equipo", "Categoria", "Eje", "Tipo proyecto", "Proyecto ingles", "Observacion",
     ]
-    detail_widths = [32, 42, 52, 16, 28, 36, 16, 16, 18, 20, 24, 18, 24, 24, 14, 52]
-    ws_detail.append(detail_headers)
-    for col_idx, (header, width) in enumerate(zip(detail_headers, detail_widths), start=1):
-        cell = ws_detail.cell(row=1, column=col_idx)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = center
-        cell.border = border
-        ws_detail.column_dimensions[get_column_letter(col_idx)].width = width
+    detail_widths = [32, 44, 54, 30, 36, 16, 16, 18, 24, 18, 26, 24, 14, 54]
 
-    for row in sorted(rows, key=lambda item: (item["judge"].lower(), item["project"].lower(), item["kind"], item["evaluation"])):
-        ws_detail.append([
-            row["judge"], row["evaluation"], row["project"], row["kind"], row["student"],
-            row["email"], row["phone"], row["attendance"], row["assignment_status"], row["assignment_scope"],
-            row["team"], row["category"], row["axis"], row["project_type"], row["project_english"], row["observation"],
-        ])
-        row_idx = ws_detail.max_row
-        for col_idx in range(1, len(detail_headers) + 1):
-            cell = ws_detail.cell(row=row_idx, column=col_idx)
+    def _build_pending_sheet(title: str, kind_label: str | None):
+        ws = wb.create_sheet(title)
+        ws.append(detail_headers)
+        for col_idx, (header, width) in enumerate(zip(detail_headers, detail_widths), start=1):
+            cell = ws.cell(row=1, column=col_idx)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center
             cell.border = border
-            cell.alignment = wrap
-        if row["assignment_status"] == "Borrador" or "reasignacion" in row["observation"]:
-            for col_idx in range(1, len(detail_headers) + 1):
-                ws_detail.cell(row=row_idx, column=col_idx).fill = warning_fill
+            ws.column_dimensions[get_column_letter(col_idx)].width = width
 
-    wb._sheets = [ws_detail, ws_judges, ws_projects, ws_summary]
+        filtered_rows = [row for row in rows if kind_label is None or row["kind"] == kind_label]
+        for row in sorted(filtered_rows, key=lambda item: (item["judge"].lower(), item["project"].lower(), item["evaluation"])):
+            ws.append([
+                row["judge"], row["evaluation"], row["project"], row["student"],
+                row["email"], row["phone"], row["attendance"], row["assignment_status"],
+                row["team"], row["category"], row["axis"], row["project_type"], row["project_english"], row["observation"],
+            ])
+            row_idx = ws.max_row
+            for col_idx in range(1, len(detail_headers) + 1):
+                cell = ws.cell(row=row_idx, column=col_idx)
+                cell.border = border
+                cell.alignment = wrap
+            if row["assignment_status"] == "Borrador" or "reasignacion" in row["observation"]:
+                for col_idx in range(1, len(detail_headers) + 1):
+                    ws.cell(row=row_idx, column=col_idx).fill = warning_fill
+        return ws
+
+    ws_doc = _build_pending_sheet("Falta DOC", "Documento")
+    ws_expo = _build_pending_sheet("Falta EXPO", "Exposicion")
+    ws_english = _build_pending_sheet("Falta ING", "Ingles")
+    ws_all = _build_pending_sheet("Todos pendientes", None)
+
+    wb._sheets = [ws_doc, ws_expo, ws_english, ws_all, ws_judges, ws_projects, ws_summary]
     wb.active = 0
 
-    for ws in [ws_detail, ws_judges, ws_projects, ws_summary]:
+    for ws in [ws_doc, ws_expo, ws_english, ws_all, ws_judges, ws_projects, ws_summary]:
         if ws.max_row > 1:
             last_col = get_column_letter(ws.max_column)
             table = Table(displayName=f"Tabla{re.sub(r'[^A-Za-z0-9]', '', ws.title)}", ref=f"A1:{last_col}{ws.max_row}")

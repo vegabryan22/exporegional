@@ -249,6 +249,7 @@ ACTION_MODULE_MAP = {
     "create_evaluation_type": "rubrics",
     "update_evaluation_type": "rubrics",
     "delete_evaluation_type": "rubrics",
+    "save_evaluation_schedule": "rubrics",
     "create_rubric": "rubrics",
     "update_rubric": "rubrics",
     "delete_rubric": "rubrics",
@@ -5848,6 +5849,23 @@ def _handle_action(action: str):
             db.session.commit()
             flash("Tipo de evaluacion eliminado.", "success")
 
+    elif action == "save_evaluation_schedule":
+        expo_open_date = request.form.get("expo_evaluation_open_date", "").strip()
+        if expo_open_date:
+            try:
+                datetime.strptime(expo_open_date, "%Y-%m-%d")
+            except ValueError:
+                flash("Fecha de Expo invalida.", "error")
+                return
+        SystemSetting.set_value("expo_evaluation_open_date", expo_open_date)
+        log_event(
+            "admin.evaluation_schedule.save",
+            "system_setting",
+            detail=f"Fecha de apertura de evaluacion de exposicion: {expo_open_date or 'sin bloqueo'}",
+        )
+        db.session.commit()
+        flash("Fecha de evaluacion de exposicion actualizada.", "success")
+
     elif action == "create_rubric":
         evaluation_type_id = request.form.get("rubric_evaluation_type_id", type=int)
         eval_type = EvaluationType.query.get(evaluation_type_id) if evaluation_type_id else None
@@ -6431,6 +6449,7 @@ def _base_context(active_page: str, **kwargs):
         evaluation_types = []
         exposition_evaluation_types = []
         documentation_evaluation_types = []
+        evaluation_schedule_settings = {"expo_evaluation_open_date": ""}
         pending_document_revisions = []
         pending_member_edit_requests = []
         smtp_settings = {"host": "", "port": "587", "username": "", "from_email": "", "use_tls": True, "use_ssl": False}
@@ -6533,6 +6552,9 @@ def _base_context(active_page: str, **kwargs):
             for eval_type in evaluation_types
             if eval_type.code != ENGLISH_EVAL_TYPE_CODE and infer_evaluation_type_kind(eval_type) == "documentacion"
         ]
+        evaluation_schedule_settings = {
+            "expo_evaluation_open_date": SystemSetting.get_value("expo_evaluation_open_date", ""),
+        }
 
         smtp_settings = {
             "host": SystemSetting.get_value("smtp_host", ""),
@@ -6669,6 +6691,7 @@ def _base_context(active_page: str, **kwargs):
         "evaluation_types": evaluation_types,
         "exposition_evaluation_types": exposition_evaluation_types,
         "documentation_evaluation_types": documentation_evaluation_types,
+        "evaluation_schedule_settings": evaluation_schedule_settings,
         "user_departments": USER_DEPARTMENTS,
         "user_roles": USER_ROLES,
         "smtp_settings": smtp_settings,

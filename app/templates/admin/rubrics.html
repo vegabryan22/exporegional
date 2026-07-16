@@ -16,6 +16,18 @@
     {% endfor %}
 
     <div class="academic-hub">
+        <article class="academic-card">
+            <h4>Fecha de Expo</h4>
+            <p>{{ evaluation_schedule_settings.expo_evaluation_open_date or 'Sin bloqueo' }}</p>
+            <form method="post" action="{{ action_url }}" class="compact-form">
+                <input type="hidden" name="next" value="{{ next_url }}">
+                <input type="hidden" name="action" value="save_evaluation_schedule">
+                <label>Habilitar calificacion de exposicion desde
+                    <input type="date" name="expo_evaluation_open_date" value="{{ evaluation_schedule_settings.expo_evaluation_open_date }}">
+                </label>
+                <button type="submit">Guardar fecha</button>
+            </form>
+        </article>
         <article class="academic-card academic-card-action" data-dialog-open="manage-eval-types-dialog" role="button" tabindex="0">
             <h4>Tipos de evaluaci&oacute;n</h4>
             <p>{{ evaluation_types|length }} configurados</p>

@@ -5514,6 +5514,19 @@ dialog.maintenance-dialog::backdrop {
     gap: 1rem;
 }
 
+.evaluation-lock-notice {
+    margin: 0;
+}
+
+.evaluation-form.is-locked input,
+.evaluation-form.is-locked textarea {
+    cursor: not-allowed;
+}
+
+.evaluation-form.is-locked .evaluation-actions button[type="submit"] {
+    display: none;
+}
+
 .evaluation-section {
     display: grid;
     gap: 0.7rem;

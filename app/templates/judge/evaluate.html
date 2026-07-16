@@ -26,7 +26,14 @@
         {% endif %}
     </div>
 
-    <form method="post" class="form-grid evaluation-form">
+    {% if submission_gate and submission_gate.locked %}
+        <div class="judge-warning evaluation-lock-notice">
+            <strong>R&uacute;brica disponible solo para consulta.</strong>
+            <p>La calificaci&oacute;n de exposici&oacute;n se habilita el {{ submission_gate.open_date.strftime('%d/%m/%Y') }}.</p>
+        </div>
+    {% endif %}
+
+    <form method="post" class="form-grid evaluation-form {{ 'is-locked' if submission_gate.locked else '' }}">
         {% for section_name, section_criteria in criteria_sections.items() %}
             <section class="evaluation-section">
                 <div class="evaluation-section-head">
@@ -52,7 +59,7 @@
                                     <td data-label="{{ score_labels.get(score_value, score_value) }}" class="evaluation-score-cell">
                                         {% if score_value >= criterion.min_score and score_value <= criterion.max_score %}
                                             <label class="evaluation-score-option">
-                                                <input type="radio" name="criterion_{{ criterion.id }}" value="{{ score_value }}" required>
+                                                <input type="radio" name="criterion_{{ criterion.id }}" value="{{ score_value }}" {% if not submission_gate.locked %}required{% else %}disabled{% endif %}>
                                                 <span>{{ score_labels.get(score_value, score_value) }}</span>
                                             </label>
                                         {% else %}
@@ -61,7 +68,7 @@
                                     </td>
                                 {% endfor %}
                                 <td data-label="Observaciones" class="evaluation-observation-cell">
-                                    <textarea name="observation_{{ criterion.id }}" rows="2" placeholder="Observacion opcional"></textarea>
+                                    <textarea name="observation_{{ criterion.id }}" rows="2" placeholder="Observacion opcional" {% if submission_gate.locked %}disabled{% endif %}></textarea>
                                 </td>
                             </tr>
                         {% endfor %}
@@ -72,12 +79,15 @@
         {% endfor %}
 
         <label class="evaluation-notes">Comentarios generales
-            <textarea name="comments" rows="4"></textarea>
+            <textarea name="comments" rows="4" {% if submission_gate.locked %}disabled{% endif %}></textarea>
         </label>
         <label class="evaluation-notes">Recomendaciones para la mejora del proyecto
-            <textarea name="recommendations" rows="5"></textarea>
+            <textarea name="recommendations" rows="5" {% if submission_gate.locked %}disabled{% endif %}></textarea>
         </label>
         <div class="actions-row evaluation-actions">
+            {% if submission_gate.locked %}
+                <button type="button" disabled>Calificaci&oacute;n bloqueada hasta la Expo</button>
+            {% endif %}
             <button type="submit">Guardar evaluación</button>
         </div>
     </form>

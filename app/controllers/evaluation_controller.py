@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from datetime import datetime, timedelta, timezone
 
 from flask import abort, current_app, flash, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
@@ -62,6 +63,30 @@ def _resolve_scale(eval_type_obj, criteria):
     if not score_labels and max_score == 3 and min_score == 0:
         score_labels = {3: "Logrado", 2: "Parcialmente logrado", 1: "No logrado", 0: "Ausente"}
     return scale_options, score_labels
+
+
+def _expo_submission_gate(eval_type_obj):
+    is_expo_type = (
+        getattr(eval_type_obj, "code", "") == ENGLISH_EVAL_TYPE_CODE
+        or infer_evaluation_type_kind(eval_type_obj) == "exposicion"
+    )
+    if not is_expo_type:
+        return {"locked": False, "open_date": None, "open_date_raw": ""}
+
+    raw_date = (SystemSetting.get_value("expo_evaluation_open_date", "") or "").strip()
+    if not raw_date:
+        return {"locked": False, "open_date": None, "open_date_raw": ""}
+
+    try:
+        open_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
+    except ValueError:
+        return {"locked": False, "open_date": None, "open_date_raw": raw_date}
+
+    return {
+        "locked": (datetime.now(timezone.utc) - timedelta(hours=6)).date() < open_date,
+        "open_date": open_date,
+        "open_date_raw": raw_date,
+    }
 
 
 @login_required
@@ -202,7 +227,19 @@ def evaluate(project_id: int):
         flash("Ya registraste esta evaluacion.", "error")
         return redirect(url_for("judge.dashboard"))
 
+    submission_gate = _expo_submission_gate(eval_type_map[eval_type])
+
     if request.method == "POST":
+        if submission_gate["locked"]:
+            flash(
+                f"La evaluacion de exposicion se habilita el {submission_gate['open_date'].strftime('%d/%m/%Y')}. Puedes ver la rubrica, pero no registrar calificacion antes de esa fecha.",
+                "error",
+            )
+            redirect_args = {"project_id": project.id, "type": eval_type}
+            if project_member:
+                redirect_args["member_id"] = project_member.id
+            return redirect(url_for("judge.evaluate", **redirect_args))
+
         total_score = 0
         max_score = 0
         scores = []
@@ -225,6 +262,7 @@ def evaluate(project_id: int):
                     score_labels=score_labels,
                     scale_options=scale_options,
                     project_member=project_member,
+                    submission_gate=submission_gate,
                 )
             total_score += score
             max_score += criterion.max_score
@@ -283,4 +321,5 @@ def evaluate(project_id: int):
         score_labels=score_labels,
         scale_options=scale_options,
         project_member=project_member,
+        submission_gate=submission_gate,
     )

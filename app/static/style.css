@@ -13285,3 +13285,31 @@ body {
 }
 
 .ov2-log-cta:hover { text-decoration: underline; }
+
+/* Admin navigation must remain reachable while scrolling long operational pages. */
+.admin-shell > .admin-sidebar {
+    position: sticky !important;
+    top: calc(var(--fixed-header-height, 96px) + 0.75rem) !important;
+    align-self: start;
+    max-height: calc(100vh - var(--fixed-header-height, 96px) - 1.5rem);
+    overflow: hidden;
+}
+
+.admin-shell > .admin-sidebar .admin-menu {
+    max-height: calc(100vh - var(--fixed-header-height, 96px) - 7.5rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 0.18rem;
+}
+
+@media (max-width: 900px) {
+    .admin-shell > .admin-sidebar {
+        top: calc(var(--fixed-header-height, 68px) + 0.45rem) !important;
+        max-height: calc(100vh - var(--fixed-header-height, 68px) - 0.9rem);
+        z-index: 1200;
+    }
+
+    .admin-shell > .admin-sidebar .admin-menu {
+        max-height: calc(100vh - var(--fixed-header-height, 68px) - 6rem);
+    }
+}

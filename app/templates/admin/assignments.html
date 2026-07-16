@@ -92,6 +92,32 @@
     </section>
     {% endif %}
 
+    <section class="assignment-filter-panel" data-assignment-filters>
+        <label class="projects-filter-field">Buscar
+            <input type="search" data-assignment-search placeholder="Proyecto, equipo o juez">
+        </label>
+        <label class="projects-filter-field">Categor&iacute;a
+            <select data-assignment-category>
+                <option value="">Todas</option>
+                {% for category in categories %}
+                    <option value="{{ category.code }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="projects-filter-field">Cobertura
+            <select data-assignment-coverage>
+                <option value="">Todas</option>
+                <option value="incompletos">Incompletos</option>
+                <option value="completos">Doc y expo completos</option>
+                <option value="sin_jueces">Sin jueces</option>
+                <option value="con_borrador">Con borrador</option>
+                <option value="ingles">Requiere ingl&eacute;s</option>
+            </select>
+        </label>
+        <button type="button" class="ghost-btn assignment-filter-clear" data-assignment-clear><svg aria-hidden="true"><use href="#ico-close"></use></svg><span>Limpiar</span></button>
+        <span class="projects-filter-count" data-assignment-count>{{ active_projects|length }} proyectos</span>
+    </section>
+
     <div class="assignment-card-list">
         {% for project in active_projects|sort(attribute='title') %}
             {% set ns = namespace(confirmed=[], drafts=[], doc_total=0, expo_total=0) %}
@@ -107,7 +133,17 @@
                 {% endif %}
             {% endfor %}
             {% set ns_all = namespace(project_assignments=ns.confirmed + ns.drafts) %}
-            <article class="assignment-project-card">
+            <article
+                class="assignment-project-card"
+                data-assignment-card
+                data-search="{{ (project.title ~ ' ' ~ project.team_name ~ ' ' ~ category_map.get(project.category, project.category) ~ ' ' ~ (ns_all.project_assignments|map(attribute='judge.full_name')|join(' ')))|lower }}"
+                data-category="{{ project.category }}"
+                data-confirmed="{{ ns.confirmed|length }}"
+                data-drafts="{{ ns.drafts|length }}"
+                data-doc-complete="{{ 1 if ns.doc_total >= 3 else 0 }}"
+                data-expo-complete="{{ 1 if ns.expo_total >= 3 else 0 }}"
+                data-english="{{ 1 if project.requires_english_evaluation else 0 }}"
+            >
                 <div class="assignment-project-main">
                     <span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span>
                     <h4>{{ project.title }}</h4>
@@ -164,6 +200,7 @@
         {% else %}
             <p class="muted-empty">No hay proyectos disponibles para asignaci&oacute;n.</p>
         {% endfor %}
+        <p class="muted-empty assignment-filter-empty" data-assignment-empty hidden>No hay proyectos que coincidan con los filtros.</p>
     </div>
 </section>
 
@@ -536,6 +573,73 @@
 {% endfor %}
 <script>
 (function () {
+    var assignmentCards = Array.from(document.querySelectorAll('[data-assignment-card]'));
+    var assignmentSearch = document.querySelector('[data-assignment-search]');
+    var assignmentCategory = document.querySelector('[data-assignment-category]');
+    var assignmentCoverage = document.querySelector('[data-assignment-coverage]');
+    var assignmentClear = document.querySelector('[data-assignment-clear]');
+    var assignmentCount = document.querySelector('[data-assignment-count]');
+    var assignmentEmpty = document.querySelector('[data-assignment-empty]');
+
+    function normalize(value) {
+        return (value || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    }
+
+    function matchesCoverage(card, coverage) {
+        if (!coverage) return true;
+        var confirmed = Number(card.dataset.confirmed || 0);
+        var drafts = Number(card.dataset.drafts || 0);
+        var docComplete = card.dataset.docComplete === '1';
+        var expoComplete = card.dataset.expoComplete === '1';
+        var english = card.dataset.english === '1';
+        if (coverage === 'incompletos') return !docComplete || !expoComplete;
+        if (coverage === 'completos') return docComplete && expoComplete;
+        if (coverage === 'sin_jueces') return confirmed === 0;
+        if (coverage === 'con_borrador') return drafts > 0;
+        if (coverage === 'ingles') return english;
+        return true;
+    }
+
+    function applyAssignmentFilters() {
+        var query = normalize(assignmentSearch ? assignmentSearch.value : '');
+        var category = assignmentCategory ? assignmentCategory.value : '';
+        var coverage = assignmentCoverage ? assignmentCoverage.value : '';
+        var visible = 0;
+
+        assignmentCards.forEach(function (card) {
+            var haystack = normalize(card.dataset.search || card.textContent);
+            var show = (!query || haystack.indexOf(query) !== -1)
+                && (!category || card.dataset.category === category)
+                && matchesCoverage(card, coverage);
+            card.hidden = !show;
+            if (show) visible += 1;
+        });
+
+        if (assignmentCount) {
+            assignmentCount.textContent = visible + ' de ' + assignmentCards.length + ' proyectos';
+        }
+        if (assignmentEmpty) {
+            assignmentEmpty.hidden = visible !== 0;
+        }
+    }
+
+    [assignmentSearch, assignmentCategory, assignmentCoverage].forEach(function (control) {
+        if (!control) return;
+        control.addEventListener('input', applyAssignmentFilters);
+        control.addEventListener('change', applyAssignmentFilters);
+    });
+
+    if (assignmentClear) {
+        assignmentClear.addEventListener('click', function () {
+            if (assignmentSearch) assignmentSearch.value = '';
+            if (assignmentCategory) assignmentCategory.value = '';
+            if (assignmentCoverage) assignmentCoverage.value = '';
+            applyAssignmentFilters();
+        });
+    }
+
+    applyAssignmentFilters();
+
     var judgeSelect = document.getElementById('assignment-judge-id');
     var summary = document.getElementById('assignment-selected-summary');
     var projectOptions = document.querySelectorAll('[data-project-option]');

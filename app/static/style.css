@@ -4247,27 +4247,26 @@ dialog.maintenance-dialog::backdrop {
 .judge-load-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.35rem;
-    width: min(150px, 100%);
+    gap: 0.4rem;
+    width: 88px;
     margin-top: 0.35rem;
 }
 
 .judge-load-action-btn {
-    width: 100%;
-    min-height: 34px;
-    padding: 0.38rem 0.45rem;
+    width: 42px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
     border-radius: 8px;
-    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     line-height: 1;
 }
 
-.judge-load-action-btn.btn-with-icon {
-    gap: 0.25rem;
-}
-
 .judge-load-action-btn .btn-svg {
-    width: 0.92rem;
-    height: 0.92rem;
+    width: 1.05rem;
+    height: 1.05rem;
 }
 
 .judge-warning {

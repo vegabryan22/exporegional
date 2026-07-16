@@ -192,9 +192,15 @@
                         <input type="hidden" name="next" value="{{ next_url }}">
                         <input type="hidden" name="action" value="balance_judge_assignments">
                         <input type="hidden" name="judge_id" value="{{ judge.id }}">
-                        <button type="submit" class="outline-btn judge-load-action-btn" title="Equilibrar carga" aria-label="Equilibrar carga" data-no-iconify>Equil.</button>
+                        <button type="submit" class="outline-btn judge-load-action-btn" title="Equilibrar carga" aria-label="Equilibrar carga" data-no-iconify>
+                            <svg class="btn-svg" aria-hidden="true" focusable="false"><use href="#ico-restore"></use></svg>
+                            <span class="sr-only">Equilibrar carga</span>
+                        </button>
                     </form>
-                    <button type="button" class="outline-btn judge-load-action-btn" data-dialog-open="judge-availability-{{ judge.id }}">Editar</button>
+                    <button type="button" class="outline-btn judge-load-action-btn" title="Editar disponibilidad" aria-label="Editar disponibilidad" data-dialog-open="judge-availability-{{ judge.id }}" data-no-iconify>
+                        <svg class="btn-svg" aria-hidden="true" focusable="false"><use href="#ico-edit"></use></svg>
+                        <span class="sr-only">Editar disponibilidad</span>
+                    </button>
                 </div>
             </div>
 

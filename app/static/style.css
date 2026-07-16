@@ -6522,7 +6522,7 @@ dialog.maintenance-dialog::backdrop {
 
 .assignment-filter-panel {
     display: grid;
-    grid-template-columns: minmax(260px, 1fr) minmax(170px, 0.45fr) minmax(210px, 0.55fr) auto auto;
+    grid-template-columns: minmax(230px, 1fr) minmax(150px, 0.42fr) minmax(210px, 0.65fr) minmax(190px, 0.55fr) auto auto;
     align-items: end;
     gap: 0.65rem;
     padding: 0.78rem;

@@ -104,6 +104,16 @@
                 {% endfor %}
             </select>
         </label>
+        <label class="projects-filter-field">Juez
+            <select data-assignment-judge>
+                <option value="">Todos</option>
+                {% for judge in judges|sort(attribute='full_name') %}
+                    {% if judge.is_active %}
+                        <option value="{{ judge.id }}">{{ judge.full_name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </label>
         <label class="projects-filter-field">Cobertura
             <select data-assignment-coverage>
                 <option value="">Todas</option>
@@ -138,6 +148,7 @@
                 data-assignment-card
                 data-search="{{ (project.title ~ ' ' ~ project.team_name ~ ' ' ~ category_map.get(project.category, project.category) ~ ' ' ~ (ns_all.project_assignments|map(attribute='judge.full_name')|join(' ')))|lower }}"
                 data-category="{{ project.category }}"
+                data-judge-ids="{{ ns_all.project_assignments|map(attribute='judge_id')|join(',') }}"
                 data-confirmed="{{ ns.confirmed|length }}"
                 data-drafts="{{ ns.drafts|length }}"
                 data-doc-complete="{{ 1 if ns.doc_total >= 3 else 0 }}"
@@ -576,6 +587,7 @@
     var assignmentCards = Array.from(document.querySelectorAll('[data-assignment-card]'));
     var assignmentSearch = document.querySelector('[data-assignment-search]');
     var assignmentCategory = document.querySelector('[data-assignment-category]');
+    var assignmentJudge = document.querySelector('[data-assignment-judge]');
     var assignmentCoverage = document.querySelector('[data-assignment-coverage]');
     var assignmentClear = document.querySelector('[data-assignment-clear]');
     var assignmentCount = document.querySelector('[data-assignment-count]');
@@ -603,13 +615,16 @@
     function applyAssignmentFilters() {
         var query = normalize(assignmentSearch ? assignmentSearch.value : '');
         var category = assignmentCategory ? assignmentCategory.value : '';
+        var judge = assignmentJudge ? assignmentJudge.value : '';
         var coverage = assignmentCoverage ? assignmentCoverage.value : '';
         var visible = 0;
 
         assignmentCards.forEach(function (card) {
             var haystack = normalize(card.dataset.search || card.textContent);
+            var judgeIds = (card.dataset.judgeIds || '').split(',').filter(Boolean);
             var show = (!query || haystack.indexOf(query) !== -1)
                 && (!category || card.dataset.category === category)
+                && (!judge || judgeIds.indexOf(judge) !== -1)
                 && matchesCoverage(card, coverage);
             card.hidden = !show;
             if (show) visible += 1;
@@ -623,7 +638,7 @@
         }
     }
 
-    [assignmentSearch, assignmentCategory, assignmentCoverage].forEach(function (control) {
+    [assignmentSearch, assignmentCategory, assignmentJudge, assignmentCoverage].forEach(function (control) {
         if (!control) return;
         control.addEventListener('input', applyAssignmentFilters);
         control.addEventListener('change', applyAssignmentFilters);
@@ -633,6 +648,7 @@
         assignmentClear.addEventListener('click', function () {
             if (assignmentSearch) assignmentSearch.value = '';
             if (assignmentCategory) assignmentCategory.value = '';
+            if (assignmentJudge) assignmentJudge.value = '';
             if (assignmentCoverage) assignmentCoverage.value = '';
             applyAssignmentFilters();
         });

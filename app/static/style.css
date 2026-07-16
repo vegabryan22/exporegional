@@ -13285,30 +13285,62 @@ body {
 
 .ov2-log-cta:hover { text-decoration: underline; }
 
-/* Admin navigation must remain reachable while scrolling long operational pages. */
-.admin-shell > .admin-sidebar {
-    position: sticky !important;
-    top: calc(var(--fixed-header-height, 96px) + 0.75rem) !important;
-    align-self: start;
-    max-height: calc(100vh - var(--fixed-header-height, 96px) - 1.5rem);
+/* Admin navigation stays fixed; only the content pane scrolls. */
+body.admin-page {
     overflow: hidden;
 }
 
-.admin-shell > .admin-sidebar .admin-menu {
-    max-height: calc(100vh - var(--fixed-header-height, 96px) - 7.5rem);
+body.admin-page .container {
+    height: calc(100vh - var(--fixed-header-height, 96px));
+    overflow: hidden;
+}
+
+body.admin-page .admin-shell {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+body.admin-page .admin-shell > .admin-sidebar {
+    position: static !important;
+    top: auto !important;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    max-height: none;
+    overflow: hidden;
+}
+
+body.admin-page .admin-shell > .admin-sidebar .admin-menu {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-right: 0.18rem;
 }
 
+body.admin-page .admin-main {
+    min-height: 0;
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 0.25rem;
+    padding-bottom: 1rem;
+}
+
+body.admin-page .site-footer {
+    display: none;
+}
+
 @media (max-width: 900px) {
-    .admin-shell > .admin-sidebar {
-        top: calc(var(--fixed-header-height, 68px) + 0.45rem) !important;
-        max-height: calc(100vh - var(--fixed-header-height, 68px) - 0.9rem);
-        z-index: 1200;
+    body.admin-page .container {
+        height: calc(100vh - var(--fixed-header-height, 68px));
     }
 
-    .admin-shell > .admin-sidebar .admin-menu {
-        max-height: calc(100vh - var(--fixed-header-height, 68px) - 6rem);
+    body.admin-page .admin-sidebar {
+        z-index: 1200;
     }
 }

@@ -7349,13 +7349,19 @@ def judge_presence_report_excel():
         draft_count = len(item["draft_expo"])
         has_confirmed_expo = confirmed_count > 0
         attendance_label = judge.attendance_status_label
-        will_attend = has_confirmed_expo and judge.attendance_confirmed is True
+        participation_confirmed = judge.attendance_confirmed is True
+        is_presential = has_confirmed_expo and participation_confirmed
+        will_attend = is_presential
         pending_attendance = has_confirmed_expo and judge.attendance_confirmed is None
         report_rows.append({
             "name": judge.full_name,
             "email": judge.email,
             "phone": judge.phone or "",
             "attendance": attendance_label,
+            "participation_confirmed": "Si" if participation_confirmed else "No",
+            "is_presential": "Si" if is_presential else "No",
+            "pending_participation": "Si" if pending_attendance else "No",
+            "parking_presential": "Si" if is_presential and judge.needs_parking else "No",
             "will_attend": "Sí" if will_attend else "No",
             "pending_attendance": "Sí" if pending_attendance else "No",
             "parking": "Sí" if will_attend and judge.needs_parking else "No",
@@ -7378,6 +7384,13 @@ def judge_presence_report_excel():
     wb = Workbook()
     ws = wb.active
     ws.title = "Resumen"
+
+    confirmed_present = [row for row in report_rows if row["is_presential"] == "Si"]
+    pending_present = [row for row in report_rows if row["confirmed_expo_count"] > 0 and row["attendance"] == "Pendiente"]
+    rejected_present = [row for row in report_rows if row["attendance"] == "No asiste" and row["confirmed_expo_count"] > 0]
+    parking_confirmed = [row for row in confirmed_present if row["parking_presential"] == "Si"]
+    confirmed_expo_judges = [row for row in report_rows if row["confirmed_expo_count"] > 0]
+    draft_only_expo_judges = [row for row in report_rows if row["confirmed_expo_count"] == 0 and row["draft_expo_count"] > 0]
 
     header_fill = PatternFill("solid", fgColor="1A4A7A")
     header_font = Font(bold=True, color="FFFFFF", size=10)
@@ -7402,6 +7415,14 @@ def judge_presence_report_excel():
         cell.alignment = center
         cell.border = border
         ws.column_dimensions[get_column_letter(col_idx)].width = width
+    summary_rows = [
+        ("Presenciales operativos: participacion confirmada + expo confirmada", len(confirmed_present), "Base para almuerzos y refrigerios. Solo cuenta jueces con al menos una exposicion confirmada."),
+        ("Expo confirmada pendientes de responder participacion", len(pending_present), "Posible aumento de alimentacion si confirman participacion."),
+        ("Expo confirmada que rechazaron participacion", len(rejected_present), "No considerar para alimentacion ni parqueo."),
+        ("Parqueo presencial solicitado", len(parking_confirmed), "Solo jueces presenciales operativos que solicitaron parqueo."),
+        ("Total jueces con exposicion confirmada", len(confirmed_expo_judges), "Universo confirmado de exposicion presencial; excluye solo documento y borradores."),
+        ("Jueces solo con exposicion en borrador", len(draft_only_expo_judges), "No usar para alimentacion ni parqueo hasta confirmar asignacion."),
+    ]
     for item in summary_rows:
         ws.append(item)
         row_idx = ws.max_row
@@ -7418,6 +7439,13 @@ def judge_presence_report_excel():
         "Proyectos expo borrador", "Proyectos inglés", "Respondió",
     ]
     widths = [30, 36, 16, 16, 16, 18, 12, 16, 14, 12, 55, 55, 45, 18]
+    headers = [
+        "Juez", "Correo", "Telefono", "Respuesta participacion", "Participacion confirmada",
+        "Presencial operativo", "Pendiente respuesta", "Parqueo presencial", "Expo confirmadas",
+        "Expo borrador", "Expo ingles", "Proyectos expo confirmados", "Proyectos expo borrador",
+        "Proyectos ingles", "Respondio",
+    ]
+    widths = [30, 36, 16, 22, 20, 18, 18, 18, 16, 14, 12, 55, 55, 45, 18]
     ws2.append(headers)
     for col_idx, (header, width) in enumerate(zip(headers, widths), start=1):
         cell = ws2.cell(row=1, column=col_idx)
@@ -7429,8 +7457,9 @@ def judge_presence_report_excel():
 
     for row in report_rows:
         ws2.append([
-            row["name"], row["email"], row["phone"], row["attendance"], row["will_attend"], row["pending_attendance"],
-            row["parking"], row["confirmed_expo_count"], row["draft_expo_count"], row["english_expo_count"],
+            row["name"], row["email"], row["phone"], row["attendance"], row["participation_confirmed"],
+            row["is_presential"], row["pending_participation"], row["parking_presential"],
+            row["confirmed_expo_count"], row["draft_expo_count"], row["english_expo_count"],
             row["confirmed_projects"], row["draft_projects"], row["english_projects"], row["responded_at"],
         ])
         row_idx = ws2.max_row
@@ -7438,6 +7467,9 @@ def judge_presence_report_excel():
             cell = ws2.cell(row=row_idx, column=col_idx)
             cell.border = border
             cell.alignment = wrap
+        if row["is_presential"] == "Si":
+            for col_idx in range(1, len(headers) + 1):
+                ws2.cell(row=row_idx, column=col_idx).fill = subheader_fill
         if row["will_attend"] == "Sí":
             for col_idx in range(1, len(headers) + 1):
                 ws2.cell(row=row_idx, column=col_idx).fill = subheader_fill

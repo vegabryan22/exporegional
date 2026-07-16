@@ -114,35 +114,46 @@
                     <p>{{ project.team_name }}</p>
                 </div>
                 <div class="assignment-project-judges">
-                    <span class="assignment-field-label">Jueces confirmados</span>
+                    <div class="assignment-column-head">
+                        <span class="assignment-field-label">Jueces confirmados</span>
+                        {% if ns.confirmed %}<strong>{{ ns.confirmed|length }}</strong>{% endif %}
+                    </div>
                     {% if ns.confirmed %}
-                        <div class="assignment-summary-list assignment-summary-list-left">
+                        <ul class="assignment-summary-list assignment-summary-list-left">
                             {% for assignment in ns.confirmed %}
-                                <span class="assignment-summary-pill">
-                                    {{ assignment.judge.full_name }}
-                                    {% if assignment.judge.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
-                                    <small>{{ assignment.scope_label }}</small>
-                                </span>
+                                <li class="assignment-summary-pill">
+                                    <span class="assignment-judge-name">{{ assignment.judge.full_name }}</span>
+                                    <span class="assignment-judge-meta">
+                                        <small>{{ assignment.scope_label }}</small>
+                                        {% if assignment.judge.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
+                                    </span>
+                                </li>
                             {% endfor %}
-                        </div>
+                        </ul>
                     {% else %}
                         <span class="tag off">Sin jueces</span>
                     {% endif %}
                     {% if ns.drafts %}
-                        <span class="assignment-field-label" style="margin-top:0.4rem">Borrador</span>
-                        <div class="assignment-summary-list assignment-summary-list-left">
-                            {% for assignment in ns.drafts %}
-                                <span class="assignment-summary-pill assignment-pill-draft">
-                                    {{ assignment.judge.full_name }}
-                                    {% if assignment.judge.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
-                                    <small>{{ assignment.scope_label }}</small>
-                                </span>
-                            {% endfor %}
+                        <div class="assignment-column-head assignment-draft-head">
+                            <span class="assignment-field-label">Borrador</span>
+                            <strong>{{ ns.drafts|length }}</strong>
                         </div>
+                        <ul class="assignment-summary-list assignment-summary-list-left">
+                            {% for assignment in ns.drafts %}
+                                <li class="assignment-summary-pill assignment-pill-draft">
+                                    <span class="assignment-judge-name">{{ assignment.judge.full_name }}</span>
+                                    <span class="assignment-judge-meta">
+                                        <small>{{ assignment.scope_label }}</small>
+                                        {% if assignment.judge.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
+                                    </span>
+                                </li>
+                            {% endfor %}
+                        </ul>
                     {% endif %}
                 </div>
                 <div class="assignment-project-status">
-                    <span class="tag {{ 'ok' if ns.confirmed else 'off' }}">{{ ns.confirmed|length }} confirmado(s)</span>
+                    <span class="assignment-field-label">Cobertura</span>
+                    <span class="tag {{ 'ok' if ns.confirmed else 'off' }}">{{ ns.confirmed|length }} juez{{ 'ces' if ns.confirmed|length != 1 else '' }}</span>
                     {% if ns.drafts %}<span class="tag warning">{{ ns.drafts|length }} borrador</span>{% endif %}
                     <span class="tag {{ 'ok' if ns.doc_total >= 3 else 'warning' }}">Doc &middot; {{ ns.doc_total }}</span>
                     <span class="tag {{ 'ok' if ns.expo_total >= 3 else 'warning' }}">Expo &middot; {{ ns.expo_total }}</span>

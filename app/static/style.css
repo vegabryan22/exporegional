@@ -4129,7 +4129,21 @@ dialog.maintenance-dialog::backdrop {
 .judge-chip-row {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
     gap: 0.4rem;
+}
+
+.judge-chip-row .tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    min-height: 0;
+    max-width: 100%;
+    padding: 0.22rem 0.55rem;
+    line-height: 1;
+    white-space: nowrap;
+    overflow-wrap: normal;
 }
 
 .judge-pool-load {

@@ -172,6 +172,16 @@
                     </div>
                     <small>{{ row.evaluation_progress.completed }}/{{ row.evaluation_progress.expected }}</small>
                 </div>
+                {% if row.evaluation_progress.scopes %}
+                    <div class="judge-eval-scope-list" aria-label="Avance por rubro">
+                        {% for scope in row.evaluation_progress.scopes %}
+                            <span class="judge-eval-scope {{ 'complete' if scope.complete else 'pending' }}">
+                                <b>{{ scope.label }}</b>
+                                <small>{{ scope.completed }}/{{ scope.expected }}</small>
+                            </span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
                 {% if row.warning_count %}
                     <p class="judge-warning">{{ row.warning_count }} alerta(s) de compatibilidad</p>
                 {% else %}

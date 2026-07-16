@@ -6687,6 +6687,12 @@ def _build_judge_pool_context(context: dict) -> dict:
     def _judge_evaluation_progress(judge: Judge, assignments: list[Assignment]) -> dict:
         expected = 0
         completed = 0
+        scopes = {
+            "documentacion": {"label": "Doc", "expected": 0, "completed": 0},
+            "exposicion": {"label": "Expo", "expected": 0, "completed": 0},
+            "english": {"label": "Ing", "expected": 0, "completed": 0},
+            "other": {"label": "Otro", "expected": 0, "completed": 0},
+        }
         for assignment in assignments:
             project = project_map.get(assignment.project_id) or assignment.project
             if not project:
@@ -6696,6 +6702,12 @@ def _build_judge_pool_context(context: dict) -> dict:
             expected += len(entries)
             project_evaluations = getattr(project, "evaluations", []) or []
             for entry in entries:
+                scope_key = "english" if entry["code"] == ENGLISH_EVAL_TYPE_CODE else (infer_evaluation_type_kind(entry.get("type")) or "other")
+                scope = scopes.setdefault(
+                    scope_key,
+                    {"label": scope_key.title(), "expected": 0, "completed": 0},
+                )
+                scope["expected"] += 1
                 entry_member_id = entry.get("project_member_id")
                 if any(
                     evaluation.judge_id == judge.id
@@ -6705,10 +6717,26 @@ def _build_judge_pool_context(context: dict) -> dict:
                     for evaluation in project_evaluations
                 ):
                     completed += 1
+                    scope["completed"] += 1
+        scope_rows = []
+        for key in ["documentacion", "exposicion", "english", "other"]:
+            scope = scopes.get(key)
+            if not scope or not scope["expected"]:
+                continue
+            scope_rows.append(
+                {
+                    "key": key,
+                    "label": scope["label"],
+                    "expected": scope["expected"],
+                    "completed": scope["completed"],
+                    "complete": scope["completed"] >= scope["expected"],
+                }
+            )
         return {
             "expected": expected,
             "completed": completed,
             "percentage": round((completed / expected) * 100) if expected else 0,
+            "scopes": scope_rows,
         }
 
     rows = []

@@ -4187,6 +4187,44 @@ dialog.maintenance-dialog::backdrop {
     background: #1d7a22;
 }
 
+.judge-eval-scope-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.28rem;
+    max-width: 160px;
+    margin: 0.15rem 0 0.2rem;
+}
+
+.judge-eval-scope {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    border: 1px solid #d7e6f5;
+    border-radius: 999px;
+    background: #f7fbff;
+    color: #123f6b;
+    padding: 0.18rem 0.42rem;
+    line-height: 1;
+}
+
+.judge-eval-scope.complete {
+    border-color: #bfe2c1;
+    background: #effaf0;
+    color: #1d7a22;
+}
+
+.judge-eval-scope b,
+.judge-eval-scope small {
+    font-size: 0.66rem;
+    line-height: 1;
+}
+
+.judge-eval-scope small {
+    color: inherit;
+    font-weight: 800;
+}
+
 .judge-pool-load .outline-btn {
     margin-top: 0.4rem;
 }

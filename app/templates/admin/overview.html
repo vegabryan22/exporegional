@@ -278,10 +278,10 @@
                   <div class="ov2-pending-scope">
                     <span class="tag {{ 'warning' if scope.label == 'Expo' else ('ok' if scope.label == 'Doc' else 'neutral') }}">{{ scope.label }} {{ scope.missing }}</span>
                     <small>
-                      {% for item in scope.items[:3] %}
+                      {% for item in scope["items"][:3] %}
                         {{ item }}{% if not loop.last %}; {% endif %}
                       {% endfor %}
-                      {% if scope.items|length > 3 %}; +{{ scope.items|length - 3 }} m&aacute;s{% endif %}
+                      {% if scope["items"]|length > 3 %}; +{{ scope["items"]|length - 3 }} m&aacute;s{% endif %}
                     </small>
                   </div>
                 {% endfor %}

@@ -6423,23 +6423,90 @@ dialog.maintenance-dialog::backdrop {
 }
 
 .assignments-action-strip {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(260px, 1.05fr) minmax(280px, 1fr) minmax(240px, 0.8fr);
+    gap: 0.72rem;
 }
 
 .assignments-action-group {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.42rem;
+}
+
+.assignments-tool-card {
+    display: grid;
+    align-content: start;
+    gap: 0.62rem;
+    padding: 0.72rem;
+    border: 1px solid #cfe0f3;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f4f9ff 100%);
+    box-shadow: 0 10px 24px rgba(13, 63, 107, 0.055);
+}
+
+.assignments-tool-card-accent {
+    border-color: #a8d5e8;
+    background: linear-gradient(180deg, #f8fdff 0%, #eef8fc 100%);
+}
+
+.assignments-tool-head {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.assignments-tool-head strong {
+    display: block;
+    color: #073864;
+    font-size: 0.9rem;
+    line-height: 1.15;
+}
+
+.assignments-tool-head small {
+    display: block;
+    margin-top: 0.08rem;
+    color: #607998;
+    font-size: 0.74rem;
+    line-height: 1.2;
+}
+
+.assignments-tool-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #e6f5fc;
+    color: #0c74a0;
+}
+
+.assignments-tool-icon svg,
+.assignment-tool-btn svg {
+    width: 1rem;
+    height: 1rem;
+    fill: currentColor;
 }
 
 .assignments-action-strip .outline-btn {
     min-width: 0;
     white-space: nowrap;
-    padding: 0.45rem 1rem;
-    font-size: 0.88rem;
+    padding: 0.42rem 0.7rem;
+    font-size: 0.82rem;
+}
+
+.assignment-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.34rem;
+    min-height: 36px;
+}
+
+.assignment-tool-form {
+    display: contents;
 }
 
 .assignment-manage-btn {
@@ -6532,6 +6599,10 @@ dialog.maintenance-dialog::backdrop {
 }
 
 @media (max-width: 1180px) {
+    .assignments-action-strip {
+        grid-template-columns: repeat(2, minmax(260px, 1fr));
+    }
+
     .assignment-project-card {
         grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr);
     }
@@ -9948,6 +10019,7 @@ button {
     .filter-grid,
     .projects-filter-row,
     .tracking-filter-row,
+    .assignments-action-strip,
     .assignment-project-card,
     .assignment-inline-add,
     .assignment-inline-create,

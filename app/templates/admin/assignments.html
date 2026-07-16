@@ -17,23 +17,54 @@
             <span class="tag neutral">{{ active_projects|length }} proyectos activos</span>
         </div>
         <div class="assignments-action-strip">
-            <div class="assignments-action-group">
-                <button type="button" class="outline-btn" data-dialog-open="quick-judge-dialog">Juez r&aacute;pido</button>
-                <button type="button" class="outline-btn" data-dialog-open="create-assignment-dialog">Asignaci&oacute;n masiva</button>
-                <button type="button" class="outline-btn" data-dialog-open="auto-assign-dialog">Asignar autom&aacute;ticamente</button>
-                <button type="button" class="outline-btn" data-dialog-open="load-report-dialog">Reporte de carga</button>
-            </div>
-            <div class="assignments-action-group">
-                <a class="outline-btn" href="{{ url_for('admin.assignments_report_pdf') }}" target="_blank">Exportar PDF</a>
-                <a class="outline-btn" href="{{ url_for('admin.assignments_report_excel') }}">Exportar Excel</a>
-                <a class="outline-btn" href="{{ url_for('admin.judge_presence_report_excel') }}">Reporte presencial</a>
-                <button type="button" class="outline-btn" data-dialog-open="document-reminder-dialog">Recordar documento</button>
-                <form method="post" action="{{ action_url }}" style="display:contents">
-                    <input type="hidden" name="next" value="{{ next_url }}">
-                    <input type="hidden" name="action" value="send_confirmed_assignment_notifications">
-                    <button type="submit" class="outline-btn" onclick="return confirm('Enviar correos solo a jueces con asistencia confirmada y asignaciones no notificadas?')">Notificar confirmados</button>
-                </form>
-            </div>
+            <section class="assignments-tool-card">
+                <div class="assignments-tool-head">
+                    <span class="assignments-tool-icon"><svg aria-hidden="true"><use href="#ico-users"></use></svg></span>
+                    <div>
+                        <strong>Operar asignaciones</strong>
+                        <small>Crear, equilibrar y revisar carga por juez.</small>
+                    </div>
+                </div>
+                <div class="assignments-action-group">
+                    <button type="button" class="outline-btn assignment-tool-btn" data-dialog-open="quick-judge-dialog"><svg aria-hidden="true"><use href="#ico-plus"></use></svg><span>Juez r&aacute;pido</span></button>
+                    <button type="button" class="outline-btn assignment-tool-btn" data-dialog-open="create-assignment-dialog"><svg aria-hidden="true"><use href="#ico-users"></use></svg><span>Asignaci&oacute;n masiva</span></button>
+                    <button type="button" class="outline-btn assignment-tool-btn" data-dialog-open="auto-assign-dialog"><svg aria-hidden="true"><use href="#ico-settings"></use></svg><span>Asignar autom&aacute;ticamente</span></button>
+                    <button type="button" class="outline-btn assignment-tool-btn" data-dialog-open="load-report-dialog"><svg aria-hidden="true"><use href="#ico-chart"></use></svg><span>Carga por juez</span></button>
+                </div>
+            </section>
+
+            <section class="assignments-tool-card assignments-tool-card-accent">
+                <div class="assignments-tool-head">
+                    <span class="assignments-tool-icon"><svg aria-hidden="true"><use href="#ico-download"></use></svg></span>
+                    <div>
+                        <strong>Exportar reportes</strong>
+                        <small>Descargas para control, revisi&oacute;n y log&iacute;stica.</small>
+                    </div>
+                </div>
+                <div class="assignments-action-group">
+                    <a class="outline-btn assignment-tool-btn" href="{{ url_for('admin.assignments_report_pdf') }}" target="_blank"><svg aria-hidden="true"><use href="#ico-doc"></use></svg><span>PDF asignaciones</span></a>
+                    <a class="outline-btn assignment-tool-btn" href="{{ url_for('admin.assignments_report_excel') }}"><svg aria-hidden="true"><use href="#ico-download"></use></svg><span>Excel asignaciones</span></a>
+                    <a class="outline-btn assignment-tool-btn" href="{{ url_for('admin.judge_presence_report_excel') }}"><svg aria-hidden="true"><use href="#ico-box"></use></svg><span>Excel presencial</span></a>
+                </div>
+            </section>
+
+            <section class="assignments-tool-card">
+                <div class="assignments-tool-head">
+                    <span class="assignments-tool-icon"><svg aria-hidden="true"><use href="#ico-send"></use></svg></span>
+                    <div>
+                        <strong>Comunicaciones</strong>
+                        <small>Recordatorios y avisos a jueces confirmados.</small>
+                    </div>
+                </div>
+                <div class="assignments-action-group">
+                    <button type="button" class="outline-btn assignment-tool-btn" data-dialog-open="document-reminder-dialog"><svg aria-hidden="true"><use href="#ico-send"></use></svg><span>Recordar documento</span></button>
+                    <form method="post" action="{{ action_url }}" class="assignment-tool-form">
+                        <input type="hidden" name="next" value="{{ next_url }}">
+                        <input type="hidden" name="action" value="send_confirmed_assignment_notifications">
+                        <button type="submit" class="outline-btn assignment-tool-btn" onclick="return confirm('Enviar correos solo a jueces con asistencia confirmada y asignaciones no notificadas?')"><svg aria-hidden="true"><use href="#ico-check"></use></svg><span>Notificar confirmados</span></button>
+                    </form>
+                </div>
+            </section>
         </div>
     </div>
 

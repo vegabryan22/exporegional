@@ -187,13 +187,15 @@
                 {% else %}
                     <p>Sin alertas</p>
                 {% endif %}
-                <form method="post" action="{{ action_url }}" class="judge-balance-form" onsubmit="return confirm('&iquest;Equilibrar carga moviendo solo proyectos/rubros sin evaluar hacia este juez?')">
-                    <input type="hidden" name="next" value="{{ next_url }}">
-                    <input type="hidden" name="action" value="balance_judge_assignments">
-                    <input type="hidden" name="judge_id" value="{{ judge.id }}">
-                    <button type="submit" class="outline-btn" data-no-iconify>Equilibrar</button>
-                </form>
-                <button type="button" class="outline-btn" data-dialog-open="judge-availability-{{ judge.id }}">Editar</button>
+                <div class="judge-load-actions">
+                    <form method="post" action="{{ action_url }}" class="judge-balance-form" onsubmit="return confirm('&iquest;Equilibrar carga moviendo solo proyectos/rubros sin evaluar hacia este juez?')">
+                        <input type="hidden" name="next" value="{{ next_url }}">
+                        <input type="hidden" name="action" value="balance_judge_assignments">
+                        <input type="hidden" name="judge_id" value="{{ judge.id }}">
+                        <button type="submit" class="outline-btn judge-load-action-btn" title="Equilibrar carga" aria-label="Equilibrar carga" data-no-iconify>Equil.</button>
+                    </form>
+                    <button type="button" class="outline-btn judge-load-action-btn" data-dialog-open="judge-availability-{{ judge.id }}">Editar</button>
+                </div>
             </div>
 
             <div class="judge-pool-attendance">

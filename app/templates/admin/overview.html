@@ -261,12 +261,15 @@
   {# Evaluaciones pendientes — fila independiente #}
   <section class="ov2-block ov2-full ov2-pending-block">
     <div class="ov2-block-head">
-      <h4>Evaluaciones pendientes</h4>
+      <div>
+        <h4>Evaluaciones pendientes</h4>
+        <p class="ov2-block-note">Todo proyecto listado aqu&iacute; tiene evaluaciones sin registrar.</p>
+      </div>
       <a href="{{ url_for('admin.evaluations_page') }}" class="ov2-block-link">Ver todas &rarr;</a>
     </div>
     {% if m.pending_evaluation_rows %}
     <table class="ov2-table ov2-pending-table">
-      <thead><tr><th>Proyecto y pendientes</th><th>Avance</th><th>Faltan</th></tr></thead>
+      <thead><tr><th>Proyecto y qu&eacute; falta</th><th>Avance registrado</th><th>Total pendiente</th></tr></thead>
       <tbody>
         {% for row in m.pending_evaluation_rows %}
         <tr>
@@ -276,7 +279,7 @@
               <div class="ov2-pending-detail">
                 {% for scope in row.pending_detail %}
                   <div class="ov2-pending-scope">
-                    <span class="tag {{ 'warning' if scope.label == 'Expo' else ('ok' if scope.label == 'Doc' else 'neutral') }}">{{ scope.label }} {{ scope.missing }}</span>
+                    <span class="tag {{ 'warning' if scope.label == 'Expo' else ('ok' if scope.label == 'Doc' else 'neutral') }}">Faltan {{ scope.missing }} {{ scope.label|lower }}</span>
                     <small>
                       {% for item in scope["items"][:3] %}
                         {{ item }}{% if not loop.last %}; {% endif %}

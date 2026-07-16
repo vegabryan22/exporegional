@@ -12300,8 +12300,10 @@ body {
 }
 
 .ov2-pending-scope .tag {
-    min-width: 58px;
+    min-width: 96px;
+    justify-content: center;
     text-align: center;
+    white-space: nowrap;
 }
 
 .ov2-pending-scope small {

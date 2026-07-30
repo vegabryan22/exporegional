@@ -100,6 +100,15 @@
                 <input type="text" id="projects-filter-text" placeholder="Proyecto, equipo o sección">
             </label>
             <label class="projects-filter-field">
+                <span>Tutor</span>
+                <select id="projects-filter-advisor">
+                    <option value="">Todos</option>
+                    {% for advisor in advisor_stats | sort(attribute='name') %}
+                        <option value="{{ advisor.name|lower }}">{{ advisor.name }} ({{ advisor.total }})</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="projects-filter-field">
                 <span>Categoría</span>
                 <select id="projects-filter-category">
                     <option value="">Todas</option>
@@ -283,6 +292,7 @@
                 data-project-title="{{ project.title|lower }}"
                 data-project-team="{{ project.team_name|lower }}"
                 data-project-section="{{ (project.section.name if project.section else 'n/d')|lower }}"
+                data-project-advisor="{{ (project.advisor_name or 'sin tutor')|trim|lower }}"
                 data-project-category="{{ project.category|lower }}"
                 data-project-status="{{ project.logistics_status|lower }}"
                 data-project-active="{{ 'activo' if project.is_active else 'inactivo' }}"
@@ -822,6 +832,7 @@
         });
 
         var textInput = document.getElementById('projects-filter-text');
+        var advisorSelect = document.getElementById('projects-filter-advisor');
         var categorySelect = document.getElementById('projects-filter-category');
         var statusSelect = document.getElementById('projects-filter-status');
         var activeRadios = document.querySelectorAll('input[name="projects-filter-active"]');
@@ -834,6 +845,7 @@
                 return;
             }
             var text = (textInput && textInput.value ? textInput.value : '').trim().toLowerCase();
+            var advisor = (advisorSelect && advisorSelect.value ? advisorSelect.value : '').trim().toLowerCase();
             var category = (categorySelect && categorySelect.value ? categorySelect.value : '').trim().toLowerCase();
             var status = (statusSelect && statusSelect.value ? statusSelect.value : '').trim().toLowerCase();
             var active = '';
@@ -850,14 +862,16 @@
                     row.getAttribute('data-project-team') || '',
                     row.getAttribute('data-project-section') || ''
                 ].join(' ');
+                var rowAdvisor = (row.getAttribute('data-project-advisor') || '').trim().toLowerCase();
                 var rowCategory = (row.getAttribute('data-project-category') || '').toLowerCase();
                 var rowStatus = (row.getAttribute('data-project-status') || '').toLowerCase();
                 var rowActive = (row.getAttribute('data-project-active') || '').toLowerCase();
                 var matchesText = !text || haystack.indexOf(text) !== -1;
+                var matchesAdvisor = !advisor || rowAdvisor === advisor;
                 var matchesCategory = !category || rowCategory === category;
                 var matchesStatus = !status || rowStatus === status;
                 var matchesActive = !active || rowActive === active;
-                var show = matchesText && matchesCategory && matchesStatus && matchesActive;
+                var show = matchesText && matchesAdvisor && matchesCategory && matchesStatus && matchesActive;
                 row.style.display = show ? '' : 'none';
                 if (show) {
                     visible += 1;
@@ -872,6 +886,9 @@
         if (textInput) {
             textInput.addEventListener('input', applyProjectFilters);
         }
+        if (advisorSelect) {
+            advisorSelect.addEventListener('change', applyProjectFilters);
+        }
         if (categorySelect) {
             categorySelect.addEventListener('change', applyProjectFilters);
         }
@@ -885,6 +902,9 @@
             clearBtn.addEventListener('click', function () {
                 if (textInput) {
                     textInput.value = '';
+                }
+                if (advisorSelect) {
+                    advisorSelect.value = '';
                 }
                 if (categorySelect) {
                     categorySelect.value = '';
@@ -903,6 +923,9 @@
         function clearProjectFilters() {
             if (textInput) {
                 textInput.value = '';
+            }
+            if (advisorSelect) {
+                advisorSelect.value = '';
             }
             if (categorySelect) {
                 categorySelect.value = '';

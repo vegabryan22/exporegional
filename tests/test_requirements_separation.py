@@ -139,6 +139,13 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn('name="requirements_internet_ok"', requirements_template)
         self.assertIn('name="requirements_resources_ok"', requirements_template)
 
+    def test_projects_can_be_filtered_by_advisor(self):
+        template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
+
+        self.assertIn('id="projects-filter-advisor"', template)
+        self.assertIn("data-project-advisor=", template)
+        self.assertIn("matchesAdvisor", template)
+
     def test_logistics_department_does_not_receive_requirements_module(self):
         self.assertNotIn("requirements", ADMIN_DEPARTMENT_MODULE_ACCESS["logistica"])
         self.assertEqual(ACTION_MODULE_MAP["update_project_requirements"], "requirements")

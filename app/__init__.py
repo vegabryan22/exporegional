@@ -235,6 +235,40 @@ def register_error_handlers(app):
         )
 
 
+def _reconcile_existing_logistics_statuses(connection):
+    return connection.execute(
+        text(
+            """
+            UPDATE projects
+            SET logistics_status = CASE
+                WHEN COALESCE(TRIM(project_document_path), '') <> ''
+                    AND logistics_document_ok = 1
+                    AND COALESCE(TRIM(project_logo_path), '') <> ''
+                    AND project_logo_path <> 'placeholders/project-logo-generic.svg'
+                    AND logistics_logo_ok = 1
+                    AND logistics_photos_ok = 1
+                    AND logistics_registration_form_signed_ok = 1
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM project_members
+                        WHERE project_members.project_id = projects.id
+                            AND COALESCE(TRIM(project_members.photo_url), '') = ''
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM project_members
+                        WHERE project_members.project_id = projects.id
+                            AND project_members.consent_signed_ok = 0
+                    )
+                THEN 'completo'
+                WHEN logistics_status = 'completo' THEN 'incompleto'
+                ELSE logistics_status
+            END
+            """
+        )
+    )
+
+
 def ensure_schema_updates():
     inspector = inspect(db.engine)
     with db.engine.begin() as connection:
@@ -935,6 +969,7 @@ def ensure_schema_updates():
                     "ALTER TABLE project_members ADD COLUMN cedula_estudiante_ok TINYINT(1) NOT NULL DEFAULT 0",
                     "project_members.cedula_estudiante_ok",
                 )
+            _reconcile_existing_logistics_statuses(connection)
 
         if "project_member_edit_requests" in inspector.get_table_names():
             mer_cols = {c["name"] for c in inspector.get_columns("project_member_edit_requests")}

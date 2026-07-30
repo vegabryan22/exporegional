@@ -1,6 +1,9 @@
 import unittest
 from pathlib import Path
 
+from sqlalchemy import create_engine, text
+
+from app import _reconcile_existing_logistics_statuses
 from app.controllers.admin_controller import (
     ACTION_MODULE_MAP,
     ADMIN_DEPARTMENT_MODULE_ACCESS,
@@ -67,6 +70,66 @@ class RequirementsSeparationTest(unittest.TestCase):
 
         self.assertIn("logo validado", missing_items)
         self.assertEqual("incompleto", project.logistics_status)
+
+    def test_existing_ready_projects_are_reconciled(self):
+        engine = create_engine("sqlite://")
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE projects (
+                        id INTEGER PRIMARY KEY,
+                        project_document_path TEXT,
+                        logistics_document_ok INTEGER,
+                        project_logo_path TEXT,
+                        logistics_logo_ok INTEGER,
+                        logistics_photos_ok INTEGER,
+                        logistics_registration_form_signed_ok INTEGER,
+                        logistics_status TEXT
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE project_members (
+                        id INTEGER PRIMARY KEY,
+                        project_id INTEGER,
+                        photo_url TEXT,
+                        consent_signed_ok INTEGER
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO projects VALUES
+                        (1, 'document.pdf', 1, 'logo.png', 1, 1, 1, 'pendiente_revision'),
+                        (2, 'document.pdf', 1, 'logo.png', 0, 1, 1, 'completo')
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO project_members VALUES
+                        (1, 1, 'student.jpg', 1),
+                        (2, 2, 'student.jpg', 1)
+                    """
+                )
+            )
+
+            _reconcile_existing_logistics_statuses(connection)
+            statuses = {
+                row.id: row.logistics_status
+                for row in connection.execute(text("SELECT id, logistics_status FROM projects"))
+            }
+
+        self.assertEqual("completo", statuses[1])
+        self.assertEqual("incompleto", statuses[2])
+        engine.dispose()
 
     def test_logistics_template_does_not_offer_resource_validation(self):
         template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")

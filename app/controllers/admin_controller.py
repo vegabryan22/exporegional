@@ -7887,6 +7887,60 @@ def _build_assignments_report_rows(context: dict) -> list[dict]:
     return rows
 
 
+def _build_exposition_usher_report_rows(context: dict) -> list[dict]:
+    project_map = {
+        project.id: project
+        for project in context.get("projects", [])
+        if project.is_active
+    }
+    category_map = context.get("category_map", {})
+    rows = []
+
+    for assignment in context.get("assignments", []):
+        if assignment.status != Assignment.STATUS_CONFIRMED:
+            continue
+        if not assignment.can_evaluate_exposition:
+            continue
+        project = project_map.get(assignment.project_id)
+        judge = assignment.judge
+        if not project or not judge or not judge.is_active_user:
+            continue
+        if judge.attendance_confirmed is False:
+            continue
+
+        section = project.section.name if project.section else ""
+        if not section and project.members:
+            section = next(
+                (
+                    member.section_name
+                    for member in project.members
+                    if member.section_name
+                ),
+                "",
+            )
+        rows.append(
+            {
+                "judge": judge.full_name,
+                "phone": judge.phone or "—",
+                "attendance": judge.attendance_status_label,
+                "project": project.title,
+                "team": project.team_name,
+                "section": section or "—",
+                "category": category_map.get(project.category, project.category),
+                "location": "",
+            }
+        )
+
+    return sorted(
+        rows,
+        key=lambda row: (
+            row["judge"].casefold(),
+            row["category"].casefold(),
+            row["project"].casefold(),
+        ),
+    )
+
+
 @admin_module_required("assignments")
 def assignments_report_excel():
     try:
@@ -8276,6 +8330,154 @@ def assignments_report_pdf():
         mimetype="application/pdf",
         as_attachment=True,
         download_name="asignaciones_por_juez.pdf",
+    )
+
+
+@admin_module_required("assignments")
+def exposition_usher_report_pdf():
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.assignments_page"))
+
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import landscape, letter
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.units import cm
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+    context = _base_context("assignments")
+    rows = _build_exposition_usher_report_rows(context)
+    buffer = BytesIO()
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=landscape(letter),
+        leftMargin=1.1 * cm,
+        rightMargin=1.1 * cm,
+        topMargin=1.1 * cm,
+        bottomMargin=1.1 * cm,
+        title="Guía de jueces de exposición para edecanes",
+        author=_institution_name(),
+    )
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "usher_title",
+        parent=styles["Heading1"],
+        fontSize=15,
+        leading=18,
+        textColor=colors.HexColor("#0B4778"),
+        spaceAfter=3,
+    )
+    subtitle_style = ParagraphStyle(
+        "usher_subtitle",
+        parent=styles["Normal"],
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor("#58789B"),
+        spaceAfter=8,
+    )
+    cell_style = ParagraphStyle(
+        "usher_cell",
+        parent=styles["Normal"],
+        fontSize=7.3,
+        leading=9,
+    )
+    cell_bold_style = ParagraphStyle(
+        "usher_cell_bold",
+        parent=cell_style,
+        fontName="Helvetica-Bold",
+        textColor=colors.HexColor("#123F6B"),
+    )
+
+    judge_count = len({row["judge"] for row in rows})
+    project_count = len({row["project"] for row in rows})
+    elements = [
+        Paragraph("Guía de jueces de exposición para edecanes", title_style),
+        Paragraph(
+            _pdf_normalize_text(
+                f"{_institution_name()} · {judge_count} jueces · {project_count} proyectos · "
+                f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+            ),
+            subtitle_style,
+        ),
+        Paragraph(
+            "Incluye únicamente asignaciones confirmadas que evalúan exposición. "
+            "La columna de recinto queda en blanco para que el equipo de edecanes registre la ubicación.",
+            subtitle_style,
+        ),
+        Spacer(1, 0.15 * cm),
+    ]
+
+    if rows:
+        headers = [
+            "Juez",
+            "Teléfono",
+            "Asistencia",
+            "Proyecto",
+            "Categoría",
+            "Equipo / sección",
+            "Recinto o ubicación\n(uso de edecanes)",
+            "Atendido",
+        ]
+        table_data = [headers]
+        for row in rows:
+            team_section = row["team"]
+            if row["section"] != "—":
+                team_section += f" · {row['section']}"
+            table_data.append(
+                [
+                    Paragraph(_pdf_normalize_text(row["judge"]), cell_bold_style),
+                    Paragraph(_pdf_normalize_text(row["phone"]), cell_style),
+                    Paragraph(_pdf_normalize_text(row["attendance"]), cell_style),
+                    Paragraph(_pdf_normalize_text(row["project"]), cell_style),
+                    Paragraph(_pdf_normalize_text(row["category"]), cell_style),
+                    Paragraph(_pdf_normalize_text(team_section), cell_style),
+                    "",
+                    "[  ]",
+                ]
+            )
+
+        table = Table(
+            table_data,
+            colWidths=[3.3 * cm, 2.1 * cm, 1.8 * cm, 5.2 * cm, 2.3 * cm, 3.5 * cm, 5.6 * cm, 1.4 * cm],
+            repeatRows=1,
+            rowHeights=[None] + [1.05 * cm] * len(rows),
+        )
+        table.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0B4778")),
+                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                    ("FONTSIZE", (0, 0), (-1, 0), 7.5),
+                    ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("ALIGN", (-1, 1), (-1, -1), "CENTER"),
+                    ("FONTSIZE", (-1, 1), (-1, -1), 13),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F2F8FF")]),
+                    ("GRID", (0, 0), (-1, -1), 0.45, colors.HexColor("#BFD3E4")),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 4),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+                    ("TOPPADDING", (0, 0), (-1, -1), 4),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ]
+            )
+        )
+        elements.append(table)
+    else:
+        elements.append(
+            Paragraph(
+                "No existen asignaciones confirmadas para evaluación de exposición.",
+                subtitle_style,
+            )
+        )
+
+    document.build(elements)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"guia_edecanes_exposicion_{datetime.now().strftime('%Y%m%d')}.pdf",
     )
 
 

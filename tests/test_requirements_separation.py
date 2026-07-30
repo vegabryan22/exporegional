@@ -10,8 +10,11 @@ from app.controllers.admin_controller import (
     _build_logistics_pending_report_rows,
     _build_project_logistics_summary,
     _build_tutor_logistics_reminder_payload,
+    _build_exposition_usher_report_rows,
     _sync_project_logistics_status,
 )
+from app.models.assignment import Assignment
+from app.models.judge import Judge
 from app.models.project import Project
 from app.models.project_member import ProjectMember
 
@@ -266,6 +269,69 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("Cédula del tutor", payload["missing_group"])
         self.assertEqual("Estudiante Ejemplo", payload["member_missing"][0]["member"].full_name)
         self.assertIn("Consentimiento informado", payload["member_missing"][0]["items"])
+
+    def test_usher_report_contains_only_confirmed_exposition_assignments(self):
+        exposition_judge = Judge(
+            id=1,
+            full_name="Juez Exposición",
+            email="expo@example.com",
+            phone="8888-8888",
+            role=Judge.ROLE_JUDGE,
+            password_hash="test",
+            is_active_user=True,
+            attendance_confirmed=True,
+        )
+        documentation_judge = Judge(
+            id=2,
+            full_name="Juez Documentación",
+            email="doc@example.com",
+            role=Judge.ROLE_JUDGE,
+            password_hash="test",
+            is_active_user=True,
+            attendance_confirmed=True,
+        )
+        project = Project(
+            id=30,
+            title="Proyecto para exposición",
+            team_name="Equipo",
+            category="steam",
+            is_active=True,
+        )
+        exposition_assignment = Assignment(
+            judge_id=1,
+            project_id=30,
+            status=Assignment.STATUS_CONFIRMED,
+            can_evaluate_documentation=True,
+            can_evaluate_exposition=True,
+        )
+        exposition_assignment.judge = exposition_judge
+        documentation_assignment = Assignment(
+            judge_id=2,
+            project_id=30,
+            status=Assignment.STATUS_CONFIRMED,
+            can_evaluate_documentation=True,
+            can_evaluate_exposition=False,
+        )
+        documentation_assignment.judge = documentation_judge
+
+        rows = _build_exposition_usher_report_rows(
+            {
+                "projects": [project],
+                "assignments": [exposition_assignment, documentation_assignment],
+                "category_map": {"steam": "STEAM"},
+            }
+        )
+
+        self.assertEqual(1, len(rows))
+        self.assertEqual("Juez Exposición", rows[0]["judge"])
+        self.assertEqual("Proyecto para exposición", rows[0]["project"])
+        self.assertEqual("", rows[0]["location"])
+
+    def test_assignments_page_links_usher_report(self):
+        template = Path("app/templates/admin/assignments.html").read_text(encoding="utf-8")
+
+        self.assertIn("exposition_usher_report_pdf", template)
+        self.assertIn("PDF edecanes · exposición", template)
 
     def test_logistics_department_does_not_receive_requirements_module(self):
         self.assertNotIn("requirements", ADMIN_DEPARTMENT_MODULE_ACCESS["logistica"])

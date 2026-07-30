@@ -76,6 +76,13 @@ LOGISTICS_STATUSES = [
     ("completo", "Completo"),
     ("incompleto", "Incompleto"),
 ]
+REQUIREMENTS_STATUSES = [
+    ("pendiente_revision", "Pendiente de revisar"),
+    ("en_gestion", "En gestión"),
+    ("parcial", "Parcialmente confirmado"),
+    ("completo", "Completo"),
+    ("no_aplica", "No aplica"),
+]
 USER_DEPARTMENTS = [
     ("logistica", "Logistica"),
     ("datos", "Datos"),
@@ -127,6 +134,7 @@ ADMIN_MENU_ICONS = {
     "academic": "doc",
     "rubrics": "chart",
     "projects": "box",
+    "requirements": "settings",
     "evaluations": "chart",
     "documents": "doc",
     "smtp": "send",
@@ -151,6 +159,7 @@ ADMIN_MENU_ITEMS = [
     ("academic", "admin.academic_page", "Académico"),
     ("rubrics", "admin.rubrics_page", "Rúbricas"),
     ("projects", "admin.projects_page", "Proyectos"),
+    ("requirements", "admin.requirements_page", "Requerimientos"),
     ("evaluations", "admin.evaluations_page", "Evaluaciones"),
     ("documents", "admin.documents_page", "Actas y certificados"),
     ("smtp", "admin.smtp_page", "SMTP"),
@@ -166,7 +175,7 @@ ADMIN_MENU_ITEMS = [
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Documentos", ["documents"]),
-    ("Operación", ["assignments", "judge_pool", "projects", "evaluations", "students_stats"]),
+    ("Operación", ["assignments", "judge_pool", "projects", "requirements", "evaluations", "students_stats"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
@@ -214,6 +223,7 @@ ACTION_MODULE_MAP = {
     "update_advisor": "projects",
     "update_project": "projects",
     "update_project_logistics": "projects",
+    "update_project_requirements": "requirements",
     "replace_project_document": "projects",
     "approve_document_revision": "projects",
     "reject_document_revision": "projects",
@@ -949,8 +959,6 @@ def _project_logistics_missing_items(project):
     missing_consents = [m.full_name for m in project.members if not m.consent_signed_ok]
     if missing_consents:
         missing.append("consentimiento de: " + ", ".join(missing_consents))
-    if not project.logistics_requirements_reviewed_ok:
-        missing.append("revision de requisitos")
     return missing
 
 
@@ -966,8 +974,6 @@ def _project_logistics_group_missing(project):
     if missing_consents:
         for name in missing_consents:
             missing.append(f"Consentimiento de {name}")
-    if not project.logistics_requirements_reviewed_ok:
-        missing.append("Revisión de requisitos completada")
     return missing
 
 
@@ -4700,7 +4706,6 @@ def _handle_action(action: str):
                 project.logistics_photos_ok = _str_to_bool(request.form.get("logistics_photos_ok"))
                 project.logistics_registration_form_signed_ok = _str_to_bool(request.form.get("logistics_registration_form_signed_ok"))
                 project.logistics_cedula_tutor_ok = _str_to_bool(request.form.get("logistics_cedula_tutor_ok"))
-                project.logistics_requirements_reviewed_ok = _str_to_bool(request.form.get("logistics_requirements_reviewed_ok"))
                 # per-member consent and cedula checkboxes
                 for member in project.members:
                     member.consent_signed_ok = _str_to_bool(request.form.get(f"consent_member_{member.id}"))
@@ -4725,12 +4730,59 @@ def _handle_action(action: str):
                         f"Proyecto #{project.id} '{project.title}' => activo={project.is_active}, status={project.logistics_status}, "
                         f"doc={project.logistics_document_ok}, logo={project.logistics_logo_ok}, "
                         f"fotos={project.logistics_photos_ok}, formulario_fisico={project.logistics_registration_form_signed_ok}, "
-                        f"consentimientos={project.logistics_student_consents_signed_ok}, requisitos={project.logistics_requirements_reviewed_ok}"
+                        f"consentimientos={project.logistics_student_consents_signed_ok}"
                     ),
                 )
                 db.session.commit()
                 if not forced_incomplete:
                     flash("Control logistico actualizado.", "success")
+
+    elif action == "update_project_requirements":
+        project_id = request.form.get("project_id", type=int)
+        project = Project.query.get(project_id) if project_id else None
+        if not project:
+            flash("Proyecto no encontrado.", "error")
+        else:
+            status = request.form.get("requirements_status", "").strip()
+            valid_status = {code for code, _ in REQUIREMENTS_STATUSES}
+            if status not in valid_status:
+                flash("Estado de requerimientos inválido.", "error")
+            else:
+                project.requirements_current_ok = _str_to_bool(request.form.get("requirements_current_ok"))
+                project.requirements_outlets_ok = _str_to_bool(request.form.get("requirements_outlets_ok"))
+                project.requirements_internet_ok = _str_to_bool(request.form.get("requirements_internet_ok"))
+                project.requirements_water_ok = _str_to_bool(request.form.get("requirements_water_ok"))
+                project.requirements_other_ok = _str_to_bool(request.form.get("requirements_other_ok"))
+                project.requirements_resources_ok = _str_to_bool(request.form.get("requirements_resources_ok"))
+                project.requirements_notes = request.form.get("requirements_notes", "").strip()
+                project.requirements_status = status
+
+                if status == "completo" and project.requirements_missing_items:
+                    project.requirements_status = "parcial"
+                    flash(
+                        "No se puede marcar como completo. Pendientes: "
+                        + ", ".join(project.requirements_missing_items)
+                        + ".",
+                        "error",
+                    )
+                elif status == "no_aplica" and (
+                    project.requested_requirement_codes or (project.required_resources or "").strip()
+                ):
+                    project.requirements_status = "pendiente_revision"
+                    flash("No aplica solo puede usarse cuando el proyecto no solicitó recursos.", "error")
+                else:
+                    flash("Requerimientos del proyecto actualizados.", "success")
+
+                log_event(
+                    "admin.project.requirements.update",
+                    "project",
+                    entity_id=project.id,
+                    detail=(
+                        f"Proyecto #{project.id} '{project.title}' => estado={project.requirements_status}, "
+                        f"pendientes={', '.join(project.requirements_missing_items) or 'ninguno'}"
+                    ),
+                )
+                db.session.commit()
 
     elif action == "replace_project_document":
         project_id = request.form.get("project_id", type=int)
@@ -5044,8 +5096,6 @@ def _handle_action(action: str):
                 missing_group.append("Formulario físico de inscripción firmado")
             if not project.logistics_cedula_tutor_ok:
                 missing_group.append("Cédula del tutor")
-            if not project.logistics_requirements_reviewed_ok:
-                missing_group.append("Revisión de requisitos")
             member_missing = []
             for member in sorted(project.members, key=lambda m: m.student_number or 0):
                 items = []
@@ -6718,6 +6768,8 @@ def _base_context(active_page: str, **kwargs):
         "overview_metrics": overview_metrics,
         "logistics_statuses": LOGISTICS_STATUSES,
         "logistics_status_map": {code: label for code, label in LOGISTICS_STATUSES},
+        "requirements_statuses": REQUIREMENTS_STATUSES,
+        "requirements_status_map": {code: label for code, label in REQUIREMENTS_STATUSES},
         "pending_document_revisions": pending_document_revisions,
         "pending_member_edit_requests": pending_member_edit_requests,
         "permission_modules": permission_modules,
@@ -7231,6 +7283,17 @@ def projects_page():
     context = _base_context("projects")
     context["advisor_stats"] = _build_advisor_stats(context.get("projects", []))
     return render_template("admin/projects.html", **context)
+
+
+@admin_module_required("requirements")
+def requirements_page():
+    context = _base_context("requirements")
+    context["requirements_projects"] = [
+        project
+        for project in context.get("projects", [])
+        if project.is_active
+    ]
+    return render_template("admin/requirements.html", **context)
 
 
 @admin_module_required("projects")

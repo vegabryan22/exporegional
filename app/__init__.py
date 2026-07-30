@@ -586,6 +586,30 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_summary TEXT NULL"))
         if "requirements_other" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_other VARCHAR(255) NULL"))
+        if "requirements_status" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_status VARCHAR(40) NOT NULL DEFAULT 'pendiente_revision'"))
+        if "requirements_notes" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_notes TEXT NULL"))
+        if "requirements_current_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_current_ok BOOLEAN NOT NULL DEFAULT 0"))
+        if "requirements_outlets_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_outlets_ok BOOLEAN NOT NULL DEFAULT 0"))
+        if "requirements_internet_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_internet_ok BOOLEAN NOT NULL DEFAULT 0"))
+        if "requirements_water_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_water_ok BOOLEAN NOT NULL DEFAULT 0"))
+        if "requirements_other_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_other_ok BOOLEAN NOT NULL DEFAULT 0"))
+        if "requirements_resources_ok" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_resources_ok BOOLEAN NOT NULL DEFAULT 0"))
+        connection.execute(
+            text(
+                "UPDATE projects SET requirements_status = 'no_aplica' "
+                "WHERE COALESCE(TRIM(requirements_summary), '') = '' "
+                "AND COALESCE(TRIM(required_resources), '') = '' "
+                "AND requirements_status = 'pendiente_revision'"
+            )
+        )
         if "section_id" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN section_id INT NULL"))
         if "specialty_id" not in project_columns:

@@ -46,6 +46,14 @@ class Project(db.Model):
     project_end_date = db.Column(db.Date, nullable=True)
     requirements_summary = db.Column(db.Text, nullable=True)
     requirements_other = db.Column(db.String(255), nullable=True)
+    requirements_status = db.Column(db.String(40), nullable=False, default="pendiente_revision", index=True)
+    requirements_notes = db.Column(db.Text, nullable=True)
+    requirements_current_ok = db.Column(db.Boolean, nullable=False, default=False)
+    requirements_outlets_ok = db.Column(db.Boolean, nullable=False, default=False)
+    requirements_internet_ok = db.Column(db.Boolean, nullable=False, default=False)
+    requirements_water_ok = db.Column(db.Boolean, nullable=False, default=False)
+    requirements_other_ok = db.Column(db.Boolean, nullable=False, default=False)
+    requirements_resources_ok = db.Column(db.Boolean, nullable=False, default=False)
     project_document_path = db.Column(db.String(300), nullable=True)
     project_logo_path = db.Column(db.String(300), nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True, index=True)
@@ -115,6 +123,37 @@ class Project(db.Model):
                 self.logistics_photos_ok,
                 self.logistics_registration_form_signed_ok,
                 self.logistics_student_consents_signed_ok,
-                self.logistics_requirements_reviewed_ok,
             ]
         )
+
+    @property
+    def requested_requirement_codes(self) -> set[str]:
+        return {
+            item.strip().lower()
+            for item in (self.requirements_summary or "").split(",")
+            if item.strip()
+        }
+
+    @property
+    def requirements_missing_items(self) -> list[str]:
+        labels = {
+            "corriente": ("Conexión a corriente", self.requirements_current_ok),
+            "salidas": ("Salidas eléctricas", self.requirements_outlets_ok),
+            "internet": ("Acceso a internet", self.requirements_internet_ok),
+            "agua": ("Acceso a agua", self.requirements_water_ok),
+            "otros": ("Otros requerimientos", self.requirements_other_ok),
+        }
+        missing = [
+            label
+            for code, (label, confirmed) in labels.items()
+            if code in self.requested_requirement_codes and not confirmed
+        ]
+        if (self.required_resources or "").strip() and not self.requirements_resources_ok:
+            missing.append("Insumos o recursos detallados")
+        return missing
+
+    @property
+    def requirements_complete(self) -> bool:
+        if self.requirements_status == "no_aplica":
+            return not self.requested_requirement_codes and not (self.required_resources or "").strip()
+        return self.requirements_status == "completo" and not self.requirements_missing_items

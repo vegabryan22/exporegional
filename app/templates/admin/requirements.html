@@ -1,0 +1,165 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+{% set requirement_labels = {
+    'corriente': 'Conexión a corriente',
+    'salidas': 'Salidas eléctricas',
+    'internet': 'Acceso a internet',
+    'agua': 'Acceso a agua',
+    'otros': 'Otros'
+} %}
+{% set ns = namespace(complete=0, pending=0) %}
+{% for project in requirements_projects %}
+    {% if project.requirements_complete %}
+        {% set ns.complete = ns.complete + 1 %}
+    {% else %}
+        {% set ns.pending = ns.pending + 1 %}
+    {% endif %}
+{% endfor %}
+
+<section class="card admin-section requirements-page">
+    <div class="maintenance-banner requirements-banner">
+        <div>
+            <p class="maintenance-kicker">Preparación técnica</p>
+            <h3>Requerimientos e insumos</h3>
+            <p>Confirma electricidad, internet, agua, salidas y demás recursos antes de declarar un proyecto listo para exposición.</p>
+        </div>
+        <div class="requirements-summary-tags">
+            <span class="tag ok">{{ ns.complete }} completos</span>
+            <span class="tag {{ 'ok' if ns.pending == 0 else 'warning' }}">{{ ns.pending }} pendientes</span>
+        </div>
+    </div>
+
+    <div class="requirements-responsibility-note">
+        <strong>Responsabilidad independiente</strong>
+        <span>Este control no modifica la revisión documental de Logística. Cada área conserva su propio estado y observaciones.</span>
+    </div>
+
+    <div class="requirements-project-list">
+        {% for project in requirements_projects %}
+        {% set requested_codes = project.requested_requirement_codes %}
+        <article class="requirements-project-card {{ 'is-complete' if project.requirements_complete else 'has-pending' }}">
+            <div class="requirements-project-main">
+                <div>
+                    <span class="tag category-badge">{{ category_map.get(project.category, project.category) }}</span>
+                    <h4>{{ project.title }}</h4>
+                    <p>{{ project.team_name }}{% if project.advisor_name %} &middot; Tutor: {{ project.advisor_name }}{% endif %}</p>
+                </div>
+                <span class="tag {{ 'ok' if project.requirements_complete else 'warning' }}">
+                    {{ requirements_status_map.get(project.requirements_status, project.requirements_status) }}
+                </span>
+            </div>
+
+            <div class="requirements-requested-list">
+                {% for code in requested_codes %}
+                <span class="requirement-pill">{{ requirement_labels.get(code, code) }}</span>
+                {% endfor %}
+                {% if project.required_resources %}
+                <span class="requirement-pill resources">Insumos: {{ project.required_resources }}</span>
+                {% endif %}
+                {% if not requested_codes and not project.required_resources %}
+                <span class="muted-cell">No se registraron requerimientos.</span>
+                {% endif %}
+            </div>
+
+            {% if project.requirements_missing_items %}
+            <p class="requirements-missing"><strong>Pendiente:</strong> {{ project.requirements_missing_items | join(', ') }}</p>
+            {% endif %}
+
+            <button type="button" class="secondary-btn requirements-manage-btn" data-dialog-open="requirements-project-{{ project.id }}">
+                Gestionar requerimientos
+            </button>
+        </article>
+        {% else %}
+        <div class="project-empty-card">No hay proyectos activos.</div>
+        {% endfor %}
+    </div>
+</section>
+
+{% for project in requirements_projects %}
+{% set requested_codes = project.requested_requirement_codes %}
+<dialog id="requirements-project-{{ project.id }}" class="maintenance-dialog">
+    <div class="dialog-card requirements-dialog-card">
+        <div class="dialog-head">
+            <div><p class="maintenance-kicker">Requerimientos</p><h4>{{ project.title }}</h4></div>
+            <button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button>
+        </div>
+        <form method="post" action="{{ action_url }}" class="compact-form">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="update_project_requirements">
+            <input type="hidden" name="project_id" value="{{ project.id }}">
+
+            <label>Estado de requerimientos
+                <select name="requirements_status" required>
+                    {% for status_code, status_name in requirements_statuses %}
+                    <option value="{{ status_code }}" {% if project.requirements_status == status_code %}selected{% endif %}>{{ status_name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <div class="logistics-check-section">
+                <div class="logistics-check-head">
+                    <span>Recursos solicitados</span>
+                    <small>Marca cada recurso únicamente cuando su disponibilidad esté confirmada.</small>
+                </div>
+                <div class="logistics-check-grid">
+                    {% if 'corriente' in requested_codes %}
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="requirements_current_ok" value="1" {% if project.requirements_current_ok %}checked{% endif %}>
+                        <span class="check-card-title">Conexión a corriente</span>
+                        <span class="check-card-help">Punto eléctrico confirmado para el espacio asignado.</span>
+                    </label>
+                    {% endif %}
+                    {% if 'salidas' in requested_codes %}
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="requirements_outlets_ok" value="1" {% if project.requirements_outlets_ok %}checked{% endif %}>
+                        <span class="check-card-title">Salidas eléctricas</span>
+                        <span class="check-card-help">Cantidad y distribución de tomas confirmadas.</span>
+                    </label>
+                    {% endif %}
+                    {% if 'internet' in requested_codes %}
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="requirements_internet_ok" value="1" {% if project.requirements_internet_ok %}checked{% endif %}>
+                        <span class="check-card-title">Acceso a internet</span>
+                        <span class="check-card-help">Cobertura o conexión necesaria confirmada.</span>
+                    </label>
+                    {% endif %}
+                    {% if 'agua' in requested_codes %}
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="requirements_water_ok" value="1" {% if project.requirements_water_ok %}checked{% endif %}>
+                        <span class="check-card-title">Acceso a agua</span>
+                        <span class="check-card-help">Punto de agua y condiciones de uso confirmados.</span>
+                    </label>
+                    {% endif %}
+                    {% if 'otros' in requested_codes %}
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="requirements_other_ok" value="1" {% if project.requirements_other_ok %}checked{% endif %}>
+                        <span class="check-card-title">Otros requerimientos</span>
+                        <span class="check-card-help">{{ project.requirements_other or 'Requerimiento adicional indicado por el proyecto.' }}</span>
+                    </label>
+                    {% endif %}
+                    {% if project.required_resources %}
+                    <label class="logistics-check-card">
+                        <input type="checkbox" name="requirements_resources_ok" value="1" {% if project.requirements_resources_ok %}checked{% endif %}>
+                        <span class="check-card-title">Insumos y recursos detallados</span>
+                        <span class="check-card-help">{{ project.required_resources }}</span>
+                    </label>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if not requested_codes and not project.required_resources %}
+            <div class="requirements-empty-request">Este proyecto no solicitó recursos. Puede marcarse como <strong>No aplica</strong>.</div>
+            {% endif %}
+
+            <label>Observaciones y responsable
+                <textarea name="requirements_notes" rows="4" placeholder="Indique gestiones realizadas, responsable, fecha esperada o motivo de rechazo.">{{ project.requirements_notes or '' }}</textarea>
+            </label>
+            <div class="actions-row">
+                <button type="button" class="ghost-btn" data-dialog-close>Cancelar</button>
+                <button type="submit">Guardar requerimientos</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+{% endfor %}
+{% endblock %}

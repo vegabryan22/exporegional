@@ -8,7 +8,7 @@
         <div>
             <p class="maintenance-kicker">Control de logística</p>
             <h3>Mantenimiento de proyectos</h3>
-            <p>Gestiona actividad del proyecto, avance logístico, insumos, integrantes, logo y trazabilidad.</p>
+            <p>Gestiona actividad, jueces, documentación, formularios, fotografías e integrantes. Los recursos técnicos se controlan en Requerimientos.</p>
         </div>
         <span class="tag ok">{{ projects|length }} proyectos</span>
     </div>
@@ -297,7 +297,7 @@
                     <div class="project-maintenance-statebar" aria-label="Estado del proyecto">
                         <span class="tag {{ 'ok' if project.is_active else 'off' }}">{{ 'Activo' if project.is_active else 'Inactivo' }}</span>
                         <span class="tag logistics-status-tag {{ 'ok' if logistics_ok else 'off' }}">
-                            {{ logistics_status_map.get(project.logistics_status, project.logistics_status) if logistics_ok else 'Pendiente requisitos' }}
+                            {{ logistics_status_map.get(project.logistics_status, project.logistics_status) if logistics_ok else 'Pendiente logística' }}
                         </span>
                         <span class="tag member-count-badge member-count-{{ member_count if member_count < 4 else 3 }}">{{ member_count }} integrante{{ '' if member_count == 1 else 's' }}</span>
                     </div>
@@ -478,22 +478,7 @@
                             {% endfor %}
                         </div>
                     </div>
-                    <label class="logistics-check-card">
-                        <input type="checkbox" name="logistics_requirements_reviewed_ok" value="1" {% if project.logistics_requirements_reviewed_ok %}checked{% endif %}>
-                        <span class="check-card-title">Requisitos revisados</span>
-                        <span class="check-card-help">Insumos solicitados verificados por logistica.</span>
-                    </label>
                 </div>
-            </div>
-            <div class="logistics-requirements-summary">
-                <strong>Requerimientos solicitados:</strong>
-                <span>{{ project.requirements_summary or 'Sin requerimientos seleccionados' }}</span>
-                {% if project.requirements_other %}
-                    <span>Otros: {{ project.requirements_other }}</span>
-                {% endif %}
-                {% if project.required_resources %}
-                    <span>Detalle: {{ project.required_resources }}</span>
-                {% endif %}
             </div>
             <label>Observaciones de logística
                 <textarea name="logistics_notes" rows="4">{{ project.logistics_notes or '' }}</textarea>
@@ -507,7 +492,7 @@
                 <input type="hidden" name="next" value="{{ next_url }}">
                 <input type="hidden" name="action" value="send_tutor_logistics_reminder">
                 <input type="hidden" name="project_id" value="{{ project.id }}">
-                <button type="submit" class="btn-tutor-reminder">Enviar requisitos faltantes al tutor</button>
+                <button type="submit" class="btn-tutor-reminder">Enviar pendientes documentales al tutor</button>
             </form>
             <span class="tutor-reminder-email">{{ project.advisor_email }}</span>
             {% else %}
@@ -990,4 +975,3 @@
     })();
 </script>
 {% endblock %}
-

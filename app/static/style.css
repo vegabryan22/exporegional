@@ -2422,6 +2422,28 @@ th {
     white-space: nowrap;
 }
 
+.logistics-auto-status {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 0.35rem 0.75rem;
+    min-height: 62px;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid #d5e2ef;
+    border-radius: 10px;
+    background: #f8fbfe;
+}
+
+.logistics-auto-status > span {
+    color: #173b63;
+    font-weight: 800;
+}
+
+.logistics-auto-status > small {
+    grid-column: 1 / -1;
+    color: #647b94;
+}
+
 .logistics-check-section {
     display: grid;
     gap: 0.7rem;

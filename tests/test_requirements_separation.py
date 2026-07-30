@@ -1,7 +1,11 @@
 import unittest
 from pathlib import Path
 
-from app.controllers.admin_controller import ACTION_MODULE_MAP, ADMIN_DEPARTMENT_MODULE_ACCESS
+from app.controllers.admin_controller import (
+    ACTION_MODULE_MAP,
+    ADMIN_DEPARTMENT_MODULE_ACCESS,
+    _sync_project_logistics_status,
+)
 from app.models.project import Project
 
 
@@ -40,6 +44,29 @@ class RequirementsSeparationTest(unittest.TestCase):
         )
 
         self.assertTrue(project.logistics_requirements_complete)
+
+    def test_logistics_status_is_completed_automatically(self):
+        project = Project(
+            project_document_path="uploads/projects/document.pdf",
+            project_logo_path="uploads/projects/logo.png",
+            logistics_document_ok=True,
+            logistics_logo_ok=True,
+            logistics_photos_ok=True,
+            logistics_registration_form_signed_ok=True,
+            logistics_student_consents_signed_ok=True,
+            logistics_status="pendiente_revision",
+        )
+
+        missing_items = _sync_project_logistics_status(project)
+
+        self.assertEqual([], missing_items)
+        self.assertEqual("completo", project.logistics_status)
+
+        project.logistics_logo_ok = False
+        missing_items = _sync_project_logistics_status(project)
+
+        self.assertIn("logo validado", missing_items)
+        self.assertEqual("incompleto", project.logistics_status)
 
     def test_logistics_template_does_not_offer_resource_validation(self):
         template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")

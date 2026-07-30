@@ -393,13 +393,13 @@
                         <option value="0" {% if not project.is_active %}selected{% endif %}>Inactivo</option>
                     </select>
                 </label>
-                <label>Estado logistico
-                    <select name="logistics_status" required>
-                        {% for status_code, status_name in logistics_statuses %}
-                            <option value="{{ status_code }}" {% if project.logistics_status == status_code %}selected{% endif %}>{{ status_name }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
+                <div class="logistics-auto-status">
+                    <span>Estado logístico</span>
+                    <strong class="tag {% if project.logistics_status == 'completo' %}ok{% elif project.logistics_status == 'incompleto' %}off{% else %}warning{% endif %}">
+                        {{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}
+                    </strong>
+                    <small>Se actualiza automáticamente al guardar.</small>
+                </div>
             </div>
             <div class="logistics-check-section">
                 <div class="logistics-check-head">

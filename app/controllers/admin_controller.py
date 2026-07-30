@@ -962,6 +962,12 @@ def _project_logistics_missing_items(project):
     return missing
 
 
+def _sync_project_logistics_status(project):
+    missing_items = _project_logistics_missing_items(project)
+    project.logistics_status = "incompleto" if missing_items else "completo"
+    return missing_items
+
+
 def _project_logistics_group_missing(project):
     missing = []
     if not project.has_real_logo or not project.logistics_logo_ok:
@@ -4695,47 +4701,37 @@ def _handle_action(action: str):
         if not project:
             flash("Proyecto no encontrado.", "error")
         else:
-            status = request.form.get("logistics_status", "").strip()
-            valid_status = {code for code, _ in LOGISTICS_STATUSES}
-            if status not in valid_status:
-                flash("Estado logistico invalido.", "error")
+            project.is_active = _str_to_bool(request.form.get("project_is_active", "1"))
+            project.logistics_document_ok = _str_to_bool(request.form.get("logistics_document_ok"))
+            project.logistics_logo_ok = _str_to_bool(request.form.get("logistics_logo_ok"))
+            project.logistics_photos_ok = _str_to_bool(request.form.get("logistics_photos_ok"))
+            project.logistics_registration_form_signed_ok = _str_to_bool(request.form.get("logistics_registration_form_signed_ok"))
+            project.logistics_cedula_tutor_ok = _str_to_bool(request.form.get("logistics_cedula_tutor_ok"))
+            # per-member consent and cedula checkboxes
+            for member in project.members:
+                member.consent_signed_ok = _str_to_bool(request.form.get(f"consent_member_{member.id}"))
+                member.cedula_encargado_ok = _str_to_bool(request.form.get(f"cedula_encargado_{member.id}"))
+                member.cedula_estudiante_ok = _str_to_bool(request.form.get(f"cedula_estudiante_{member.id}"))
+                member.cedula_copies_ok = member.cedula_encargado_ok and member.cedula_estudiante_ok
+            project.logistics_student_consents_signed_ok = all(m.consent_signed_ok for m in project.members) if project.members else False
+            missing_items = _sync_project_logistics_status(project)
+            project.logistics_notes = request.form.get("logistics_notes", "").strip()
+            log_event(
+                "admin.project.logistics.update",
+                "project",
+                entity_id=project.id,
+                detail=(
+                    f"Proyecto #{project.id} '{project.title}' => activo={project.is_active}, status={project.logistics_status}, "
+                    f"doc={project.logistics_document_ok}, logo={project.logistics_logo_ok}, "
+                    f"fotos={project.logistics_photos_ok}, formulario_fisico={project.logistics_registration_form_signed_ok}, "
+                    f"consentimientos={project.logistics_student_consents_signed_ok}"
+                ),
+            )
+            db.session.commit()
+            if missing_items:
+                flash("Control logístico actualizado. Pendientes: " + ", ".join(missing_items) + ".", "warning")
             else:
-                project.is_active = _str_to_bool(request.form.get("project_is_active", "1"))
-                project.logistics_document_ok = _str_to_bool(request.form.get("logistics_document_ok"))
-                project.logistics_logo_ok = _str_to_bool(request.form.get("logistics_logo_ok"))
-                project.logistics_photos_ok = _str_to_bool(request.form.get("logistics_photos_ok"))
-                project.logistics_registration_form_signed_ok = _str_to_bool(request.form.get("logistics_registration_form_signed_ok"))
-                project.logistics_cedula_tutor_ok = _str_to_bool(request.form.get("logistics_cedula_tutor_ok"))
-                # per-member consent and cedula checkboxes
-                for member in project.members:
-                    member.consent_signed_ok = _str_to_bool(request.form.get(f"consent_member_{member.id}"))
-                    member.cedula_encargado_ok = _str_to_bool(request.form.get(f"cedula_encargado_{member.id}"))
-                    member.cedula_estudiante_ok = _str_to_bool(request.form.get(f"cedula_estudiante_{member.id}"))
-                    member.cedula_copies_ok = member.cedula_encargado_ok and member.cedula_estudiante_ok
-                project.logistics_student_consents_signed_ok = all(m.consent_signed_ok for m in project.members) if project.members else False
-                missing_items = _project_logistics_missing_items(project)
-                forced_incomplete = False
-                if status == "completo" and missing_items:
-                    project.logistics_status = "incompleto"
-                    forced_incomplete = True
-                    flash("No se puede marcar como completo. Pendientes: " + ", ".join(missing_items) + ".", "error")
-                else:
-                    project.logistics_status = status
-                project.logistics_notes = request.form.get("logistics_notes", "").strip()
-                log_event(
-                    "admin.project.logistics.update",
-                    "project",
-                    entity_id=project.id,
-                    detail=(
-                        f"Proyecto #{project.id} '{project.title}' => activo={project.is_active}, status={project.logistics_status}, "
-                        f"doc={project.logistics_document_ok}, logo={project.logistics_logo_ok}, "
-                        f"fotos={project.logistics_photos_ok}, formulario_fisico={project.logistics_registration_form_signed_ok}, "
-                        f"consentimientos={project.logistics_student_consents_signed_ok}"
-                    ),
-                )
-                db.session.commit()
-                if not forced_incomplete:
-                    flash("Control logistico actualizado.", "success")
+                flash("Control logístico completado automáticamente.", "success")
 
     elif action == "update_project_requirements":
         project_id = request.form.get("project_id", type=int)

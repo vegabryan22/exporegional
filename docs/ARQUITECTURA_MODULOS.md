@@ -621,6 +621,8 @@ Puntos criticos:
 - cargas de archivos deben reemplazar correctamente
 - los contadores de pendientes enlazan al reporte Excel `/admin/logistica/pendientes/reporte.xlsx`
 - cada fila del reporte identifica pendiente, persona afectada, seccion, proyecto y tutor
+- el centro `/admin/proyectos/recordatorio` permite envios masivos o por proyecto a estudiantes, tutores o ambas audiencias
+- todo envio omite destinatarios sin correo y registra audiencia, proyectos y resultado en la auditoria
 
 ## 5.15.1 Modulo Requerimientos
 

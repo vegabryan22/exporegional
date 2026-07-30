@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.13.0] - 2026-07-30
+### Added
+- Centro de recordatorios logísticos con envíos a estudiantes, tutores o ambas audiencias.
+- Envíos puntuales por proyecto y envío masivo configurable.
+- Resumen de estudiantes y tutores con correo, además de destinatarios omitidos.
+- Vista previa diferenciada del correo para estudiantes y para tutores.
+
+### Changed
+- Rediseño responsive de la pantalla de recordatorios con centro de mando, tarjetas de proyecto y acciones claras.
+- La auditoría registra audiencia y proyectos incluidos en cada envío.
+
+### Fixed
+- Corrección de la plantilla de correo para tutores al mostrar pendientes individuales.
+
 ## [0.12.1] - 2026-07-30
 ### Fixed
 - Se eliminó la definición duplicada de filtro automático en los reportes de pendientes.

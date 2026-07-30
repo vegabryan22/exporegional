@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0] - 2026-07-30
+### Added
+- Filtro por tutor en el mantenimiento de proyectos, con cantidad de proyectos por cada opción.
+- Combinación del tutor con búsqueda, categoría, estado logístico y estado activo/inactivo.
+
+### Changed
+- Distribución adaptable de la barra de filtros para incorporar el tutor sin afectar la vista móvil.
+
 ## [0.9.2] - 2026-07-30
 ### Added
 - Reconciliación automática de estados logísticos para proyectos registrados antes de `v0.9.1`.

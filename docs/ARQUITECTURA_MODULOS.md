@@ -827,6 +827,13 @@ Se conectan con:
 5. Sistema valida asignacion y no duplicidad
 6. Sistema registra `Evaluation` y `EvaluationScore`
 
+Reporte operativo:
+
+- `/admin/asignaciones/reporte/edecanes/pdf`
+- incluye solo asignaciones confirmadas con alcance de exposicion
+- excluye asignaciones exclusivas de documentacion
+- no almacena ni inventa recintos; ofrece espacios para que los edecanes los registren manualmente
+
 ## 7.3 Flujo de cierre administrativo
 
 1. Logística revisa documentación, formularios, fotografías, integrantes y asignación de jueces

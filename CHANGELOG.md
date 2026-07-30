@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.14.0] - 2026-07-30
+### Added
+- Reporte PDF operativo para edecanes con jueces y proyectos asignados a evaluación de exposición.
+- Columnas en blanco para que los edecanes registren recinto, ubicación y atención durante el evento.
+- Acceso directo al reporte desde Asignaciones de jueces.
+
+### Changed
+- El reporte excluye borradores, proyectos inactivos, jueces que no asistirán y asignaciones exclusivas de documentación.
+
 ## [0.13.1] - 2026-07-30
 ### Added
 - Barra de progreso para envíos masivos de recordatorios.

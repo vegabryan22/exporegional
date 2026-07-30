@@ -7513,7 +7513,6 @@ def logistics_pending_report_excel():
     for index, width in enumerate(widths, start=1):
         worksheet.column_dimensions[get_column_letter(index)].width = width
     worksheet.freeze_panes = "A6"
-    worksheet.auto_filter.ref = f"A5:E{max(worksheet.max_row, 5)}"
     worksheet.sheet_view.showGridLines = False
 
     buffer = BytesIO()

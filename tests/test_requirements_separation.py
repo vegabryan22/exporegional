@@ -206,9 +206,14 @@ class RequirementsSeparationTest(unittest.TestCase):
 
     def test_overview_pending_counters_download_reports(self):
         template = Path("app/templates/admin/overview.html").read_text(encoding="utf-8")
+        controller = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")
 
         self.assertIn("logistics_pending_report_excel", template)
         self.assertIn("Descargar reporte detallado de pendientes", template)
+        self.assertNotIn(
+            'worksheet.auto_filter.ref = f"A5:E{max(worksheet.max_row, 5)}"',
+            controller,
+        )
 
     def test_logistics_department_does_not_receive_requirements_module(self):
         self.assertNotIn("requirements", ADMIN_DEPARTMENT_MODULE_ACCESS["logistica"])

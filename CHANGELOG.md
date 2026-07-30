@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.12.0] - 2026-07-30
+### Added
+- Reporte Excel descargable de pendientes logísticos con tipo de pendiente, persona afectada, sección, proyecto y tutor.
+- Reportes específicos para fotografías, logos, documentos, logística incompleta, documentos en revisión y ediciones de datos.
+- Descarga consolidada de todos los pendientes desde el resumen del panel.
+
+### Changed
+- Los contadores de pendientes de Logística ahora funcionan como accesos directos a su reporte detallado.
+
 ## [0.11.0] - 2026-07-30
 ### Added
 - Resumen estadístico en Proyectos con activos, completados, pendientes, inactivos y porcentaje de avance.

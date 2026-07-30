@@ -619,6 +619,8 @@ Puntos criticos:
 - logo generico es solo visual, no cumplimiento logistico
 - foto generica es solo visual, no cumplimiento logistico
 - cargas de archivos deben reemplazar correctamente
+- los contadores de pendientes enlazan al reporte Excel `/admin/logistica/pendientes/reporte.xlsx`
+- cada fila del reporte identifica pendiente, persona afectada, seccion, proyecto y tutor
 
 ## 5.15.1 Modulo Requerimientos
 

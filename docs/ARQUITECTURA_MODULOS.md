@@ -603,7 +603,8 @@ Vista:
 Objetivo:
 
 - mantener proyectos
-- controlar logistica
+- controlar la recepción y revisión logística
+- validar documentación, formularios, fotografías e integrantes
 - cargar logo real del proyecto
 - administrar integrantes y fotos
 
@@ -618,6 +619,45 @@ Puntos criticos:
 - logo generico es solo visual, no cumplimiento logistico
 - foto generica es solo visual, no cumplimiento logistico
 - cargas de archivos deben reemplazar correctamente
+
+## 5.15.1 Modulo Requerimientos
+
+Ruta:
+
+- `/admin/requerimientos`
+
+Vista:
+
+- `app/templates/admin/requirements.html`
+
+Objetivo:
+
+- separar los requerimientos técnicos y de insumos del cierre logístico
+- dar seguimiento a electricidad, tomacorrientes, internet, agua y otros recursos
+- registrar el estado y las observaciones del responsable
+
+Entidad:
+
+- `Project`
+
+Campos principales:
+
+- `requirements_status`
+- `requirements_notes`
+- `requirements_current_ok`
+- `requirements_outlets_ok`
+- `requirements_internet_ok`
+- `requirements_water_ok`
+- `requirements_other_ok`
+- `requirements_resources_ok`
+
+Puntos críticos:
+
+- el módulo utiliza un permiso independiente
+- Logística no recibe este permiso automáticamente
+- un requerimiento pendiente no impide completar la revisión logística
+- un proyecto con recursos solicitados no puede marcarse como `no_aplica`
+- el estado `completo` exige que todos los recursos solicitados estén atendidos
 
 ## 5.16 Modulo Evaluaciones
 
@@ -785,10 +825,11 @@ Se conectan con:
 
 ## 7.3 Flujo de cierre administrativo
 
-1. Admin revisa logistica
-2. Admin valida logo, documento y fotos
-3. Admin consulta estado de evaluaciones
-4. Sistema calcula avance, ranking y nota final
+1. Logística revisa documentación, formularios, fotografías, integrantes y asignación de jueces
+2. El responsable de requerimientos atiende por separado electricidad, tomacorrientes, internet, agua e insumos
+3. Ambos responsables registran sus observaciones y estados sin bloquearse mutuamente
+4. Admin consulta el estado de evaluaciones
+5. Sistema calcula avance, ranking y nota final
 
 ## 8. Puntos de mayor riesgo para QA
 
@@ -798,6 +839,7 @@ Se conectan con:
 - no duplicidad de evaluaciones
 - calculo de nota final
 - diferencia entre placeholder visual y evidencia real cargada
+- independencia entre cumplimiento logístico y requerimientos técnicos
 - filtros por proyectos activos
 - cargas y reemplazo de archivos
 

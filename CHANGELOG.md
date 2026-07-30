@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0] - 2026-07-30
+### Added
+- Módulo administrativo independiente de Requerimientos para gestionar electricidad, tomacorrientes, internet, agua, otros insumos y recursos detallados por proyecto.
+- Estado, comprobaciones individuales y notas de seguimiento para los requerimientos técnicos.
+- Permiso específico para asignar el nuevo módulo al departamento responsable sin incorporarlo automáticamente a Logística.
+- Pruebas automatizadas que verifican la separación entre el cierre logístico y la atención de recursos.
+
+### Changed
+- Logística se concentra en la asignación de jueces, documentación, formularios, fotografías e integrantes.
+- El cumplimiento logístico ya no depende de la disponibilidad o validación de insumos técnicos.
+- Los recordatorios logísticos al tutor se limitan a pendientes documentales.
+
 ## [0.8.0] - 2026-03-20
 ### Added
 - Actas de evaluación en PDF por proyecto y consolidado general, con vista previa HTML y opción de descarga/visualización directa.

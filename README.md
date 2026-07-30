@@ -5,6 +5,7 @@ App web para feria científica con:
 - login de jueces y admin
 - evaluación por rúbrica
 - panel admin para asignaciones, mantenimiento y reportes
+- gestión separada de logística y requerimientos técnicos
 
 ## 1) Requisitos
 - Python 3.11+

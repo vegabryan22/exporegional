@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.0] - 2026-07-30
+
+### Añadido
+
+- Reporte Excel editable para que los edecanes ubiquen a los jueces en sus proyectos de exposición.
+- Columnas operativas para registrar recinto o ubicación y el estado de atención durante el evento.
+- Filtros, encabezado fijo, lista de estados y formato visual para facilitar el trabajo en campo.
+
+### Cambiado
+
+- La descarga principal para edecanes ahora es Excel en lugar de PDF.
+- El reporte continúa excluyendo evaluaciones exclusivas de documentación y no presupone recintos.
+
 ## [0.14.0] - 2026-07-30
 ### Added
 - Reporte PDF operativo para edecanes con jueces y proyectos asignados a evaluación de exposición.

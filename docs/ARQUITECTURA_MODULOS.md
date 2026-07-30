@@ -830,9 +830,11 @@ Se conectan con:
 Reporte operativo:
 
 - `/admin/asignaciones/reporte/edecanes/pdf`
+- `/admin/asignaciones/reporte/edecanes/excel`
 - incluye solo asignaciones confirmadas con alcance de exposicion
 - excluye asignaciones exclusivas de documentacion
 - no almacena ni inventa recintos; ofrece espacios para que los edecanes los registren manualmente
+- la descarga Excel es la opción operativa principal y permite registrar ubicación y seguimiento sin alterar la asignación original
 
 ## 7.3 Flujo de cierre administrativo
 

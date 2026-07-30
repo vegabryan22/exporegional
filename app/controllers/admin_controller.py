@@ -8071,6 +8071,166 @@ def assignments_report_excel():
 
 
 @admin_module_required("assignments")
+def exposition_usher_report_excel():
+    try:
+        from openpyxl import Workbook
+        from openpyxl.formatting.rule import FormulaRule
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.datavalidation import DataValidation
+        from openpyxl.worksheet.table import Table, TableStyleInfo
+    except ImportError:
+        flash("Instala openpyxl en el servidor para exportar Excel.", "error")
+        return redirect(url_for("admin.assignments_page"))
+
+    context = _base_context("assignments")
+    rows = _build_exposition_usher_report_rows(context)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Guía edecanes"
+    ws.sheet_view.showGridLines = False
+
+    navy = "063B68"
+    blue = "0D5E94"
+    pale_blue = "EAF4FB"
+    light_border = "C8DDF0"
+    white = "FFFFFF"
+    muted = "526B82"
+
+    ws.merge_cells("A1:H1")
+    ws["A1"] = "GUÍA DE JUECES DE EXPOSICIÓN PARA EDECANES"
+    ws["A1"].font = Font(bold=True, color=white, size=16)
+    ws["A1"].fill = PatternFill("solid", fgColor=navy)
+    ws["A1"].alignment = Alignment(vertical="center")
+    ws.row_dimensions[1].height = 34
+
+    ws.merge_cells("A2:H2")
+    ws["A2"] = (
+        f"ExpoTEC · {len(rows)} asignaciones confirmadas de exposición · "
+        f"Generado el {datetime.now().strftime('%d/%m/%Y')}"
+    )
+    ws["A2"].font = Font(color=white, size=10)
+    ws["A2"].fill = PatternFill("solid", fgColor=blue)
+    ws["A2"].alignment = Alignment(vertical="center")
+    ws.row_dimensions[2].height = 24
+
+    ws.merge_cells("A3:H3")
+    ws["A3"] = (
+        "Uso operativo: complete el recinto o ubicación y el estado de atención. "
+        "Este archivo contiene únicamente evaluaciones de exposición; no incluye revisión documental."
+    )
+    ws["A3"].font = Font(color=muted, italic=True, size=10)
+    ws["A3"].fill = PatternFill("solid", fgColor=pale_blue)
+    ws["A3"].alignment = Alignment(vertical="center", wrap_text=True)
+    ws.row_dimensions[3].height = 34
+
+    headers = [
+        "Juez",
+        "Teléfono",
+        "Asistencia",
+        "Proyecto",
+        "Categoría",
+        "Equipo / sección",
+        "Recinto o ubicación (edecanes)",
+        "Estado de atención",
+    ]
+    widths = [29, 18, 16, 46, 22, 24, 31, 22]
+    header_row = 5
+    ws.append([])
+    ws.append(headers)
+
+    thin = Side(style="thin", color=light_border)
+    border = Border(bottom=thin)
+    for column, width in enumerate(widths, start=1):
+        cell = ws.cell(row=header_row, column=column)
+        cell.font = Font(bold=True, color=white, size=10)
+        cell.fill = PatternFill("solid", fgColor=navy)
+        cell.alignment = Alignment(vertical="center", wrap_text=True)
+        ws.column_dimensions[get_column_letter(column)].width = width
+    ws.row_dimensions[header_row].height = 32
+
+    for row in rows:
+        ws.append(
+            [
+                row["judge"],
+                row["phone"],
+                row["attendance"],
+                row["project"],
+                row["category"],
+                " · ".join(part for part in (row["team"], row["section"]) if part and part != "—"),
+                "",
+                "Pendiente",
+            ]
+        )
+        current_row = ws.max_row
+        for column in range(1, len(headers) + 1):
+            cell = ws.cell(row=current_row, column=column)
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+            cell.border = border
+        ws.cell(row=current_row, column=7).fill = PatternFill("solid", fgColor="FFF8D6")
+        ws.cell(row=current_row, column=8).fill = PatternFill("solid", fgColor="FFF8D6")
+        ws.row_dimensions[current_row].height = 34
+
+    last_data_row = max(ws.max_row, header_row + 1)
+    status_validation = DataValidation(
+        type="list",
+        formula1='"Pendiente,Ubicado,Acompañado,Finalizado"',
+        allow_blank=True,
+    )
+    status_validation.promptTitle = "Seguimiento del edecán"
+    status_validation.prompt = "Seleccione el estado de atención del juez."
+    status_validation.error = "Seleccione una opción disponible en la lista."
+    status_validation.errorTitle = "Estado no válido"
+    ws.add_data_validation(status_validation)
+    status_validation.add(f"H{header_row + 1}:H{last_data_row}")
+
+    if rows:
+        table = Table(displayName="GuiaEdecanes", ref=f"A{header_row}:H{ws.max_row}")
+        table.tableStyleInfo = TableStyleInfo(
+            name="TableStyleMedium2",
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=False,
+        )
+        ws.add_table(table)
+
+        ws.conditional_formatting.add(
+            f"H{header_row + 1}:H{ws.max_row}",
+            FormulaRule(
+                formula=[f'$H{header_row + 1}="Finalizado"'],
+                fill=PatternFill("solid", fgColor="D9EED3"),
+            ),
+        )
+        ws.conditional_formatting.add(
+            f"H{header_row + 1}:H{ws.max_row}",
+            FormulaRule(
+                formula=[f'$H{header_row + 1}="Pendiente"'],
+                fill=PatternFill("solid", fgColor="FFF3CD"),
+            ),
+        )
+
+    ws.freeze_panes = "A6"
+    ws.print_title_rows = f"1:{header_row}"
+    ws.page_setup.orientation = "landscape"
+    ws.page_setup.fitToWidth = 1
+    ws.page_setup.fitToHeight = 0
+    ws.sheet_properties.pageSetUpPr.fitToPage = True
+    ws.auto_filter.ref = None
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"guia_edecanes_exposicion_{datetime.now().strftime('%Y%m%d')}.xlsx",
+    )
+
+
+@admin_module_required("assignments")
 def judge_presence_report_excel():
     try:
         from openpyxl import Workbook

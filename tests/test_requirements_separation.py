@@ -330,8 +330,8 @@ class RequirementsSeparationTest(unittest.TestCase):
     def test_assignments_page_links_usher_report(self):
         template = Path("app/templates/admin/assignments.html").read_text(encoding="utf-8")
 
-        self.assertIn("exposition_usher_report_pdf", template)
-        self.assertIn("PDF edecanes · exposición", template)
+        self.assertIn("exposition_usher_report_excel", template)
+        self.assertIn("Excel edecanes · exposición", template)
 
     def test_logistics_department_does_not_receive_requirements_module(self):
         self.assertNotIn("requirements", ADMIN_DEPARTMENT_MODULE_ACCESS["logistica"])

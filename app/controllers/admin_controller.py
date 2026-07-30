@@ -968,6 +968,91 @@ def _sync_project_logistics_status(project):
     return missing_items
 
 
+def _build_logistics_pending_report_rows(
+    projects,
+    report_type="all",
+    pending_revisions=None,
+    pending_member_edits=None,
+):
+    valid_types = {"all", "photo", "logo", "document", "logistics", "revisions", "edits"}
+    report_type = report_type if report_type in valid_types else "all"
+    rows = []
+
+    def add_row(project, pending, affected=None, member=None):
+        project_section = project.section.name if project.section else ""
+        rows.append(
+            {
+                "pending": pending,
+                "name": affected or (member.full_name if member else project.team_name),
+                "section": (member.section_name if member and member.section_name else project_section) or "Sin sección",
+                "project": project.title,
+                "tutor": project.advisor_name or "Sin tutor",
+            }
+        )
+
+    for project in projects:
+        if not project.is_active:
+            continue
+
+        if report_type in {"all", "photo", "logistics"}:
+            for member in project.members:
+                if not member.photo_url:
+                    add_row(project, "Fotografía de integrante", member=member)
+
+        if report_type in {"all", "logo", "logistics"} and (not project.has_real_logo or not project.logistics_logo_ok):
+            add_row(project, "Logo del proyecto pendiente o sin validar")
+
+        if report_type in {"all", "document", "logistics"}:
+            if not project.project_document_path:
+                add_row(project, "Documento digital no adjuntado")
+            elif not project.logistics_document_ok:
+                add_row(project, "Proyecto escrito pendiente de validación")
+
+        if report_type in {"all", "logistics"}:
+            if not project.logistics_photos_ok and all(member.photo_url for member in project.members):
+                add_row(project, "Fotografías pendientes de validación")
+            if not project.logistics_registration_form_signed_ok:
+                add_row(project, "Formulario físico firmado")
+            for member in project.members:
+                if not member.consent_signed_ok:
+                    add_row(project, "Consentimiento informado firmado", member=member)
+
+    if report_type in {"all", "revisions"}:
+        for revision in pending_revisions or []:
+            project = revision.project
+            if project and project.is_active:
+                add_row(
+                    project,
+                    "Documento pendiente de revisión",
+                    affected=revision.submitted_by_name or project.team_name,
+                )
+
+    if report_type in {"all", "edits"}:
+        for edit_request in pending_member_edits or []:
+            project = edit_request.project
+            if project and project.is_active:
+                add_row(
+                    project,
+                    "Edición de datos pendiente",
+                    affected=(
+                        edit_request.member.full_name
+                        if edit_request.member
+                        else edit_request.submitted_by_name or project.team_name
+                    ),
+                    member=edit_request.member,
+                )
+
+    return sorted(
+        rows,
+        key=lambda row: (
+            row["pending"].casefold(),
+            row["tutor"].casefold(),
+            row["project"].casefold(),
+            row["name"].casefold(),
+        ),
+    )
+
+
 def _project_logistics_group_missing(project):
     missing = []
     if not project.has_real_logo or not project.logistics_logo_ok:
@@ -7308,6 +7393,138 @@ def projects_page():
     context["advisor_stats"] = _build_advisor_stats(projects)
     context["project_logistics_summary"] = _build_project_logistics_summary(projects)
     return render_template("admin/projects.html", **context)
+
+
+@admin_module_required("overview")
+def logistics_pending_report_excel():
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.table import Table, TableStyleInfo
+    except ImportError:
+        flash("Instala openpyxl en el servidor para exportar Excel.", "error")
+        return redirect(url_for("admin.overview"))
+
+    report_type = request.args.get("tipo", "all").strip().lower()
+    projects = (
+        Project.query.options(
+            joinedload(Project.members),
+            joinedload(Project.section),
+        )
+        .filter(Project.is_active.is_(True))
+        .order_by(Project.title.asc())
+        .all()
+    )
+    pending_revisions = (
+        ProjectDocumentRevision.query.options(joinedload(ProjectDocumentRevision.project))
+        .filter(ProjectDocumentRevision.status == ProjectDocumentRevision.STATUS_PENDING)
+        .all()
+    )
+    pending_member_edits = (
+        ProjectMemberEditRequest.query.options(
+            joinedload(ProjectMemberEditRequest.project),
+            joinedload(ProjectMemberEditRequest.member),
+        )
+        .filter(ProjectMemberEditRequest.status == ProjectMemberEditRequest.STATUS_PENDING)
+        .all()
+    )
+    rows = _build_logistics_pending_report_rows(
+        projects,
+        report_type=report_type,
+        pending_revisions=pending_revisions,
+        pending_member_edits=pending_member_edits,
+    )
+
+    labels = {
+        "all": "Todos los pendientes",
+        "photo": "Integrantes sin fotografía",
+        "logo": "Proyectos sin logo",
+        "document": "Proyectos sin documento",
+        "logistics": "Logística incompleta",
+        "revisions": "Documentos pendientes de revisión",
+        "edits": "Ediciones de datos pendientes",
+    }
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Pendientes"
+    worksheet.append(["REPORTE DE PENDIENTES DE LOGÍSTICA"])
+    worksheet.append([labels.get(report_type, labels["all"])])
+    worksheet.append([f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}"])
+    worksheet.append([])
+    headers = ["Pendiente", "Nombre o persona afectada", "Sección", "Proyecto", "Tutor"]
+    worksheet.append(headers)
+
+    for row in rows:
+        worksheet.append(
+            [
+                row["pending"],
+                row["name"],
+                row["section"],
+                row["project"],
+                row["tutor"],
+            ]
+        )
+
+    worksheet.merge_cells("A1:E1")
+    worksheet.merge_cells("A2:E2")
+    worksheet.merge_cells("A3:E3")
+    title_fill = PatternFill("solid", fgColor="0B4778")
+    header_fill = PatternFill("solid", fgColor="1F6A99")
+    for cell in worksheet[1]:
+        cell.fill = title_fill
+        cell.font = Font(color="FFFFFF", bold=True, size=14)
+        cell.alignment = Alignment(horizontal="center")
+    worksheet["A2"].font = Font(bold=True, color="315A7D")
+    worksheet["A2"].alignment = Alignment(horizontal="center")
+    worksheet["A3"].alignment = Alignment(horizontal="center")
+
+    for cell in worksheet[5]:
+        cell.fill = header_fill
+        cell.font = Font(color="FFFFFF", bold=True)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    thin_border = Border(
+        left=Side(style="thin", color="D5E2EF"),
+        right=Side(style="thin", color="D5E2EF"),
+        top=Side(style="thin", color="D5E2EF"),
+        bottom=Side(style="thin", color="D5E2EF"),
+    )
+    for row in worksheet.iter_rows(min_row=6, max_row=worksheet.max_row, min_col=1, max_col=5):
+        for cell in row:
+            cell.border = thin_border
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+
+    if rows:
+        table = Table(displayName="DetallePendientesLogistica", ref=f"A5:E{worksheet.max_row}")
+        table.tableStyleInfo = TableStyleInfo(
+            name="TableStyleMedium2",
+            showFirstColumn=False,
+            showLastColumn=False,
+            showRowStripes=True,
+            showColumnStripes=False,
+        )
+        worksheet.add_table(table)
+    else:
+        worksheet.append(["No hay pendientes para este criterio."])
+        worksheet.merge_cells(start_row=6, start_column=1, end_row=6, end_column=5)
+
+    widths = [34, 30, 18, 45, 30]
+    for index, width in enumerate(widths, start=1):
+        worksheet.column_dimensions[get_column_letter(index)].width = width
+    worksheet.freeze_panes = "A6"
+    worksheet.auto_filter.ref = f"A5:E{max(worksheet.max_row, 5)}"
+    worksheet.sheet_view.showGridLines = False
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"pendientes_logistica_{report_type}_{datetime.now().strftime('%Y%m%d')}.xlsx",
+    )
 
 
 @admin_module_required("requirements")

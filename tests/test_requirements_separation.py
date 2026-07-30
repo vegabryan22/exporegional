@@ -7,10 +7,12 @@ from app import _reconcile_existing_logistics_statuses
 from app.controllers.admin_controller import (
     ACTION_MODULE_MAP,
     ADMIN_DEPARTMENT_MODULE_ACCESS,
+    _build_logistics_pending_report_rows,
     _build_project_logistics_summary,
     _sync_project_logistics_status,
 )
 from app.models.project import Project
+from app.models.project_member import ProjectMember
 
 
 class RequirementsSeparationTest(unittest.TestCase):
@@ -168,6 +170,45 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual(1, summary["pending"])
         self.assertEqual(1, summary["inactive"])
         self.assertIn("documento digital adjunto", summary["missing_by_project"][2])
+
+    def test_logistics_report_identifies_each_affected_student(self):
+        project = Project(
+            id=10,
+            title="Proyecto de prueba",
+            team_name="Equipo ExpoTEC",
+            advisor_name="Tutor Ejemplo",
+            is_active=True,
+            project_document_path="document.pdf",
+            project_logo_path="logo.png",
+            logistics_document_ok=True,
+            logistics_logo_ok=True,
+            logistics_photos_ok=False,
+            logistics_registration_form_signed_ok=True,
+        )
+        project.members = [
+            ProjectMember(
+                full_name="Estudiante Ejemplo",
+                section_name="12-1",
+                student_number=1,
+                photo_url=None,
+                consent_signed_ok=True,
+            )
+        ]
+
+        rows = _build_logistics_pending_report_rows([project], report_type="photo")
+
+        self.assertEqual(1, len(rows))
+        self.assertEqual("Fotografía de integrante", rows[0]["pending"])
+        self.assertEqual("Estudiante Ejemplo", rows[0]["name"])
+        self.assertEqual("12-1", rows[0]["section"])
+        self.assertEqual("Proyecto de prueba", rows[0]["project"])
+        self.assertEqual("Tutor Ejemplo", rows[0]["tutor"])
+
+    def test_overview_pending_counters_download_reports(self):
+        template = Path("app/templates/admin/overview.html").read_text(encoding="utf-8")
+
+        self.assertIn("logistics_pending_report_excel", template)
+        self.assertIn("Descargar reporte detallado de pendientes", template)
 
     def test_logistics_department_does_not_receive_requirements_module(self):
         self.assertNotIn("requirements", ADMIN_DEPARTMENT_MODULE_ACCESS["logistica"])

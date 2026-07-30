@@ -1,4 +1,18 @@
 {% extends "admin/layout.html" %}
+{% macro logistics_pending_link(value, label, report_type) -%}
+  {% if value > 0 %}
+    <a
+      href="{{ url_for('admin.logistics_pending_report_excel', tipo=report_type) }}"
+      class="ov2-log-item bad ov2-log-download"
+      title="Descargar reporte detallado de {{ label }}"
+      download
+    >
+      <strong>{{ value }}</strong> {{ label }}
+    </a>
+  {% else %}
+    <span class="ov2-log-item ok"><strong>0</strong> {{ label }}</span>
+  {% endif %}
+{%- endmacro %}
 {% block admin_content %}
 
 {% set m = overview_metrics %}
@@ -227,29 +241,17 @@
       </div>
 
       <div class="ov2-log-mini-row">
-        <span class="ov2-log-item {{ 'ok' if m.members_without_photo == 0 else 'bad' }}">
-          <strong>{{ m.members_without_photo }}</strong> sin foto
-        </span>
-        <span class="ov2-log-item {{ 'ok' if m.projects_without_logo == 0 else 'bad' }}">
-          <strong>{{ m.projects_without_logo }}</strong> sin logo
-        </span>
-        <span class="ov2-log-item {{ 'ok' if m.projects_without_document == 0 else 'bad' }}">
-          <strong>{{ m.projects_without_document }}</strong> sin doc.
-        </span>
-        <span class="ov2-log-item {{ 'ok' if m.projects_incomplete_logistics == 0 else 'bad' }}">
-          <strong>{{ m.projects_incomplete_logistics }}</strong> incompletos
-        </span>
-        <span class="ov2-log-item {{ 'ok' if m.pending_document_revisions_count == 0 else 'bad' }}">
-          <strong>{{ m.pending_document_revisions_count }}</strong> doc. revisión
-        </span>
-        <span class="ov2-log-item {{ 'ok' if m.pending_member_edits_count == 0 else 'bad' }}">
-          <strong>{{ m.pending_member_edits_count }}</strong> edic. datos
-        </span>
+        {{ logistics_pending_link(m.members_without_photo, 'sin foto', 'photo') }}
+        {{ logistics_pending_link(m.projects_without_logo, 'sin logo', 'logo') }}
+        {{ logistics_pending_link(m.projects_without_document, 'sin doc.', 'document') }}
+        {{ logistics_pending_link(m.projects_incomplete_logistics, 'incompletos', 'logistics') }}
+        {{ logistics_pending_link(m.pending_document_revisions_count, 'doc. revisión', 'revisions') }}
+        {{ logistics_pending_link(m.pending_member_edits_count, 'edic. datos', 'edits') }}
       </div>
 
       {% if m.projects_incomplete_logistics > 0 %}
-      <a href="{{ url_for('admin.projects_page') }}" class="ov2-log-cta">
-        Ver {{ m.projects_incomplete_logistics }} proyecto{{ 's' if m.projects_incomplete_logistics != 1 }} con pendientes &rarr;
+      <a href="{{ url_for('admin.logistics_pending_report_excel', tipo='all') }}" class="ov2-log-cta" download>
+        Descargar reporte detallado de pendientes &darr;
       </a>
       {% else %}
       <p class="ov2-empty" style="margin-top:0.5rem;">Toda la log&iacute;stica est&aacute; al d&iacute;a.</p>

@@ -13633,6 +13633,20 @@ body {
 .ov2-log-item.ok strong { color: #1d7a22; }
 .ov2-log-item.bad strong { color: #b01c1c; }
 
+.ov2-log-download {
+    padding: 0.2rem 0.35rem;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.16s ease, color 0.16s ease;
+}
+
+.ov2-log-download:hover,
+.ov2-log-download:focus-visible {
+    color: #8f1818;
+    background: #fff0f0;
+    text-decoration: underline;
+}
+
 .ov2-log-cta {
     display: inline-block;
     margin-top: 0.7rem;

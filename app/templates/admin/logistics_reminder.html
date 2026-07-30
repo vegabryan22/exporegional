@@ -74,9 +74,12 @@
             <h4>¿A quién desea recordar?</h4>
             <p>Seleccione la audiencia. Los destinatarios sin correo se omitirán y quedarán indicados en el resumen.</p>
         </div>
-        <form method="POST" action="{{ action_url }}" class="reminder-send-form reminder-bulk-form" onsubmit="return confirm('¿Enviar los recordatorios a la audiencia seleccionada?')">
+        <form method="POST" action="{{ action_url }}" class="reminder-send-form reminder-bulk-form" id="reminder-bulk-form">
             <input type="hidden" name="action" value="send_logistics_reminder">
             <input type="hidden" name="next" value="{{ request.path }}">
+            {% for row in reminder_data.reminder_rows %}
+            <input type="hidden" name="project_ids" value="{{ row.project.id }}">
+            {% endfor %}
             <label class="reminder-audience-field">
                 <span>Destinatarios</span>
                 <select name="audience" id="reminder-audience">
@@ -94,10 +97,19 @@
             <button
                 type="submit"
                 class="table-link-btn logistics-control-link"
+                id="reminder-bulk-submit"
                 {% if not smtp_configured %}disabled title="Configura SMTP primero"{% endif %}
             >Enviar recordatorios</button>
         </form>
     </section>
+    <div class="reminder-batch-progress" id="reminder-batch-progress" hidden aria-live="polite">
+        <div class="reminder-batch-progress-head">
+            <strong id="reminder-batch-status">Preparando envío…</strong>
+            <span id="reminder-batch-percent">0%</span>
+        </div>
+        <div class="reminder-batch-track"><span id="reminder-batch-bar"></span></div>
+        <small>No cierre esta página mientras se procesan los lotes.</small>
+    </div>
 
     <div class="reminder-two-col">
 
@@ -183,4 +195,79 @@
 
     {% endif %}
 </section>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var form = document.getElementById('reminder-bulk-form');
+    if (!form || !window.fetch || !window.FormData) {
+        return;
+    }
+
+    var submitButton = document.getElementById('reminder-bulk-submit');
+    var progress = document.getElementById('reminder-batch-progress');
+    var statusLabel = document.getElementById('reminder-batch-status');
+    var percentLabel = document.getElementById('reminder-batch-percent');
+    var progressBar = document.getElementById('reminder-batch-bar');
+
+    form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+        if (!window.confirm('¿Enviar los recordatorios a la audiencia seleccionada?')) {
+            return;
+        }
+
+        var projectIds = Array.from(form.querySelectorAll('input[name="project_ids"]'))
+            .map(function (input) { return input.value; })
+            .filter(Boolean);
+        if (!projectIds.length) {
+            return;
+        }
+
+        var batchSize = 1;
+        var batches = [];
+        for (var index = 0; index < projectIds.length; index += batchSize) {
+            batches.push(projectIds.slice(index, index + batchSize));
+        }
+
+        submitButton.disabled = true;
+        progress.hidden = false;
+        var completed = 0;
+
+        try {
+            for (var batchIndex = 0; batchIndex < batches.length; batchIndex += 1) {
+                statusLabel.textContent = 'Enviando lote ' + (batchIndex + 1) + ' de ' + batches.length + '…';
+                var formData = new FormData(form);
+                formData.delete('project_ids');
+                batches[batchIndex].forEach(function (projectId) {
+                    formData.append('project_ids', projectId);
+                });
+                formData.set('batch_mode', '1');
+
+                var response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin',
+                    redirect: 'follow'
+                });
+                if (!response.ok) {
+                    throw new Error('El servidor respondió con estado ' + response.status);
+                }
+
+                completed += 1;
+                var percent = Math.round((completed / batches.length) * 100);
+                percentLabel.textContent = percent + '%';
+                progressBar.style.width = percent + '%';
+            }
+
+            statusLabel.textContent = 'Envío finalizado correctamente';
+            progress.classList.add('is-complete');
+            window.setTimeout(function () {
+                window.location.reload();
+            }, 1400);
+        } catch (error) {
+            statusLabel.textContent = 'El envío se detuvo después de ' + completed + ' lote(s). ' + error.message;
+            progress.classList.add('has-error');
+            submitButton.disabled = false;
+        }
+    });
+});
+</script>
 {% endblock %}

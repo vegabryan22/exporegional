@@ -224,6 +224,9 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn('value="all"', template)
         self.assertIn('name="project_ids"', template)
         self.assertIn("Correo para tutores", template)
+        self.assertIn("reminder-batch-progress", template)
+        self.assertIn("var batchSize = 1", template)
+        self.assertIn("await fetch", template)
 
     def test_tutor_reminder_contains_group_and_student_pending_items(self):
         from app import create_app

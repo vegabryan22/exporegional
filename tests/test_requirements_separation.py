@@ -9,6 +9,7 @@ from app.controllers.admin_controller import (
     ADMIN_DEPARTMENT_MODULE_ACCESS,
     _build_logistics_pending_report_rows,
     _build_project_logistics_summary,
+    _build_tutor_logistics_reminder_payload,
     _sync_project_logistics_status,
 )
 from app.models.project import Project
@@ -214,6 +215,54 @@ class RequirementsSeparationTest(unittest.TestCase):
             'worksheet.auto_filter.ref = f"A5:E{max(worksheet.max_row, 5)}"',
             controller,
         )
+
+    def test_reminder_center_supports_every_audience(self):
+        template = Path("app/templates/admin/logistics_reminder.html").read_text(encoding="utf-8")
+
+        self.assertIn('value="students"', template)
+        self.assertIn('value="tutors"', template)
+        self.assertIn('value="all"', template)
+        self.assertIn('name="project_ids"', template)
+        self.assertIn("Correo para tutores", template)
+
+    def test_tutor_reminder_contains_group_and_student_pending_items(self):
+        from app import create_app
+
+        app = create_app()
+        project = Project(
+            id=20,
+            title="Proyecto con pendientes",
+            team_name="Equipo",
+            advisor_name="Tutor Ejemplo",
+            is_active=True,
+            project_logo_path=None,
+            logistics_document_ok=False,
+            logistics_registration_form_signed_ok=False,
+            logistics_cedula_tutor_ok=False,
+        )
+        project.members = [
+            ProjectMember(
+                full_name="Estudiante Ejemplo",
+                section_name="12-2",
+                student_number=1,
+                photo_url=None,
+                consent_signed_ok=False,
+                cedula_encargado_ok=False,
+                cedula_estudiante_ok=False,
+            )
+        ]
+
+        with app.test_request_context("/admin/proyectos/recordatorio"):
+            payload = _build_tutor_logistics_reminder_payload(
+                project,
+                deadline=None,
+                institution_name="ExpoTécnica",
+            )
+
+        self.assertIsNotNone(payload)
+        self.assertIn("Cédula del tutor", payload["missing_group"])
+        self.assertEqual("Estudiante Ejemplo", payload["member_missing"][0]["member"].full_name)
+        self.assertIn("Consentimiento informado", payload["member_missing"][0]["items"])
 
     def test_logistics_department_does_not_receive_requirements_module(self):
         self.assertNotIn("requirements", ADMIN_DEPARTMENT_MODULE_ACCESS["logistica"])

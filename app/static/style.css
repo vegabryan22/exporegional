@@ -13219,6 +13219,62 @@ body {
     gap: 0.75rem;
     flex-wrap: wrap;
 }
+
+.reminder-command-center {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(420px, 1.6fr);
+    gap: 1rem;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #b8d8eb;
+    border-radius: 16px;
+    background:
+        radial-gradient(circle at 95% 5%, rgba(133, 196, 70, 0.16), transparent 34%),
+        linear-gradient(135deg, #f4faff, #edf6fc);
+}
+
+.reminder-command-copy {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.reminder-command-copy h4,
+.reminder-command-copy p {
+    margin: 0;
+}
+
+.reminder-command-copy h4 {
+    color: var(--primary);
+    font-size: 1.15rem;
+}
+
+.reminder-command-copy p {
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+.reminder-bulk-form {
+    justify-content: flex-end;
+    padding: 0.75rem;
+    border: 1px solid rgba(126, 171, 207, 0.32);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.reminder-audience-field {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 245px;
+    color: #4a6078;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.reminder-audience-field select {
+    min-height: 38px;
+    background: #fff;
+}
+
 .reminder-deadline-field {
     display: flex;
     flex-direction: column;
@@ -13266,6 +13322,24 @@ body {
     color: var(--primary);
 }
 
+.reminder-project-head > div:first-child {
+    display: grid;
+    gap: 0.16rem;
+}
+
+.reminder-project-head small {
+    color: #607998;
+    font-size: 0.75rem;
+    font-weight: 650;
+}
+
+.reminder-project-recipient-tags {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
 .reminder-chips {
     display: flex;
     flex-wrap: wrap;
@@ -13310,6 +13384,50 @@ body {
     flex-shrink: 0;
 }
 
+.reminder-project-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.45rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid var(--line);
+}
+
+.reminder-project-actions button {
+    width: auto;
+    min-height: 36px;
+    padding: 0.42rem 0.75rem;
+}
+
+.reminder-preview-col {
+    position: sticky;
+    top: 0.75rem;
+}
+
+.reminder-preview-panel {
+    margin-bottom: 0.65rem;
+    border: 1px solid #d7e2ef;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+}
+
+.reminder-preview-panel > summary {
+    padding: 0.75rem 0.9rem;
+    cursor: pointer;
+    color: var(--primary);
+    font-weight: 800;
+    background: #f4f8fc;
+}
+
+.reminder-preview-panel[open] > summary {
+    border-bottom: 1px solid #d7e2ef;
+}
+
+.reminder-preview-panel .reminder-email-iframe {
+    border: 0;
+    border-radius: 0;
+}
+
 .reminder-email-iframe {
     width: 100%;
     min-height: 520px;
@@ -13320,7 +13438,35 @@ body {
 }
 
 @media (max-width: 900px) {
-    .reminder-two-col { grid-template-columns: 1fr; }
+    .reminder-command-center,
+    .reminder-two-col {
+        grid-template-columns: 1fr;
+    }
+
+    .reminder-preview-col {
+        position: static;
+    }
+}
+
+@media (max-width: 640px) {
+    .reminder-bulk-form,
+    .reminder-project-head,
+    .reminder-project-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .reminder-audience-field {
+        min-width: 0;
+    }
+
+    .reminder-project-recipient-tags {
+        justify-content: flex-start;
+    }
+
+    .reminder-project-actions button {
+        width: 100%;
+    }
 }
 
 /* ── Evaluations redesign (ev2) ──────────────────────────────────────────── */

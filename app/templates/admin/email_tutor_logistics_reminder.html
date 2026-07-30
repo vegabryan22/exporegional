@@ -74,7 +74,7 @@
             <td class="member-name">{{ row.member.full_name }}</td>
             <td>
               <ul class="member-items">
-                {% for item in row.items %}<li>{{ item }}</li>{% endfor %}
+                {% for item in row['items'] %}<li>{{ item }}</li>{% endfor %}
               </ul>
             </td>
           </tr>

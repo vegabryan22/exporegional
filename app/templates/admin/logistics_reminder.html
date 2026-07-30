@@ -5,8 +5,8 @@
     <div class="maintenance-banner">
         <div>
             <p class="maintenance-kicker">Logística</p>
-            <h3>Recordatorio por correo</h3>
-            <p>Vista previa de los correos que se enviarán a los integrantes con requisitos pendientes. La fecha límite indicada es un día antes del cierre de la campaña activa.</p>
+            <h3>Centro de recordatorios</h3>
+            <p>Comunica pendientes a estudiantes, tutores o ambos. Revisa los destinatarios y el contenido antes de realizar un envío masivo o puntual.</p>
         </div>
         <a href="{{ url_for('admin.projects_page') }}" class="table-link-btn ghost">Volver</a>
     </div>
@@ -18,7 +18,15 @@
         </article>
         <article>
             <strong>{{ reminder_data.total_recipients }}</strong>
-            <span>Correos a enviar</span>
+            <span>Estudiantes con correo</span>
+        </article>
+        <article>
+            <strong>{{ reminder_data.total_tutor_recipients }}</strong>
+            <span>Tutores con correo</span>
+        </article>
+        <article>
+            <strong>{{ reminder_data.total_members_without_email + reminder_data.total_tutors_without_email }}</strong>
+            <span>Destinatarios sin correo</span>
         </article>
         <article>
             {% if reminder_data.deadline %}
@@ -56,19 +64,27 @@
     </div>
     {% endif %}
 
-    {% if reminder_data.total_recipients == 0 %}
-    <p class="muted-empty">No hay integrantes con requisitos pendientes y correo electr&oacute;nico registrado. No se enviar&aacute; ning&uacute;n correo.</p>
+    {% if reminder_data.total_recipients == 0 and reminder_data.total_tutor_recipients == 0 %}
+    <p class="muted-empty">No hay estudiantes ni tutores con correo electrónico registrado para enviar recordatorios.</p>
     {% else %}
 
-    <div class="page-head reminder-send-bar">
-        <p class="table-subtext">
-            Se enviar&aacute; <strong>{{ reminder_data.total_recipients }}</strong> correo(s)
-            a integrantes de <strong>{{ reminder_data.total_projects }}</strong> proyecto(s) con pendientes.
-            Los integrantes sin correo registrado ser&aacute;n omitidos autom&aacute;ticamente.
-        </p>
-        <form method="POST" action="{{ action_url }}" class="page-head-actions reminder-send-form">
+    <section class="reminder-command-center">
+        <div class="reminder-command-copy">
+            <p class="maintenance-kicker">Envío masivo</p>
+            <h4>¿A quién desea recordar?</h4>
+            <p>Seleccione la audiencia. Los destinatarios sin correo se omitirán y quedarán indicados en el resumen.</p>
+        </div>
+        <form method="POST" action="{{ action_url }}" class="reminder-send-form reminder-bulk-form" onsubmit="return confirm('¿Enviar los recordatorios a la audiencia seleccionada?')">
             <input type="hidden" name="action" value="send_logistics_reminder">
             <input type="hidden" name="next" value="{{ request.path }}">
+            <label class="reminder-audience-field">
+                <span>Destinatarios</span>
+                <select name="audience" id="reminder-audience">
+                    <option value="students">Estudiantes — {{ reminder_data.total_recipients }} correos</option>
+                    <option value="tutors">Tutores — {{ reminder_data.total_tutor_recipients }} correos</option>
+                    <option value="all">Estudiantes y tutores — {{ reminder_data.total_recipients + reminder_data.total_tutor_recipients }} correos</option>
+                </select>
+            </label>
             <label class="reminder-deadline-field">
                 <span>Fecha l&iacute;mite en correo</span>
                 <input type="date" name="custom_deadline"
@@ -79,21 +95,27 @@
                 type="submit"
                 class="table-link-btn logistics-control-link"
                 {% if not smtp_configured %}disabled title="Configura SMTP primero"{% endif %}
-            >Enviar {{ reminder_data.total_recipients }} correo(s)</button>
+            >Enviar recordatorios</button>
         </form>
-    </div>
+    </section>
 
     <div class="reminder-two-col">
 
         <section class="reminder-list-col">
-            <p class="maintenance-kicker">Destinatarios por proyecto</p>
-            <p class="table-subtext" style="margin-bottom:0.6rem">Verifica qui&eacute;n recibir&aacute; el correo y qu&eacute; requisitos se listar&aacute;n en cada caso.</p>
+            <p class="maintenance-kicker">Envíos puntuales por proyecto</p>
+            <p class="table-subtext" style="margin-bottom:0.6rem">Verifica pendientes y envía solo al proyecto que necesita seguimiento inmediato.</p>
 
             {% for row in reminder_data.reminder_rows %}
             <div class="reminder-project-entry">
                 <div class="reminder-project-head">
-                    <strong>{{ row.project.title }}</strong>
-                    <span class="tag">{{ row.recipient_count }} correo(s)</span>
+                    <div>
+                        <strong>{{ row.project.title }}</strong>
+                        <small>Tutor: {{ row.project.advisor_name or 'Sin tutor' }}</small>
+                    </div>
+                    <div class="reminder-project-recipient-tags">
+                        <span class="tag">{{ row.recipient_count }} estudiante(s)</span>
+                        <span class="tag {{ 'ok' if row.tutor_has_email else 'off' }}">{{ 'Tutor con correo' if row.tutor_has_email else 'Tutor sin correo' }}</span>
+                    </div>
                 </div>
 
                 {% if row.missing_group %}
@@ -122,26 +144,39 @@
                     </div>
                     {% endfor %}
                 </div>
+
+                <form method="POST" action="{{ action_url }}" class="reminder-project-actions" onsubmit="return confirm('¿Enviar este recordatorio puntual?')">
+                    <input type="hidden" name="action" value="send_logistics_reminder">
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <input type="hidden" name="project_ids" value="{{ row.project.id }}">
+                    <input type="hidden" name="custom_deadline" value="{{ reminder_data.deadline.strftime('%Y-%m-%d') if reminder_data.deadline else '' }}">
+                    <button type="submit" name="audience" value="students" class="ghost-btn" {% if row.recipient_count == 0 or not smtp_configured %}disabled{% endif %}>Estudiantes</button>
+                    <button type="submit" name="audience" value="tutors" class="ghost-btn" {% if not row.tutor_has_email or not smtp_configured %}disabled{% endif %}>Tutor</button>
+                    <button type="submit" name="audience" value="all" class="secondary-btn" {% if (row.recipient_count == 0 and not row.tutor_has_email) or not smtp_configured %}disabled{% endif %}>Ambos</button>
+                </form>
             </div>
             {% endfor %}
         </section>
 
         <section class="reminder-preview-col">
-            <p class="maintenance-kicker">Vista previa del correo</p>
-            <p class="table-subtext" style="margin-bottom:0.6rem">
-                As&iacute; ver&aacute; el correo el primer integrante elegible.
-                Cada integrante recibe su propia versi&oacute;n con sus pendientes individuales.
-            </p>
-            {% if preview_email_html %}
-            <iframe
-                class="reminder-email-iframe"
-                srcdoc="{{ preview_email_html | e }}"
-                title="Vista previa del correo"
-                scrolling="yes"
-            ></iframe>
-            {% else %}
-            <p class="muted-empty">No hay destinatarios con correo registrado para mostrar una vista previa.</p>
-            {% endif %}
+            <p class="maintenance-kicker">Vistas previas</p>
+            <p class="table-subtext" style="margin-bottom:0.6rem">Comprueba el contenido diferenciado que recibe cada audiencia.</p>
+            <details class="reminder-preview-panel" open>
+                <summary>Correo para estudiantes</summary>
+                {% if preview_email_html %}
+                <iframe class="reminder-email-iframe" srcdoc="{{ preview_email_html | e }}" title="Vista previa del correo para estudiantes" scrolling="yes"></iframe>
+                {% else %}
+                <p class="muted-empty">No hay estudiantes elegibles para la vista previa.</p>
+                {% endif %}
+            </details>
+            <details class="reminder-preview-panel">
+                <summary>Correo para tutores</summary>
+                {% if tutor_preview_email_html %}
+                <iframe class="reminder-email-iframe" srcdoc="{{ tutor_preview_email_html | e }}" title="Vista previa del correo para tutores" scrolling="yes"></iframe>
+                {% else %}
+                <p class="muted-empty">No hay tutores elegibles para la vista previa.</p>
+                {% endif %}
+            </details>
         </section>
 
     </div>

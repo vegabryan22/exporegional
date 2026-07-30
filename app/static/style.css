@@ -1376,6 +1376,80 @@ nav a:hover,
     gap: 0.5rem;
 }
 
+.projects-logistics-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.7rem;
+}
+
+.projects-logistics-metrics article {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #dbe6f3;
+    border-radius: 14px;
+    background: #f8fbff;
+}
+
+.projects-logistics-metrics article.is-complete {
+    border-color: #b9dfc2;
+    background: #f2fbf4;
+}
+
+.projects-logistics-metrics article.has-pending {
+    border-color: #f1c9c9;
+    background: #fff7f7;
+}
+
+.projects-logistics-metrics span,
+.projects-logistics-metrics small {
+    color: #5d7590;
+    font-weight: 700;
+}
+
+.projects-logistics-metrics strong {
+    color: var(--primary);
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.project-document-readiness {
+    grid-column: 1 / -1;
+    align-self: stretch;
+    min-width: min(100%, 220px);
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #d7e5f2;
+    border-radius: 10px;
+    background: #f8fbfe;
+    color: #315a7d;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.project-document-readiness.is-complete {
+    border-color: #b9dfc2;
+    background: #f2fbf4;
+    color: #23733b;
+}
+
+.project-document-readiness.has-pending {
+    border-color: #efcaca;
+    background: #fff8f8;
+    color: #9b3030;
+}
+
+.project-document-readiness summary {
+    cursor: pointer;
+    font-weight: 800;
+}
+
+.project-document-readiness ul {
+    margin: 0.5rem 0 0;
+    padding-left: 1.15rem;
+    color: #5e3f3f;
+    font-weight: 600;
+}
+
 .projects-filter-row {
     display: grid;
     grid-template-columns: minmax(240px, 1.6fr) minmax(190px, 1.2fr) minmax(155px, 1fr) minmax(165px, 1fr) auto;
@@ -2314,6 +2388,10 @@ th {
 }
 
 @media (max-width: 980px) {
+    .projects-logistics-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .project-maintenance-main,
     .project-maintenance-actions {
         grid-template-columns: 1fr;
@@ -2330,6 +2408,10 @@ th {
 }
 
 @media (max-width: 640px) {
+    .projects-logistics-metrics {
+        grid-template-columns: 1fr;
+    }
+
     .project-maintenance-card {
         padding: 0.8rem;
         border-radius: 14px;

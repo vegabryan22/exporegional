@@ -7,6 +7,7 @@ from app import _reconcile_existing_logistics_statuses
 from app.controllers.admin_controller import (
     ACTION_MODULE_MAP,
     ADMIN_DEPARTMENT_MODULE_ACCESS,
+    _build_project_logistics_summary,
     _sync_project_logistics_status,
 )
 from app.models.project import Project
@@ -145,6 +146,28 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn('id="projects-filter-advisor"', template)
         self.assertIn("data-project-advisor=", template)
         self.assertIn("matchesAdvisor", template)
+
+    def test_project_summary_reports_completed_and_missing_documents(self):
+        complete = Project(
+            id=1,
+            is_active=True,
+            logistics_status="completo",
+            project_document_path="document.pdf",
+            project_logo_path="logo.png",
+            logistics_document_ok=True,
+            logistics_logo_ok=True,
+            logistics_photos_ok=True,
+            logistics_registration_form_signed_ok=True,
+        )
+        pending = Project(id=2, is_active=True, logistics_status="pendiente_revision")
+        inactive = Project(id=3, is_active=False, logistics_status="incompleto")
+
+        summary = _build_project_logistics_summary([complete, pending, inactive])
+
+        self.assertEqual(1, summary["completed"])
+        self.assertEqual(1, summary["pending"])
+        self.assertEqual(1, summary["inactive"])
+        self.assertIn("documento digital adjunto", summary["missing_by_project"][2])
 
     def test_logistics_department_does_not_receive_requirements_module(self):
         self.assertNotIn("requirements", ADMIN_DEPARTMENT_MODULE_ACCESS["logistica"])

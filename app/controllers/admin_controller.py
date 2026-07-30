@@ -7275,9 +7275,38 @@ def _build_advisor_stats(projects):
     return sorted(buckets.values(), key=lambda r: -r["total"])
 
 
+def _build_project_logistics_summary(projects):
+    missing_by_project = {}
+    completed = 0
+    active = 0
+    inactive = 0
+
+    for project in projects:
+        missing_items = _project_logistics_missing_items(project)
+        missing_by_project[project.id] = missing_items
+        if project.is_active:
+            active += 1
+            if project.logistics_status == "completo" and not missing_items:
+                completed += 1
+        else:
+            inactive += 1
+
+    return {
+        "total": len(projects),
+        "active": active,
+        "completed": completed,
+        "pending": max(active - completed, 0),
+        "inactive": inactive,
+        "completion_percent": round((completed / active) * 100) if active else 0,
+        "missing_by_project": missing_by_project,
+    }
+
+
 def projects_page():
     context = _base_context("projects")
-    context["advisor_stats"] = _build_advisor_stats(context.get("projects", []))
+    projects = context.get("projects", [])
+    context["advisor_stats"] = _build_advisor_stats(projects)
+    context["project_logistics_summary"] = _build_project_logistics_summary(projects)
     return render_template("admin/projects.html", **context)
 
 

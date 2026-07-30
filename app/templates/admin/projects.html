@@ -13,6 +13,29 @@
         <span class="tag ok">{{ projects|length }} proyectos</span>
     </div>
 
+    <div class="projects-logistics-metrics" aria-label="Resumen de proyectos">
+        <article>
+            <span>Proyectos activos</span>
+            <strong>{{ project_logistics_summary.active }}</strong>
+            <small>De {{ project_logistics_summary.total }} registrados</small>
+        </article>
+        <article class="is-complete">
+            <span>Completados</span>
+            <strong>{{ project_logistics_summary.completed }}</strong>
+            <small>Control logístico listo</small>
+        </article>
+        <article class="has-pending">
+            <span>Con pendientes</span>
+            <strong>{{ project_logistics_summary.pending }}</strong>
+            <small>Requieren documentación</small>
+        </article>
+        <article>
+            <span>Avance</span>
+            <strong>{{ project_logistics_summary.completion_percent }}%</strong>
+            <small>{{ project_logistics_summary.inactive }} inactivos aparte</small>
+        </article>
+    </div>
+
     {% if advisor_stats %}
     <details class="advisor-stats-panel">
         <summary>Proyectos por tutor <span class="tag neutral">{{ advisor_stats|length }} tutores</span></summary>
@@ -286,6 +309,7 @@
         {% for project in projects %}
             {% set member_count = project.members|length %}
             {% set logistics_ok = project.logistics_status == 'completo' and project.logistics_requirements_complete %}
+            {% set document_pending = project_logistics_summary.missing_by_project.get(project.id, []) %}
             <article
                 id="project-row-{{ project.id }}"
                 class="project-row project-maintenance-card"
@@ -314,6 +338,20 @@
                 </div>
 
                 <div class="project-maintenance-actions">
+                    <div class="project-document-readiness {{ 'is-complete' if not document_pending else 'has-pending' }}">
+                        {% if document_pending %}
+                            <details>
+                                <summary>{{ document_pending|length }} pendiente{{ '' if document_pending|length == 1 else 's' }} documental{{ '' if document_pending|length == 1 else 'es' }}</summary>
+                                <ul>
+                                    {% for missing_item in document_pending %}
+                                        <li>{{ missing_item }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </details>
+                        {% else %}
+                            <span>Documentación logística completa</span>
+                        {% endif %}
+                    </div>
                     <div class="project-action-group project-action-group-manage">
                         <span class="project-action-label">Gestionar</span>
                         <button type="button" class="project-action-btn action-edit" data-dialog-open="edit-project-{{ project.id }}" data-no-iconify>Editar</button>

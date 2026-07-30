@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.12.1] - 2026-07-30
+### Fixed
+- Se eliminó la definición duplicada de filtro automático en los reportes de pendientes.
+- Excel ya no necesita reparar ni eliminar la tabla al abrir los archivos generados.
+
 ## [0.12.0] - 2026-07-30
 ### Added
 - Reporte Excel descargable de pendientes logísticos con tipo de pendiente, persona afectada, sección, proyecto y tutor.

@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.13.1] - 2026-07-30
+### Added
+- Barra de progreso para envíos masivos de recordatorios.
+- Mensaje de finalización o interrupción con cantidad de lotes procesados.
+
+### Changed
+- Los recordatorios masivos se procesan proyecto por proyecto mediante peticiones secuenciales.
+
+### Fixed
+- Se evita el error `504 Gateway Time-out` al enviar decenas de correos en una sola petición.
+
 ## [0.13.0] - 2026-07-30
 ### Added
 - Centro de recordatorios logísticos con envíos a estudiantes, tutores o ambas audiencias.

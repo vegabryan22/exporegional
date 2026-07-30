@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.2] - 2026-07-30
+### Added
+- Reconciliación automática de estados logísticos para proyectos registrados antes de `v0.9.1`.
+
+### Fixed
+- Los proyectos existentes que ya tienen documentos, logo, fotografías, formulario y consentimientos aprobados pasan a `Completo` al iniciar la aplicación.
+- Los proyectos guardados como completos que vuelvan a tener un pendiente se corrigen a `Incompleto`.
+
 ## [0.9.1] - 2026-07-30
 ### Changed
 - El estado logístico ahora se calcula automáticamente al guardar el control del proyecto.

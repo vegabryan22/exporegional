@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.9.1] - 2026-07-30
+### Changed
+- El estado logístico ahora se calcula automáticamente al guardar el control del proyecto.
+- Se reemplazó el selector manual por un indicador que evita estados contradictorios.
+
+### Fixed
+- Un proyecto con todos los controles logísticos aprobados ya no permanece en estado `Revisión`.
+- Al aparecer un pendiente, el proyecto vuelve automáticamente a estado `Incompleto`.
+
 ## [0.9.0] - 2026-07-30
 ### Added
 - Módulo administrativo independiente de Requerimientos para gestionar electricidad, tomacorrientes, internet, agua, otros insumos y recursos detallados por proyecto.

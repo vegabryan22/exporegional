@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.11.0] - 2026-07-30
+### Added
+- Resumen estadístico en Proyectos con activos, completados, pendientes, inactivos y porcentaje de avance.
+- Desglose expandible de documentos y evidencias faltantes en cada proyecto.
+
+### Changed
+- Los indicadores y pendientes utilizan el mismo cálculo de cumplimiento logístico para evitar cifras contradictorias.
+- Las nuevas métricas se adaptan a cuatro, dos o una columna según el tamaño del dispositivo.
+
 ## [0.10.0] - 2026-07-30
 ### Added
 - Filtro por tutor en el mantenimiento de proyectos, con cantidad de proyectos por cada opción.

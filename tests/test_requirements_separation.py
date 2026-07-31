@@ -15,6 +15,7 @@ from app.controllers.admin_controller import (
     _person_name_title,
     _project_report_rows,
     _sync_project_logistics_status,
+    _sync_project_photo_validation,
 )
 from app.controllers.project_controller import _build_requirement_items
 from app.models.assignment import Assignment
@@ -24,6 +25,21 @@ from app.models.project_member import ProjectMember
 
 
 class RequirementsSeparationTest(unittest.TestCase):
+    def test_member_photos_are_validated_automatically(self):
+        project = Project(logistics_photos_ok=False)
+        project.members = [
+            ProjectMember(full_name="Estudiante uno", student_number=1, photo_url="uploads/uno.jpg"),
+            ProjectMember(full_name="Estudiante dos", student_number=2, photo_url="uploads/dos.jpg"),
+        ]
+
+        self.assertTrue(_sync_project_photo_validation(project))
+        self.assertTrue(project.logistics_photos_ok)
+
+        project.members[1].photo_url = None
+
+        self.assertFalse(_sync_project_photo_validation(project))
+        self.assertFalse(project.logistics_photos_ok)
+
     def test_person_names_are_exported_with_natural_capitalization(self):
         self.assertEqual("María José de la Cruz", _person_name_title("MARÍA JOSÉ DE LA CRUZ"))
         self.assertEqual("Ana-María del Río", _person_name_title("ana-maría DEL RÍO"))
@@ -159,6 +175,14 @@ class RequirementsSeparationTest(unittest.TestCase):
             logistics_student_consents_signed_ok=True,
             logistics_status="pendiente_revision",
         )
+        project.members = [
+            ProjectMember(
+                full_name="Estudiante listo",
+                student_number=1,
+                photo_url="uploads/student.jpg",
+                consent_signed_ok=True,
+            )
+        ]
 
         missing_items = _sync_project_logistics_status(project)
 
@@ -207,7 +231,8 @@ class RequirementsSeparationTest(unittest.TestCase):
                     """
                     INSERT INTO projects VALUES
                         (1, 'document.pdf', 1, 'logo.png', 1, 1, 1, 'pendiente_revision'),
-                        (2, 'document.pdf', 1, 'logo.png', 0, 1, 1, 'completo')
+                        (2, 'document.pdf', 1, 'logo.png', 0, 1, 1, 'completo'),
+                        (3, 'document.pdf', 1, 'logo.png', 1, 0, 1, 'incompleto')
                     """
                 )
             )
@@ -216,19 +241,26 @@ class RequirementsSeparationTest(unittest.TestCase):
                     """
                     INSERT INTO project_members VALUES
                         (1, 1, 'student.jpg', 1),
-                        (2, 2, 'student.jpg', 1)
+                        (2, 2, 'student.jpg', 1),
+                        (3, 3, 'student.jpg', 1)
                     """
                 )
             )
 
             _reconcile_existing_logistics_statuses(connection)
-            statuses = {
-                row.id: row.logistics_status
-                for row in connection.execute(text("SELECT id, logistics_status FROM projects"))
+            rows = connection.execute(
+                text("SELECT id, logistics_status, logistics_photos_ok FROM projects")
+            )
+            statuses = {row.id: row.logistics_status for row in rows}
+            photo_flags = {
+                row.id: row.logistics_photos_ok
+                for row in connection.execute(text("SELECT id, logistics_photos_ok FROM projects"))
             }
 
         self.assertEqual("completo", statuses[1])
         self.assertEqual("incompleto", statuses[2])
+        self.assertEqual("completo", statuses[3])
+        self.assertEqual(1, photo_flags[3])
         engine.dispose()
 
     def test_logistics_template_does_not_offer_resource_validation(self):

@@ -236,6 +236,26 @@ def register_error_handlers(app):
 
 
 def _reconcile_existing_logistics_statuses(connection):
+    connection.execute(
+        text(
+            """
+            UPDATE projects
+            SET logistics_photos_ok = CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM project_members
+                    WHERE project_members.project_id = projects.id
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM project_members
+                    WHERE project_members.project_id = projects.id
+                        AND COALESCE(TRIM(project_members.photo_url), '') = ''
+                )
+                THEN 1
+                ELSE 0
+            END
+            """
+        )
+    )
     return connection.execute(
         text(
             """

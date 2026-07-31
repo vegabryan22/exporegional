@@ -962,7 +962,16 @@ def _project_logistics_missing_items(project):
     return missing
 
 
+def _sync_project_photo_validation(project) -> bool:
+    photos_complete = bool(project.members) and all(
+        bool((member.photo_url or "").strip()) for member in project.members
+    )
+    project.logistics_photos_ok = photos_complete
+    return photos_complete
+
+
 def _sync_project_logistics_status(project):
+    _sync_project_photo_validation(project)
     missing_items = _project_logistics_missing_items(project)
     project.logistics_status = "incompleto" if missing_items else "completo"
     return missing_items
@@ -5431,6 +5440,7 @@ def _handle_action(action: str):
                 new_path = _save_member_photo(photo_file)
                 _delete_member_photo_file(member)
                 member.photo_url = new_path
+                _sync_project_logistics_status(member.project)
                 log_event(
                     "admin.member.photo_upload",
                     "project_member",
@@ -5506,6 +5516,8 @@ def _handle_action(action: str):
                             db.session.rollback()
                             flash(str(error), "error")
                             return
+                    db.session.expire(project, ["members"])
+                    _sync_project_logistics_status(project)
                     _add_member_change(
                         project.id,
                         new_member.id,
@@ -5578,6 +5590,7 @@ def _handle_action(action: str):
                         except ValueError as error:
                             flash(str(error), "error")
                             return
+                    _sync_project_logistics_status(member.project)
                     after = (
                         f"#{member.student_number} {member.full_name} / {member.section_name or 'N/D'} / "
                         f"{member.specialty or 'N/D'}"
@@ -5601,6 +5614,7 @@ def _handle_action(action: str):
         if not member:
             flash("Integrante no encontrado.", "error")
         else:
+            project = member.project
             details = f"Integrante eliminado: #{member.student_number} {member.full_name}"
             _add_member_change(member.project_id, member.id, "deleted", details)
             _delete_member_photo_file(member)
@@ -5614,6 +5628,9 @@ def _handle_action(action: str):
                 ),
             )
             db.session.delete(member)
+            db.session.flush()
+            db.session.expire(project, ["members"])
+            _sync_project_logistics_status(project)
             db.session.commit()
             flash("Integrante eliminado.", "success")
 

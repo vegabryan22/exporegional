@@ -480,9 +480,9 @@
                         <span class="check-card-help">Imagen cargada y apta para el sistema.</span>
                     </label>
                     <label class="logistics-check-card">
-                        <input type="checkbox" name="logistics_photos_ok" value="1" {% if project.logistics_photos_ok %}checked{% endif %}>
+                        <input type="checkbox" name="logistics_photos_ok" value="1" {% if project.logistics_photos_ok %}checked{% endif %} disabled>
                         <span class="check-card-title">Fotos completas</span>
-                        <span class="check-card-help">Fotografias de integrantes verificadas.</span>
+                        <span class="check-card-help">Se verifica automáticamente cuando todos los integrantes tienen fotografía.</span>
                     </label>
                 </div>
             </div>

@@ -4892,12 +4892,53 @@ def _handle_action(action: str):
             if status not in valid_status:
                 flash("Estado de requerimientos inválido.", "error")
             else:
+                item_ids = request.form.getlist("requirement_item_id")
+                item_names = request.form.getlist("requirement_item_name")
+                item_quantities = request.form.getlist("requirement_item_quantity")
+                item_units = request.form.getlist("requirement_item_unit")
+                item_notes = request.form.getlist("requirement_item_notes")
+                confirmed_item_ids = set(request.form.getlist("requirement_item_confirmed"))
+                detailed_items = []
+                for index, raw_name in enumerate(item_names[:20]):
+                    name = (raw_name or "").strip()
+                    quantity = (item_quantities[index] if index < len(item_quantities) else "").strip()
+                    unit = (item_units[index] if index < len(item_units) else "").strip()
+                    notes = (item_notes[index] if index < len(item_notes) else "").strip()
+                    if not any((name, quantity, unit, notes)):
+                        continue
+                    item_id = (
+                        (item_ids[index] if index < len(item_ids) else "").strip()
+                        or f"item-{index + 1}"
+                    )
+                    detailed_items.append(
+                        {
+                            "id": item_id,
+                            "name": name,
+                            "quantity": quantity,
+                            "unit": unit,
+                            "notes": notes,
+                            "confirmed": item_id in confirmed_item_ids,
+                        }
+                    )
+
                 project.requirements_current_ok = _str_to_bool(request.form.get("requirements_current_ok"))
                 project.requirements_outlets_ok = _str_to_bool(request.form.get("requirements_outlets_ok"))
                 project.requirements_internet_ok = _str_to_bool(request.form.get("requirements_internet_ok"))
                 project.requirements_water_ok = _str_to_bool(request.form.get("requirements_water_ok"))
                 project.requirements_other_ok = _str_to_bool(request.form.get("requirements_other_ok"))
-                project.requirements_resources_ok = _str_to_bool(request.form.get("requirements_resources_ok"))
+                project.requirements_items_json = json.dumps(detailed_items, ensure_ascii=False)
+                project.required_resources = "; ".join(
+                    " ".join(
+                        part
+                        for part in (item["quantity"], item["unit"], item["name"])
+                        if part
+                    )
+                    + (f" ({item['notes']})" if item["notes"] else "")
+                    for item in detailed_items
+                )
+                project.requirements_resources_ok = bool(detailed_items) and all(
+                    item["confirmed"] for item in detailed_items
+                )
                 project.requirements_notes = request.form.get("requirements_notes", "").strip()
                 project.requirements_status = status
 

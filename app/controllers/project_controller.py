@@ -1,6 +1,7 @@
 import os
 import re
 import uuid
+import json
 from io import BytesIO
 from datetime import date, datetime
 
@@ -191,6 +192,36 @@ def _draft_form_list(form_data, key):
     if isinstance(value, list):
         return value
     return [value] if value else []
+
+
+def _build_requirement_items(form_data) -> list[dict]:
+    def values_for(key):
+        return form_data.getlist(key) if hasattr(form_data, "getlist") else _draft_form_list(form_data, key)
+
+    names = values_for("requirement_item_name")
+    quantities = values_for("requirement_item_quantity")
+    units = values_for("requirement_item_unit")
+    notes = values_for("requirement_item_notes")
+    count = max(len(names), len(quantities), len(units), len(notes), 0)
+    items = []
+    for index in range(min(count, 12)):
+        name = str(names[index] if index < len(names) else "").strip()
+        quantity = str(quantities[index] if index < len(quantities) else "").strip()
+        unit = str(units[index] if index < len(units) else "").strip()
+        item_notes = str(notes[index] if index < len(notes) else "").strip()
+        if not any((name, quantity, unit, item_notes)):
+            continue
+        items.append(
+            {
+                "id": f"item-{index + 1}",
+                "name": name,
+                "quantity": quantity,
+                "unit": unit,
+                "notes": item_notes,
+                "confirmed": False,
+            }
+        )
+    return items
 
 
 def _store_registration_draft(form_data, temp_document_path=""):
@@ -1005,6 +1036,9 @@ def _current_form_context(form_data):
     thematic_axes = ThematicAxis.query.filter_by(is_active=True).order_by(ThematicAxis.sort_order.asc(), ThematicAxis.name.asc()).all()
     project_types = ProjectType.query.filter_by(is_active=True).order_by(ProjectType.sort_order.asc(), ProjectType.name.asc()).all()
     req_values = form_data.getlist("requirements") if hasattr(form_data, "getlist") else _draft_form_list(form_data, "requirements")
+    requirement_items = _build_requirement_items(form_data)
+    if not requirement_items:
+        requirement_items = [{"name": "", "quantity": "", "unit": "", "notes": ""}]
 
     active_campaign = (
         Campaign.query.filter(
@@ -1019,6 +1053,7 @@ def _current_form_context(form_data):
     return {
         "form_data": form_data,
         "req_values": req_values,
+        "requirement_items": requirement_items,
         "categories": categories,
         "levels": levels,
         "sections": sections,
@@ -1119,6 +1154,7 @@ def register_project():
 
         requirements = [item.strip().lower() for item in request.form.getlist("requirements") if item.strip()]
         requirements_other = (_draft_form_value(form_data, "requirements_other") or "").strip()
+        requirement_items = _build_requirement_items(form_data)
         required_students = _required_student_numbers(form_data)
 
         thematic_axis = ThematicAxis.query.get(thematic_axis_id) if thematic_axis_id else None
@@ -1174,7 +1210,20 @@ def register_project():
             mentor_phone=_normalize_phone(_draft_form_value(form_data, "mentor_phone")),
             category=category,
             description=(_draft_form_value(form_data, "description") or "Proyecto registrado mediante ExpoTEC-1.").strip(),
-            required_resources=(_draft_form_value(form_data, "required_resources") or "").strip(),
+            required_resources="; ".join(
+                " ".join(
+                    part
+                    for part in (
+                        item["quantity"],
+                        item["unit"],
+                        item["name"],
+                    )
+                    if part
+                )
+                + (f" ({item['notes']})" if item["notes"] else "")
+                for item in requirement_items
+            ),
+            requirements_items_json=json.dumps(requirement_items, ensure_ascii=False),
             project_start_date=project_start_date,
             project_end_date=project_end_date,
             requirements_summary=", ".join(requirements),
@@ -1215,6 +1264,9 @@ def register_project():
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
         if "otros" in requirements and not requirements_other:
             flash("Debes completar el detalle de 'Otros'.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if any(not item["name"] or not item["quantity"] or not item["unit"] for item in requirement_items):
+            flash("Cada insumo debe indicar nombre, cantidad y unidad.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
         if not temp_document_path:

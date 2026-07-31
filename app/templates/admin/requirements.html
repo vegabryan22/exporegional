@@ -53,13 +53,32 @@
                 {% for code in requested_codes %}
                 <span class="requirement-pill">{{ requirement_labels.get(code, code) }}</span>
                 {% endfor %}
-                {% if project.required_resources %}
-                <span class="requirement-pill resources">Insumos: {{ project.required_resources }}</span>
-                {% endif %}
-                {% if not requested_codes and not project.required_resources %}
+                {% if not requested_codes and not project.detailed_requirement_items %}
                 <span class="muted-cell">No se registraron requerimientos.</span>
                 {% endif %}
             </div>
+
+            {% if project.detailed_requirement_items %}
+            <div class="requirements-items-summary">
+                <strong>Detalle de insumos</strong>
+                <div class="requirements-items-table">
+                    {% for item in project.detailed_requirement_items %}
+                    <div class="requirements-item-summary {{ 'is-confirmed' if item.confirmed else 'is-pending' }}">
+                        <span class="requirements-item-quantity">
+                            {{ item.quantity or 'Sin cantidad' }}{% if item.unit %} {{ item.unit }}{% endif %}
+                        </span>
+                        <span>
+                            <b>{{ item.name }}</b>
+                            {% if item.notes %}<small>{{ item.notes }}</small>{% endif %}
+                        </span>
+                        <span class="tag {{ 'ok' if item.confirmed else 'warning' }}">
+                            {{ 'Confirmado' if item.confirmed else 'Pendiente' }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
 
             {% if project.requirements_missing_items %}
             <p class="requirements-missing"><strong>Pendiente:</strong> {{ project.requirements_missing_items | join(', ') }}</p>
@@ -137,17 +156,42 @@
                         <span class="check-card-help">{{ project.requirements_other or 'Requerimiento adicional indicado por el proyecto.' }}</span>
                     </label>
                     {% endif %}
-                    {% if project.required_resources %}
-                    <label class="logistics-check-card">
-                        <input type="checkbox" name="requirements_resources_ok" value="1" {% if project.requirements_resources_ok %}checked{% endif %}>
-                        <span class="check-card-title">Insumos y recursos detallados</span>
-                        <span class="check-card-help">{{ project.required_resources }}</span>
-                    </label>
-                    {% endif %}
                 </div>
             </div>
 
-            {% if not requested_codes and not project.required_resources %}
+            <div class="requirements-detail-editor" data-requirement-editor>
+                <div class="logistics-check-head">
+                    <span>Detalle de insumos y materiales</span>
+                    <small>Puede corregir el desglose y confirmar cada elemento por separado.</small>
+                </div>
+                <div class="requirements-admin-items" data-requirement-items>
+                    {% for item in project.detailed_requirement_items %}
+                    <div class="requirements-admin-item">
+                        <input type="hidden" name="requirement_item_id" value="{{ item.id }}">
+                        <label>Insumo
+                            <input type="text" name="requirement_item_name" value="{{ item.name }}" required>
+                        </label>
+                        <label>Cantidad
+                            <input type="text" name="requirement_item_quantity" value="{{ item.quantity }}">
+                        </label>
+                        <label>Unidad
+                            <input type="text" name="requirement_item_unit" value="{{ item.unit }}">
+                        </label>
+                        <label>Observación
+                            <input type="text" name="requirement_item_notes" value="{{ item.notes }}">
+                        </label>
+                        <label class="requirements-item-confirm">
+                            <input type="checkbox" name="requirement_item_confirmed" value="{{ item.id }}" {% if item.confirmed %}checked{% endif %}>
+                            <span>Confirmado</span>
+                        </label>
+                        <button type="button" class="ghost-btn" data-remove-requirement-item aria-label="Eliminar insumo">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" class="outline-btn requirements-add-item" data-add-requirement-item>+ Agregar insumo</button>
+            </div>
+
+            {% if not requested_codes and not project.detailed_requirement_items %}
             <div class="requirements-empty-request">Este proyecto no solicitó recursos. Puede marcarse como <strong>No aplica</strong>.</div>
             {% endif %}
 
@@ -162,4 +206,39 @@
     </div>
 </dialog>
 {% endfor %}
+<script>
+(function () {
+    function bindRow(row) {
+        var removeButton = row.querySelector('[data-remove-requirement-item]');
+        if (removeButton) {
+            removeButton.addEventListener('click', function () { row.remove(); });
+        }
+    }
+
+    document.querySelectorAll('[data-requirement-editor]').forEach(function (editor) {
+        var list = editor.querySelector('[data-requirement-items]');
+        var addButton = editor.querySelector('[data-add-requirement-item]');
+        list.querySelectorAll('.requirements-admin-item').forEach(bindRow);
+        addButton.addEventListener('click', function () {
+            if (list.children.length >= 20) {
+                return;
+            }
+            var itemId = 'item-' + Date.now() + '-' + list.children.length;
+            var row = document.createElement('div');
+            row.className = 'requirements-admin-item';
+            row.innerHTML =
+                '<input type="hidden" name="requirement_item_id" value="' + itemId + '">' +
+                '<label>Insumo<input type="text" name="requirement_item_name" required></label>' +
+                '<label>Cantidad<input type="text" name="requirement_item_quantity"></label>' +
+                '<label>Unidad<input type="text" name="requirement_item_unit"></label>' +
+                '<label>Observación<input type="text" name="requirement_item_notes"></label>' +
+                '<label class="requirements-item-confirm"><input type="checkbox" name="requirement_item_confirmed" value="' + itemId + '"><span>Confirmado</span></label>' +
+                '<button type="button" class="ghost-btn" data-remove-requirement-item aria-label="Eliminar insumo">&times;</button>';
+            list.appendChild(row);
+            bindRow(row);
+            row.querySelector('input[name="requirement_item_name"]').focus();
+        });
+    });
+})();
+</script>
 {% endblock %}

@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from app.extensions import db
@@ -42,6 +43,7 @@ class Project(db.Model):
     project_objective = db.Column(db.Text, nullable=True)
     expected_impact = db.Column(db.Text, nullable=True)
     required_resources = db.Column(db.Text, nullable=True)
+    requirements_items_json = db.Column(db.Text, nullable=True)
     project_start_date = db.Column(db.Date, nullable=True)
     project_end_date = db.Column(db.Date, nullable=True)
     requirements_summary = db.Column(db.Text, nullable=True)
@@ -135,6 +137,46 @@ class Project(db.Model):
         }
 
     @property
+    def detailed_requirement_items(self) -> list[dict]:
+        try:
+            raw_items = json.loads(self.requirements_items_json or "[]")
+        except (TypeError, ValueError):
+            raw_items = []
+
+        items = []
+        for index, raw_item in enumerate(raw_items):
+            if not isinstance(raw_item, dict):
+                continue
+            name = str(raw_item.get("name") or "").strip()
+            if not name:
+                continue
+            items.append(
+                {
+                    "id": str(raw_item.get("id") or f"item-{index + 1}"),
+                    "name": name,
+                    "quantity": str(raw_item.get("quantity") or "").strip(),
+                    "unit": str(raw_item.get("unit") or "").strip(),
+                    "notes": str(raw_item.get("notes") or "").strip(),
+                    "confirmed": bool(raw_item.get("confirmed")),
+                    "legacy": False,
+                }
+            )
+
+        if not items and (self.required_resources or "").strip():
+            items.append(
+                {
+                    "id": "legacy",
+                    "name": (self.required_resources or "").strip(),
+                    "quantity": "",
+                    "unit": "",
+                    "notes": "Información histórica pendiente de desglosar.",
+                    "confirmed": bool(self.requirements_resources_ok),
+                    "legacy": True,
+                }
+            )
+        return items
+
+    @property
     def requirements_missing_items(self) -> list[str]:
         labels = {
             "corriente": ("Conexión a corriente", self.requirements_current_ok),
@@ -148,12 +190,15 @@ class Project(db.Model):
             for code, (label, confirmed) in labels.items()
             if code in self.requested_requirement_codes and not confirmed
         ]
-        if (self.required_resources or "").strip() and not self.requirements_resources_ok:
-            missing.append("Insumos o recursos detallados")
+        unconfirmed_items = [item for item in self.detailed_requirement_items if not item["confirmed"]]
+        if unconfirmed_items:
+            missing.append(
+                "Insumos pendientes: " + ", ".join(item["name"] for item in unconfirmed_items)
+            )
         return missing
 
     @property
     def requirements_complete(self) -> bool:
         if self.requirements_status == "no_aplica":
-            return not self.requested_requirement_codes and not (self.required_resources or "").strip()
+            return not self.requested_requirement_codes and not self.detailed_requirement_items
         return self.requirements_status == "completo" and not self.requirements_missing_items

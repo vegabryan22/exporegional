@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from app.controllers.admin_controller import (
     _build_exposition_usher_report_rows,
     _sync_project_logistics_status,
 )
+from app.controllers.project_controller import _build_requirement_items
 from app.models.assignment import Assignment
 from app.models.judge import Judge
 from app.models.project import Project
@@ -20,24 +22,72 @@ from app.models.project_member import ProjectMember
 
 
 class RequirementsSeparationTest(unittest.TestCase):
+    def test_registration_builds_structured_requirement_items(self):
+        form_data = {
+            "requirement_item_name": ["Mesa de exhibición", "Extensión eléctrica"],
+            "requirement_item_quantity": ["2", "1"],
+            "requirement_item_unit": ["unidades", "unidad"],
+            "requirement_item_notes": ["De 1,80 m", "De 10 metros"],
+        }
+
+        items = _build_requirement_items(form_data)
+
+        self.assertEqual(2, len(items))
+        self.assertEqual("Mesa de exhibición", items[0]["name"])
+        self.assertEqual("2", items[0]["quantity"])
+        self.assertEqual("unidades", items[0]["unit"])
+        self.assertFalse(items[0]["confirmed"])
+
+    def test_legacy_resource_text_is_preserved_for_detailing(self):
+        project = Project(
+            required_resources="Son tres estudiantes",
+            requirements_resources_ok=False,
+        )
+
+        self.assertEqual(1, len(project.detailed_requirement_items))
+        self.assertEqual("Son tres estudiantes", project.detailed_requirement_items[0]["name"])
+        self.assertTrue(project.detailed_requirement_items[0]["legacy"])
+        self.assertIn("pendiente de desglosar", project.detailed_requirement_items[0]["notes"])
+
     def test_requested_resources_have_their_own_completion_state(self):
         project = Project(
             requirements_summary="corriente, internet",
-            required_resources="Mesa de exhibición",
+            requirements_items_json=json.dumps(
+                [
+                    {
+                        "id": "item-1",
+                        "name": "Mesa de exhibición",
+                        "quantity": "2",
+                        "unit": "unidades",
+                        "notes": "De 1,80 m",
+                        "confirmed": False,
+                    }
+                ]
+            ),
             requirements_status="completo",
             requirements_current_ok=True,
             requirements_internet_ok=False,
-            requirements_resources_ok=False,
         )
 
         self.assertEqual(
             project.requirements_missing_items,
-            ["Acceso a internet", "Insumos o recursos detallados"],
+            ["Acceso a internet", "Insumos pendientes: Mesa de exhibición"],
         )
         self.assertFalse(project.requirements_complete)
 
         project.requirements_internet_ok = True
-        project.requirements_resources_ok = True
+        project.requirements_items_json = json.dumps(
+            [
+                {
+                    "id": "item-1",
+                    "name": "Mesa de exhibición",
+                    "quantity": "2",
+                    "unit": "unidades",
+                    "notes": "De 1,80 m",
+                    "confirmed": True,
+                }
+            ]
+        )
 
         self.assertTrue(project.requirements_complete)
 
@@ -144,7 +194,8 @@ class RequirementsSeparationTest(unittest.TestCase):
 
         self.assertNotIn('name="logistics_requirements_reviewed_ok"', template)
         self.assertIn('name="requirements_internet_ok"', requirements_template)
-        self.assertIn('name="requirements_resources_ok"', requirements_template)
+        self.assertIn('name="requirement_item_confirmed"', requirements_template)
+        self.assertIn("Detalle de insumos y materiales", requirements_template)
 
     def test_projects_can_be_filtered_by_advisor(self):
         template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")

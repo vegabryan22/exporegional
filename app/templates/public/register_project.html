@@ -95,12 +95,37 @@
                 <label id="req-otros-wrapper">Otros:
                     <input type="text" name="requirements_other" value="{{ form_data.get('requirements_other', '') }}">
                 </label>
-                <label>Detalle adicional de requerimientos
-                    <input type="text" name="required_resources" value="{{ form_data.get('required_resources', '') }}">
-                </label>
                 <label>Documentación del proyecto *
                     <input type="file" name="project_document" accept="application/pdf,.pdf" {% if not temp_document_path %}required{% endif %}>
                 </label>
+            </div>
+            <div class="requirement-items-editor">
+                <div class="requirement-items-heading">
+                    <div>
+                        <strong>Insumos o materiales solicitados</strong>
+                        <small>Detalle cada recurso por separado. No escriba la cantidad de estudiantes.</small>
+                    </div>
+                    <button type="button" class="outline-btn" id="add-requirement-item">+ Agregar insumo</button>
+                </div>
+                <div id="requirement-items-list">
+                    {% for item in requirement_items %}
+                    <div class="requirement-item-row">
+                        <label>Insumo o material
+                            <input type="text" name="requirement_item_name" value="{{ item.name }}" placeholder="Ej.: mesa de exhibición">
+                        </label>
+                        <label>Cantidad
+                            <input type="text" name="requirement_item_quantity" value="{{ item.quantity }}" placeholder="Ej.: 2">
+                        </label>
+                        <label>Unidad
+                            <input type="text" name="requirement_item_unit" value="{{ item.unit }}" placeholder="Ej.: unidades">
+                        </label>
+                        <label>Observación
+                            <input type="text" name="requirement_item_notes" value="{{ item.notes }}" placeholder="Medida, capacidad u otra especificación">
+                        </label>
+                        <button type="button" class="ghost-btn remove-requirement-item" aria-label="Eliminar insumo">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
             {% if temp_document_path %}
                 <p class="upload-retained-note">
@@ -372,6 +397,8 @@
     var reqOtros = document.getElementById('req-otros');
     var reqOtrosWrapper = document.getElementById('req-otros-wrapper');
     var form = document.getElementById('expotec-form');
+    var requirementItemsList = document.getElementById('requirement-items-list');
+    var addRequirementItem = document.getElementById('add-requirement-item');
     var identityInputs = Array.prototype.slice.call(document.querySelectorAll('[data-identity-input]'));
     var phoneInputs = Array.prototype.slice.call(document.querySelectorAll('[data-phone-input]'));
 
@@ -443,11 +470,44 @@
         reqOtrosWrapper.style.display = reqOtros.checked ? 'block' : 'none';
     }
 
+    function bindRequirementItem(row) {
+        var removeButton = row.querySelector('.remove-requirement-item');
+        if (!removeButton) {
+            return;
+        }
+        removeButton.addEventListener('click', function () {
+            var rows = requirementItemsList.querySelectorAll('.requirement-item-row');
+            if (rows.length === 1) {
+                row.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+                return;
+            }
+            row.remove();
+        });
+    }
+
+    function addRequirementItemRow() {
+        if (!requirementItemsList || requirementItemsList.children.length >= 12) {
+            return;
+        }
+        var template = requirementItemsList.querySelector('.requirement-item-row');
+        var row = template.cloneNode(true);
+        row.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+        requirementItemsList.appendChild(row);
+        bindRequirementItem(row);
+        row.querySelector('input').focus();
+    }
+
     document.querySelectorAll('input[name="student_1_more"], input[name="student_2_more"]').forEach(function (input) {
         input.addEventListener('change', toggleStudentSections);
     });
     if (reqOtros) {
         reqOtros.addEventListener('change', toggleOtros);
+    }
+    if (requirementItemsList) {
+        requirementItemsList.querySelectorAll('.requirement-item-row').forEach(bindRequirementItem);
+    }
+    if (addRequirementItem) {
+        addRequirementItem.addEventListener('click', addRequirementItemRow);
     }
     identityInputs.forEach(function (input) {
         input.addEventListener('input', function () {
@@ -470,7 +530,6 @@
 })();
 </script>
 {% endblock %}
-
 
 
 

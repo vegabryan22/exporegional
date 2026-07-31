@@ -606,6 +606,8 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN expected_impact TEXT NULL"))
         if "required_resources" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN required_resources TEXT NULL"))
+        if "requirements_items_json" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN requirements_items_json TEXT NULL"))
         if "project_start_date" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN project_start_date DATE NULL"))
         if "project_end_date" not in project_columns:

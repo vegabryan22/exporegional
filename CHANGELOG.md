@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.18.0] - 2026-07-31
+
+### Añadido
+
+- Módulo administrativo de Tutores con información centralizada por cédula, correo o nombre.
+- Estadísticas de proyectos, estudiantes, categorías, avance logístico y requerimientos pendientes por tutor.
+- Filtros por texto y estado, detalle desplegable de proyectos y acceso directo a cada inscripción.
+- Reporte Excel consolidado de tutores y proyectos asociados.
+- Edición conjunta y unificación explícita de registros duplicados.
+
+### Cambiado
+
+- La tabla de tutores dejó de estar incrustada en Proyectos; fue sustituida por un enlace compacto al módulo especializado.
+- Los permisos existentes con acceso a Proyectos incorporan automáticamente el acceso a Tutores.
+
 ## [0.17.2] - 2026-07-31
 
 ### Corregido

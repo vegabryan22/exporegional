@@ -860,6 +860,15 @@ Reporte operativo:
 - altas, cambios, eliminaciones y cargas de foto recalculan el indicador y el estado logístico en la misma transacción
 - el arranque reconcilia los proyectos históricos antes de evaluar si su logística está completa
 
+### Tutores
+
+- rutas: `/admin/tutores` y `/admin/tutores/reporte/excel`
+- permiso independiente: `tutors`, heredado automáticamente cuando una matriz histórica contiene `projects`
+- agrupación operativa: cédula, correo normalizado y nombre como último recurso
+- la ficha agrega proyectos, estudiantes, secciones, categorías, logística y requerimientos sin duplicar datos
+- `update_advisor` aplica cambios a todos los proyectos asociados y admite una unificación explícita
+- el reporte Excel presenta una fila por tutor y conserva el detalle de proyectos vinculados
+
 ## 7.3 Flujo de cierre administrativo
 
 1. Logística revisa documentación, formularios, fotografías, integrantes y asignación de jueces

@@ -1179,7 +1179,8 @@ def register_project():
             sorted({student["specialty"] for student in required_student_records if student["specialty"]})
         )
         advisor_identity = _normalize_identity(_draft_form_value(form_data, "advisor_identity"))
-        mentor_identity = _normalize_identity(_draft_form_value(form_data, "mentor_identity"))
+        mentor_has = (_draft_form_value(form_data, "mentor_has") or "").strip().lower()
+        mentor_identity = _normalize_identity(_draft_form_value(form_data, "mentor_identity")) if mentor_has == "si" else ""
         tutor_mode = (_draft_form_value(form_data, "tutor_mode") or "existing").strip().lower()
         selected_tutor_id = request.form.get("tutor_id", type=int)
         selected_tutor = Tutor.query.filter_by(id=selected_tutor_id, is_active=True).first() if selected_tutor_id else None
@@ -1227,13 +1228,13 @@ def register_project():
             advisor_specialty=advisor_values["specialty"],
             advisor_email=advisor_values["email"],
             advisor_phone=advisor_values["phone"],
-            mentor_name=(_draft_form_value(form_data, "mentor_name") or "").strip(),
+            mentor_name=(_draft_form_value(form_data, "mentor_name") or "").strip() if mentor_has == "si" else "",
             mentor_identity=mentor_identity,
-            mentor_birth_date=_parse_date(_draft_form_value(form_data, "mentor_birth_date")),
-            mentor_gender=_normalize_person_gender(form_data, "mentor_gender"),
-            mentor_specialty=(_draft_form_value(form_data, "mentor_specialty") or "").strip(),
-            mentor_email=(_draft_form_value(form_data, "mentor_email") or "").strip().lower(),
-            mentor_phone=_normalize_phone(_draft_form_value(form_data, "mentor_phone")),
+            mentor_birth_date=_parse_date(_draft_form_value(form_data, "mentor_birth_date")) if mentor_has == "si" else None,
+            mentor_gender=_normalize_person_gender(form_data, "mentor_gender") if mentor_has == "si" else "",
+            mentor_specialty=(_draft_form_value(form_data, "mentor_specialty") or "").strip() if mentor_has == "si" else "",
+            mentor_email=(_draft_form_value(form_data, "mentor_email") or "").strip().lower() if mentor_has == "si" else "",
+            mentor_phone=_normalize_phone(_draft_form_value(form_data, "mentor_phone")) if mentor_has == "si" else "",
             category=category,
             description=(_draft_form_value(form_data, "description") or "Proyecto registrado mediante ExpoTEC-1.").strip(),
             required_resources="; ".join(
@@ -1366,8 +1367,11 @@ def register_project():
             project.mentor_phone,
             project.mentor_email,
         ]
-        if any(mentor_values) and not all(mentor_values):
-            flash("Si agregas persona mentora, completa todos sus datos.", "error")
+        if mentor_has not in {"si", "no"}:
+            flash("Indica si el proyecto cuenta con una persona mentora.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if mentor_has == "si" and not all(mentor_values):
+            flash("Completa todos los datos de la persona mentora.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
         if project.mentor_phone:
             mentor_phone_error = _phone_error(project.mentor_phone, "El telefono de la persona mentora")

@@ -7440,6 +7440,37 @@ dialog.maintenance-dialog::backdrop {
 .tutor-new-panel[hidden],
 .tutor-existing-panel[hidden] { display: none !important; }
 
+.mentor-question {
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid #efc4cc;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.66);
+}
+
+.mentor-fields[hidden] { display: none !important; }
+
+.declaration-acceptance {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: fit-content;
+    margin-top: 0.55rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #efc4cc;
+    border-radius: 0.9rem;
+    background: #fff;
+    color: var(--navy);
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.declaration-acceptance input {
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: #b83d53;
+}
+
 .project-register-card-accent.confirm {
     --judge-accent: #b83d53;
 }

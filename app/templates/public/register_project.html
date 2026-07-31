@@ -371,9 +371,15 @@
             <section class="judge-register-band judge-register-card-accent project-register-card-accent confirm stage-block stage-6">
                 <span class="judge-step">6</span>
                 <p class="project-section-kicker">Cierre de inscripción</p>
-                <h3>Mentor y declaración</h3>
-                <p>Si el proyecto cuenta con persona mentora externa o especialista, completa sus datos. Si no aplica, deja esta parte en blanco.</p>
-                <div class="form-grid inline-grid-2">
+                <h3>Mentoría y declaración</h3>
+                <div class="register-fieldset mentor-question">
+                    <span>¿El proyecto cuenta con una persona mentora externa o especialista? *</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="mentor_has" value="si" {% if form_data.get('mentor_has') == 'si' %}checked{% endif %} required><span>Sí</span></label>
+                        <label><input type="radio" name="mentor_has" value="no" {% if form_data.get('mentor_has', 'no') == 'no' %}checked{% endif %} required><span>No</span></label>
+                    </div>
+                </div>
+                <div class="form-grid inline-grid-2 mentor-fields" data-mentor-fields>
                     <label>Nombre completo de la persona mentora<input type="text" name="mentor_name" value="{{ form_data.get('mentor_name', '') }}"></label>
                     <label>Cédula / documento de la persona mentora
                         <input type="text" name="mentor_identity" value="{{ form_data.get('mentor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input>
@@ -394,10 +400,7 @@
                 <div class="form-grid inline-grid-1">
                     <div class="register-fieldset">
                         <span>Declaración *</span>
-                        <div class="radio-card-group radio-card-group-wide">
-                            <label><input type="radio" name="declaration" value="si" {% if form_data.get('declaration') == 'si' %}checked{% endif %} required><span>Acepto la declaración</span></label>
-                            <label><input type="radio" name="declaration" value="no" {% if form_data.get('declaration') == 'no' %}checked{% endif %} required><span>No acepto</span></label>
-                        </div>
+                        <label class="declaration-acceptance"><input type="checkbox" name="declaration" value="si" {% if form_data.get('declaration') == 'si' %}checked{% endif %} required><span>Acepto la declaración para completar la inscripción</span></label>
                     </div>
                 </div>
             </section>
@@ -426,6 +429,8 @@
     var tutorExistingPanel = document.querySelector('[data-tutor-panel="existing"]');
     var tutorNewPanel = document.querySelector('[data-tutor-panel="new"]');
     var tutorExistingInput = document.querySelector('[data-tutor-existing-input]');
+    var mentorModeInputs = Array.prototype.slice.call(document.querySelectorAll('input[name="mentor_has"]'));
+    var mentorFields = document.querySelector('[data-mentor-fields]');
 
     function radioValue(name) {
         var selected = document.querySelector('input[name="' + name + '"]:checked');
@@ -510,6 +515,15 @@
         });
     }
 
+    function toggleMentorFields() {
+        var enabled = radioValue('mentor_has') === 'si';
+        mentorFields.hidden = !enabled;
+        mentorFields.querySelectorAll('input').forEach(function (field) {
+            field.disabled = !enabled;
+            field.required = enabled;
+        });
+    }
+
     function bindRequirementItem(row) {
         var removeButton = row.querySelector('.remove-requirement-item');
         if (!removeButton) {
@@ -552,6 +566,9 @@
     tutorModeInputs.forEach(function (input) {
         input.addEventListener('change', toggleTutorMode);
     });
+    mentorModeInputs.forEach(function (input) {
+        input.addEventListener('change', toggleMentorFields);
+    });
     identityInputs.forEach(function (input) {
         input.addEventListener('input', function () {
             input.value = normalizeIdentity(input.value).slice(0, 12);
@@ -570,8 +587,8 @@
     toggleStudentSections();
     toggleOtros();
     toggleTutorMode();
+    toggleMentorFields();
     validateIdentityInputs();
 })();
 </script>
 {% endblock %}
-

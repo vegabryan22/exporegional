@@ -96,6 +96,15 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual("tutors", Tutor.__tablename__)
         self.assertIn("toggle_tutor", ACTION_MODULE_MAP)
 
+    def test_registration_only_requests_mentor_data_when_applicable(self):
+        template = Path("app/templates/public/register_project.html").read_text(encoding="utf-8")
+
+        self.assertIn('name="mentor_has" value="si"', template)
+        self.assertIn('data-mentor-fields', template)
+        self.assertIn("toggleMentorFields", template)
+        self.assertIn('type="checkbox" name="declaration" value="si"', template)
+        self.assertNotIn("No acepto", template)
+
     def test_member_photos_are_validated_automatically(self):
         project = Project(logistics_photos_ok=False)
         project.members = [

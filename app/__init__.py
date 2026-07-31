@@ -22,6 +22,23 @@ DEFAULT_DEPARTMENT_PERMISSIONS = {
 }
 PERMISSIONS_SETTING_KEY = "permissions_department_modules"
 LOCAL_TIMEZONE = ZoneInfo("America/Costa_Rica")
+NATURAL_TITLE_LOWER_WORDS = {"a", "al", "de", "del", "e", "el", "la", "las", "los", "o", "para", "por", "y"}
+
+
+def natural_title(value: str | None) -> str:
+    parts = re.split(r"(\s+)", (value or "").strip().lower())
+    result = []
+    word_index = 0
+    for part in parts:
+        if not part or part.isspace():
+            result.append(part)
+            continue
+        normalized = "-".join(piece.capitalize() for piece in part.split("-"))
+        if word_index > 0 and part in NATURAL_TITLE_LOWER_WORDS:
+            normalized = part
+        result.append(normalized)
+        word_index += 1
+    return "".join(result)
 
 
 def _run_optional_schema_statement(connection, statement: str, label: str) -> bool:
@@ -78,6 +95,8 @@ def _to_local_datetime(value):
 
 
 def register_template_filters(app):
+    app.add_template_filter(natural_title, "natural_title")
+
     @app.template_filter("local_datetime")
     def local_datetime(value, fmt="%Y-%m-%d %H:%M"):
         local_value = _to_local_datetime(value)

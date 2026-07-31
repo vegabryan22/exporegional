@@ -4,7 +4,7 @@ from pathlib import Path
 
 from sqlalchemy import create_engine, text
 
-from app import _reconcile_existing_logistics_statuses
+from app import _reconcile_existing_logistics_statuses, natural_title
 from app.controllers.admin_controller import (
     ACTION_MODULE_MAP,
     ADMIN_DEPARTMENT_MODULE_ACCESS,
@@ -135,6 +135,11 @@ class RequirementsSeparationTest(unittest.TestCase):
     def test_person_names_are_exported_with_natural_capitalization(self):
         self.assertEqual("María José de la Cruz", _person_name_title("MARÍA JOSÉ DE LA CRUZ"))
         self.assertEqual("Ana-María del Río", _person_name_title("ana-maría DEL RÍO"))
+        self.assertEqual("Andrés Delgado Zúñiga", natural_title("ANDRÉS DELGADO ZÚÑIGA"))
+        self.assertEqual(
+            "Configuración y Soporte a Redes de Comunicación y Sistemas Operativos",
+            natural_title("CONFIGURACIÓN Y SOPORTE A REDES DE COMUNICACIÓN Y SISTEMAS OPERATIVOS"),
+        )
 
     def test_projects_report_contains_projects_and_members(self):
         project = Project(

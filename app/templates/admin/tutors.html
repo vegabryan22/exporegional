@@ -43,7 +43,7 @@
                 <div class="tutor-avatar">{{ tutor.name[:1] }}</div>
                 <div>
                     <h4>{{ tutor.name }}</h4>
-                    <p>{{ tutor.specialty or 'Especialidad no indicada' }}</p>
+                    <p>{{ tutor.specialty | natural_title if tutor.specialty else 'Especialidad no indicada' }}</p>
                 </div>
                 <span class="tag {{ 'off' if not tutor.is_active else ('warning' if tutor.pending or tutor.requirements_pending else 'ok') }}">
                     {{ 'No disponible' if not tutor.is_active else ((tutor.pending + tutor.requirements_pending)|string ~ ' pendientes') }}

@@ -342,7 +342,7 @@
                         <select name="tutor_id" data-tutor-existing-input>
                             <option value="">Selecciona un tutor</option>
                             {% for tutor in tutors %}
-                            <option value="{{ tutor.id }}" {% if form_data.get('tutor_id')|string == tutor.id|string %}selected{% endif %}>{{ tutor.full_name }}{% if tutor.specialty %} — {{ tutor.specialty }}{% endif %}</option>
+                            <option value="{{ tutor.id }}" {% if form_data.get('tutor_id')|string == tutor.id|string %}selected{% endif %}>{{ tutor.full_name | natural_title }}{% if tutor.specialty %} — {{ tutor.specialty | natural_title }}{% endif %}</option>
                             {% endfor %}
                         </select>
                     </label>

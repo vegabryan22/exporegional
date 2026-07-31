@@ -23,6 +23,7 @@ from app.models.assignment import Assignment
 from app.models.judge import Judge
 from app.models.project import Project
 from app.models.project_member import ProjectMember
+from app.models.tutor import Tutor
 
 
 class RequirementsSeparationTest(unittest.TestCase):
@@ -81,6 +82,19 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("tutors-filter-text", template)
         self.assertIn("tutors_report_excel", template)
         self.assertIn('name="action" value="update_advisor"', template)
+        self.assertIn('name="action" value="toggle_tutor"', template)
+
+    def test_registration_uses_private_central_tutor_catalog(self):
+        template = Path("app/templates/public/register_project.html").read_text(encoding="utf-8")
+
+        self.assertIn('name="tutor_mode" value="existing"', template)
+        self.assertIn('name="tutor_id"', template)
+        self.assertIn("Registrar otro tutor", template)
+        self.assertIn("La información privada permanece protegida", template)
+        self.assertNotIn("tutor.identity_number", template)
+        self.assertNotIn("tutor.birth_date", template)
+        self.assertEqual("tutors", Tutor.__tablename__)
+        self.assertIn("toggle_tutor", ACTION_MODULE_MAP)
 
     def test_member_photos_are_validated_automatically(self):
         project = Project(logistics_photos_ok=False)

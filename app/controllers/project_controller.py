@@ -26,6 +26,7 @@ from app.models.specialty import Specialty
 from app.models.system_setting import SystemSetting
 from app.models.thematic_axis import ThematicAxis
 from app.models.judge import Judge
+from app.models.tutor import Tutor
 from app.services.audit_service import log_event
 from app.services.assignment_service import reassign_absent_judge_assignments
 from app.services.mail_service import send_email, smtp_is_configured
@@ -1035,6 +1036,7 @@ def _current_form_context(form_data):
     specialties = Specialty.query.filter_by(is_active=True).order_by(Specialty.sort_order.asc()).all()
     thematic_axes = ThematicAxis.query.filter_by(is_active=True).order_by(ThematicAxis.sort_order.asc(), ThematicAxis.name.asc()).all()
     project_types = ProjectType.query.filter_by(is_active=True).order_by(ProjectType.sort_order.asc(), ProjectType.name.asc()).all()
+    tutors = Tutor.query.filter_by(is_active=True).order_by(Tutor.full_name.asc()).all()
     req_values = form_data.getlist("requirements") if hasattr(form_data, "getlist") else _draft_form_list(form_data, "requirements")
     requirement_items = _build_requirement_items(form_data)
     if not requirement_items:
@@ -1060,6 +1062,7 @@ def _current_form_context(form_data):
         "specialties": specialties,
         "thematic_axes": thematic_axes,
         "project_types": project_types,
+        "tutors": tutors,
         "requirements_options": REQUIREMENTS_OPTIONS,
         "active_campaign": active_campaign,
     }
@@ -1177,6 +1180,28 @@ def register_project():
         )
         advisor_identity = _normalize_identity(_draft_form_value(form_data, "advisor_identity"))
         mentor_identity = _normalize_identity(_draft_form_value(form_data, "mentor_identity"))
+        tutor_mode = (_draft_form_value(form_data, "tutor_mode") or "existing").strip().lower()
+        selected_tutor_id = request.form.get("tutor_id", type=int)
+        selected_tutor = Tutor.query.filter_by(id=selected_tutor_id, is_active=True).first() if selected_tutor_id else None
+        if tutor_mode == "existing" and selected_tutor:
+            advisor_identity = selected_tutor.identity_number
+            advisor_values = {
+                "name": selected_tutor.full_name,
+                "birth_date": selected_tutor.birth_date,
+                "gender": selected_tutor.gender,
+                "specialty": selected_tutor.specialty,
+                "email": selected_tutor.email,
+                "phone": selected_tutor.phone,
+            }
+        else:
+            advisor_values = {
+                "name": (_draft_form_value(form_data, "advisor_name") or "").strip(),
+                "birth_date": _parse_date(_draft_form_value(form_data, "advisor_birth_date")),
+                "gender": _normalize_person_gender(form_data, "advisor_gender"),
+                "specialty": (_draft_form_value(form_data, "advisor_specialty") or "").strip(),
+                "email": (_draft_form_value(form_data, "advisor_email") or "").strip().lower(),
+                "phone": _normalize_phone(_draft_form_value(form_data, "advisor_phone")),
+            }
 
         project = Project(
             registration_date=registration_date,
@@ -1194,13 +1219,14 @@ def register_project():
             project_type_id=project_type_id,
             workshop_id=None,
             campaign_id=active_campaign.id,
-            advisor_name=(_draft_form_value(form_data, "advisor_name") or "").strip(),
+            tutor_id=selected_tutor.id if selected_tutor else None,
+            advisor_name=advisor_values["name"],
             advisor_identity=advisor_identity,
-            advisor_birth_date=_parse_date(_draft_form_value(form_data, "advisor_birth_date")),
-            advisor_gender=_normalize_person_gender(form_data, "advisor_gender"),
-            advisor_specialty=(_draft_form_value(form_data, "advisor_specialty") or "").strip(),
-            advisor_email=(_draft_form_value(form_data, "advisor_email") or "").strip().lower(),
-            advisor_phone=_normalize_phone(_draft_form_value(form_data, "advisor_phone")),
+            advisor_birth_date=advisor_values["birth_date"],
+            advisor_gender=advisor_values["gender"],
+            advisor_specialty=advisor_values["specialty"],
+            advisor_email=advisor_values["email"],
+            advisor_phone=advisor_values["phone"],
             mentor_name=(_draft_form_value(form_data, "mentor_name") or "").strip(),
             mentor_identity=mentor_identity,
             mentor_birth_date=_parse_date(_draft_form_value(form_data, "mentor_birth_date")),
@@ -1277,6 +1303,10 @@ def register_project():
             flash(students_error, "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
+        if tutor_mode == "existing" and not selected_tutor:
+            flash("Selecciona un docente tutor registrado o elige registrar uno nuevo.", "error")
+            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+
         if not all([
             project.advisor_name,
             project.advisor_identity,
@@ -1300,6 +1330,28 @@ def register_project():
         if advisor_email_error:
             flash(advisor_email_error, "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        if tutor_mode != "existing":
+            existing_tutor = Tutor.query.filter_by(identity_number=project.advisor_identity).first()
+            if existing_tutor:
+                selected_tutor = existing_tutor
+                project.tutor = existing_tutor
+                project.advisor_name = existing_tutor.full_name
+                project.advisor_birth_date = existing_tutor.birth_date
+                project.advisor_gender = existing_tutor.gender
+                project.advisor_specialty = existing_tutor.specialty
+                project.advisor_email = existing_tutor.email
+                project.advisor_phone = existing_tutor.phone
+            else:
+                selected_tutor = Tutor(
+                    full_name=project.advisor_name,
+                    identity_number=project.advisor_identity,
+                    birth_date=project.advisor_birth_date,
+                    gender=project.advisor_gender,
+                    specialty=project.advisor_specialty,
+                    email=project.advisor_email,
+                    phone=project.advisor_phone,
+                )
+                project.tutor = selected_tutor
         if project.mentor_identity:
             mentor_identity_error = _identity_error(project.mentor_identity, "La cedula/documento de la persona mentora")
             if mentor_identity_error:

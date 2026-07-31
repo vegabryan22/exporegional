@@ -18,6 +18,7 @@ from app.models.specialty import Specialty
 from app.models.system_setting import SystemSetting
 from app.models.system_audit_log import SystemAuditLog
 from app.models.thematic_axis import ThematicAxis
+from app.models.tutor import Tutor
 from app.models.workshop import Workshop
 
 __all__ = [
@@ -38,6 +39,7 @@ __all__ = [
     "SystemSetting",
     "SystemAuditLog",
     "ThematicAxis",
+    "Tutor",
     "Assignment",
     "Evaluation",
     "EvaluationScore",

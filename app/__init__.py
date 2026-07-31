@@ -1,4 +1,5 @@
 import json
+import re
 import time
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -104,12 +105,64 @@ def _initialize_database(max_attempts: int = 5, retry_delay_seconds: float = 1.5
         try:
             db.create_all()
             ensure_schema_updates()
+            _reconcile_tutor_catalog()
             bootstrap_defaults(db)
             return
         except OperationalError as error:
             if not _is_retryable_schema_error(error) or attempt == max_attempts:
                 raise
             time.sleep(retry_delay_seconds)
+
+
+def _reconcile_tutor_catalog():
+    """Create one tutor profile per identity and link historical projects."""
+    from app.models.project import Project
+    from app.models.tutor import Tutor
+
+    changed = False
+    tutors_by_identity = {
+        re.sub(r"[\s-]+", "", (tutor.identity_number or "").strip().upper()): tutor
+        for tutor in Tutor.query.all()
+        if tutor.identity_number
+    }
+    projects = Project.query.filter(Project.advisor_identity.isnot(None)).order_by(Project.id.asc()).all()
+    for project in projects:
+        identity = re.sub(r"[\s-]+", "", (project.advisor_identity or "").strip().upper())
+        if not identity:
+            continue
+        tutor = tutors_by_identity.get(identity)
+        if tutor is None:
+            tutor = Tutor(
+                full_name=(project.advisor_name or "Tutor sin nombre").strip(),
+                identity_number=identity,
+                birth_date=project.advisor_birth_date,
+                gender=project.advisor_gender,
+                specialty=project.advisor_specialty,
+                email=(project.advisor_email or "").strip().lower() or None,
+                phone=(project.advisor_phone or "").strip() or None,
+            )
+            db.session.add(tutor)
+            db.session.flush()
+            tutors_by_identity[identity] = tutor
+            changed = True
+        else:
+            for attr, value in (
+                ("full_name", project.advisor_name),
+                ("birth_date", project.advisor_birth_date),
+                ("gender", project.advisor_gender),
+                ("specialty", project.advisor_specialty),
+                ("email", (project.advisor_email or "").strip().lower() or None),
+                ("phone", project.advisor_phone),
+            ):
+                if not getattr(tutor, attr) and value:
+                    setattr(tutor, attr, value)
+                    changed = True
+        if project.tutor_id != tutor.id or project.advisor_identity != identity:
+            project.tutor_id = tutor.id
+            project.advisor_identity = identity
+            changed = True
+    if changed:
+        db.session.commit()
 
 
 def register_cli(app):
@@ -680,6 +733,18 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN project_document_path VARCHAR(300) NULL"))
         if "campaign_id" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN campaign_id INT NULL"))
+        if "tutor_id" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN tutor_id INT NULL"))
+            _run_optional_schema_statement(
+                connection,
+                "CREATE INDEX ix_projects_tutor_id ON projects (tutor_id)",
+                "indice projects.tutor_id",
+            )
+            _run_optional_schema_statement(
+                connection,
+                "ALTER TABLE projects ADD CONSTRAINT fk_projects_tutor FOREIGN KEY (tutor_id) REFERENCES tutors (id) ON DELETE SET NULL",
+                "llave foranea projects.tutor_id",
+            )
         if "project_logo_path" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN project_logo_path VARCHAR(300) NULL"))
         if "is_active" not in project_columns:

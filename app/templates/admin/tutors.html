@@ -28,6 +28,7 @@
                 <option value="">Todos</option>
                 <option value="pending">Con pendientes</option>
                 <option value="complete">Sin pendientes</option>
+                <option value="inactive">No disponible para inscripciones</option>
             </select>
         </label>
         <button type="button" class="ghost-btn" id="tutors-filter-clear">Limpiar</button>
@@ -37,15 +38,15 @@
     <div class="tutors-grid" id="tutors-grid">
         {% for tutor in tutors %}
         {% set tutor_search = (tutor.name ~ ' ' ~ tutor.identity ~ ' ' ~ tutor.email ~ ' ' ~ (tutor.projects | map(attribute='title') | join(' '))) | lower %}
-        <article class="tutor-card" data-tutor-card data-search="{{ tutor_search }}" data-status="{{ 'pending' if tutor.pending or tutor.requirements_pending else 'complete' }}">
+        <article class="tutor-card" data-tutor-card data-search="{{ tutor_search }}" data-status="{{ 'inactive' if not tutor.is_active else ('pending' if tutor.pending or tutor.requirements_pending else 'complete') }}">
             <div class="tutor-card-head">
                 <div class="tutor-avatar">{{ tutor.name[:1] }}</div>
                 <div>
                     <h4>{{ tutor.name }}</h4>
                     <p>{{ tutor.specialty or 'Especialidad no indicada' }}</p>
                 </div>
-                <span class="tag {{ 'warning' if tutor.pending or tutor.requirements_pending else 'ok' }}">
-                    {{ tutor.pending + tutor.requirements_pending }} pendientes
+                <span class="tag {{ 'off' if not tutor.is_active else ('warning' if tutor.pending or tutor.requirements_pending else 'ok') }}">
+                    {{ 'No disponible' if not tutor.is_active else ((tutor.pending + tutor.requirements_pending)|string ~ ' pendientes') }}
                 </span>
             </div>
 
@@ -78,6 +79,12 @@
 
             <div class="tutor-card-actions">
                 <button type="button" class="outline-btn" data-dialog-open="tutor-edit-{{ loop.index }}">Editar información</button>
+                <form method="post" action="{{ action_url }}" class="inline-form">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="action" value="toggle_tutor">
+                    <input type="hidden" name="tutor_id" value="{{ tutor.key[6:] if tutor.key.startswith('tutor:') else '' }}">
+                    <button type="submit" class="ghost-btn" {% if not tutor.key.startswith('tutor:') %}disabled title="Perfil pendiente de migrar al catálogo"{% endif %}>{{ 'Habilitar en inscripción' if not tutor.is_active else 'Ocultar de inscripción' }}</button>
+                </form>
             </div>
         </article>
 

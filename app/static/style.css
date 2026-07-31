@@ -2899,6 +2899,9 @@ th {
 }
 
 @media (max-width: 760px) {
+    .tutor-mode-picker {
+        grid-template-columns: 1fr;
+    }
     .logistics-upload-card {
         grid-template-columns: 1fr;
     }
@@ -7381,6 +7384,61 @@ dialog.maintenance-dialog::backdrop {
 .project-register-card-accent.advisor {
     --judge-accent: #0f6f95;
 }
+
+.tutor-mode-picker {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin: 1rem 0;
+}
+
+.tutor-mode-picker label { cursor: pointer; }
+
+.tutor-mode-picker input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.tutor-mode-picker span {
+    display: flex;
+    min-height: 3.25rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid #bdd8df;
+    border-radius: 0.9rem;
+    background: #fff;
+    color: var(--navy);
+    font-weight: 800;
+    text-align: center;
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tutor-mode-picker input:checked + span {
+    border-color: #168d91;
+    background: #e6f7f5;
+    box-shadow: 0 0 0 3px rgba(22, 141, 145, 0.12);
+}
+
+.tutor-existing-panel {
+    padding: 1rem;
+    border: 1px solid #c7e0e3;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.tutor-existing-panel label,
+.tutor-existing-panel select { width: 100%; }
+
+.tutor-privacy-note {
+    margin: 0.65rem 0 0;
+    color: #557087;
+    font-size: 0.88rem;
+}
+
+.tutor-new-panel[hidden],
+.tutor-existing-panel[hidden] { display: none !important; }
 
 .project-register-card-accent.confirm {
     --judge-accent: #b83d53;

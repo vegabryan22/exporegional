@@ -42,6 +42,7 @@ from app.models.specialty import Specialty
 from app.models.system_audit_log import SystemAuditLog
 from app.models.system_setting import SystemSetting
 from app.models.thematic_axis import ThematicAxis
+from app.models.tutor import Tutor
 from app.models.workshop import Workshop
 from app.services.audit_service import log_event
 from app.services.assignment_service import balance_assignments_to_judge, reassign_absent_judge_assignments
@@ -223,6 +224,7 @@ ACTION_MODULE_MAP = {
     "balance_judge_assignments": "judge_pool",
     "reassign_absent_judges": "judge_pool",
     "update_advisor": "tutors",
+    "toggle_tutor": "tutors",
     "update_project": "projects",
     "update_project_logistics": "projects",
     "update_project_requirements": "requirements",
@@ -3985,6 +3987,8 @@ def _handle_action(action: str):
             flash("Clave de tutor no especificada.", "error")
         else:
             def _projects_for_key(key):
+                if key.startswith("tutor:") and key[6:].isdigit():
+                    return Project.query.filter_by(tutor_id=int(key[6:])).all()
                 return Project.query.filter(
                     db.or_(
                         Project.advisor_identity == key,
@@ -3998,19 +4002,42 @@ def _handle_action(action: str):
                 ).all()
 
             affected = _projects_for_key(old_key)
+            source_tutor = Tutor.query.get(int(old_key[6:])) if old_key.startswith("tutor:") and old_key[6:].isdigit() else None
             if merge_key and merge_key != old_key:
                 affected += _projects_for_key(merge_key)
+            target_tutor = Tutor.query.get(int(merge_key[6:])) if merge_key.startswith("tutor:") and merge_key[6:].isdigit() else None
+            catalog_tutor = target_tutor or source_tutor
             affected = list({project.id: project for project in affected}.values())
+            if catalog_tutor and not target_tutor:
+                catalog_tutor.full_name = new_name or catalog_tutor.full_name
+                catalog_tutor.identity_number = new_identity or catalog_tutor.identity_number
+                catalog_tutor.email = new_email or None
+                catalog_tutor.phone = new_phone or None
+                catalog_tutor.specialty = new_specialty or None
             for p in affected:
-                p.advisor_name = new_name or p.advisor_name
-                p.advisor_identity = new_identity
-                p.advisor_email = new_email
-                if new_phone:
-                    p.advisor_phone = new_phone
-                if new_specialty:
-                    p.advisor_specialty = new_specialty
+                p.tutor = catalog_tutor or p.tutor
+                p.advisor_name = catalog_tutor.full_name if catalog_tutor else (new_name or p.advisor_name)
+                p.advisor_identity = catalog_tutor.identity_number if catalog_tutor else new_identity
+                p.advisor_email = catalog_tutor.email if catalog_tutor else new_email
+                p.advisor_phone = catalog_tutor.phone if catalog_tutor else (new_phone or p.advisor_phone)
+                p.advisor_specialty = catalog_tutor.specialty if catalog_tutor else (new_specialty or p.advisor_specialty)
+            if source_tutor and target_tutor and source_tutor.id != target_tutor.id:
+                db.session.delete(source_tutor)
             db.session.commit()
             flash(f"Tutor actualizado en {len(affected)} proyecto(s).", "ok")
+
+    elif action == "toggle_tutor":
+        tutor_id = request.form.get("tutor_id", type=int)
+        tutor = Tutor.query.get(tutor_id) if tutor_id else None
+        if not tutor:
+            flash("Tutor no encontrado.", "error")
+        else:
+            tutor.is_active = not tutor.is_active
+            db.session.commit()
+            flash(
+                f"{tutor.full_name} quedó {'disponible' if tutor.is_active else 'oculto'} para nuevas inscripciones.",
+                "ok",
+            )
 
     elif action == "install_package":
         if not current_user.is_superadmin:
@@ -7524,6 +7551,7 @@ def _build_advisor_stats(projects):
             "steam": 0, "emprendimiento": 0, "total": 0, "active": 0, "inactive": 0,
             "completed": 0, "pending": 0, "requirements_pending": 0, "students": 0,
             "sections": set(), "projects": [],
+            "is_active": True,
         }
     )
     for p in projects:
@@ -7535,7 +7563,10 @@ def _build_advisor_stats(projects):
             )
         ):
             continue
+        tutor_id = getattr(p, "tutor_id", None)
         key = (
+            f"tutor:{tutor_id}" if tutor_id else None
+        ) or (
             (p.advisor_identity or "").strip()
             or (p.advisor_email or "").strip().lower()
             or (p.advisor_name or "").strip().casefold()
@@ -7549,6 +7580,8 @@ def _build_advisor_stats(projects):
         b["identity"] = b["identity"] or p.advisor_identity or ""
         b["phone"] = b["phone"] or p.advisor_phone or ""
         b["specialty"] = b["specialty"] or p.advisor_specialty or ""
+        if getattr(p, "tutor", None) is not None:
+            b["is_active"] = bool(p.tutor.is_active)
         cat = (p.category or "").lower()
         if "steam" in cat:
             b["steam"] += 1

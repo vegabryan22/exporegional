@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.1] - 2026-07-31
+
+### Corregido
+
+- El acceso al reporte Excel de proyectos ahora usa una barra compacta y un icono de tamaño controlado.
+- Se eliminó el botón desproporcionado que ocupaba gran parte de la página de Proyectos.
+
 ## [0.17.0] - 2026-07-31
 
 ### Añadido

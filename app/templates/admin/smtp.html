@@ -3,71 +3,74 @@
 <section class="card admin-section maintenance-page">
     <div class="maintenance-banner">
         <div>
-            <p class="maintenance-kicker">Comunicacion</p>
-            <h3>Configuración SMTP</h3>
-            <p>Administra servidor de correo para credenciales y notificaciones.</p>
+            <p class="maintenance-kicker">Comunicaci&oacute;n</p>
+            <h3>Configuraci&oacute;n de correo</h3>
+            <p>Env&iacute;a recordatorios y notificaciones desde Gmail o desde otro servidor de correo.</p>
         </div>
         <div class="maintenance-tools">
             <span class="tag {{ 'ok' if smtp_configured else 'off' }}">{{ 'Configurado' if smtp_configured else 'No configurado' }}</span>
-            <button type="button" data-dialog-open="smtp-config-dialog">Editar SMTP</button>
+            <button type="button" data-dialog-open="smtp-config-dialog">{{ 'Editar Gmail' if smtp_settings.provider == 'gmail' else 'Configurar correo' }}</button>
             <button type="button" class="secondary-btn" data-dialog-open="smtp-test-dialog">Enviar prueba</button>
         </div>
     </div>
 
     <div class="settings-summary-grid smtp-summary-grid">
-        <article>
-            <span>Host</span>
-            <strong>{{ smtp_settings.host or 'N/D' }}</strong>
-        </article>
-        <article>
-            <span>Puerto</span>
-            <strong>{{ smtp_settings.port }}</strong>
-        </article>
-        <article>
-            <span>Usuario</span>
-            <strong>{{ smtp_settings.username or 'N/D' }}</strong>
-        </article>
-        <article>
-            <span>Remitente</span>
-            <strong>{{ smtp_settings.from_email or 'N/D' }}</strong>
-        </article>
-        <article class="{{ 'ok' if smtp_settings.use_tls else 'warn' }}">
-            <span>TLS</span>
-            <strong>{{ 'Si' if smtp_settings.use_tls else 'No' }}</strong>
-        </article>
-        <article class="{{ 'ok' if smtp_settings.use_ssl else 'warn' }}">
-            <span>SSL</span>
-            <strong>{{ 'Si' if smtp_settings.use_ssl else 'No' }}</strong>
-        </article>
+        <article class="{{ 'ok' if smtp_settings.provider == 'gmail' else '' }}"><span>Proveedor</span><strong>{{ 'Gmail' if smtp_settings.provider == 'gmail' else 'SMTP personalizado' }}</strong></article>
+        <article><span>Host</span><strong>{{ smtp_settings.host or 'N/D' }}</strong></article>
+        <article><span>Puerto</span><strong>{{ smtp_settings.port }}</strong></article>
+        <article><span>Usuario</span><strong>{{ smtp_settings.username or 'N/D' }}</strong></article>
+        <article><span>Remitente</span><strong>{{ smtp_settings.from_email or 'N/D' }}</strong></article>
+        <article class="{{ 'ok' if smtp_settings.use_tls else 'warn' }}"><span>TLS</span><strong>{{ 'S&iacute;' if smtp_settings.use_tls else 'No' }}</strong></article>
+    </div>
+
+    <div class="gmail-setup-guide">
+        <div class="gmail-setup-icon" aria-hidden="true">G</div>
+        <div>
+            <strong>Uso de una cuenta Gmail</strong>
+            <p>Active la verificaci&oacute;n en dos pasos en Google y genere una contrase&ntilde;a de aplicaci&oacute;n. La plataforma no utiliza ni solicita la contrase&ntilde;a habitual de Gmail.</p>
+        </div>
+        <a class="outline-btn" href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">Crear contrase&ntilde;a de aplicaci&oacute;n</a>
     </div>
 </section>
 
 <dialog id="smtp-config-dialog" class="maintenance-dialog">
     <div class="dialog-card">
-        <div class="dialog-head"><h4>Editar configuración SMTP</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
-        <form method="post" action="{{ action_url }}" class="compact-form">
+        <div class="dialog-head"><h4>Configurar env&iacute;o de correos</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+        <form method="post" action="{{ action_url }}" class="compact-form" id="smtp-config-form">
             <input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="save_smtp">
-            <div class="grid-3">
+            <label>Proveedor
+                <select name="smtp_provider" id="smtp-provider">
+                    <option value="gmail" {% if smtp_settings.provider == 'gmail' %}selected{% endif %}>Gmail / Google Workspace</option>
+                    <option value="custom" {% if smtp_settings.provider != 'gmail' %}selected{% endif %}>Otro servidor SMTP</option>
+                </select>
+            </label>
+            <div class="gmail-config-note" id="gmail-config-note">
+                <strong>Configuraci&oacute;n autom&aacute;tica:</strong> smtp.gmail.com, puerto 587 y TLS. Use su correo completo y la contrase&ntilde;a de aplicaci&oacute;n de 16 caracteres.
+            </div>
+            <div class="grid-2 smtp-custom-fields">
                 <label>Servidor SMTP<input type="text" name="smtp_host" value="{{ smtp_settings.host }}" required></label>
                 <label>Puerto<input type="number" name="smtp_port" value="{{ smtp_settings.port }}" required></label>
-                <label>Usuario<input type="text" name="smtp_username" value="{{ smtp_settings.username }}"></label>
             </div>
             <div class="grid-2">
+                <label><span id="smtp-username-label">Usuario</span><input type="text" name="smtp_username" value="{{ smtp_settings.username }}" autocomplete="username" inputmode="email"></label>
                 <label>Correo remitente<input type="email" name="smtp_from_email" value="{{ smtp_settings.from_email }}" required></label>
-                <label>Password (vacio para mantener)<input type="password" name="smtp_password"></label>
             </div>
-            <div class="grid-2">
-                <label>Usar TLS<select name="smtp_use_tls"><option value="1" {% if smtp_settings.use_tls %}selected{% endif %}>Si</option><option value="0" {% if not smtp_settings.use_tls %}selected{% endif %}>No</option></select></label>
-                <label>Usar SSL<select name="smtp_use_ssl"><option value="1" {% if smtp_settings.use_ssl %}selected{% endif %}>Si</option><option value="0" {% if not smtp_settings.use_ssl %}selected{% endif %}>No</option></select></label>
+            <label><span id="smtp-password-label">Contrase&ntilde;a</span>
+                <input type="password" name="smtp_password" autocomplete="new-password" placeholder="{{ 'Guardada; deje vacío para mantenerla' if smtp_settings.has_password else '' }}">
+                <small>No se mostrar&aacute; ni se enviar&aacute; de vuelta al navegador.</small>
+            </label>
+            <div class="grid-2 smtp-custom-fields">
+                <label>Usar TLS<select name="smtp_use_tls"><option value="1" {% if smtp_settings.use_tls %}selected{% endif %}>S&iacute;</option><option value="0" {% if not smtp_settings.use_tls %}selected{% endif %}>No</option></select></label>
+                <label>Usar SSL<select name="smtp_use_ssl"><option value="1" {% if smtp_settings.use_ssl %}selected{% endif %}>S&iacute;</option><option value="0" {% if not smtp_settings.use_ssl %}selected{% endif %}>No</option></select></label>
             </div>
-            <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar SMTP</button></div>
+            <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar configuraci&oacute;n</button></div>
         </form>
     </div>
 </dialog>
 
 <dialog id="smtp-test-dialog" class="maintenance-dialog">
     <div class="dialog-card">
-        <div class="dialog-head"><h4>Correo de prueba SMTP</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+        <div class="dialog-head"><h4>Correo de prueba</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
         <form method="post" action="{{ action_url }}" class="compact-form">
             <input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="test_smtp">
             <label>Correo de destino<input type="email" name="smtp_test_email" required></label>
@@ -75,4 +78,35 @@
         </form>
     </div>
 </dialog>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var provider = document.getElementById('smtp-provider');
+    var customFields = document.querySelectorAll('.smtp-custom-fields');
+    var note = document.getElementById('gmail-config-note');
+    var usernameLabel = document.getElementById('smtp-username-label');
+    var passwordLabel = document.getElementById('smtp-password-label');
+    var username = document.querySelector('[name="smtp_username"]');
+    var fromEmail = document.querySelector('[name="smtp_from_email"]');
+    var host = document.querySelector('[name="smtp_host"]');
+    var port = document.querySelector('[name="smtp_port"]');
+
+    function syncProvider() {
+        var gmail = provider.value === 'gmail';
+        customFields.forEach(function (field) { field.hidden = gmail; });
+        note.hidden = !gmail;
+        usernameLabel.textContent = gmail ? 'Cuenta Gmail completa' : 'Usuario SMTP';
+        passwordLabel.textContent = gmail ? 'Contraseña de aplicación' : 'Contraseña SMTP';
+        username.required = gmail;
+        host.required = !gmail;
+        port.required = !gmail;
+        if (gmail && username.value) fromEmail.value = username.value;
+    }
+
+    provider.addEventListener('change', syncProvider);
+    username.addEventListener('input', function () {
+        if (provider.value === 'gmail') fromEmail.value = username.value;
+    });
+    syncProvider();
+});
+</script>
 {% endblock %}

@@ -13537,6 +13537,49 @@ body {
     flex-wrap: wrap;
 }
 
+.gmail-setup-guide {
+    display: grid;
+    grid-template-columns: auto minmax(240px, 1fr) auto;
+    gap: 0.9rem;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #d7e2ef;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fff, #f5f9fd);
+}
+
+.gmail-setup-guide p {
+    margin: 0.2rem 0 0;
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+.gmail-setup-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #fff0ef;
+    color: #c5221f;
+    font-size: 1.25rem;
+    font-weight: 900;
+}
+
+.gmail-config-note {
+    padding: 0.75rem 0.85rem;
+    border: 1px solid #b8d8eb;
+    border-radius: 10px;
+    background: #eef8fc;
+    color: var(--primary);
+    font-size: 0.86rem;
+}
+
+.gmail-config-note[hidden],
+.smtp-custom-fields[hidden] {
+    display: none;
+}
+
 .projects-reminder-link {
     display: inline-flex;
     align-items: center;
@@ -13874,6 +13917,16 @@ body {
 }
 
 @media (max-width: 640px) {
+    .gmail-setup-guide {
+        grid-template-columns: auto 1fr;
+    }
+
+    .gmail-setup-guide .outline-btn {
+        grid-column: 1 / -1;
+        justify-content: center;
+        width: 100%;
+    }
+
     .projects-header-actions,
     .projects-reminder-link {
         width: 100%;

@@ -1,6 +1,7 @@
 import json
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from sqlalchemy import create_engine, text
 
@@ -25,9 +26,38 @@ from app.models.judge import Judge
 from app.models.project import Project
 from app.models.project_member import ProjectMember
 from app.models.tutor import Tutor
+from app.services import mail_service
 
 
 class RequirementsSeparationTest(unittest.TestCase):
+
+    def test_gmail_requires_account_and_app_password(self):
+        values = {
+            "smtp_provider": "gmail",
+            "smtp_host": "smtp.gmail.com",
+            "smtp_port": "587",
+            "smtp_username": "expotec@example.com",
+            "smtp_password": "app-password",
+            "smtp_from_email": "expotec@example.com",
+            "smtp_use_tls": "1",
+            "smtp_use_ssl": "0",
+        }
+        with patch.object(
+            mail_service.SystemSetting,
+            "get_value",
+            side_effect=lambda key, default=None: values.get(key, default),
+        ):
+            self.assertTrue(mail_service.smtp_is_configured())
+            values["smtp_password"] = ""
+            self.assertFalse(mail_service.smtp_is_configured())
+
+    def test_smtp_page_offers_guided_gmail_setup(self):
+        template = Path("app/templates/admin/smtp.html").read_text(encoding="utf-8")
+
+        self.assertIn('value="gmail"', template)
+        self.assertIn("smtp.gmail.com", template)
+        self.assertIn("contrase&ntilde;a de aplicaci&oacute;n", template)
+        self.assertIn("myaccount.google.com/apppasswords", template)
     def test_tutor_statistics_centralize_projects_students_and_pending_work(self):
         complete = Project(
             id=31,

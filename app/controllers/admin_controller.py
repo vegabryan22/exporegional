@@ -6348,17 +6348,45 @@ def _handle_action(action: str):
             flash("Evaluacion eliminada.", "success")
 
     elif action == "save_smtp":
-        SystemSetting.set_value("smtp_host", request.form.get("smtp_host", "").strip())
-        SystemSetting.set_value("smtp_port", request.form.get("smtp_port", "587").strip() or "587")
-        SystemSetting.set_value("smtp_username", request.form.get("smtp_username", "").strip())
-        if request.form.get("smtp_password"):
-            SystemSetting.set_value("smtp_password", request.form.get("smtp_password", ""))
-        SystemSetting.set_value("smtp_from_email", request.form.get("smtp_from_email", "").strip())
-        SystemSetting.set_value("smtp_use_tls", "1" if _str_to_bool(request.form.get("smtp_use_tls")) else "0")
-        SystemSetting.set_value("smtp_use_ssl", "1" if _str_to_bool(request.form.get("smtp_use_ssl")) else "0")
-        log_event("admin.smtp.save", "smtp", detail="Configuracion SMTP actualizada")
-        db.session.commit()
-        flash("Configuracion SMTP actualizada.", "success")
+        provider = request.form.get("smtp_provider", "custom").strip().lower()
+        if provider not in {"gmail", "custom"}:
+            provider = "custom"
+        username = request.form.get("smtp_username", "").strip().lower()
+        from_email = request.form.get("smtp_from_email", "").strip().lower()
+        password = request.form.get("smtp_password", "").replace(" ", "")
+        current_password = SystemSetting.get_value("smtp_password", "") or ""
+        if provider == "gmail":
+            host = "smtp.gmail.com"
+            port = "587"
+            use_tls = "1"
+            use_ssl = "0"
+            from_email = username
+        else:
+            host = request.form.get("smtp_host", "").strip()
+            port = request.form.get("smtp_port", "587").strip() or "587"
+            use_tls = "1" if _str_to_bool(request.form.get("smtp_use_tls")) else "0"
+            use_ssl = "1" if _str_to_bool(request.form.get("smtp_use_ssl")) else "0"
+
+        email_pattern = r"[^\s@]+@[^\s@]+\.[^\s@]+"
+        if provider == "gmail" and not re.fullmatch(email_pattern, username):
+            flash("Ingrese la dirección completa de la cuenta Gmail.", "error")
+        elif provider == "gmail" and not (password or current_password):
+            flash("Ingrese una contraseña de aplicación de Google.", "error")
+        elif not host or not re.fullmatch(email_pattern, from_email):
+            flash("Revise el servidor y el correo remitente.", "error")
+        else:
+            SystemSetting.set_value("smtp_provider", provider)
+            SystemSetting.set_value("smtp_host", host)
+            SystemSetting.set_value("smtp_port", port)
+            SystemSetting.set_value("smtp_username", username)
+            if password:
+                SystemSetting.set_value("smtp_password", password)
+            SystemSetting.set_value("smtp_from_email", from_email)
+            SystemSetting.set_value("smtp_use_tls", use_tls)
+            SystemSetting.set_value("smtp_use_ssl", use_ssl)
+            log_event("admin.smtp.save", "smtp", detail=f"Configuración SMTP actualizada: proveedor={provider}")
+            db.session.commit()
+            flash("Cuenta Gmail configurada para envíos." if provider == "gmail" else "Configuración SMTP actualizada.", "success")
 
     elif action == "test_smtp":
         target_email = request.form.get("smtp_test_email", "").strip()
@@ -6829,7 +6857,7 @@ def _base_context(active_page: str, **kwargs):
         evaluation_schedule_settings = {"expo_evaluation_open_date": ""}
         pending_document_revisions = []
         pending_member_edit_requests = []
-        smtp_settings = {"host": "", "port": "587", "username": "", "from_email": "", "use_tls": True, "use_ssl": False}
+        smtp_settings = {"provider": "custom", "host": "", "port": "587", "username": "", "from_email": "", "use_tls": True, "use_ssl": False, "has_password": False}
         institution_settings = {
             "name": "CTP Roberto Gamboa Valverde",
             "address": "",
@@ -6934,12 +6962,14 @@ def _base_context(active_page: str, **kwargs):
         }
 
         smtp_settings = {
+            "provider": SystemSetting.get_value("smtp_provider", "custom"),
             "host": SystemSetting.get_value("smtp_host", ""),
             "port": SystemSetting.get_value("smtp_port", "587"),
             "username": SystemSetting.get_value("smtp_username", ""),
             "from_email": SystemSetting.get_value("smtp_from_email", ""),
             "use_tls": SystemSetting.get_value("smtp_use_tls", "1") == "1",
             "use_ssl": SystemSetting.get_value("smtp_use_ssl", "0") == "1",
+            "has_password": bool(SystemSetting.get_value("smtp_password", "")),
         }
         institution_settings = {
             "name": SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde"),

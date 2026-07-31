@@ -21,6 +21,7 @@ def _log_email(to_email: str, subject: str, ok: bool, error: str | None):
 
 def get_smtp_config():
     return {
+        "provider": SystemSetting.get_value("smtp_provider", "custom"),
         "host": SystemSetting.get_value("smtp_host", ""),
         "port": int(SystemSetting.get_value("smtp_port", "587") or 587),
         "username": SystemSetting.get_value("smtp_username", ""),
@@ -33,7 +34,10 @@ def get_smtp_config():
 
 def smtp_is_configured():
     config = get_smtp_config()
-    return bool(config["host"] and config["port"] and config["from_email"])
+    base_ready = bool(config["host"] and config["port"] and config["from_email"])
+    if config["provider"] == "gmail" or config["host"].strip().lower() == "smtp.gmail.com":
+        return base_ready and bool(config["username"] and config["password"])
+    return base_ready
 
 
 def send_email(to_email: str, subject: str, body: str, html_body: str | None = None):
@@ -62,8 +66,14 @@ def send_email(to_email: str, subject: str, body: str, html_body: str | None = N
                 server.login(config["username"], config["password"])
             server.send_message(message)
     except Exception as error:  # noqa: BLE001
-        _log_email(to_email, subject, ok=False, error=str(error))
-        return False, str(error)
+        error_text = str(error)
+        if config["provider"] == "gmail" and ("535" in error_text or "Username and Password not accepted" in error_text):
+            error_text = (
+                "Gmail rechazó las credenciales. Use el correo completo y una contraseña "
+                "de aplicación de Google, no la contraseña habitual de la cuenta."
+            )
+        _log_email(to_email, subject, ok=False, error=error_text)
+        return False, error_text
 
     _log_email(to_email, subject, ok=True, error=None)
     return True, None

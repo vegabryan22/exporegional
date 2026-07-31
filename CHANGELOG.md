@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.20.1] - 2026-07-31
+
+### Añadido
+
+- El centro de recordatorios permite configurar el correo institucional destinado a recibir los logos de los proyectos.
+- Los correos para estudiantes y tutores incluyen un enlace directo a esa dirección cuando el proyecto todavía no ha cargado su logo.
+
+### Corregido
+
+- Un logo ya cargado pero pendiente de validación continúa apareciendo como requisito logístico, pero el recordatorio no solicita enviarlo nuevamente.
+
 ## [0.20.0] - 2026-07-31
 
 ### Cambiado

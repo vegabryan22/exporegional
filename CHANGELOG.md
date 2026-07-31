@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.19.6] - 2026-07-31
+
+### Corregido
+
+- La cuadrícula de una columna de la declaración ya no es sobrescrita por la regla general de tres columnas de los paneles de registro.
+
 ## [0.19.5] - 2026-07-31
 
 ### Corregido

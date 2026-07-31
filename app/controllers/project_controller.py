@@ -7,7 +7,7 @@ from datetime import date, datetime
 
 from flask import current_app, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
@@ -75,6 +75,40 @@ def _normalize_identity(raw_value: str) -> str:
 
 def _normalize_phone(raw_value: str) -> str:
     return re.sub(r"\D+", "", raw_value or "")
+
+
+def _get_or_create_tutor_atomic(project: Project) -> Tutor:
+    """Resolve a tutor by identity in one MySQL statement, safe under concurrent registrations."""
+    result = db.session.execute(
+        text(
+            """
+            INSERT INTO tutors (
+                full_name, identity_number, birth_date, gender, specialty,
+                email, phone, is_active, created_at, updated_at
+            ) VALUES (
+                :full_name, :identity_number, :birth_date, :gender, :specialty,
+                :email, :phone, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            )
+            ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)
+            """
+        ),
+        {
+            "full_name": project.advisor_name,
+            "identity_number": project.advisor_identity,
+            "birth_date": project.advisor_birth_date,
+            "gender": project.advisor_gender,
+            "specialty": project.advisor_specialty,
+            "email": project.advisor_email,
+            "phone": project.advisor_phone,
+        },
+    )
+    tutor_id = result.lastrowid
+    tutor = db.session.get(Tutor, tutor_id) if tutor_id else None
+    if tutor is None:
+        tutor = Tutor.query.filter_by(identity_number=project.advisor_identity).first()
+    if tutor is None:
+        raise RuntimeError("No se pudo resolver el perfil del tutor.")
+    return tutor
 
 
 def _phone_error(phone: str, label: str) -> str | None:
@@ -1331,28 +1365,6 @@ def register_project():
         if advisor_email_error:
             flash(advisor_email_error, "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-        if tutor_mode != "existing":
-            existing_tutor = Tutor.query.filter_by(identity_number=project.advisor_identity).first()
-            if existing_tutor:
-                selected_tutor = existing_tutor
-                project.tutor = existing_tutor
-                project.advisor_name = existing_tutor.full_name
-                project.advisor_birth_date = existing_tutor.birth_date
-                project.advisor_gender = existing_tutor.gender
-                project.advisor_specialty = existing_tutor.specialty
-                project.advisor_email = existing_tutor.email
-                project.advisor_phone = existing_tutor.phone
-            else:
-                selected_tutor = Tutor(
-                    full_name=project.advisor_name,
-                    identity_number=project.advisor_identity,
-                    birth_date=project.advisor_birth_date,
-                    gender=project.advisor_gender,
-                    specialty=project.advisor_specialty,
-                    email=project.advisor_email,
-                    phone=project.advisor_phone,
-                )
-                project.tutor = selected_tutor
         if project.mentor_identity:
             mentor_identity_error = _identity_error(project.mentor_identity, "La cedula/documento de la persona mentora")
             if mentor_identity_error:
@@ -1386,6 +1398,17 @@ def register_project():
         if not project.consent_terms:
             flash("Debes aceptar la declaracion para finalizar la inscripcion.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+
+        if tutor_mode != "existing":
+            selected_tutor = _get_or_create_tutor_atomic(project)
+            project.tutor = selected_tutor
+            project.advisor_name = selected_tutor.full_name
+            project.advisor_identity = selected_tutor.identity_number
+            project.advisor_birth_date = selected_tutor.birth_date
+            project.advisor_gender = selected_tutor.gender
+            project.advisor_specialty = selected_tutor.specialty
+            project.advisor_email = selected_tutor.email
+            project.advisor_phone = selected_tutor.phone
 
         try:
             project.project_document_path = _promote_temp_project_document(temp_document_path)

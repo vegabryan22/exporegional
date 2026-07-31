@@ -18,7 +18,7 @@ from app.controllers.admin_controller import (
     _sync_project_logistics_status,
     _sync_project_photo_validation,
 )
-from app.controllers.project_controller import _build_requirement_items
+from app.controllers.project_controller import _build_requirement_items, _get_or_create_tutor_atomic
 from app.models.assignment import Assignment
 from app.models.judge import Judge
 from app.models.project import Project
@@ -96,6 +96,13 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertNotIn("tutor.birth_date", template)
         self.assertEqual("tutors", Tutor.__tablename__)
         self.assertIn("toggle_tutor", ACTION_MODULE_MAP)
+
+    def test_tutor_creation_uses_atomic_mysql_upsert(self):
+        import inspect
+
+        source = inspect.getsource(_get_or_create_tutor_atomic)
+        self.assertIn("ON DUPLICATE KEY UPDATE", source)
+        self.assertIn("LAST_INSERT_ID(id)", source)
 
     def test_registration_only_requests_mentor_data_when_applicable(self):
         template = Path("app/templates/public/register_project.html").read_text(encoding="utf-8")

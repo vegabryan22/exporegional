@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.9] - 2026-07-31
+
+### Corregido
+
+- Los nombres y especialidades del selector de tutores se muestran con capitalización natural.
+- Conectores como «de», «del», «a» y «y» permanecen en minúscula sin alterar los datos almacenados.
+
 ## [0.19.8] - 2026-07-31
 
 ### Corregido

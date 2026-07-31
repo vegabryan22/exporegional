@@ -106,6 +106,8 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertNotIn("No acepto", template)
         base_template = Path("app/templates/base.html").read_text(encoding="utf-8")
         self.assertIn("?v={{ asset_version }}", base_template)
+        stylesheet = Path("app/static/style.css").read_text(encoding="utf-8")
+        self.assertIn(".judge-register-band .form-grid.inline-grid-1", stylesheet)
 
     def test_member_photos_are_validated_automatically(self):
         project = Project(logistics_photos_ok=False)

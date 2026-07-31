@@ -5059,6 +5059,323 @@ dialog.member-edit-dialog {
     }
 }
 
+dialog.members-overview-dialog {
+    width: min(1060px, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
+    padding: 0;
+    border: 0;
+    border-radius: 20px;
+}
+
+.members-overview-card {
+    gap: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.members-overview-head {
+    padding: 1rem 1.3rem;
+    color: #fff;
+    background: linear-gradient(135deg, #0b3c68, #13789b);
+}
+
+.members-overview-head span,
+.members-overview-head h4,
+.members-overview-head p {
+    margin: 0;
+}
+
+.members-overview-head span {
+    color: #bde9f4;
+    font-size: 0.7rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.members-overview-head h4 {
+    margin-top: 0.12rem;
+    font-size: 1.45rem;
+}
+
+.members-overview-head p {
+    color: #e0f2f7;
+    font-size: 0.84rem;
+}
+
+.members-overview-head .dialog-close {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.48);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.members-project-summary {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.3rem;
+    border-bottom: 1px solid #dce8f1;
+    background: #f5f9fc;
+}
+
+.members-project-summary div {
+    display: grid;
+    gap: 0.12rem;
+    min-width: 0;
+}
+
+.members-project-summary strong {
+    color: var(--primary);
+    line-height: 1.25;
+}
+
+.members-project-summary small {
+    color: var(--muted);
+}
+
+.members-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.9rem;
+    padding: 1.15rem 1.3rem;
+}
+
+.member-profile-card {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr);
+    gap: 0.85rem;
+    min-width: 0;
+    padding: 0.85rem;
+    border: 1px solid #cfe0ec;
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 8px 22px rgba(20, 64, 101, 0.07);
+}
+
+.member-profile-photo {
+    position: relative;
+}
+
+.member-profile-photo img {
+    display: block;
+    width: 82px;
+    height: 104px;
+    border-radius: 11px;
+    object-fit: cover;
+    object-position: center top;
+    background: #eaf3f8;
+}
+
+.member-profile-photo > span {
+    position: absolute;
+    right: -0.35rem;
+    bottom: -0.25rem;
+    display: grid;
+    width: 28px;
+    height: 28px;
+    place-items: center;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    color: #fff;
+    background: #0b537f;
+    font-size: 0.72rem;
+    font-weight: 900;
+}
+
+.member-profile-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    min-width: 0;
+}
+
+.member-profile-title {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.member-profile-title strong {
+    color: var(--primary);
+    line-height: 1.2;
+}
+
+.member-profile-title .tag {
+    justify-self: start;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.67rem;
+}
+
+.member-profile-facts {
+    display: flex;
+    gap: 0.8rem;
+}
+
+.member-profile-facts span {
+    display: grid;
+}
+
+.member-profile-facts small {
+    color: var(--muted);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.member-profile-facts strong {
+    font-size: 0.8rem;
+}
+
+.member-profile-content > p {
+    margin: 0;
+    color: #506b84;
+    font-size: 0.76rem;
+    line-height: 1.35;
+}
+
+.member-profile-actions {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: auto;
+}
+
+.member-profile-actions form {
+    margin: 0;
+}
+
+.member-profile-actions button {
+    min-height: 34px;
+    padding: 0.38rem 0.62rem;
+    font-size: 0.72rem;
+}
+
+.members-history {
+    margin: 0 1.3rem 1rem;
+    border: 1px solid #d7e4ee;
+    border-radius: 14px;
+    background: #f8fbfd;
+    overflow: hidden;
+}
+
+.members-history summary {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    list-style: none;
+}
+
+.members-history summary::-webkit-details-marker {
+    display: none;
+}
+
+.members-history summary > span:first-child {
+    display: grid;
+}
+
+.members-history summary strong {
+    color: var(--primary);
+}
+
+.members-history summary small {
+    color: var(--muted);
+}
+
+.members-history-toggle {
+    color: #08789e;
+    font-size: 0.78rem;
+    font-weight: 900;
+}
+
+.members-history[open] .members-history-toggle::before {
+    content: "Ocultar ";
+}
+
+.members-history[open] .members-history-toggle {
+    font-size: 0;
+}
+
+.members-history[open] .members-history-toggle::before {
+    font-size: 0.78rem;
+}
+
+.members-history-list {
+    display: grid;
+    max-height: 270px;
+    padding: 0 1rem 0.85rem;
+    overflow-y: auto;
+}
+
+.members-history-list article {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr);
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-top: 1px solid #dce7ef;
+}
+
+.members-history-list time {
+    color: #607a91;
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.members-history-list article strong {
+    color: #16496f;
+}
+
+.members-history-list article p {
+    margin: 0.2rem 0 0;
+    color: #526b81;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.members-overview-card > .actions-row {
+    margin: 0;
+    padding: 0 1.3rem 1rem;
+}
+
+@media (max-width: 900px) {
+    .members-profile-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    dialog.members-overview-dialog {
+        width: calc(100vw - 1rem);
+        max-height: calc(100vh - 1rem);
+    }
+
+    .members-project-summary {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .members-profile-grid {
+        grid-template-columns: 1fr;
+        padding: 0.85rem;
+    }
+
+    .member-profile-actions button {
+        width: 100%;
+    }
+
+    .members-history {
+        margin-inline: 0.85rem;
+    }
+
+    .members-history-list article {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
+}
+
 .judge-register-band .form-grid.inline-grid-1 {
     grid-template-columns: minmax(0, 1fr);
 }

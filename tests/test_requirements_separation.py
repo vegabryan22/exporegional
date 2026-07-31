@@ -255,6 +255,15 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("Reporte de proyectos inscritos", template)
         self.assertIn("Descargar Excel", template)
 
+    def test_members_dialog_uses_profile_cards_and_collapsible_history(self):
+        template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
+
+        self.assertIn('class="members-profile-grid"', template)
+        self.assertIn('class="member-profile-card"', template)
+        self.assertIn('class="members-history"', template)
+        self.assertIn("Historial de cambios", template)
+        self.assertNotIn("Bitácora de cambios de integrantes", template)
+
     def test_registration_builds_structured_requirement_items(self):
         form_data = {
             "requirement_item_name": ["Mesa de exhibición", "Extensión eléctrica"],

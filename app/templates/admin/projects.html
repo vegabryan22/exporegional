@@ -572,79 +572,77 @@
     </div>
 </dialog>
 
-<dialog id="members-project-{{ project.id }}" class="maintenance-dialog">
-    <div class="dialog-card">
-        <div class="dialog-head"><h4>Integrantes y fotos</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
-        <div class="maintenance-head">
-            <p><strong>{{ project.title }}</strong> - {{ project.team_name }}</p>
-            <button type="button" data-dialog-open="create-member-{{ project.id }}">Agregar integrante</button>
+<dialog id="members-project-{{ project.id }}" class="maintenance-dialog members-overview-dialog">
+    <div class="dialog-card members-overview-card">
+        <div class="dialog-head members-overview-head">
+            <div><span>Equipo del proyecto</span><h4>Integrantes</h4><p>{{ project.members|length }} de 3 espacios registrados</p></div>
+            <button type="button" class="ghost-btn dialog-close" data-dialog-close aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="members-project-summary">
+            <div><strong>{{ project.title }}</strong><small>{{ project.team_name }}</small></div>
+            <button type="button" data-dialog-open="create-member-{{ project.id }}" {% if project.members|length >= 3 %}disabled title="El proyecto ya tiene tres integrantes"{% endif %}>Agregar integrante</button>
         </div>
 
-        <div class="table-wrap">
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Nombre</th>
-                        <th>Sección</th>
-                        <th>Especialidad tecnica</th>
-                        <th>Genero</th>
-                        <th>Foto</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for member in project.members|sort(attribute='student_number') %}
-                    <tr>
-                        <td>{{ member.student_number }}</td>
-                        <td>{{ member.full_name }}</td>
-                        <td>{{ member.section_name or 'N/D' }}</td>
-                        <td>{{ member.specialty or 'N/D' }}</td>
-                        <td>{{ member.gender|capitalize if member.gender else 'N/D' }}</td>
-                        <td>
-                            {% if member.photo_url %}
-                                <img src="{{ url_for('static', filename=member.photo_url) }}" alt="Foto de {{ member.full_name }}" class="member-photo">
-                            {% else %}
-                                {% set member_placeholder = female_member_placeholder if member.gender == 'femenino' else male_member_placeholder %}
-                                <img src="{{ member_placeholder }}" alt="Sin foto de {{ member.full_name }}" class="member-photo">
-                            {% endif %}
-                        </td>
-                        <td class="actions-cell">
-                            <button type="button" class="outline-btn" data-dialog-open="edit-member-{{ member.id }}">Editar</button>
-                            <form method="post" action="{{ action_url }}" class="inline-form" onsubmit="return confirm('Eliminar integrante?')">
-                                <input type="hidden" name="next" value="{{ next_url }}">
-                                <input type="hidden" name="action" value="delete_project_member">
-                                <input type="hidden" name="member_id" value="{{ member.id }}">
-                                <button type="submit" class="danger-btn">Eliminar</button>
-                            </form>
-                        </td>
-                    </tr>
+        <div class="members-profile-grid">
+            {% for member in project.members|sort(attribute='student_number') %}
+            <article class="member-profile-card">
+                <div class="member-profile-photo">
+                    {% if member.photo_url %}
+                        <img src="{{ url_for('static', filename=member.photo_url) }}" alt="Foto de {{ member.full_name }}">
                     {% else %}
-                    <tr><td colspan="7">Este proyecto no tiene integrantes.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        {% set member_placeholder = female_member_placeholder if member.gender == 'femenino' else male_member_placeholder %}
+                        <img src="{{ member_placeholder }}" alt="Sin foto de {{ member.full_name }}">
+                    {% endif %}
+                    <span>#{{ member.student_number }}</span>
+                </div>
+                <div class="member-profile-content">
+                    <div class="member-profile-title"><strong>{{ member.full_name|natural_title }}</strong><span class="tag {{ 'ok' if member.photo_url else 'warning' }}">{{ 'Foto lista' if member.photo_url else 'Sin foto' }}</span></div>
+                    <div class="member-profile-facts">
+                        <span><small>Secci&oacute;n</small><strong>{{ member.section_name or 'N/D' }}</strong></span>
+                        <span><small>G&eacute;nero</small><strong>{{ member.gender|capitalize if member.gender else 'N/D' }}</strong></span>
+                    </div>
+                    <p>{{ member.specialty|natural_title if member.specialty else 'Especialidad no indicada' }}</p>
+                    <div class="member-profile-actions">
+                        <button type="button" class="outline-btn" data-dialog-open="edit-member-{{ member.id }}">Editar informaci&oacute;n</button>
+                        <form method="post" action="{{ action_url }}" onsubmit="return confirm('¿Eliminar definitivamente a este integrante?')">
+                            <input type="hidden" name="next" value="{{ next_url }}">
+                            <input type="hidden" name="action" value="delete_project_member">
+                            <input type="hidden" name="member_id" value="{{ member.id }}">
+                            <button type="submit" class="danger-btn">Eliminar</button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+            {% else %}
+            <div class="members-empty-state"><strong>Sin integrantes</strong><p>Agregue el primer estudiante para comenzar a gestionar el equipo.</p></div>
+            {% endfor %}
         </div>
 
-        <div class="section-block">
-            <h4>Bitácora de cambios de integrantes</h4>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Fecha</th><th>Accion</th><th>Detalle</th></tr></thead>
-                    <tbody>
-                        {% for change in project.member_changes|sort(attribute='created_at', reverse=True) %}
-                            <tr>
-                                <td>{{ change.created_at|local_datetime }}</td>
-                                <td>{{ change.action }}</td>
-                                <td>{{ change.details }}</td>
-                            </tr>
-                        {% else %}
-                            <tr><td colspan="3">Sin cambios registrados.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <details class="members-history">
+            <summary>
+                <span><strong>Historial de cambios</strong><small>{{ project.member_changes|length }} movimientos registrados</small></span>
+                <span class="members-history-toggle">Ver historial</span>
+            </summary>
+            <div class="members-history-list">
+                {% for change in project.member_changes|sort(attribute='created_at', reverse=True) %}
+                <article>
+                    <time>{{ change.created_at|local_datetime }}</time>
+                    <div>
+                        <strong>
+                            {% if change.action == 'created' %}Integrante agregado
+                            {% elif change.action == 'updated' %}Informaci&oacute;n actualizada
+                            {% elif change.action == 'deleted' %}Integrante eliminado
+                            {% elif change.action == 'photo_deleted' %}Fotograf&iacute;a eliminada
+                            {% else %}Cambio en el integrante{% endif %}
+                        </strong>
+                        <p>{{ change.details }}</p>
+                    </div>
+                </article>
+                {% else %}
+                <div class="members-empty-state"><strong>Sin movimientos</strong><p>Todav&iacute;a no existen cambios registrados en este equipo.</p></div>
+                {% endfor %}
             </div>
-        </div>
+        </details>
 
         <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div>
     </div>

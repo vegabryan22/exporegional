@@ -14332,8 +14332,8 @@ body.admin-page .site-footer {
     border-radius: 15px;
     box-shadow: 0 8px 24px rgba(18, 63, 107, .06);
     display: grid;
-    gap: .8rem;
-    padding: 1rem;
+    gap: .65rem;
+    padding: .9rem;
 }
 
 .tutor-card-head {
@@ -14389,17 +14389,31 @@ body.admin-page .site-footer {
 }
 
 .tutor-metrics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .4rem;
+    display: grid;
+    gap: .45rem;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .tutor-metrics span {
-    background: #edf5fa;
-    border-radius: 999px;
+    align-items: center;
+    background: #f3f8fc;
+    border: 1px solid #dce8f1;
+    border-radius: 9px;
     color: #365b78;
-    font-size: .75rem;
-    padding: .35rem .55rem;
+    display: grid;
+    font-size: .7rem;
+    gap: .08rem;
+    justify-items: center;
+    line-height: 1.15;
+    min-height: 50px;
+    padding: .42rem .3rem;
+    text-align: center;
+}
+
+.tutor-metrics span b {
+    color: #123f6b;
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .tutor-projects-detail {
@@ -14445,8 +14459,27 @@ body.admin-page .site-footer {
 }
 
 .tutor-card-actions {
-    display: flex;
-    justify-content: flex-end;
+    display: grid;
+    gap: .5rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-top: .15rem;
+}
+
+.tutor-card-actions .inline-form {
+    display: block;
+    margin: 0;
+    width: 100%;
+}
+
+.tutor-card-actions button {
+    align-items: center;
+    display: inline-flex;
+    font-size: .78rem;
+    justify-content: center;
+    line-height: 1.15;
+    min-height: 40px !important;
+    padding: .48rem .65rem !important;
+    width: 100% !important;
 }
 
 @media (max-width: 1100px) {
@@ -14460,6 +14493,8 @@ body.admin-page .site-footer {
     .tutor-contact-grid { grid-template-columns: 1fr; }
     .tutor-card-head { grid-template-columns: auto minmax(0, 1fr); }
     .tutor-card-head > .tag { grid-column: 1 / -1; justify-self: start; }
+    .tutor-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tutor-metrics span:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 
 .requirements-responsibility-note {

@@ -84,6 +84,9 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn('name="action" value="update_advisor"', template)
         self.assertIn('name="action" value="toggle_tutor"', template)
         self.assertIn("tutors-export-btn", template)
+        stylesheet = Path("app/static/style.css").read_text(encoding="utf-8")
+        self.assertIn(".tutor-card-actions button", stylesheet)
+        self.assertIn("grid-template-columns: repeat(5, minmax(0, 1fr));", stylesheet)
 
     def test_registration_uses_private_central_tutor_catalog(self):
         template = Path("app/templates/public/register_project.html").read_text(encoding="utf-8")

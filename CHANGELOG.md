@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.1] - 2026-07-31
+
+### Cambiado
+
+- El diálogo de integrantes sustituye la tabla estrecha por fichas uniformes con fotografía, nombre, sección, género, especialidad y acciones alineadas.
+- El historial permanece plegado hasta solicitarlo y presenta cada movimiento con fecha, nombre comprensible y detalle legible.
+- La distribución responde con tres, dos o una ficha por fila según el ancho disponible, sin cortar encabezados ni botones.
+
 ## [0.23.0] - 2026-07-31
 
 ### Añadido

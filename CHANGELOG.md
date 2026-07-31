@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.20.2] - 2026-07-31
+
+### Corregido
+
+- Proyectos muestra un acceso visible al Centro de recordatorios directamente en su encabezado.
+- El acceso se adapta a pantallas estrechas y conserva junto a él el total de proyectos.
+
 ## [0.20.1] - 2026-07-31
 
 ### Añadido

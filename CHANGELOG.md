@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.16.0] - 2026-07-30
+
+### Añadido
+
+- Desglose estructurado de insumos por proyecto con nombre, cantidad, unidad y observación.
+- Confirmación administrativa independiente para cada insumo o material solicitado.
+- Editor dinámico de insumos en el formulario de inscripción y en el módulo de requerimientos.
+
+### Cambiado
+
+- Las tarjetas de requerimientos muestran el detalle completo y el estado de cada insumo.
+- Los textos históricos de insumos se conservan como elementos pendientes de desglosar.
+- Los pendientes identifican ahora los insumos concretos que aún no han sido confirmados.
+
 ## [0.15.0] - 2026-07-30
 
 ### Añadido

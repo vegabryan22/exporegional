@@ -836,6 +836,14 @@ Reporte operativo:
 - no almacena ni inventa recintos; ofrece espacios para que los edecanes los registren manualmente
 - la descarga Excel es la opción operativa principal y permite registrar ubicación y seguimiento sin alterar la asignación original
 
+### Insumos estructurados
+
+- `projects.requirements_items_json` conserva el desglose editable de insumos sin eliminar el campo histórico `required_resources`
+- cada elemento contiene identificador, nombre, cantidad, unidad, observación y confirmación
+- el formulario público admite hasta doce elementos y el panel administrativo hasta veinte durante la depuración
+- los textos históricos se presentan como un elemento heredado pendiente de desglosar
+- la confirmación de insumos pertenece al módulo de requerimientos y permanece separada del control documental de Logística
+
 ## 7.3 Flujo de cierre administrativo
 
 1. Logística revisa documentación, formularios, fotografías, integrantes y asignación de jueces

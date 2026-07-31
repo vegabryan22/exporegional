@@ -271,7 +271,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 formData.set('audience', batches[batchIndex].audience);
                 formData.set('batch_mode', '1');
 
-                var response = await fetch(form.action, {
+                var actionUrl = form.getAttribute('action');
+                var response = await fetch(actionUrl, {
                     method: 'POST',
                     body: formData,
                     credentials: 'same-origin',

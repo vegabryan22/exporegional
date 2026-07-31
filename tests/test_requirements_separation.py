@@ -522,6 +522,8 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("tutorGroups", template)
         self.assertIn("formData.set('audience'", template)
         self.assertIn("'Accept': 'application/json'", template)
+        self.assertIn("form.getAttribute('action')", template)
+        self.assertNotIn("fetch(form.action", template)
 
         controller = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")
         self.assertIn('batch_mode = request.form.get("batch_mode") == "1"', controller)

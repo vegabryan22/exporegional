@@ -1,0 +1,141 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section tutors-page">
+    <div class="maintenance-banner tutors-banner">
+        <div>
+            <p class="maintenance-kicker">Acompañamiento académico</p>
+            <h3>Tutores de proyectos</h3>
+            <p>Información centralizada, carga de proyectos y pendientes de cada docente tutor.</p>
+        </div>
+        <a class="outline-btn" href="{{ url_for('admin.tutors_report_excel') }}">
+            <svg aria-hidden="true"><use href="#ico-download"></use></svg>
+            Excel de tutores
+        </a>
+    </div>
+
+    <div class="tutors-summary-grid">
+        <article><span>Tutores</span><strong>{{ tutors_summary.total }}</strong><small>Perfiles identificados</small></article>
+        <article><span>Proyectos</span><strong>{{ tutors_summary.projects }}</strong><small>Asignados a tutores</small></article>
+        <article><span>Estudiantes</span><strong>{{ tutors_summary.students }}</strong><small>Bajo acompañamiento</small></article>
+        <article class="has-pending"><span>Pendientes</span><strong>{{ tutors_summary.pending }}</strong><small>Control logístico</small></article>
+        <article class="has-pending"><span>Requerimientos</span><strong>{{ tutors_summary.requirements_pending }}</strong><small>Proyectos por resolver</small></article>
+    </div>
+
+    <div class="tutors-filter-bar">
+        <label><span>Buscar tutor</span><input type="search" id="tutors-filter-text" placeholder="Nombre, cédula, correo o proyecto"></label>
+        <label><span>Estado</span>
+            <select id="tutors-filter-status">
+                <option value="">Todos</option>
+                <option value="pending">Con pendientes</option>
+                <option value="complete">Sin pendientes</option>
+            </select>
+        </label>
+        <button type="button" class="ghost-btn" id="tutors-filter-clear">Limpiar</button>
+        <strong id="tutors-filter-count">{{ tutors|length }} tutores</strong>
+    </div>
+
+    <div class="tutors-grid" id="tutors-grid">
+        {% for tutor in tutors %}
+        {% set tutor_search = (tutor.name ~ ' ' ~ tutor.identity ~ ' ' ~ tutor.email ~ ' ' ~ (tutor.projects | map(attribute='title') | join(' '))) | lower %}
+        <article class="tutor-card" data-tutor-card data-search="{{ tutor_search }}" data-status="{{ 'pending' if tutor.pending or tutor.requirements_pending else 'complete' }}">
+            <div class="tutor-card-head">
+                <div class="tutor-avatar">{{ tutor.name[:1] }}</div>
+                <div>
+                    <h4>{{ tutor.name }}</h4>
+                    <p>{{ tutor.specialty or 'Especialidad no indicada' }}</p>
+                </div>
+                <span class="tag {{ 'warning' if tutor.pending or tutor.requirements_pending else 'ok' }}">
+                    {{ tutor.pending + tutor.requirements_pending }} pendientes
+                </span>
+            </div>
+
+            <div class="tutor-contact-grid">
+                <span><b>Cédula</b>{{ tutor.identity or 'No registrada' }}</span>
+                <span><b>Correo</b>{{ tutor.email or 'No registrado' }}</span>
+                <span><b>Teléfono</b>{{ tutor.phone or 'No registrado' }}</span>
+                <span><b>Secciones</b>{{ tutor.sections_label }}</span>
+            </div>
+
+            <div class="tutor-metrics">
+                <span><b>{{ tutor.total }}</b> proyectos</span>
+                <span><b>{{ tutor.students }}</b> estudiantes</span>
+                <span><b>{{ tutor.completion_percent }}%</b> logística</span>
+                <span><b>{{ tutor.steam }}</b> STEAM</span>
+                <span><b>{{ tutor.emprendimiento }}</b> emprend.</span>
+            </div>
+
+            <details class="tutor-projects-detail">
+                <summary>Ver proyectos <span>{{ tutor.total }}</span></summary>
+                <div class="tutor-project-list">
+                    {% for project in tutor.projects %}
+                    <a href="{{ url_for('admin.projects_page') }}#project-row-{{ project.id }}">
+                        <span><b>{{ project.title }}</b><small>{{ category_map.get(project.category, project.category) }} · {{ project.team_name }}</small></span>
+                        <span class="tag {% if project.logistics_status == 'completo' %}ok{% else %}warning{% endif %}">{{ logistics_status_map.get(project.logistics_status, project.logistics_status) }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </details>
+
+            <div class="tutor-card-actions">
+                <button type="button" class="outline-btn" data-dialog-open="tutor-edit-{{ loop.index }}">Editar información</button>
+            </div>
+        </article>
+
+        <dialog id="tutor-edit-{{ loop.index }}" class="maintenance-dialog">
+            <div class="dialog-card">
+                <div class="dialog-head"><h4>Editar tutor</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+                <p class="table-subtext">Los cambios se aplican a los {{ tutor.total }} proyectos asociados.</p>
+                <form method="post" action="{{ action_url }}" class="compact-form">
+                    <input type="hidden" name="next" value="{{ next_url }}">
+                    <input type="hidden" name="action" value="update_advisor">
+                    <input type="hidden" name="old_advisor_key" value="{{ tutor.key }}">
+                    <div class="grid-2">
+                        <label>Nombre completo<input type="text" name="advisor_name" value="{{ tutor.name }}" required></label>
+                        <label>Cédula<input type="text" name="advisor_identity" value="{{ tutor.identity }}"></label>
+                    </div>
+                    <div class="grid-2">
+                        <label>Correo<input type="email" name="advisor_email" value="{{ tutor.email }}"></label>
+                        <label>Teléfono<input type="text" name="advisor_phone" value="{{ tutor.phone }}"></label>
+                    </div>
+                    <label>Especialidad o área profesional<input type="text" name="advisor_specialty" value="{{ tutor.specialty }}"></label>
+                    {% if tutors|length > 1 %}
+                    <label>Unificar con otro tutor (opcional)
+                        <select name="merge_advisor_key"><option value="">No unificar</option>
+                            {% for other in tutors if other.key != tutor.key %}<option value="{{ other.key }}">{{ other.name }} — {{ other.total }} proyectos</option>{% endfor %}
+                        </select>
+                    </label>
+                    {% endif %}
+                    <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit" class="secondary-btn">Guardar</button></div>
+                </form>
+            </div>
+        </dialog>
+        {% else %}
+        <div class="project-empty-card">No hay tutores vinculados a proyectos.</div>
+        {% endfor %}
+    </div>
+</section>
+
+<script>
+(function () {
+    var text = document.getElementById('tutors-filter-text');
+    var status = document.getElementById('tutors-filter-status');
+    var clear = document.getElementById('tutors-filter-clear');
+    var count = document.getElementById('tutors-filter-count');
+    var cards = Array.prototype.slice.call(document.querySelectorAll('[data-tutor-card]'));
+    function applyFilters() {
+        var query = (text.value || '').trim().toLowerCase();
+        var state = status.value;
+        var visible = 0;
+        cards.forEach(function (card) {
+            var show = (!query || card.dataset.search.indexOf(query) !== -1) && (!state || card.dataset.status === state);
+            card.hidden = !show;
+            if (show) visible += 1;
+        });
+        count.textContent = visible + (visible === 1 ? ' tutor' : ' tutores');
+    }
+    text.addEventListener('input', applyFilters);
+    status.addEventListener('change', applyFilters);
+    clear.addEventListener('click', function () { text.value = ''; status.value = ''; applyFilters(); });
+})();
+</script>
+{% endblock %}

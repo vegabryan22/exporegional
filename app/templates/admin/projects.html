@@ -36,84 +36,11 @@
         </article>
     </div>
 
-    {% if advisor_stats %}
-    <details class="advisor-stats-panel">
-        <summary>Proyectos por tutor <span class="tag neutral">{{ advisor_stats|length }} tutores</span></summary>
-        <div class="advisor-stats-wrap">
-            <table class="advisor-stats-table">
-                <thead>
-                    <tr>
-                        <th>Tutor</th>
-                        <th>Cédula</th>
-                        <th>Correo</th>
-                        <th>STEAM</th>
-                        <th>Emprend.</th>
-                        <th>Total</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in advisor_stats %}
-                    {% set advisor_key = row.identity if row.identity else row.name %}
-                    {% set dialog_id = "advisor-edit-" ~ loop.index %}
-                    <tr>
-                        <td>{{ row.name }}</td>
-                        <td class="muted-cell">{{ row.identity or '—' }}</td>
-                        <td class="muted-cell">{{ row.email or '—' }}</td>
-                        <td>{{ row.steam or '—' }}</td>
-                        <td>{{ row.emprendimiento or '—' }}</td>
-                        <td><strong>{{ row.total }}</strong></td>
-                        <td><button type="button" class="ghost-btn advisor-edit-btn" data-dialog-open="{{ dialog_id }}">Editar</button></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </details>
-
-    {% for row in advisor_stats %}
-    {% set advisor_key = row.identity if row.identity else row.name %}
-    {% set dialog_id = "advisor-edit-" ~ loop.index %}
-    <dialog id="{{ dialog_id }}" class="maintenance-dialog">
-        <div class="dialog-card">
-            <div class="dialog-head">
-                <h4>Editar tutor</h4>
-                <button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button>
-            </div>
-            <p class="table-subtext">Los cambios se aplican a todos los proyectos de este tutor. Para unificar duplicados, selecciona el otro tutor a fusionar.</p>
-            <form method="post" action="{{ action_url }}" class="compact-form">
-                <input type="hidden" name="next" value="{{ next_url }}">
-                <input type="hidden" name="action" value="update_advisor">
-                <input type="hidden" name="old_advisor_key" value="{{ advisor_key }}">
-                <div class="grid-2">
-                    <label>Nombre completo<input type="text" name="advisor_name" value="{{ row.name }}" required></label>
-                    <label>C&eacute;dula<input type="text" name="advisor_identity" value="{{ row.identity or '' }}"></label>
-                </div>
-                <div class="grid-2">
-                    <label>Correo<input type="email" name="advisor_email" value="{{ row.email or '' }}"></label>
-                    <label>Tel&eacute;fono<input type="text" name="advisor_phone" value="{{ row.phone or '' }}"></label>
-                </div>
-                {% if advisor_stats|length > 1 %}
-                <label>Unificar con (opcional)
-                    <select name="merge_advisor_key">
-                        <option value="">— No unificar —</option>
-                        {% for other in advisor_stats %}
-                        {% set other_key = other.identity if other.identity else other.name %}
-                        {% if other_key != advisor_key %}
-                        <option value="{{ other_key }}">{{ other.name }}{% if other.identity %} ({{ other.identity }}){% endif %} — {{ other.total }} proy.</option>
-                        {% endif %}
-                        {% endfor %}
-                    </select>
-                </label>
-                {% endif %}
-                <div class="actions-row">
-                    <button type="button" class="ghost-btn" data-dialog-close>Cancelar</button>
-                    <button type="submit" class="secondary-btn">Guardar cambios</button>
-                </div>
-            </form>
-        </div>
-    </dialog>
-    {% endfor %}
+    {% if 'tutors' in allowed_modules %}
+    <div class="projects-tutors-link">
+        <span><strong>{{ advisor_stats|length }} tutores vinculados</strong><small>Consulte información, carga, estadísticas y pendientes en el módulo especializado.</small></span>
+        <a class="outline-btn" href="{{ url_for('admin.tutors_page') }}">Abrir Tutores</a>
+    </div>
     {% endif %}
 
     <div class="projects-report-actions">

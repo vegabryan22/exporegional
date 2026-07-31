@@ -12,6 +12,7 @@ from app.controllers.admin_controller import (
     _build_project_logistics_summary,
     _build_tutor_logistics_reminder_payload,
     _build_exposition_usher_report_rows,
+    _build_advisor_stats,
     _person_name_title,
     _project_report_rows,
     _sync_project_logistics_status,
@@ -25,6 +26,62 @@ from app.models.project_member import ProjectMember
 
 
 class RequirementsSeparationTest(unittest.TestCase):
+    def test_tutor_statistics_centralize_projects_students_and_pending_work(self):
+        complete = Project(
+            id=31,
+            title="Proyecto completo",
+            team_name="Equipo A",
+            advisor_name="MARÍA ELENA DEL RÍO",
+            advisor_identity="123456789",
+            advisor_email="tutora@example.com",
+            advisor_phone="88880000",
+            advisor_specialty="Informática",
+            category="steam",
+            is_active=True,
+            logistics_status="completo",
+            requirements_status="completo",
+            project_document_path="document.pdf",
+            project_logo_path="logo.png",
+            logistics_document_ok=True,
+            logistics_logo_ok=True,
+            logistics_photos_ok=True,
+            logistics_registration_form_signed_ok=True,
+        )
+        complete.members = [
+            ProjectMember(full_name="Estudiante", student_number=1, section_name="12-1", photo_url="student.jpg", consent_signed_ok=True)
+        ]
+        pending = Project(
+            id=32,
+            title="Proyecto pendiente",
+            team_name="Equipo B",
+            advisor_name="María Elena del Río",
+            advisor_identity="123456789",
+            advisor_email="tutora@example.com",
+            category="emprendimiento",
+            is_active=True,
+            logistics_status="incompleto",
+            requirements_status="pendiente_revision",
+        )
+        pending.members = [ProjectMember(full_name="Otro", student_number=1, section_name="11-2")]
+
+        tutors = _build_advisor_stats([complete, pending])
+
+        self.assertEqual(1, len(tutors))
+        self.assertEqual("María Elena del Río", tutors[0]["name"])
+        self.assertEqual(2, tutors[0]["total"])
+        self.assertEqual(2, tutors[0]["students"])
+        self.assertEqual(1, tutors[0]["completed"])
+        self.assertEqual(1, tutors[0]["pending"])
+        self.assertEqual("11-2, 12-1", tutors[0]["sections_label"])
+
+    def test_tutors_page_has_filters_statistics_and_excel(self):
+        template = Path("app/templates/admin/tutors.html").read_text(encoding="utf-8")
+
+        self.assertIn("tutors_summary", template)
+        self.assertIn("tutors-filter-text", template)
+        self.assertIn("tutors_report_excel", template)
+        self.assertIn('name="action" value="update_advisor"', template)
+
     def test_member_photos_are_validated_automatically(self):
         project = Project(logistics_photos_ok=False)
         project.members = [

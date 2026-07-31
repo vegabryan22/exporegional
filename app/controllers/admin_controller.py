@@ -134,6 +134,7 @@ ADMIN_MENU_ICONS = {
     "academic": "doc",
     "rubrics": "chart",
     "projects": "box",
+    "tutors": "users",
     "requirements": "settings",
     "evaluations": "chart",
     "documents": "doc",
@@ -159,6 +160,7 @@ ADMIN_MENU_ITEMS = [
     ("academic", "admin.academic_page", "Académico"),
     ("rubrics", "admin.rubrics_page", "Rúbricas"),
     ("projects", "admin.projects_page", "Proyectos"),
+    ("tutors", "admin.tutors_page", "Tutores"),
     ("requirements", "admin.requirements_page", "Requerimientos"),
     ("evaluations", "admin.evaluations_page", "Evaluaciones"),
     ("documents", "admin.documents_page", "Actas y certificados"),
@@ -175,13 +177,13 @@ ADMIN_MENU_ITEMS = [
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Documentos", ["documents"]),
-    ("Operación", ["assignments", "judge_pool", "projects", "requirements", "evaluations", "students_stats"]),
+    ("Operación", ["assignments", "judge_pool", "projects", "tutors", "requirements", "evaluations", "students_stats"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
-    "logistica": {"overview", "assignments", "judge_pool", "projects", "documents"},
+    "logistica": {"overview", "assignments", "judge_pool", "projects", "tutors", "documents"},
     "datos": {"overview", "evaluations", "documents"},
     "diseno": {"overview", "campaigns", "categories", "academic", "rubrics", "institution"},
     "qa": {"overview", "logs", "maintenance", "database", "gitops"},
@@ -220,7 +222,7 @@ ACTION_MODULE_MAP = {
     "send_pending_attendance_invitations": "judges",
     "balance_judge_assignments": "judge_pool",
     "reassign_absent_judges": "judge_pool",
-    "update_advisor": "projects",
+    "update_advisor": "tutors",
     "update_project": "projects",
     "update_project_logistics": "projects",
     "update_project_requirements": "requirements",
@@ -551,6 +553,9 @@ def _load_department_module_access():
         if not isinstance(modules, list):
             modules = defaults.get(dept_code, ["overview"])
         clean_modules = sorted({module for module in modules if module in valid_modules})
+        if "projects" in clean_modules and "tutors" not in clean_modules:
+            clean_modules.append("tutors")
+            clean_modules.sort()
         if "overview" not in clean_modules:
             clean_modules.insert(0, "overview")
         sanitized[dept_code] = clean_modules
@@ -3975,6 +3980,7 @@ def _handle_action(action: str):
         new_identity = request.form.get("advisor_identity", "").strip()
         new_email = request.form.get("advisor_email", "").strip().lower()
         new_phone = request.form.get("advisor_phone", "").strip()
+        new_specialty = request.form.get("advisor_specialty", "").strip()
         if not old_key:
             flash("Clave de tutor no especificada.", "error")
         else:
@@ -3982,9 +3988,11 @@ def _handle_action(action: str):
                 return Project.query.filter(
                     db.or_(
                         Project.advisor_identity == key,
+                        Project.advisor_email == key.lower(),
                         db.and_(
                             db.or_(Project.advisor_identity == None, Project.advisor_identity == ""),  # noqa: E711
-                            Project.advisor_name == key,
+                            db.or_(Project.advisor_email == None, Project.advisor_email == ""),  # noqa: E711
+                            db.func.lower(Project.advisor_name) == key.lower(),
                         ),
                     )
                 ).all()
@@ -3992,12 +4000,15 @@ def _handle_action(action: str):
             affected = _projects_for_key(old_key)
             if merge_key and merge_key != old_key:
                 affected += _projects_for_key(merge_key)
+            affected = list({project.id: project for project in affected}.values())
             for p in affected:
                 p.advisor_name = new_name or p.advisor_name
                 p.advisor_identity = new_identity
                 p.advisor_email = new_email
                 if new_phone:
                     p.advisor_phone = new_phone
+                if new_specialty:
+                    p.advisor_specialty = new_specialty
             db.session.commit()
             flash(f"Tutor actualizado en {len(affected)} proyecto(s).", "ok")
 
@@ -7505,25 +7516,66 @@ def rubrics_page():
     return _render("admin/rubrics.html", "rubrics")
 
 
-@admin_module_required("projects")
 def _build_advisor_stats(projects):
     from collections import defaultdict
-    buckets = defaultdict(lambda: {"name": "", "email": "", "steam": 0, "emprendimiento": 0, "total": 0})
+    buckets = defaultdict(
+        lambda: {
+            "name": "", "email": "", "identity": "", "phone": "", "specialty": "",
+            "steam": 0, "emprendimiento": 0, "total": 0, "active": 0, "inactive": 0,
+            "completed": 0, "pending": 0, "requirements_pending": 0, "students": 0,
+            "sections": set(), "projects": [],
+        }
+    )
     for p in projects:
-        key = (p.advisor_identity or "").strip() or (p.advisor_name or "sin_cedula").strip()
+        if not any(
+            (
+                (p.advisor_identity or "").strip(),
+                (p.advisor_email or "").strip(),
+                (p.advisor_name or "").strip(),
+            )
+        ):
+            continue
+        key = (
+            (p.advisor_identity or "").strip()
+            or (p.advisor_email or "").strip().lower()
+            or (p.advisor_name or "").strip().casefold()
+        )
         if not key:
             continue
         b = buckets[key]
-        b["name"] = " ".join(w.capitalize() for w in (p.advisor_name or "Sin nombre").split())
-        b["email"] = p.advisor_email or ""
-        b["identity"] = p.advisor_identity or ""
+        b["key"] = key
+        b["name"] = _person_name_title(p.advisor_name or "Sin nombre")
+        b["email"] = b["email"] or p.advisor_email or ""
+        b["identity"] = b["identity"] or p.advisor_identity or ""
+        b["phone"] = b["phone"] or p.advisor_phone or ""
+        b["specialty"] = b["specialty"] or p.advisor_specialty or ""
         cat = (p.category or "").lower()
         if "steam" in cat:
             b["steam"] += 1
         elif "emprend" in cat:
             b["emprendimiento"] += 1
         b["total"] += 1
-    return sorted(buckets.values(), key=lambda r: -r["total"])
+        b["students"] += len(p.members)
+        b["projects"].append(p)
+        b["sections"].update(member.section_name for member in p.members if member.section_name)
+        if p.is_active:
+            b["active"] += 1
+            if p.logistics_status == "completo" and not _project_logistics_missing_items(p):
+                b["completed"] += 1
+            else:
+                b["pending"] += 1
+        else:
+            b["inactive"] += 1
+        if not p.requirements_complete:
+            b["requirements_pending"] += 1
+
+    rows = []
+    for bucket in buckets.values():
+        bucket["sections_label"] = ", ".join(sorted(bucket.pop("sections"))) or "Sin sección"
+        bucket["completion_percent"] = round((bucket["completed"] / bucket["active"]) * 100) if bucket["active"] else 0
+        bucket["projects"] = sorted(bucket["projects"], key=lambda project: project.title.casefold())
+        rows.append(bucket)
+    return sorted(rows, key=lambda row: (-row["total"], row["name"].casefold()))
 
 
 def _build_project_logistics_summary(projects):
@@ -7559,6 +7611,108 @@ def projects_page():
     context["advisor_stats"] = _build_advisor_stats(projects)
     context["project_logistics_summary"] = _build_project_logistics_summary(projects)
     return render_template("admin/projects.html", **context)
+
+
+@admin_module_required("tutors")
+def tutors_page():
+    context = _base_context("tutors")
+    tutors = _build_advisor_stats(context.get("projects", []))
+    context["tutors"] = tutors
+    context["tutors_summary"] = {
+        "total": len(tutors),
+        "projects": sum(row["total"] for row in tutors),
+        "students": sum(row["students"] for row in tutors),
+        "pending": sum(row["pending"] for row in tutors),
+        "requirements_pending": sum(row["requirements_pending"] for row in tutors),
+    }
+    return render_template("admin/tutors.html", **context)
+
+
+@admin_module_required("tutors")
+def tutors_report_excel():
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.table import Table, TableStyleInfo
+    except ImportError:
+        flash("Instala openpyxl en el servidor para exportar Excel.", "error")
+        return redirect(url_for("admin.tutors_page"))
+
+    projects = (
+        Project.query.options(joinedload(Project.members))
+        .order_by(Project.advisor_name.asc(), Project.title.asc())
+        .all()
+    )
+    tutors = _build_advisor_stats(projects)
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Tutores"
+    sheet.sheet_view.showGridLines = False
+    headers = [
+        "Tutor", "Cédula", "Correo", "Teléfono", "Especialidad", "Secciones", "Proyectos",
+        "Activos", "Inactivos", "Logística completa", "Logística pendiente", "Requerimientos pendientes",
+        "Avance logístico", "Estudiantes", "STEAM", "Emprendimiento", "Detalle de proyectos",
+    ]
+    widths = [30, 18, 32, 18, 25, 20, 12, 10, 10, 18, 18, 23, 18, 12, 10, 16, 55]
+    sheet.merge_cells("A1:Q1")
+    sheet["A1"] = "REPORTE GENERAL DE TUTORES"
+    sheet["A1"].font = Font(bold=True, color="FFFFFF", size=16)
+    sheet["A1"].fill = PatternFill("solid", fgColor="063B68")
+    sheet["A1"].alignment = Alignment(vertical="center")
+    sheet.row_dimensions[1].height = 34
+    sheet.merge_cells("A2:Q2")
+    sheet["A2"] = f"{len(tutors)} tutores · Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+    sheet["A2"].font = Font(color="FFFFFF", size=10)
+    sheet["A2"].fill = PatternFill("solid", fgColor="0D5E94")
+    sheet.append([])
+    sheet.append(headers)
+    for column, width in enumerate(widths, start=1):
+        cell = sheet.cell(4, column)
+        cell.font = Font(bold=True, color="FFFFFF", size=10)
+        cell.fill = PatternFill("solid", fgColor="174D74")
+        cell.alignment = Alignment(vertical="center", wrap_text=True)
+        sheet.column_dimensions[get_column_letter(column)].width = width
+    sheet.row_dimensions[4].height = 32
+    thin = Side(style="thin", color="D7E3EC")
+    for tutor in tutors:
+        sheet.append(
+            [
+                tutor["name"], tutor["identity"], tutor["email"], tutor["phone"], tutor["specialty"],
+                tutor["sections_label"], tutor["total"], tutor["active"], tutor["inactive"],
+                tutor["completed"], tutor["pending"], tutor["requirements_pending"],
+                tutor["completion_percent"] / 100, tutor["students"], tutor["steam"], tutor["emprendimiento"],
+                "; ".join(project.title for project in tutor["projects"]),
+            ]
+        )
+        current = sheet.max_row
+        for column in range(1, len(headers) + 1):
+            cell = sheet.cell(current, column)
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+            cell.border = Border(bottom=thin)
+        sheet.cell(current, 13).number_format = "0%"
+        sheet.row_dimensions[current].height = 30
+    if tutors:
+        table = Table(displayName="TutoresProyectos", ref=f"A4:Q{sheet.max_row}")
+        table.tableStyleInfo = TableStyleInfo(
+            name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False,
+            showRowStripes=True, showColumnStripes=False,
+        )
+        sheet.add_table(table)
+    sheet.freeze_panes = "A5"
+    sheet.auto_filter.ref = None
+    sheet.page_setup.orientation = "landscape"
+    sheet.page_setup.fitToWidth = 1
+    sheet.sheet_properties.pageSetUpPr.fitToPage = True
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"tutores_proyectos_{datetime.now().strftime('%Y%m%d')}.xlsx",
+    )
 
 
 _PERSON_NAME_LOWER_WORDS = {"de", "del", "la", "las", "los", "y", "e"}

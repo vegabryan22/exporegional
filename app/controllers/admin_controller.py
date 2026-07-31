@@ -7544,6 +7544,243 @@ def projects_page():
     return render_template("admin/projects.html", **context)
 
 
+_PERSON_NAME_LOWER_WORDS = {"de", "del", "la", "las", "los", "y", "e"}
+
+
+def _person_name_title(value: str | None) -> str:
+    words = re.split(r"(\s+)", (value or "").strip().lower())
+    result = []
+    word_index = 0
+    for part in words:
+        if not part or part.isspace():
+            result.append(part)
+            continue
+        normalized = "-".join(piece.capitalize() for piece in part.split("-"))
+        if word_index > 0 and part in _PERSON_NAME_LOWER_WORDS:
+            normalized = part
+        result.append(normalized)
+        word_index += 1
+    return "".join(result)
+
+
+def _project_report_rows(projects: list, category_map: dict) -> tuple[list[dict], list[dict]]:
+    project_rows = []
+    member_rows = []
+    logistics_map = dict(LOGISTICS_STATUSES)
+    requirements_map = dict(REQUIREMENTS_STATUSES)
+
+    for project in projects:
+        members = sorted(project.members, key=lambda member: (member.student_number, member.full_name.casefold()))
+        sections = ", ".join(sorted({member.section_name for member in members if member.section_name}))
+        specialties = ", ".join(sorted({member.specialty for member in members if member.specialty}))
+        supplies = "; ".join(
+            " ".join(part for part in (item["quantity"], item["unit"], item["name"]) if part)
+            + (f" ({item['notes']})" if item["notes"] else "")
+            for item in project.detailed_requirement_items
+        )
+        project_rows.append(
+            {
+                "id": project.id,
+                "registration_date": project.registration_date,
+                "title": project.title,
+                "category": category_map.get(project.category, project.category),
+                "project_type": project.project_type.name if project.project_type else "",
+                "thematic_axis": project.thematic_axis.name if project.thematic_axis else "",
+                "campaign": project.campaign.name if project.campaign else "",
+                "team": project.team_name,
+                "sections": sections or project.grade_level or "",
+                "specialties": specialties or project.specialty or "",
+                "members_count": len(members),
+                "representative": _person_name_title(project.representative_name),
+                "representative_email": project.representative_email or "",
+                "representative_phone": project.representative_phone or "",
+                "advisor": _person_name_title(project.advisor_name),
+                "advisor_identity": project.advisor_identity or "",
+                "advisor_email": project.advisor_email or "",
+                "advisor_phone": project.advisor_phone or "",
+                "mentor": _person_name_title(project.mentor_name),
+                "description": project.description or "",
+                "objective": project.project_objective or "",
+                "impact": project.expected_impact or "",
+                "start_date": project.project_start_date,
+                "end_date": project.project_end_date,
+                "requirements": ", ".join(sorted(project.requested_requirement_codes)),
+                "supplies": supplies,
+                "logistics_status": logistics_map.get(project.logistics_status, project.logistics_status),
+                "requirements_status": requirements_map.get(project.requirements_status, project.requirements_status),
+                "active": "Activo" if project.is_active else "Inactivo",
+                "english": "Sí" if project.requires_english_evaluation else "No",
+                "created_at": project.created_at,
+            }
+        )
+
+        for member in members:
+            member_rows.append(
+                {
+                    "project_id": project.id,
+                    "project": project.title,
+                    "team": project.team_name,
+                    "category": category_map.get(project.category, project.category),
+                    "student_number": member.student_number,
+                    "name": _person_name_title(member.full_name),
+                    "identity": member.identity_number or "",
+                    "section": member.section_name or "",
+                    "specialty": member.specialty or "",
+                    "phone": member.phone or "",
+                    "email": member.email or "",
+                    "gender": (member.gender or "").capitalize(),
+                    "scholarship": "Sí" if member.has_dining_scholarship else "No",
+                    "english": "Sí" if member.participates_in_english else "No",
+                    "consent": "Sí" if member.consent_signed_ok else "No",
+                    "identity_documents": "Sí" if member.cedula_copies_ok else "No",
+                    "photo": "Sí" if member.photo_url else "No",
+                }
+            )
+
+    return project_rows, member_rows
+
+
+@admin_module_required("projects")
+def projects_report_excel():
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.table import Table, TableStyleInfo
+    except ImportError:
+        flash("Instala openpyxl en el servidor para exportar Excel.", "error")
+        return redirect(url_for("admin.projects_page"))
+
+    projects = (
+        Project.query.options(
+            joinedload(Project.members),
+            joinedload(Project.project_type),
+            joinedload(Project.thematic_axis),
+            joinedload(Project.campaign),
+        )
+        .order_by(Project.title.asc())
+        .all()
+    )
+    category_map = {row.code: row.name for row in Category.query.order_by(Category.sort_order.asc()).all()}
+    project_rows, member_rows = _project_report_rows(projects, category_map)
+
+    workbook = Workbook()
+    projects_sheet = workbook.active
+    projects_sheet.title = "Proyectos"
+    members_sheet = workbook.create_sheet("Integrantes")
+
+    project_headers = [
+        "ID", "Fecha de inscripción", "Proyecto", "Categoría", "Tipo", "Eje temático", "Campaña",
+        "Equipo", "Secciones", "Especialidades", "Integrantes", "Representante", "Correo representante",
+        "Teléfono representante", "Tutor", "Cédula tutor", "Correo tutor", "Teléfono tutor", "Mentor",
+        "Descripción", "Objetivo", "Impacto esperado", "Fecha inicio", "Fecha final", "Requerimientos",
+        "Insumos detallados", "Estado logístico", "Estado requerimientos", "Estado proyecto",
+        "Evaluación en inglés", "Registrado en sistema",
+    ]
+    project_keys = [
+        "id", "registration_date", "title", "category", "project_type", "thematic_axis", "campaign",
+        "team", "sections", "specialties", "members_count", "representative", "representative_email",
+        "representative_phone", "advisor", "advisor_identity", "advisor_email", "advisor_phone", "mentor",
+        "description", "objective", "impact", "start_date", "end_date", "requirements", "supplies",
+        "logistics_status", "requirements_status", "active", "english", "created_at",
+    ]
+    member_headers = [
+        "ID proyecto", "Proyecto", "Equipo", "Categoría", "N.º integrante", "Nombre completo", "Identificación",
+        "Sección", "Especialidad", "Teléfono", "Correo", "Género", "Beca comedor", "Participa en inglés",
+        "Consentimiento", "Copias de identificación", "Fotografía",
+    ]
+    member_keys = [
+        "project_id", "project", "team", "category", "student_number", "name", "identity", "section",
+        "specialty", "phone", "email", "gender", "scholarship", "english", "consent",
+        "identity_documents", "photo",
+    ]
+
+    def build_sheet(sheet, title, subtitle, headers, keys, rows, table_name, widths, date_columns):
+        sheet.sheet_view.showGridLines = False
+        sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+        sheet.cell(1, 1, title)
+        sheet.cell(1, 1).font = Font(bold=True, color="FFFFFF", size=16)
+        sheet.cell(1, 1).fill = PatternFill("solid", fgColor="063B68")
+        sheet.cell(1, 1).alignment = Alignment(vertical="center")
+        sheet.row_dimensions[1].height = 34
+        sheet.merge_cells(start_row=2, start_column=1, end_row=2, end_column=len(headers))
+        sheet.cell(2, 1, subtitle)
+        sheet.cell(2, 1).font = Font(color="FFFFFF", size=10)
+        sheet.cell(2, 1).fill = PatternFill("solid", fgColor="0D5E94")
+        sheet.cell(2, 1).alignment = Alignment(vertical="center")
+        sheet.row_dimensions[2].height = 24
+        sheet.append([])
+        sheet.append(headers)
+
+        thin = Side(style="thin", color="D7E3EC")
+        for column, width in enumerate(widths, start=1):
+            cell = sheet.cell(4, column)
+            cell.font = Font(bold=True, color="FFFFFF", size=10)
+            cell.fill = PatternFill("solid", fgColor="174D74")
+            cell.alignment = Alignment(vertical="center", wrap_text=True)
+            sheet.column_dimensions[get_column_letter(column)].width = width
+        sheet.row_dimensions[4].height = 32
+
+        for row in rows:
+            sheet.append([row[key] for key in keys])
+            current = sheet.max_row
+            for column in range(1, len(headers) + 1):
+                cell = sheet.cell(current, column)
+                cell.alignment = Alignment(vertical="top", wrap_text=True)
+                cell.border = Border(bottom=thin)
+            for column in date_columns:
+                sheet.cell(current, column).number_format = "dd/mm/yyyy"
+            sheet.row_dimensions[current].height = 32
+
+        if rows:
+            table = Table(displayName=table_name, ref=f"A4:{get_column_letter(len(headers))}{sheet.max_row}")
+            table.tableStyleInfo = TableStyleInfo(
+                name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False,
+                showRowStripes=True, showColumnStripes=False,
+            )
+            sheet.add_table(table)
+        sheet.freeze_panes = "A5"
+        sheet.auto_filter.ref = None
+        sheet.page_setup.orientation = "landscape"
+        sheet.page_setup.fitToWidth = 1
+        sheet.page_setup.fitToHeight = 0
+        sheet.sheet_properties.pageSetUpPr.fitToPage = True
+
+    generated = datetime.now().strftime("%d/%m/%Y %H:%M")
+    build_sheet(
+        projects_sheet,
+        "REPORTE GENERAL DE PROYECTOS INSCRITOS",
+        f"{len(project_rows)} proyectos · Generado el {generated}",
+        project_headers,
+        project_keys,
+        project_rows,
+        "ProyectosInscritos",
+        [8, 16, 38, 18, 22, 24, 22, 24, 18, 28, 12, 28, 30, 18, 28, 18, 30, 18, 28, 42, 38, 38, 14, 14, 26, 38, 20, 22, 16, 18, 20],
+        {2, 23, 24, 31},
+    )
+    build_sheet(
+        members_sheet,
+        "INTEGRANTES DE PROYECTOS INSCRITOS",
+        f"{len(member_rows)} integrantes · Generado el {generated}",
+        member_headers,
+        member_keys,
+        member_rows,
+        "IntegrantesProyectos",
+        [12, 38, 24, 18, 12, 30, 18, 14, 28, 18, 30, 14, 16, 18, 18, 22, 14],
+        set(),
+    )
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"proyectos_inscritos_{datetime.now().strftime('%Y%m%d')}.xlsx",
+    )
+
+
 @admin_module_required("overview")
 def logistics_pending_report_excel():
     try:

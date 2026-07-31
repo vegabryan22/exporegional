@@ -1376,6 +1376,29 @@ nav a:hover,
     gap: 0.5rem;
 }
 
+.projects-report-actions {
+    align-items: center;
+    background: linear-gradient(135deg, #edf7ff 0%, #f7fbff 100%);
+    border: 1px solid #c9deef;
+    border-radius: 12px;
+    display: flex;
+    gap: .8rem;
+    justify-content: space-between;
+    margin: .8rem 0;
+    padding: .75rem .85rem;
+}
+
+.projects-report-actions .secondary-btn {
+    align-items: center;
+    display: inline-flex;
+    gap: .45rem;
+}
+
+.projects-report-actions small {
+    color: #5d7590;
+    font-weight: 700;
+}
+
 .projects-logistics-metrics {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2410,6 +2433,16 @@ th {
 @media (max-width: 640px) {
     .projects-logistics-metrics {
         grid-template-columns: 1fr;
+    }
+
+    .projects-report-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .projects-report-actions .secondary-btn {
+        justify-content: center;
+        width: 100%;
     }
 
     .project-maintenance-card {

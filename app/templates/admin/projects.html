@@ -116,6 +116,14 @@
     {% endfor %}
     {% endif %}
 
+    <div class="projects-report-actions">
+        <a class="secondary-btn" href="{{ url_for('admin.projects_report_excel') }}">
+            <svg aria-hidden="true"><use href="#ico-download"></use></svg>
+            Descargar Excel de proyectos inscritos
+        </a>
+        <small>Incluye una hoja general y otra con los integrantes.</small>
+    </div>
+
     <div class="projects-filter-bar">
         <div class="projects-filter-row">
             <label class="projects-filter-field projects-filter-search">

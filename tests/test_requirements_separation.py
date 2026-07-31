@@ -12,6 +12,8 @@ from app.controllers.admin_controller import (
     _build_project_logistics_summary,
     _build_tutor_logistics_reminder_payload,
     _build_exposition_usher_report_rows,
+    _person_name_title,
+    _project_report_rows,
     _sync_project_logistics_status,
 )
 from app.controllers.project_controller import _build_requirement_items
@@ -22,6 +24,46 @@ from app.models.project_member import ProjectMember
 
 
 class RequirementsSeparationTest(unittest.TestCase):
+    def test_person_names_are_exported_with_natural_capitalization(self):
+        self.assertEqual("María José de la Cruz", _person_name_title("MARÍA JOSÉ DE LA CRUZ"))
+        self.assertEqual("Ana-María del Río", _person_name_title("ana-maría DEL RÍO"))
+
+    def test_projects_report_contains_projects_and_members(self):
+        project = Project(
+            id=7,
+            title="Proyecto de prueba",
+            team_name="Equipo",
+            representative_name="JUAN CARLOS DE LA O",
+            representative_email="representante@example.com",
+            advisor_name="MARÍA ELENA DEL RÍO",
+            category="steam",
+            description="Descripción",
+            is_active=True,
+            logistics_status="completo",
+            requirements_status="completo",
+        )
+        project.members = [
+            ProjectMember(
+                student_number=1,
+                full_name="ANA SOFÍA DE LOS ÁNGELES",
+                section_name="12-1",
+                specialty="Redes",
+            )
+        ]
+
+        projects, members = _project_report_rows([project], {"steam": "STEAM"})
+
+        self.assertEqual("Juan Carlos de la O", projects[0]["representative"])
+        self.assertEqual("María Elena del Río", projects[0]["advisor"])
+        self.assertEqual("Ana Sofía de los Ángeles", members[0]["name"])
+        self.assertEqual("12-1", members[0]["section"])
+
+    def test_projects_page_links_general_excel_report(self):
+        template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
+
+        self.assertIn("projects_report_excel", template)
+        self.assertIn("Descargar Excel de proyectos inscritos", template)
+
     def test_registration_builds_structured_requirement_items(self):
         form_data = {
             "requirement_item_name": ["Mesa de exhibición", "Extensión eléctrica"],

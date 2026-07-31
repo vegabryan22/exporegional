@@ -688,6 +688,39 @@ nav a:hover,
     margin: 0;
 }
 
+.tutors-banner {
+    align-items: center;
+}
+
+a.tutors-export-btn {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    width: auto !important;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0.55rem 0.8rem;
+    border-radius: 9px;
+    white-space: nowrap;
+}
+
+a.tutors-export-btn svg {
+    display: block;
+    flex: 0 0 18px;
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px;
+    max-width: 18px;
+}
+
+@media (max-width: 640px) {
+    a.tutors-export-btn {
+        width: 100% !important;
+    }
+}
+
 .page-head {
     display: flex;
     align-items: flex-start;

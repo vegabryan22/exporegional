@@ -83,6 +83,7 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("tutors_report_excel", template)
         self.assertIn('name="action" value="update_advisor"', template)
         self.assertIn('name="action" value="toggle_tutor"', template)
+        self.assertIn("tutors-export-btn", template)
 
     def test_registration_uses_private_central_tutor_catalog(self):
         template = Path("app/templates/public/register_project.html").read_text(encoding="utf-8")

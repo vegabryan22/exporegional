@@ -844,6 +844,15 @@ Reporte operativo:
 - los textos históricos se presentan como un elemento heredado pendiente de desglosar
 - la confirmación de insumos pertenece al módulo de requerimientos y permanece separada del control documental de Logística
 
+### Reporte general de proyectos
+
+- ruta administrativa: `/admin/proyectos/reporte/excel`
+- permiso requerido: `projects`
+- hoja `Proyectos`: una fila por inscripción con información académica, responsables, fechas, estados y requerimientos
+- hoja `Integrantes`: una fila por estudiante vinculada mediante el identificador del proyecto
+- la capitalización de nombres se aplica en la exportación y no reescribe la información original
+- las tablas de Excel incorporan sus propios filtros; no se agrega un filtro duplicado a nivel de hoja
+
 ## 7.3 Flujo de cierre administrativo
 
 1. Logística revisa documentación, formularios, fotografías, integrantes y asignación de jueces

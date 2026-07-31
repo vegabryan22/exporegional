@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.17.0] - 2026-07-31
+
+### Añadido
+
+- Reporte Excel general de proyectos inscritos disponible desde Administración → Proyectos.
+- Hoja de proyectos con datos académicos, responsables, fechas, estados y requerimientos.
+- Hoja de integrantes con sección, especialidad, contacto y controles documentales relevantes.
+
+### Cambiado
+
+- Los nombres de representantes, tutores, mentores e integrantes se exportan con capitalización natural sin modificar la base de datos.
+- La página de proyectos incorpora un acceso visible y adaptable para descargar el reporte.
+
 ## [0.16.0] - 2026-07-30
 
 ### Añadido

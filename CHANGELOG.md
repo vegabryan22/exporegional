@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.21.0] - 2026-07-31
+
+### Añadido
+
+- Configuración guiada para enviar notificaciones mediante una cuenta Gmail o Google Workspace.
+- El modo Gmail establece automáticamente `smtp.gmail.com`, puerto `587`, TLS y el remitente de la cuenta.
+- La pantalla enlaza la creación de contraseñas de aplicación y conserva el envío de prueba.
+
+### Seguridad
+
+- Gmail exige cuenta completa y contraseña de aplicación antes de considerarse configurado.
+- La contraseña guardada nunca se devuelve al navegador y puede conservarse dejando el campo vacío.
+- Los rechazos de autenticación de Google muestran una explicación específica sin revelar credenciales.
+
 ## [0.20.2] - 2026-07-31
 
 ### Corregido

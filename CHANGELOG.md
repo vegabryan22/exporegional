@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.19.2] - 2026-07-31
+
+### Corregido
+
+- La aceptación final ahora utiliza una franja horizontal proporcionada, con casilla visible, jerarquía tipográfica clara y adaptación móvil.
+
 ## [0.19.1] - 2026-07-31
 
 ### Corregido

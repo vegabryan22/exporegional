@@ -95,7 +95,7 @@
             <input type="hidden" name="action" value="send_logistics_reminder">
             <input type="hidden" name="next" value="{{ request.path }}">
             {% for row in reminder_data.reminder_rows %}
-            <input type="hidden" name="project_ids" value="{{ row.project.id }}">
+            <input type="hidden" name="project_ids" value="{{ row.project.id }}" data-tutor-key="{{ (row.project.advisor_email or ('project-' ~ row.project.id))|trim|lower }}">
             {% endfor %}
             <label class="reminder-audience-field">
                 <span>Destinatarios</span>
@@ -132,7 +132,7 @@
 
         <section class="reminder-list-col">
             <p class="maintenance-kicker">Envíos puntuales por proyecto</p>
-            <p class="table-subtext" style="margin-bottom:0.6rem">Verifica pendientes y envía solo al proyecto que necesita seguimiento inmediato.</p>
+            <p class="table-subtext" style="margin-bottom:0.6rem">El aviso a estudiantes corresponde al proyecto seleccionado. El aviso al tutor consolida todos sus proyectos pendientes.</p>
 
             {% for row in reminder_data.reminder_rows %}
             <div class="reminder-project-entry">
@@ -180,7 +180,7 @@
                     <input type="hidden" name="project_ids" value="{{ row.project.id }}">
                     <input type="hidden" name="custom_deadline" value="{{ reminder_data.deadline.strftime('%Y-%m-%d') if reminder_data.deadline else '' }}">
                     <button type="submit" name="audience" value="students" class="ghost-btn" {% if row.recipient_count == 0 or not smtp_configured %}disabled{% endif %}>Estudiantes</button>
-                    <button type="submit" name="audience" value="tutors" class="ghost-btn" {% if not row.tutor_has_email or not smtp_configured %}disabled{% endif %}>Tutor</button>
+                    <button type="submit" name="audience" value="tutors" class="ghost-btn" {% if not row.tutor_has_email or not smtp_configured %}disabled{% endif %}>Tutor: resumen</button>
                     <button type="submit" name="audience" value="all" class="secondary-btn" {% if (row.recipient_count == 0 and not row.tutor_has_email) or not smtp_configured %}disabled{% endif %}>Ambos</button>
                 </form>
             </div>
@@ -231,17 +231,29 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        var projectIds = Array.from(form.querySelectorAll('input[name="project_ids"]'))
-            .map(function (input) { return input.value; })
-            .filter(Boolean);
-        if (!projectIds.length) {
+        var projectEntries = Array.from(form.querySelectorAll('input[name="project_ids"]'))
+            .map(function (input) { return { id: input.value, tutor: input.dataset.tutorKey }; })
+            .filter(function (entry) { return Boolean(entry.id); });
+        if (!projectEntries.length) {
             return;
         }
 
-        var batchSize = 1;
+        var selectedAudience = document.getElementById('reminder-audience').value;
         var batches = [];
-        for (var index = 0; index < projectIds.length; index += batchSize) {
-            batches.push(projectIds.slice(index, index + batchSize));
+        if (selectedAudience === 'students' || selectedAudience === 'all') {
+            projectEntries.forEach(function (entry) {
+                batches.push({ audience: 'students', ids: [entry.id] });
+            });
+        }
+        if (selectedAudience === 'tutors' || selectedAudience === 'all') {
+            var tutorGroups = {};
+            projectEntries.forEach(function (entry) {
+                if (!tutorGroups[entry.tutor]) tutorGroups[entry.tutor] = [];
+                tutorGroups[entry.tutor].push(entry.id);
+            });
+            Object.keys(tutorGroups).sort().forEach(function (tutorKey) {
+                batches.push({ audience: 'tutors', ids: tutorGroups[tutorKey] });
+            });
         }
 
         submitButton.disabled = true;
@@ -253,9 +265,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 statusLabel.textContent = 'Enviando lote ' + (batchIndex + 1) + ' de ' + batches.length + '…';
                 var formData = new FormData(form);
                 formData.delete('project_ids');
-                batches[batchIndex].forEach(function (projectId) {
+                batches[batchIndex].ids.forEach(function (projectId) {
                     formData.append('project_ids', projectId);
                 });
+                formData.set('audience', batches[batchIndex].audience);
                 formData.set('batch_mode', '1');
 
                 var response = await fetch(form.action, {

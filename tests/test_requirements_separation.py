@@ -12,6 +12,8 @@ from app.controllers.admin_controller import (
     _build_logistics_pending_report_rows,
     _build_project_logistics_summary,
     _build_tutor_logistics_reminder_payload,
+    _build_tutor_logistics_digest_payload,
+    _build_logistics_reminder_data,
     _build_exposition_usher_report_rows,
     _build_advisor_stats,
     _person_name_title,
@@ -516,7 +518,9 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn('name="project_ids"', template)
         self.assertIn("Correo para tutores", template)
         self.assertIn("reminder-batch-progress", template)
-        self.assertIn("var batchSize = 1", template)
+        self.assertIn("data-tutor-key", template)
+        self.assertIn("tutorGroups", template)
+        self.assertIn("formData.set('audience'", template)
         self.assertIn("await fetch", template)
         self.assertIn('value="save_logo_submission_email"', template)
         self.assertIn('name="logo_submission_email"', template)
@@ -600,6 +604,60 @@ class RequirementsSeparationTest(unittest.TestCase):
 
         self.assertNotIn("logos@colegio.cr", payload["plain_body"])
         self.assertNotIn("mailto:logos@colegio.cr", payload["html_body"])
+
+    def test_tutor_digest_combines_and_orders_all_pending_projects(self):
+        from app import create_app
+
+        app = create_app()
+        project_b = Project(
+            id=22,
+            title="Proyecto Zeta",
+            advisor_name="Tutor Ejemplo",
+            advisor_email="tutor@example.com",
+            is_active=True,
+            project_logo_path=None,
+            logistics_document_ok=False,
+            logistics_registration_form_signed_ok=True,
+            logistics_cedula_tutor_ok=True,
+        )
+        project_a = Project(
+            id=23,
+            title="Proyecto Alfa",
+            advisor_name="Tutor Ejemplo",
+            advisor_email="tutor@example.com",
+            is_active=True,
+            project_logo_path="uploads/projects/alfa.png",
+            logistics_logo_ok=True,
+            logistics_document_ok=True,
+            logistics_registration_form_signed_ok=False,
+            logistics_cedula_tutor_ok=True,
+        )
+        project_a.members = []
+        project_b.members = []
+
+        with app.test_request_context("/admin/proyectos/recordatorio"):
+            payload = _build_tutor_logistics_digest_payload(
+                [project_b, project_a],
+                deadline=None,
+                institution_name="ExpoTécnica",
+                logo_submission_email="logos@colegio.cr",
+            )
+
+        self.assertEqual(2, len(payload["project_rows"]))
+        self.assertEqual("Proyecto Alfa", payload["project_rows"][0]["project"].title)
+        self.assertEqual("Proyecto Zeta", payload["project_rows"][1]["project"].title)
+        self.assertIn("2 proyectos", payload["subject"])
+        self.assertLess(payload["html_body"].index("Proyecto Alfa"), payload["html_body"].index("Proyecto Zeta"))
+
+        with app.app_context(), patch.object(
+            mail_service.SystemSetting,
+            "get_value",
+            side_effect=lambda key, default=None: default,
+        ):
+            reminder_data = _build_logistics_reminder_data([project_b, project_a], [])
+
+        self.assertEqual(1, reminder_data["total_tutor_recipients"])
+        self.assertEqual([project_b, project_a], reminder_data["tutor_groups"]["tutor@example.com"])
 
     def test_usher_report_contains_only_confirmed_exposition_assignments(self):
         exposition_judge = Judge(

@@ -713,10 +713,13 @@
 </dialog>
 
 {% for member in project.members %}
-<dialog id="edit-member-{{ member.id }}" class="maintenance-dialog">
+<dialog id="edit-member-{{ member.id }}" class="maintenance-dialog member-edit-dialog">
     <div class="dialog-card">
-        <div class="dialog-head"><h4>Editar integrante</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
-        <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form member-academic-form">
+        <div class="dialog-head member-edit-head">
+            <div><span>Integrante #{{ member.student_number }}</span><h4>Editar informaci&oacute;n</h4><p>{{ member.full_name }}</p></div>
+            <button type="button" class="ghost-btn dialog-close" data-dialog-close aria-label="Cerrar">&times;</button>
+        </div>
+        <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form member-academic-form member-edit-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="update_project_member">
             <input type="hidden" name="member_id" value="{{ member.id }}">
@@ -767,17 +770,32 @@
                 <label>Teléfono<input type="text" name="member_phone" value="{{ member.phone or '' }}"></label>
                 <label>Correo<input type="email" name="member_email" value="{{ member.email or '' }}"></label>
             </div>
-            <label>Foto del integrante
+            <div class="member-photo-editor">
+                <div class="member-photo-preview">
                 {% if member.photo_url %}
-                    <img src="{{ url_for('static', filename=member.photo_url) }}" alt="Foto de {{ member.full_name }}" class="member-photo" style="display:block;margin-bottom:0.45rem;">
+                    <img src="{{ url_for('static', filename=member.photo_url) }}" alt="Foto de {{ member.full_name }}">
                 {% else %}
                     {% set member_placeholder = female_member_placeholder if member.gender == 'femenino' else male_member_placeholder %}
-                    <img src="{{ member_placeholder }}" alt="Sin foto de {{ member.full_name }}" class="member-photo" style="display:block;margin-bottom:0.45rem;">
+                    <img src="{{ member_placeholder }}" alt="Sin foto de {{ member.full_name }}">
                 {% endif %}
-                <input type="file" name="member_photo" accept="image/png,image/jpeg,image/webp,image/gif">
-            </label>
-            <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Actualizar integrante</button></div>
+                </div>
+                <div class="member-photo-controls">
+                    <div><strong>Fotograf&iacute;a del integrante</strong><small>Seleccione una imagen solo si desea reemplazar la actual.</small></div>
+                    <input type="file" name="member_photo" accept="image/png,image/jpeg,image/webp,image/gif">
+                    {% if member.photo_url %}
+                    <button type="submit" class="danger-btn member-photo-delete" form="delete-member-photo-{{ member.id }}">Eliminar foto actual</button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="actions-row member-edit-actions"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar cambios</button></div>
         </form>
+        {% if member.photo_url %}
+        <form id="delete-member-photo-{{ member.id }}" method="post" action="{{ action_url }}" onsubmit="return confirm('¿Eliminar la foto actual de este integrante?')">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="delete_member_photo">
+            <input type="hidden" name="member_id" value="{{ member.id }}">
+        </form>
+        {% endif %}
     </div>
 </dialog>
 {% endfor %}

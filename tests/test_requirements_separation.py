@@ -242,6 +242,16 @@ class RequirementsSeparationTest(unittest.TestCase):
 
         self.assertIn("logistics_reminder_page", template)
         self.assertIn("Centro de recordatorios", template)
+
+    def test_member_editor_can_delete_current_photo(self):
+        template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
+        controller = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")
+
+        self.assertIn('value="delete_member_photo"', template)
+        self.assertIn("Eliminar foto actual", template)
+        self.assertIn('"delete_member_photo": "projects"', controller)
+        self.assertIn('member.photo_url = None', controller)
+        self.assertIn('_sync_project_logistics_status(member.project)', controller)
         self.assertIn("Reporte de proyectos inscritos", template)
         self.assertIn("Descargar Excel", template)
 

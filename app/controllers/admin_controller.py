@@ -237,6 +237,7 @@ ACTION_MODULE_MAP = {
     "upload_project_logo": "projects",
     "delete_project": "projects",
     "upload_member_photo": "projects",
+    "delete_member_photo": "projects",
     "create_project_member": "projects",
     "update_project_member": "projects",
     "delete_project_member": "projects",
@@ -5573,6 +5574,31 @@ def _handle_action(action: str):
                 flash("Foto del integrante actualizada.", "success")
             except ValueError as error:
                 flash(str(error), "error")
+
+    elif action == "delete_member_photo":
+        member_id = request.form.get("member_id", type=int)
+        member = ProjectMember.query.options(joinedload(ProjectMember.project).joinedload(Project.members)).get(member_id) if member_id else None
+        if not member:
+            flash("Integrante no encontrado.", "error")
+        elif not member.photo_url:
+            flash("El integrante no tiene una foto para eliminar.", "info")
+        else:
+            previous_path = member.photo_url
+            _delete_member_photo_file(member)
+            member.photo_url = None
+            _sync_project_logistics_status(member.project)
+            _add_member_change(member.project_id, member.id, "photo_deleted", f"Foto eliminada de {member.full_name}")
+            log_event(
+                "admin.member.photo_delete",
+                "project_member",
+                entity_id=member.id,
+                detail=(
+                    f"Foto eliminada de integrante #{member.student_number} '{member.full_name}' "
+                    f"en proyecto #{member.project_id}; ruta anterior={previous_path}"
+                ),
+            )
+            db.session.commit()
+            flash("Foto del integrante eliminada.", "success")
 
     elif action == "create_project_member":
         project_id = request.form.get("project_id", type=int)

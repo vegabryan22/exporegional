@@ -2,6 +2,7 @@ import json
 import re
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from flask import Flask, render_template
@@ -35,6 +36,8 @@ def _run_optional_schema_statement(connection, statement: str, label: str) -> bo
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    version_path = Path(app.root_path).parent / "VERSION"
+    app.config["ASSET_VERSION"] = version_path.read_text(encoding="utf-8").strip() if version_path.exists() else "dev"
 
     db.init_app(app)
     login_manager.init_app(app)
@@ -263,6 +266,7 @@ def register_context_processors(app):
                 "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
             },
             "campaign_is_open": active_campaign is not None,
+            "asset_version": app.config.get("ASSET_VERSION", "dev"),
             "judge_public_registration_enabled": SystemSetting.get_value("judge_public_registration_enabled", "1") == "1",
             "site_visibility": {
                 "maintenance_enabled": SystemSetting.get_value("maintenance_enabled", "0") == "1",

@@ -104,6 +104,8 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("toggleMentorFields", template)
         self.assertIn('type="checkbox" name="declaration" value="si"', template)
         self.assertNotIn("No acepto", template)
+        base_template = Path("app/templates/base.html").read_text(encoding="utf-8")
+        self.assertIn("?v={{ asset_version }}", base_template)
 
     def test_member_photos_are_validated_automatically(self):
         project = Project(logistics_photos_ok=False)

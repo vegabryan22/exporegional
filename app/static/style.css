@@ -7451,10 +7451,14 @@ dialog.maintenance-dialog::backdrop {
 .mentor-fields[hidden] { display: none !important; }
 
 .declaration-acceptance {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: 0.9rem;
-    width: 100%;
+    width: 100% !important;
+    max-width: none !important;
+    justify-self: stretch;
+    box-sizing: border-box;
     margin-top: 0.55rem;
     padding: 1rem 1.1rem;
     border: 1px solid #e8b5bf;
@@ -7464,6 +7468,13 @@ dialog.maintenance-dialog::backdrop {
     cursor: pointer;
     box-shadow: 0 8px 22px rgba(184, 61, 83, 0.07);
     transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.stage-6 .inline-grid-1,
+.stage-6 .inline-grid-1 > .register-fieldset {
+    width: 100%;
+    min-width: 0;
+    justify-self: stretch;
 }
 
 .project-register-form .declaration-acceptance input[type="checkbox"] {

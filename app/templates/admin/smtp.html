@@ -18,9 +18,9 @@
         <article class="{{ 'ok' if smtp_settings.provider == 'gmail' else '' }}"><span>Proveedor</span><strong>{{ 'Gmail' if smtp_settings.provider == 'gmail' else 'SMTP personalizado' }}</strong></article>
         <article><span>Host</span><strong>{{ smtp_settings.host or 'N/D' }}</strong></article>
         <article><span>Puerto</span><strong>{{ smtp_settings.port }}</strong></article>
-        <article><span>Usuario</span><strong>{{ smtp_settings.username or 'N/D' }}</strong></article>
-        <article><span>Remitente</span><strong>{{ smtp_settings.from_email or 'N/D' }}</strong></article>
-        <article class="{{ 'ok' if smtp_settings.use_tls else 'warn' }}"><span>TLS</span><strong>{{ 'S&iacute;' if smtp_settings.use_tls else 'No' }}</strong></article>
+        <article class="{{ 'ok' if smtp_settings.use_tls else 'warn' }}"><span>TLS</span><strong>{{ 'Sí' if smtp_settings.use_tls else 'No' }}</strong></article>
+        <article class="smtp-email-summary"><span>Usuario</span><strong>{{ smtp_settings.username or 'N/D' }}</strong></article>
+        <article class="smtp-email-summary"><span>Remitente</span><strong>{{ smtp_settings.from_email or 'N/D' }}</strong></article>
     </div>
 
     <div class="gmail-setup-guide">

@@ -58,6 +58,8 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("smtp.gmail.com", template)
         self.assertIn("contrase&ntilde;a de aplicaci&oacute;n", template)
         self.assertIn("myaccount.google.com/apppasswords", template)
+        self.assertIn("{{ 'Sí' if smtp_settings.use_tls else 'No' }}", template)
+        self.assertNotIn("{{ 'S&iacute;' if smtp_settings.use_tls else 'No' }}", template)
     def test_tutor_statistics_centralize_projects_students_and_pending_work(self):
         complete = Project(
             id=31,

@@ -13548,6 +13548,14 @@ body {
     background: linear-gradient(135deg, #fff, #f5f9fd);
 }
 
+.smtp-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.smtp-summary-grid .smtp-email-summary {
+    grid-column: span 2;
+}
+
 .gmail-setup-guide p {
     margin: 0.2rem 0 0;
     color: var(--muted);
@@ -13905,6 +13913,10 @@ body {
 }
 
 @media (max-width: 900px) {
+    .smtp-summary-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .reminder-logo-email-card,
     .reminder-command-center,
     .reminder-two-col {
@@ -13917,6 +13929,14 @@ body {
 }
 
 @media (max-width: 640px) {
+    .smtp-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .smtp-summary-grid .smtp-email-summary {
+        grid-column: auto;
+    }
+
     .gmail-setup-guide {
         grid-template-columns: auto 1fr;
     }

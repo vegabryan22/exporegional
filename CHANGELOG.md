@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.23.2] - 2026-07-31
+
+### Corregido
+
+- Al crear, actualizar o eliminar un integrante, o retirar su fotografía, la página vuelve a abrir el modal de integrantes del proyecto correspondiente.
+- Los diálogos de creación y edición reconocen el modal del equipo como padre, por lo que cancelar cierra únicamente el diálogo secundario.
+- La acción de eliminar se presenta como una papelera compacta y evita texto partido o botones desproporcionados.
+
 ## [0.23.1] - 2026-07-31
 
 ### Cambiado

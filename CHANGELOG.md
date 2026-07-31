@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.22.0] - 2026-07-31
+
+### Cambiado
+
+- Cada tutor recibe un único correo consolidado con todos sus proyectos pendientes, ordenados alfabéticamente.
+- Cada proyecto del resumen separa requisitos generales, pendientes individuales por estudiante e instrucciones para enviar el logo cuando corresponda.
+- El envío masivo conserva lotes individuales para estudiantes, pero agrupa los proyectos por correo de tutor para evitar mensajes duplicados.
+- El envío puntual al tutor también incorpora todos sus proyectos activos con pendientes.
+- Las métricas del centro cuentan tutores únicos en lugar de contar un tutor una vez por proyecto.
+
 ## [0.21.1] - 2026-07-31
 
 ### Corregido

@@ -7453,22 +7453,57 @@ dialog.maintenance-dialog::backdrop {
 .declaration-acceptance {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    width: fit-content;
+    gap: 0.9rem;
+    width: 100%;
     margin-top: 0.55rem;
-    padding: 0.85rem 1rem;
-    border: 1px solid #efc4cc;
-    border-radius: 0.9rem;
-    background: #fff;
+    padding: 1rem 1.1rem;
+    border: 1px solid #e8b5bf;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #fff 0%, #fff8f9 100%);
     color: var(--navy);
-    font-weight: 850;
     cursor: pointer;
+    box-shadow: 0 8px 22px rgba(184, 61, 83, 0.07);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
-.declaration-acceptance input {
-    width: 1.2rem;
-    height: 1.2rem;
+.project-register-form .declaration-acceptance input[type="checkbox"] {
+    appearance: auto;
+    flex: 0 0 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    min-width: 1.25rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0.25rem;
+    box-shadow: none;
     accent-color: #b83d53;
+}
+
+.declaration-acceptance > span {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.declaration-acceptance strong {
+    color: #173d62;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.declaration-acceptance small {
+    color: #65798e;
+    font-size: 0.86rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.declaration-acceptance:hover,
+.declaration-acceptance:has(input:checked) {
+    border-color: #c8415b;
+    box-shadow: 0 10px 24px rgba(184, 61, 83, 0.13);
+    transform: translateY(-1px);
 }
 
 .project-register-card-accent.confirm {

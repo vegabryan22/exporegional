@@ -400,7 +400,10 @@
                 <div class="form-grid inline-grid-1">
                     <div class="register-fieldset">
                         <span>Declaración *</span>
-                        <label class="declaration-acceptance"><input type="checkbox" name="declaration" value="si" {% if form_data.get('declaration') == 'si' %}checked{% endif %} required><span>Acepto la declaración para completar la inscripción</span></label>
+                        <label class="declaration-acceptance">
+                            <input type="checkbox" name="declaration" value="si" {% if form_data.get('declaration') == 'si' %}checked{% endif %} required>
+                            <span><strong>Acepto la declaración</strong><small>Confirmo la información anterior para completar la inscripción.</small></span>
+                        </label>
                     </div>
                 </div>
             </section>

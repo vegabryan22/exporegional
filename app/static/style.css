@@ -13529,6 +13529,51 @@ body {
     flex-wrap: wrap;
 }
 
+.reminder-logo-email-card {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) minmax(360px, 1.15fr);
+    gap: 1rem;
+    align-items: end;
+    padding: 1rem;
+    border: 1px solid #b8d8eb;
+    border-radius: 16px;
+    background: #fff;
+}
+
+.reminder-logo-email-card h4,
+.reminder-logo-email-card p {
+    margin: 0;
+}
+
+.reminder-logo-email-card h4 {
+    margin-bottom: 0.25rem;
+    color: var(--primary);
+}
+
+.reminder-logo-email-card > div > p:last-child {
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+.reminder-logo-email-form {
+    display: grid;
+    grid-template-columns: minmax(220px, 1fr) auto;
+    gap: 0.65rem;
+    align-items: end;
+}
+
+.reminder-logo-email-form label {
+    display: grid;
+    gap: 0.3rem;
+    color: var(--primary);
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.reminder-logo-email-form input {
+    width: 100%;
+}
+
 .reminder-command-center {
     display: grid;
     grid-template-columns: minmax(220px, 0.8fr) minmax(420px, 1.6fr);
@@ -13797,6 +13842,7 @@ body {
 }
 
 @media (max-width: 900px) {
+    .reminder-logo-email-card,
     .reminder-command-center,
     .reminder-two-col {
         grid-template-columns: 1fr;
@@ -13808,6 +13854,14 @@ body {
 }
 
 @media (max-width: 640px) {
+    .reminder-logo-email-form {
+        grid-template-columns: 1fr;
+    }
+
+    .reminder-logo-email-form button {
+        width: 100%;
+    }
+
     .reminder-bulk-form,
     .reminder-project-head,
     .reminder-project-actions {

@@ -480,6 +480,8 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("reminder-batch-progress", template)
         self.assertIn("var batchSize = 1", template)
         self.assertIn("await fetch", template)
+        self.assertIn('value="save_logo_submission_email"', template)
+        self.assertIn('name="logo_submission_email"', template)
 
     def test_tutor_reminder_contains_group_and_student_pending_items(self):
         from app import create_app
@@ -519,6 +521,47 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("Cédula del tutor", payload["missing_group"])
         self.assertEqual("Estudiante Ejemplo", payload["member_missing"][0]["member"].full_name)
         self.assertIn("Consentimiento informado", payload["member_missing"][0]["items"])
+
+    def test_logo_email_is_included_only_when_logo_must_be_uploaded(self):
+        from app import create_app
+
+        app = create_app()
+        project = Project(
+            id=21,
+            title="Proyecto sin logo",
+            team_name="Equipo",
+            advisor_name="Tutor Ejemplo",
+            is_active=True,
+            project_logo_path=None,
+            logistics_document_ok=True,
+            logistics_registration_form_signed_ok=True,
+            logistics_cedula_tutor_ok=True,
+        )
+        project.members = []
+
+        with app.test_request_context("/admin/proyectos/recordatorio"):
+            payload = _build_tutor_logistics_reminder_payload(
+                project,
+                deadline=None,
+                institution_name="ExpoTécnica",
+                logo_submission_email="logos@colegio.cr",
+            )
+
+        self.assertIn("logos@colegio.cr", payload["plain_body"])
+        self.assertIn("mailto:logos@colegio.cr", payload["html_body"])
+
+        project.project_logo_path = "uploads/projects/logo.png"
+        project.logistics_logo_ok = False
+        with app.test_request_context("/admin/proyectos/recordatorio"):
+            payload = _build_tutor_logistics_reminder_payload(
+                project,
+                deadline=None,
+                institution_name="ExpoTécnica",
+                logo_submission_email="logos@colegio.cr",
+            )
+
+        self.assertNotIn("logos@colegio.cr", payload["plain_body"])
+        self.assertNotIn("mailto:logos@colegio.cr", payload["html_body"])
 
     def test_usher_report_contains_only_confirmed_exposition_assignments(self):
         exposition_judge = Judge(

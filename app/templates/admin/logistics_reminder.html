@@ -64,6 +64,23 @@
     </div>
     {% endif %}
 
+    <section class="reminder-logo-email-card">
+        <div>
+            <p class="maintenance-kicker">Recepci&oacute;n de archivos</p>
+            <h4>Correo para recibir logos</h4>
+            <p>Cuando un proyecto no tenga logo, el recordatorio indicar&aacute; esta direcci&oacute;n para enviarlo. Si la deja vac&iacute;a, no se mostrar&aacute; ninguna instrucci&oacute;n.</p>
+        </div>
+        <form method="POST" action="{{ action_url }}" class="reminder-logo-email-form">
+            <input type="hidden" name="action" value="save_logo_submission_email">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <label>
+                <span>Correo de recepci&oacute;n</span>
+                <input type="email" name="logo_submission_email" value="{{ reminder_data.logo_submission_email }}" placeholder="logos@institucion.cr" autocomplete="email">
+            </label>
+            <button type="submit" class="secondary-btn">Guardar correo</button>
+        </form>
+    </section>
+
     {% if reminder_data.total_recipients == 0 and reminder_data.total_tutor_recipients == 0 %}
     <p class="muted-empty">No hay estudiantes ni tutores con correo electrónico registrado para enviar recordatorios.</p>
     {% else %}

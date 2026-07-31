@@ -290,6 +290,7 @@ ACTION_MODULE_MAP = {
     "save_permissions_matrix": "permissions",
     "send_logistics_reminder": "projects",
     "send_tutor_logistics_reminder": "projects",
+    "save_logo_submission_email": "projects",
     "install_package": "dependencies",
 }
 
@@ -1109,6 +1110,7 @@ def _build_logistics_reminder_data(projects, campaigns):
     if active_campaign and active_campaign.end_date:
         deadline = active_campaign.end_date - timedelta(days=1)
     institution_name = SystemSetting.get_value("school_name", "ExpoTécnica")
+    logo_submission_email = (SystemSetting.get_value("logo_submission_email", "") or "").strip()
 
     reminder_rows = []
     for project in projects:
@@ -1154,10 +1156,21 @@ def _build_logistics_reminder_data(projects, campaigns):
         "total_tutors_without_email": len(reminder_rows) - total_tutor_recipients,
         "total_projects": len(reminder_rows),
         "institution_name": institution_name,
+        "logo_submission_email": logo_submission_email,
     }
 
 
-def _render_logistics_reminder_email(member, project, missing_group, missing_individual, deadline, institution_name):
+def _render_logistics_reminder_email(
+    member,
+    project,
+    missing_group,
+    missing_individual,
+    deadline,
+    institution_name,
+    logo_submission_email=None,
+):
+    if logo_submission_email is None:
+        logo_submission_email = (SystemSetting.get_value("logo_submission_email", "") or "").strip()
     return render_template(
         "admin/email_logistics_reminder.html",
         member=member,
@@ -1166,10 +1179,14 @@ def _render_logistics_reminder_email(member, project, missing_group, missing_ind
         missing_individual=missing_individual,
         deadline=deadline,
         institution_name=institution_name,
+        logo_submission_email=logo_submission_email,
+        needs_logo_upload=not project.has_real_logo,
     )
 
 
-def _build_tutor_logistics_reminder_payload(project, deadline, institution_name):
+def _build_tutor_logistics_reminder_payload(project, deadline, institution_name, logo_submission_email=None):
+    if logo_submission_email is None:
+        logo_submission_email = (SystemSetting.get_value("logo_submission_email", "") or "").strip()
     missing_group = _project_logistics_group_missing(project)
     if not project.logistics_cedula_tutor_ok:
         missing_group.append("Cédula del tutor")
@@ -1198,6 +1215,8 @@ def _build_tutor_logistics_reminder_payload(project, deadline, institution_name)
         member_missing=member_missing,
         deadline=deadline,
         institution_name=institution_name,
+        logo_submission_email=logo_submission_email,
+        needs_logo_upload=not project.has_real_logo,
     )
     plain_lines = [
         f"Estimado/a {project.advisor_name or 'tutor'},",
@@ -1211,6 +1230,8 @@ def _build_tutor_logistics_reminder_payload(project, deadline, institution_name)
         plain_lines.append(f"{row['member'].full_name}: " + ", ".join(row["items"]))
     if deadline:
         plain_lines.extend(["", f"Fecha límite: {deadline.strftime('%d/%m/%Y')}"])
+    if not project.has_real_logo and logo_submission_email:
+        plain_lines.extend(["", f"Envíe el logo del proyecto a: {logo_submission_email}"])
     plain_lines.extend(["", "Organización ExpoTécnica", institution_name])
     return {
         "missing_group": missing_group,
@@ -5256,6 +5277,24 @@ def _handle_action(action: str):
                 )
             flash("Solicitud rechazada. Los datos del integrante no fueron modificados.", "success")
 
+    elif action == "save_logo_submission_email":
+        logo_submission_email = request.form.get("logo_submission_email", "").strip().lower()
+        is_valid_email = re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", logo_submission_email)
+        if logo_submission_email and not is_valid_email:
+            flash("Ingrese un correo electrónico válido para recibir los logos.", "error")
+        else:
+            SystemSetting.set_value("logo_submission_email", logo_submission_email)
+            log_event(
+                "admin.logistics.logo_email_saved",
+                "system_setting",
+                detail="Correo de recepción de logos actualizado" if logo_submission_email else "Correo de recepción de logos eliminado",
+            )
+            db.session.commit()
+            if logo_submission_email:
+                flash("Correo para recibir logos guardado correctamente.", "success")
+            else:
+                flash("Se eliminó el correo para recibir logos de los recordatorios.", "success")
+
     elif action == "send_logistics_reminder":
         if not smtp_is_configured():
             flash("El servidor SMTP no está configurado. Ve a Ajustes → SMTP antes de enviar correos.", "error")
@@ -5323,6 +5362,7 @@ def _handle_action(action: str):
                             f"Grupales: {', '.join(missing_group) if missing_group else 'Ninguno'}\n"
                             f"Individuales: {', '.join(missing_individual) if missing_individual else 'Ninguno'}\n\n"
                             f"{'Fecha límite: ' + deadline.strftime('%d/%m/%Y') if deadline else ''}\n\n"
+                            f"{'Envíe el logo del proyecto a: ' + (SystemSetting.get_value('logo_submission_email', '') or '').strip() if not project.has_real_logo and (SystemSetting.get_value('logo_submission_email', '') or '').strip() else ''}\n\n"
                             "Organización ExpoTécnica"
                         )
                         ok, _err = send_email(member.email.strip(), subject, plain_body, html_body=html_body)
@@ -5412,28 +5452,13 @@ def _handle_action(action: str):
                 deadline = None
                 if active_campaign and active_campaign.end_date:
                     deadline = active_campaign.end_date - timedelta(days=1)
-                html_body = render_template(
-                    "admin/email_tutor_logistics_reminder.html",
-                    project=project,
-                    missing_group=missing_group,
-                    member_missing=member_missing,
-                    deadline=deadline,
-                    institution_name=institution_name,
+                tutor_payload = _build_tutor_logistics_reminder_payload(project, deadline, institution_name)
+                ok, err = send_email(
+                    project.advisor_email.strip(),
+                    tutor_payload["subject"],
+                    tutor_payload["plain_body"],
+                    html_body=tutor_payload["html_body"],
                 )
-                plain_lines = [
-                    f"Estimado/a {project.advisor_name or 'tutor'},",
-                    f"",
-                    f"El proyecto \"{project.title}\" tiene requisitos logísticos pendientes.",
-                    f"",
-                ]
-                if missing_group:
-                    plain_lines.append("Grupales: " + ", ".join(missing_group))
-                for row in member_missing:
-                    plain_lines.append(f"{row['member'].full_name}: " + ", ".join(row["items"]))
-                plain_lines += ["", "Organización ExpoTécnica", institution_name]
-                plain_body = "\n".join(plain_lines)
-                subject = f"Requisitos logísticos pendientes — {project.title}"
-                ok, err = send_email(project.advisor_email.strip(), subject, plain_body, html_body=html_body)
                 if ok:
                     log_event(
                         "admin.project.tutor_reminder_sent",

@@ -17,6 +17,8 @@
   ul { margin: 0; padding: 0 0 0 18px; }
   li { margin: 6px 0; color: #842029; font-weight: 600; }
   .deadline { color: #842029; font-weight: 800; }
+  .logo-delivery { border: 1px solid #9dcde0; border-radius: 10px; padding: 14px 16px; margin: 16px 0; background: #eef8fc; color: #123f6b; }
+  .logo-delivery a { color: #087ea4; font-weight: 800; }
   .project-name { color: #123f6b; font-weight: 800; }
   .sign { margin: 20px 0 0; font-size: 13px; color: #55565a; line-height: 1.7; }
   .sign strong { color: #123f6b; }
@@ -57,6 +59,14 @@
       <ul>
         {% for item in missing_individual %}<li>{{ item }}</li>{% endfor %}
       </ul>
+    </div>
+    {% endif %}
+
+    {% if needs_logo_upload and logo_submission_email %}
+    <div class="logo-delivery">
+      <strong>Env&iacute;o del logo:</strong><br>
+      Remite el archivo del proyecto a
+      <a href="mailto:{{ logo_submission_email }}">{{ logo_submission_email }}</a>.
     </div>
     {% endif %}
 

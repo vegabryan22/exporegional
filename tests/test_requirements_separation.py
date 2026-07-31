@@ -202,6 +202,12 @@ class RequirementsSeparationTest(unittest.TestCase):
         template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
 
         self.assertIn("projects_report_excel", template)
+
+    def test_projects_page_links_reminder_center(self):
+        template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
+
+        self.assertIn("logistics_reminder_page", template)
+        self.assertIn("Centro de recordatorios", template)
         self.assertIn("Reporte de proyectos inscritos", template)
         self.assertIn("Descargar Excel", template)
 

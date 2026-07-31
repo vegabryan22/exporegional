@@ -13529,6 +13529,26 @@ body {
     flex-wrap: wrap;
 }
 
+.projects-header-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+}
+
+.projects-reminder-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    white-space: nowrap;
+}
+
+.projects-reminder-link svg {
+    width: 17px;
+    height: 17px;
+}
+
 .reminder-logo-email-card {
     display: grid;
     grid-template-columns: minmax(240px, 1fr) minmax(360px, 1.15fr);
@@ -13854,6 +13874,19 @@ body {
 }
 
 @media (max-width: 640px) {
+    .projects-header-actions,
+    .projects-reminder-link {
+        width: 100%;
+    }
+
+    .projects-header-actions {
+        align-items: stretch;
+    }
+
+    .projects-reminder-link {
+        justify-content: center;
+    }
+
     .reminder-logo-email-form {
         grid-template-columns: 1fr;
     }

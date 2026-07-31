@@ -10,7 +10,13 @@
             <h3>Mantenimiento de proyectos</h3>
             <p>Gestiona actividad, jueces, documentación, formularios, fotografías e integrantes. Los recursos técnicos se controlan en Requerimientos.</p>
         </div>
-        <span class="tag ok">{{ projects|length }} proyectos</span>
+        <div class="projects-header-actions">
+            <span class="tag ok">{{ projects|length }} proyectos</span>
+            <a class="outline-btn projects-reminder-link" href="{{ url_for('admin.logistics_reminder_page') }}">
+                <svg aria-hidden="true"><use href="#ico-send"></use></svg>
+                Centro de recordatorios
+            </a>
+        </div>
     </div>
 
     <div class="projects-logistics-metrics" aria-label="Resumen de proyectos">

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.20.0] - 2026-07-31
+
+### Cambiado
+
+- El porcentaje logístico de cada tutor mide el avance real acumulado de las evidencias de sus proyectos activos.
+- Se consideran siete controles: documento adjunto, documento validado, logo cargado, logo validado, fotografías, formulario firmado y consentimientos.
+- La etiqueta de pendientes cuenta proyectos únicos y evita sumar dos veces un mismo proyecto por logística y requerimientos.
+
 ## [0.19.10] - 2026-07-31
 
 ### Corregido

@@ -521,6 +521,11 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn("data-tutor-key", template)
         self.assertIn("tutorGroups", template)
         self.assertIn("formData.set('audience'", template)
+        self.assertIn("'Accept': 'application/json'", template)
+
+        controller = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")
+        self.assertIn('batch_mode = request.form.get("batch_mode") == "1"', controller)
+        self.assertIn('return jsonify({"ok": True, "action": action})', controller)
         self.assertIn("await fetch", template)
         self.assertIn('value="save_logo_submission_email"', template)
         self.assertIn('name="logo_submission_email"', template)

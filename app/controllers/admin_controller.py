@@ -7364,10 +7364,15 @@ def _build_judge_pool_context(context: dict) -> dict:
 @admin_required
 def perform_action():
     action = request.form.get("action", "").strip()
+    batch_mode = request.form.get("batch_mode") == "1"
     if action and _can_perform_action(action):
         _handle_action(action)
     elif action:
+        if batch_mode:
+            return jsonify({"ok": False, "error": "No tiene permisos para ejecutar esta acción."}), 403
         flash("No tienes permisos para ejecutar esta accion.", "error")
+    if batch_mode:
+        return jsonify({"ok": True, "action": action})
     return _redirect_next()
 
 

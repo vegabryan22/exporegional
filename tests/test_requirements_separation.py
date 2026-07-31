@@ -62,7 +62,8 @@ class RequirementsSeparationTest(unittest.TestCase):
         template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
 
         self.assertIn("projects_report_excel", template)
-        self.assertIn("Descargar Excel de proyectos inscritos", template)
+        self.assertIn("Reporte de proyectos inscritos", template)
+        self.assertIn("Descargar Excel", template)
 
     def test_registration_builds_structured_requirement_items(self):
         form_data = {

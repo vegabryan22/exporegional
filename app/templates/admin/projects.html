@@ -117,11 +117,17 @@
     {% endif %}
 
     <div class="projects-report-actions">
-        <a class="secondary-btn" href="{{ url_for('admin.projects_report_excel') }}">
+        <div class="projects-report-copy">
+            <span class="projects-report-icon"><svg aria-hidden="true"><use href="#ico-box"></use></svg></span>
+            <div>
+                <strong>Reporte de proyectos inscritos</strong>
+                <small>Datos generales e integrantes en un archivo editable.</small>
+            </div>
+        </div>
+        <a class="outline-btn projects-report-download" href="{{ url_for('admin.projects_report_excel') }}">
             <svg aria-hidden="true"><use href="#ico-download"></use></svg>
-            Descargar Excel de proyectos inscritos
+            Descargar Excel
         </a>
-        <small>Incluye una hoja general y otra con los integrantes.</small>
     </div>
 
     <div class="projects-filter-bar">

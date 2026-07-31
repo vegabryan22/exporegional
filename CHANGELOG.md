@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.23.0] - 2026-07-31
+
+### Añadido
+
+- El editor de integrantes permite eliminar la fotografía actual mediante una acción independiente con confirmación.
+- La eliminación borra el archivo local, limpia la referencia, registra la bitácora y recalcula el control fotográfico del proyecto.
+
+### Cambiado
+
+- El formulario de edición presenta un encabezado identificable, campos compactos, bloques visuales uniformes y un editor de fotografía separado.
+- La fotografía utiliza una vista previa amplia, selector de archivo estilizado y acciones claras para reemplazar o eliminar.
+- El diálogo se adapta a escritorio y móvil, con acciones de guardado visibles al desplazarse.
+
 ## [0.22.2] - 2026-07-31
 
 ### Corregido

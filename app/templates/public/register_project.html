@@ -372,44 +372,38 @@
                 <span class="judge-step">6</span>
                 <p class="project-section-kicker">Cierre de inscripción</p>
                 <h3>Mentoría y declaración</h3>
-                <div class="closing-columns">
-                    <div class="closing-column closing-mentor-column">
-                        <p class="closing-column-kicker">Persona mentora</p>
-                        <div class="register-fieldset mentor-question">
-                            <span>¿El proyecto cuenta con una persona mentora externa o especialista? *</span>
-                            <div class="radio-card-group">
-                                <label><input type="radio" name="mentor_has" value="si" {% if form_data.get('mentor_has') == 'si' %}checked{% endif %} required><span>Sí</span></label>
-                                <label><input type="radio" name="mentor_has" value="no" {% if form_data.get('mentor_has', 'no') == 'no' %}checked{% endif %} required><span>No</span></label>
-                            </div>
-                        </div>
-                        <div class="form-grid inline-grid-2 mentor-fields" data-mentor-fields>
-                            <label>Nombre completo de la persona mentora<input type="text" name="mentor_name" value="{{ form_data.get('mentor_name', '') }}"></label>
-                            <label>Cédula / documento de la persona mentora
-                                <input type="text" name="mentor_identity" value="{{ form_data.get('mentor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input>
-                            </label>
-                            <label>Fecha de nacimiento de la persona mentora<input type="date" name="mentor_birth_date" value="{{ form_data.get('mentor_birth_date', '') }}"></label>
-                            <div class="register-fieldset">
-                                <span>Sexo de la persona mentora</span>
-                                <div class="radio-card-group">
-                                    <label><input type="radio" name="mentor_gender" value="masculino" {% if form_data.get('mentor_gender') == 'masculino' %}checked{% endif %}><span>Masculino</span></label>
-                                    <label><input type="radio" name="mentor_gender" value="femenino" {% if form_data.get('mentor_gender') == 'femenino' %}checked{% endif %}><span>Femenino</span></label>
-                                </div>
-                            </div>
-                            <label>Carrera técnica / especialidad de la persona mentora<input type="text" name="mentor_specialty" value="{{ form_data.get('mentor_specialty', '') }}"></label>
-                            <label>Teléfono de la persona mentora<input type="tel" name="mentor_phone" value="{{ form_data.get('mentor_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input></label>
-                            <label>Correo electrónico de la persona mentora<input type="email" name="mentor_email" value="{{ form_data.get('mentor_email', '') }}"></label>
+                <div class="register-fieldset mentor-question">
+                    <span>¿El proyecto cuenta con una persona mentora externa o especialista? *</span>
+                    <div class="radio-card-group">
+                        <label><input type="radio" name="mentor_has" value="si" {% if form_data.get('mentor_has') == 'si' %}checked{% endif %} required><span>Sí</span></label>
+                        <label><input type="radio" name="mentor_has" value="no" {% if form_data.get('mentor_has', 'no') == 'no' %}checked{% endif %} required><span>No</span></label>
+                    </div>
+                </div>
+                <div class="form-grid inline-grid-2 mentor-fields" data-mentor-fields>
+                    <label>Nombre completo de la persona mentora<input type="text" name="mentor_name" value="{{ form_data.get('mentor_name', '') }}"></label>
+                    <label>Cédula / documento de la persona mentora
+                        <input type="text" name="mentor_identity" value="{{ form_data.get('mentor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input>
+                    </label>
+                    <label>Fecha de nacimiento de la persona mentora<input type="date" name="mentor_birth_date" value="{{ form_data.get('mentor_birth_date', '') }}"></label>
+                    <div class="register-fieldset">
+                        <span>Sexo de la persona mentora</span>
+                        <div class="radio-card-group">
+                            <label><input type="radio" name="mentor_gender" value="masculino" {% if form_data.get('mentor_gender') == 'masculino' %}checked{% endif %}><span>Masculino</span></label>
+                            <label><input type="radio" name="mentor_gender" value="femenino" {% if form_data.get('mentor_gender') == 'femenino' %}checked{% endif %}><span>Femenino</span></label>
                         </div>
                     </div>
-                    <div class="closing-column closing-declaration-column">
-                        <p class="closing-column-kicker">Confirmación final</p>
-                        <h4>Declaración jurada</h4>
-                        <p>Declaramos bajo juramento que el proyecto inscrito en el formulario ExpoTEC-1 fue realizado por los estudiantes y el docente asesoró durante el proceso.</p>
-                        <div class="register-fieldset">
-                            <label class="declaration-acceptance">
-                                <input type="checkbox" name="declaration" value="si" {% if form_data.get('declaration') == 'si' %}checked{% endif %} required>
-                                <span><strong>Acepto la declaración</strong><small>Confirmo la información anterior para completar la inscripción.</small></span>
-                            </label>
-                        </div>
+                    <label>Carrera técnica / especialidad de la persona mentora<input type="text" name="mentor_specialty" value="{{ form_data.get('mentor_specialty', '') }}"></label>
+                    <label>Teléfono de la persona mentora<input type="tel" name="mentor_phone" value="{{ form_data.get('mentor_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input></label>
+                    <label>Correo electrónico de la persona mentora<input type="email" name="mentor_email" value="{{ form_data.get('mentor_email', '') }}"></label>
+                </div>
+                <p>Declaramos bajo juramento que el proyecto inscrito en el formulario ExpoTEC-1 fue realizado por los estudiantes y el docente asesoró durante el proceso.</p>
+                <div class="form-grid inline-grid-1">
+                    <div class="register-fieldset">
+                        <span>Declaración *</span>
+                        <label class="declaration-acceptance">
+                            <input type="checkbox" name="declaration" value="si" {% if form_data.get('declaration') == 'si' %}checked{% endif %} required>
+                            <span><strong>Acepto la declaración</strong><small>Confirmo la información anterior para completar la inscripción.</small></span>
+                        </label>
                     </div>
                 </div>
             </section>

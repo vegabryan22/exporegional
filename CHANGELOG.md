@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.21.1] - 2026-07-31
+
+### Corregido
+
+- El indicador TLS muestra correctamente «Sí» en lugar de una entidad HTML visible.
+- Usuario y remitente ocupan filas más amplias para evitar cortes innecesarios en direcciones de correo largas.
+- El resumen SMTP conserva una cuadrícula adaptable en escritorio, tableta y móvil.
+
 ## [0.21.0] - 2026-07-31
 
 ### Añadido

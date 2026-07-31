@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.5] - 2026-07-31
+
+### Corregido
+
+- La aceptación de la declaración ocupa correctamente todo el ancho disponible sin comprimir el texto.
+- Los estilos estáticos utilizan la versión de la aplicación como identificador de caché, evitando que el navegador conserve diseños anteriores después de una actualización.
+
 ## [0.19.4] - 2026-07-31
 
 ### Corregido

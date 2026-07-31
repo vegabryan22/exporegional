@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.8] - 2026-07-31
+
+### Corregido
+
+- Las inscripciones simultáneas con la misma cédula de tutor utilizan una operación atómica de MySQL.
+- Si otra solicitud crea primero el perfil, las demás recuperan ese mismo tutor y continúan guardando sus proyectos sin duplicados ni errores de clave única.
+
 ## [0.19.7] - 2026-07-31
 
 ### Corregido

@@ -969,6 +969,23 @@ def _project_logistics_missing_items(project):
     return missing
 
 
+def _project_logistics_progress(project) -> tuple[int, int]:
+    """Return completed and total operational logistics checks for one project."""
+    members = list(project.members or [])
+    checks = (
+        bool(project.project_document_path),
+        bool(project.logistics_document_ok),
+        bool(project.has_real_logo),
+        bool(project.has_real_logo and project.logistics_logo_ok),
+        bool(members) and all(bool((member.photo_url or "").strip()) for member in members),
+        bool(project.logistics_registration_form_signed_ok),
+        bool(members)
+        and bool(project.logistics_student_consents_signed_ok)
+        and all(bool(member.consent_signed_ok) for member in members),
+    )
+    return sum(checks), len(checks)
+
+
 def _sync_project_photo_validation(project) -> bool:
     photos_complete = bool(project.members) and all(
         bool((member.photo_url or "").strip()) for member in project.members
@@ -7550,7 +7567,8 @@ def _build_advisor_stats(projects):
             "name": "", "email": "", "identity": "", "phone": "", "specialty": "",
             "steam": 0, "emprendimiento": 0, "total": 0, "active": 0, "inactive": 0,
             "completed": 0, "pending": 0, "requirements_pending": 0, "students": 0,
-            "sections": set(), "projects": [],
+            "logistics_checks_done": 0, "logistics_checks_total": 0,
+            "pending_project_ids": set(), "sections": set(), "projects": [],
             "is_active": True,
         }
     )
@@ -7593,19 +7611,27 @@ def _build_advisor_stats(projects):
         b["sections"].update(member.section_name for member in p.members if member.section_name)
         if p.is_active:
             b["active"] += 1
+            checks_done, checks_total = _project_logistics_progress(p)
+            b["logistics_checks_done"] += checks_done
+            b["logistics_checks_total"] += checks_total
             if p.logistics_status == "completo" and not _project_logistics_missing_items(p):
                 b["completed"] += 1
             else:
                 b["pending"] += 1
+                b["pending_project_ids"].add(p.id)
         else:
             b["inactive"] += 1
         if not p.requirements_complete:
             b["requirements_pending"] += 1
+            b["pending_project_ids"].add(p.id)
 
     rows = []
     for bucket in buckets.values():
         bucket["sections_label"] = ", ".join(sorted(bucket.pop("sections"))) or "Sin sección"
-        bucket["completion_percent"] = round((bucket["completed"] / bucket["active"]) * 100) if bucket["active"] else 0
+        bucket["pending_total"] = len(bucket.pop("pending_project_ids"))
+        bucket["completion_percent"] = round(
+            (bucket["logistics_checks_done"] / bucket["logistics_checks_total"]) * 100
+        ) if bucket["logistics_checks_total"] else 0
         bucket["projects"] = sorted(bucket["projects"], key=lambda project: project.title.casefold())
         rows.append(bucket)
     return sorted(rows, key=lambda row: (-row["total"], row["name"].casefold()))

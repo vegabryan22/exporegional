@@ -14,6 +14,7 @@ from app.controllers.admin_controller import (
     _build_exposition_usher_report_rows,
     _build_advisor_stats,
     _person_name_title,
+    _project_logistics_progress,
     _project_report_rows,
     _sync_project_logistics_status,
     _sync_project_photo_validation,
@@ -74,6 +75,29 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual(1, tutors[0]["completed"])
         self.assertEqual(1, tutors[0]["pending"])
         self.assertEqual("11-2, 12-1", tutors[0]["sections_label"])
+        self.assertEqual(1, tutors[0]["pending_total"])
+
+    def test_tutor_logistics_percentage_reflects_partial_progress(self):
+        project = Project(
+            id=90,
+            title="Avance parcial",
+            team_name="Equipo",
+            advisor_name="Tutor Ejemplo",
+            advisor_identity="900000001",
+            category="steam",
+            is_active=True,
+            logistics_status="incompleto",
+            requirements_status="completo",
+            project_document_path="proyecto.pdf",
+            logistics_document_ok=True,
+        )
+        project.members = [ProjectMember(full_name="Estudiante", student_number=1)]
+
+        completed, total = _project_logistics_progress(project)
+        tutors = _build_advisor_stats([project])
+
+        self.assertEqual((2, 7), (completed, total))
+        self.assertEqual(29, tutors[0]["completion_percent"])
 
     def test_tutors_page_has_filters_statistics_and_excel(self):
         template = Path("app/templates/admin/tutors.html").read_text(encoding="utf-8")

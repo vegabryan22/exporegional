@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.19.0] - 2026-07-31
+
+### Añadido
+
+- Catálogo persistente de tutores con relación directa entre cada perfil y sus proyectos.
+- Migración automática y no destructiva de los datos de tutores existentes al catálogo central.
+- Selector de tutor registrado en el formulario público y alternativa para registrar uno nuevo.
+- Control administrativo para mostrar u ocultar tutores en nuevas inscripciones.
+
+### Cambiado
+
+- Los datos personales del tutor se guardan una sola vez y se reutilizan al inscribir otros proyectos.
+- El formulario público muestra únicamente nombre y especialidad de los tutores disponibles; no expone cédula, nacimiento, teléfono ni correo.
+- Los proyectos conservan una copia histórica de los datos del tutor para sus formularios y documentos oficiales.
+
 ## [0.18.0] - 2026-07-31
 
 ### Añadido

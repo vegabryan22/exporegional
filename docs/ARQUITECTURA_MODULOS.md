@@ -894,3 +894,10 @@ Reporte operativo:
 El plan detallado de pruebas esta en:
 
 - `docs/MODELO_PRUEBAS_QA.md`
+## Catálogo de tutores
+
+- `Tutor` es la fuente central de identidad y contacto del docente acompañante.
+- `Project.tutor_id` relaciona cada inscripción con un tutor y los campos `advisor_*` conservan la instantánea histórica usada por los PDF.
+- El arranque reconcilia proyectos anteriores mediante la cédula normalizada y crea los perfiles que todavía no existen.
+- La inscripción pública consulta únicamente tutores activos y expone en el selector solo nombre y especialidad.
+- Ocultar un tutor afecta nuevas inscripciones, no los proyectos históricos ni sus documentos.

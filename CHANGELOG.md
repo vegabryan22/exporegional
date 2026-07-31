@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.4] - 2026-07-31
+
+### Corregido
+
+- Se restauró la distribución original de los contenedores de tutoría y cierre de inscripción.
+- Se conserva únicamente el ajuste solicitado para la aceptación visual de la declaración.
+
 ## [0.19.3] - 2026-07-31
 
 ### Corregido

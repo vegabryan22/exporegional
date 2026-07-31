@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.2] - 2026-07-31
+
+### Corregido
+
+- El envío masivo obtiene la URL desde el atributo HTML del formulario y evita la colisión entre `form.action` y el campo oculto llamado `action`.
+- Los lotes ya no intentan acceder a una ruta inexistente antes de iniciar, eliminando el error 404 con cero lotes procesados.
+
 ## [0.22.1] - 2026-07-31
 
 ### Corregido

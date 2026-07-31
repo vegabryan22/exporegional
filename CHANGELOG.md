@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.1] - 2026-07-31
+
+### Corregido
+
+- Los datos de la persona mentora solo aparecen y se exigen cuando se confirma que el proyecto cuenta con mentoría.
+- La declaración final se presenta como una aceptación obligatoria única; se eliminó la opción inviable «No acepto».
+
 ## [0.19.0] - 2026-07-31
 
 ### Añadido

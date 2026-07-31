@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.17.2] - 2026-07-31
+
+### Corregido
+
+- La validación de fotografías se activa automáticamente cuando todos los integrantes del proyecto tienen foto.
+- Los proyectos existentes se reconcilian al iniciar la aplicación para eliminar pendientes manuales desactualizados.
+- Al agregar, actualizar o eliminar integrantes se recalculan inmediatamente las fotografías y el estado logístico.
+- La casilla de fotografías se presenta como un indicador automático y ya no como un control manual.
+
 ## [0.17.1] - 2026-07-31
 
 ### Corregido

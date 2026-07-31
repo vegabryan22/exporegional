@@ -853,6 +853,13 @@ Reporte operativo:
 - la capitalización de nombres se aplica en la exportación y no reescribe la información original
 - las tablas de Excel incorporan sus propios filtros; no se agrega un filtro duplicado a nivel de hoja
 
+### Validación automática de fotografías
+
+- `projects.logistics_photos_ok` se deriva de la existencia de al menos un integrante y de que todos tengan `photo_url`
+- la casilla administrativa es informativa y no admite edición manual
+- altas, cambios, eliminaciones y cargas de foto recalculan el indicador y el estado logístico en la misma transacción
+- el arranque reconcilia los proyectos históricos antes de evaluar si su logística está completa
+
 ## 7.3 Flujo de cierre administrativo
 
 1. Logística revisa documentación, formularios, fotografías, integrantes y asignación de jueces

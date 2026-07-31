@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.19.7] - 2026-07-31
+
+### Corregido
+
+- La descarga Excel de Tutores ahora es un botón compacto con icono de tamaño controlado y no deforma el encabezado.
+
 ## [0.19.6] - 2026-07-31
 
 ### Corregido

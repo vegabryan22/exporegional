@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.10] - 2026-07-31
+
+### Corregido
+
+- Las métricas de cada tutor utilizan bloques rectangulares compactos y uniformes en lugar de círculos desproporcionados.
+- Las acciones de edición y disponibilidad tienen el mismo ancho y altura, sin espacios vacíos excesivos.
+
 ## [0.19.9] - 2026-07-31
 
 ### Corregido

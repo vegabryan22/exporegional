@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.22.1] - 2026-07-31
+
+### Corregido
+
+- Los lotes de recordatorios responden directamente con JSON y ya no siguen una redirección administrativa que podía terminar en un error 404.
+- El navegador valida la respuesta de cada lote antes de avanzar y conserva los mensajes finales para la recarga de la página.
+
 ## [0.22.0] - 2026-07-31
 
 ### Cambiado

@@ -5245,9 +5245,30 @@ dialog.members-overview-dialog {
 }
 
 .member-profile-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 34px;
     padding: 0.38rem 0.62rem;
     font-size: 0.72rem;
+    white-space: nowrap;
+}
+
+.member-profile-actions > .outline-btn {
+    flex: 1;
+}
+
+.member-profile-actions .member-delete-btn {
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
+    border-radius: 9px;
+}
+
+.member-delete-btn svg {
+    width: 17px;
+    height: 17px;
+    fill: currentColor;
 }
 
 .members-history {

@@ -263,6 +263,9 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn('class="members-history"', template)
         self.assertIn("Historial de cambios", template)
         self.assertNotIn("Bitácora de cambios de integrantes", template)
+        self.assertIn('data-parent-dialog="members-project-{{ project.id }}"', template)
+        self.assertIn('{{ next_url }}#members-project-{{ project.id }}', template)
+        self.assertIn('class="danger-btn member-delete-btn"', template)
 
     def test_registration_builds_structured_requirement_items(self):
         form_data = {

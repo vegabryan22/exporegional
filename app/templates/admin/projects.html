@@ -605,10 +605,10 @@
                     <div class="member-profile-actions">
                         <button type="button" class="outline-btn" data-dialog-open="edit-member-{{ member.id }}">Editar informaci&oacute;n</button>
                         <form method="post" action="{{ action_url }}" onsubmit="return confirm('¿Eliminar definitivamente a este integrante?')">
-                            <input type="hidden" name="next" value="{{ next_url }}">
+                            <input type="hidden" name="next" value="{{ next_url }}#members-project-{{ project.id }}">
                             <input type="hidden" name="action" value="delete_project_member">
                             <input type="hidden" name="member_id" value="{{ member.id }}">
-                            <button type="submit" class="danger-btn">Eliminar</button>
+                            <button type="submit" class="danger-btn member-delete-btn" data-no-iconify title="Eliminar integrante" aria-label="Eliminar integrante"><svg aria-hidden="true"><use href="#ico-delete"></use></svg></button>
                         </form>
                     </div>
                 </div>
@@ -648,11 +648,11 @@
     </div>
 </dialog>
 
-<dialog id="create-member-{{ project.id }}" class="maintenance-dialog">
+<dialog id="create-member-{{ project.id }}" class="maintenance-dialog" data-parent-dialog="members-project-{{ project.id }}">
     <div class="dialog-card">
         <div class="dialog-head"><h4>Agregar integrante</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
         <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form member-academic-form">
-            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="next" value="{{ next_url }}#members-project-{{ project.id }}">
             <input type="hidden" name="action" value="create_project_member">
             <input type="hidden" name="project_id" value="{{ project.id }}">
             <div class="grid-3">
@@ -711,14 +711,14 @@
 </dialog>
 
 {% for member in project.members %}
-<dialog id="edit-member-{{ member.id }}" class="maintenance-dialog member-edit-dialog">
+<dialog id="edit-member-{{ member.id }}" class="maintenance-dialog member-edit-dialog" data-parent-dialog="members-project-{{ project.id }}">
     <div class="dialog-card">
         <div class="dialog-head member-edit-head">
             <div><span>Integrante #{{ member.student_number }}</span><h4>Editar informaci&oacute;n</h4><p>{{ member.full_name }}</p></div>
             <button type="button" class="ghost-btn dialog-close" data-dialog-close aria-label="Cerrar">&times;</button>
         </div>
         <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form member-academic-form member-edit-form">
-            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="next" value="{{ next_url }}#members-project-{{ project.id }}">
             <input type="hidden" name="action" value="update_project_member">
             <input type="hidden" name="member_id" value="{{ member.id }}">
             <div class="grid-3">
@@ -789,7 +789,7 @@
         </form>
         {% if member.photo_url %}
         <form id="delete-member-photo-{{ member.id }}" method="post" action="{{ action_url }}" onsubmit="return confirm('¿Eliminar la foto actual de este integrante?')">
-            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="next" value="{{ next_url }}#members-project-{{ project.id }}">
             <input type="hidden" name="action" value="delete_member_photo">
             <input type="hidden" name="member_id" value="{{ member.id }}">
         </form>

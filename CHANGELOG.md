@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.3] - 2026-07-31
+
+### Corregido
+
+- El cierre de inscripción utiliza dos áreas paralelas para mentoría y declaración en computadora y tableta.
+- Los bloques de tutoría y cierre aprovechan el ancho completo; la disposición de una columna queda reservada para celulares.
+
 ## [0.19.2] - 2026-07-31
 
 ### Corregido

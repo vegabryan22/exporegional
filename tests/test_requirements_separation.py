@@ -15,6 +15,7 @@ from app.controllers.admin_controller import (
     _build_tutor_logistics_digest_payload,
     _build_logistics_reminder_data,
     _build_exposition_usher_report_rows,
+    _judge_report_rows,
     _build_advisor_stats,
     _person_name_title,
     _project_logistics_progress,
@@ -750,6 +751,62 @@ class RequirementsSeparationTest(unittest.TestCase):
 
         self.assertIn("exposition_usher_report_excel", template)
         self.assertIn("Excel edecanes · exposición", template)
+
+    def test_judge_pool_links_general_judges_excel_report(self):
+        template = Path("app/templates/admin/judge_pool.html").read_text(encoding="utf-8")
+        routes = Path("app/routes/admin_routes.py").read_text(encoding="utf-8")
+
+        self.assertIn("judges_report_excel", template)
+        self.assertIn("Excel jueces", template)
+        self.assertIn("/jueces/evaluacion/reporte/excel", routes)
+
+    def test_judge_report_rows_include_attendance_and_assignments(self):
+        judge = Judge(
+            id=8,
+            full_name="JUEZ DE PRUEBA",
+            email="JUEZ@EXAMPLE.COM",
+            identity="123",
+            phone="8888-0000",
+            job_title="INGENIERIA",
+            institution="EMPRESA ABC",
+            role=Judge.ROLE_JUDGE,
+            is_active_user=True,
+            attendance_confirmed=True,
+            needs_parking=True,
+            can_evaluate_documentation=True,
+            can_evaluate_exposition=True,
+            can_evaluate_english=True,
+            category_scope="ambas",
+        )
+        project = Project(
+            id=9,
+            title="Proyecto Demo",
+            team_name="Equipo",
+            category="steam",
+            is_active=True,
+        )
+        project.members = [ProjectMember(full_name="Estudiante Ingles", participates_in_english=True)]
+        assignment = Assignment(
+            id=10,
+            judge_id=8,
+            project_id=9,
+            can_evaluate_documentation=True,
+            can_evaluate_exposition=True,
+            status=Assignment.STATUS_CONFIRMED,
+        )
+        assignment.judge = judge
+        assignment.project = project
+
+        judge_rows, assignment_rows = _judge_report_rows([judge], [assignment])
+
+        self.assertEqual("Juez de Prueba", judge_rows[0]["name"])
+        self.assertEqual("Confirmado", judge_rows[0]["attendance"])
+        self.assertEqual("Si", judge_rows[0]["parking"])
+        self.assertEqual(1, judge_rows[0]["confirmed_assignments"])
+        self.assertEqual(1, judge_rows[0]["english_assignments"])
+        self.assertEqual("juez@example.com", assignment_rows[0]["email"])
+        self.assertEqual("Si", assignment_rows[0]["document"])
+        self.assertEqual("Si", assignment_rows[0]["exposition"])
 
     def test_logistics_department_does_not_receive_requirements_module(self):
         self.assertNotIn("requirements", ADMIN_DEPARTMENT_MODULE_ACCESS["logistica"])

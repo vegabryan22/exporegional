@@ -21,6 +21,7 @@ from sqlalchemy.engine import make_url
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
+from app import natural_title
 from app.extensions import db
 from app.models.assignment import Assignment
 from app.models.campaign import Campaign
@@ -7418,6 +7419,261 @@ def judge_pool_page():
     context = _base_context("judge_pool")
     context.update(_build_judge_pool_context(context))
     return render_template("admin/judge_pool.html", **context)
+
+
+def _judge_report_rows(judges: list[Judge], assignments: list[Assignment]) -> tuple[list[dict], list[dict]]:
+    assignments_by_judge: dict[int, list[Assignment]] = {}
+    for assignment in assignments:
+        if not assignment.judge_id:
+            continue
+        assignments_by_judge.setdefault(assignment.judge_id, []).append(assignment)
+
+    judge_rows = []
+    assignment_rows = []
+    for judge in sorted(judges, key=lambda item: (_person_name_title(item.full_name).lower(), item.email or "")):
+        judge_assignments = [
+            assignment
+            for assignment in assignments_by_judge.get(judge.id, [])
+            if assignment.project and assignment.project.is_active
+        ]
+        confirmed_assignments = [assignment for assignment in judge_assignments if not assignment.is_draft]
+        doc_assignments = [assignment for assignment in confirmed_assignments if assignment.can_evaluate_documentation]
+        expo_assignments = [assignment for assignment in confirmed_assignments if assignment.can_evaluate_exposition]
+        english_assignments = [
+            assignment
+            for assignment in expo_assignments
+            if assignment.project and assignment.project.requires_english_evaluation and judge.can_evaluate_english
+        ]
+        judge_rows.append(
+            {
+                "name": _person_name_title(judge.full_name),
+                "identity": judge.identity or "",
+                "email": (judge.email or "").strip().lower(),
+                "phone": judge.phone or "",
+                "job_title": natural_title(judge.job_title or ""),
+                "institution": natural_title(judge.institution or ""),
+                "active": "Si" if judge.is_active_user else "No",
+                "role": judge.role_label,
+                "category_scope": judge.category_scope_label,
+                "evaluation_scope": judge.evaluation_scope_label,
+                "english": "Si" if judge.can_evaluate_english else "No",
+                "previous_expo": judge.previous_expo or "No indicado",
+                "attendance": judge.attendance_status_label,
+                "parking": "Si" if judge.needs_parking else "No",
+                "invitation_sent": judge.attendance_invitation_sent_at.strftime("%Y-%m-%d %H:%M") if judge.attendance_invitation_sent_at else "",
+                "responded_at": judge.attendance_responded_at.strftime("%Y-%m-%d %H:%M") if judge.attendance_responded_at else "",
+                "invitation_error": judge.attendance_invitation_error or "",
+                "last_login": judge.last_login_at.strftime("%Y-%m-%d %H:%M") if judge.last_login_at else "",
+                "registered_public": "Si" if judge.registered_from_public_form else "No",
+                "confirmed_assignments": len(confirmed_assignments),
+                "draft_assignments": len(judge_assignments) - len(confirmed_assignments),
+                "doc_assignments": len(doc_assignments),
+                "expo_assignments": len(expo_assignments),
+                "english_assignments": len(set(assignment.project_id for assignment in english_assignments)),
+                "projects": ", ".join(sorted({assignment.project.title for assignment in confirmed_assignments if assignment.project})),
+            }
+        )
+
+        for assignment in sorted(judge_assignments, key=lambda item: ((item.project.title if item.project else ""), item.id or 0)):
+            project = assignment.project
+            assignment_rows.append(
+                {
+                    "judge": _person_name_title(judge.full_name),
+                    "email": (judge.email or "").strip().lower(),
+                    "attendance": judge.attendance_status_label,
+                    "project": project.title if project else "",
+                    "team": project.team_name if project else "",
+                    "category": natural_title(project.category if project else ""),
+                    "axis": project.thematic_axis.name if project and project.thematic_axis else "",
+                    "type": project.project_type.name if project and project.project_type else "",
+                    "status": "Borrador" if assignment.is_draft else "Confirmada",
+                    "document": "Si" if assignment.can_evaluate_documentation else "No",
+                    "exposition": "Si" if assignment.can_evaluate_exposition else "No",
+                    "english_project": "Si" if project and project.requires_english_evaluation else "No",
+                    "english_judge": "Si" if judge.can_evaluate_english else "No",
+                    "scope": assignment.scope_label,
+                }
+            )
+    return judge_rows, assignment_rows
+
+
+@admin_module_required("judge_pool")
+def judges_report_excel():
+    try:
+        from collections import Counter
+
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+        from openpyxl.utils import get_column_letter
+        from openpyxl.worksheet.table import Table, TableStyleInfo
+    except ImportError:
+        flash("Instala openpyxl en el servidor para exportar Excel.", "error")
+        return redirect(url_for("admin.judge_pool_page"))
+
+    judges = (
+        Judge.query.filter(Judge.role == Judge.ROLE_JUDGE)
+        .order_by(Judge.full_name.asc())
+        .all()
+    )
+    assignments = (
+        Assignment.query.options(
+            joinedload(Assignment.judge),
+            joinedload(Assignment.project).joinedload(Project.thematic_axis),
+            joinedload(Assignment.project).joinedload(Project.project_type),
+        )
+        .join(Project, Project.id == Assignment.project_id)
+        .filter(Project.is_active == True)  # noqa: E712
+        .all()
+    )
+    judge_rows, assignment_rows = _judge_report_rows(judges, assignments)
+
+    wb = Workbook()
+    ws_summary = wb.active
+    ws_summary.title = "Resumen"
+    ws_judges = wb.create_sheet("Jueces")
+    ws_assignments = wb.create_sheet("Asignaciones")
+
+    header_fill = PatternFill("solid", fgColor="1A4A7A")
+    title_fill = PatternFill("solid", fgColor="063B68")
+    good_fill = PatternFill("solid", fgColor="EAF8EA")
+    warning_fill = PatternFill("solid", fgColor="FFF3CD")
+    off_fill = PatternFill("solid", fgColor="FCE8E8")
+    header_font = Font(bold=True, color="FFFFFF", size=10)
+    title_font = Font(bold=True, color="FFFFFF", size=16)
+    bold_font = Font(bold=True, color="0D2F52")
+    thin = Side(style="thin", color="C8DDF0")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    wrap = Alignment(vertical="top", wrap_text=True)
+
+    active_rows = [row for row in judge_rows if row["active"] == "Si"]
+    attendance_counts = Counter(row["attendance"] for row in judge_rows)
+    summary_rows = [
+        ("Jueces registrados", len(judge_rows), "Total de cuentas con rol juez."),
+        ("Jueces activos", len(active_rows), "Disponibles en el sistema."),
+        ("Confirmaron asistencia", attendance_counts["Confirmado"], "Indicaron que asistirán."),
+        ("No asisten", attendance_counts["No asiste"], "Deben excluirse de logística presencial."),
+        ("Sin responder asistencia", attendance_counts["Pendiente"], "Requieren seguimiento."),
+        ("Solicitan parqueo", sum(1 for row in judge_rows if row["attendance"] == "Confirmado" and row["parking"] == "Si"), "Solo confirmados con parqueo marcado."),
+        ("Con asignaciones confirmadas", sum(1 for row in judge_rows if row["confirmed_assignments"] > 0), "Tienen proyectos ya confirmados."),
+        ("Sin asignaciones confirmadas", sum(1 for row in judge_rows if row["confirmed_assignments"] == 0), "Revisar si se ocuparán como respaldo."),
+    ]
+
+    ws_summary.merge_cells("A1:C1")
+    ws_summary["A1"] = "REPORTE GENERAL DE JUECES"
+    ws_summary["A1"].font = title_font
+    ws_summary["A1"].fill = title_fill
+    ws_summary["A1"].alignment = Alignment(vertical="center")
+    ws_summary.row_dimensions[1].height = 34
+    ws_summary.append(["Metrica", "Cantidad", "Uso"])
+    for col_idx, width in enumerate([42, 14, 72], start=1):
+        cell = ws_summary.cell(row=2, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws_summary.column_dimensions[get_column_letter(col_idx)].width = width
+    for item in summary_rows:
+        ws_summary.append(item)
+        row_idx = ws_summary.max_row
+        for col_idx in range(1, 4):
+            ws_summary.cell(row=row_idx, column=col_idx).border = border
+            ws_summary.cell(row=row_idx, column=col_idx).alignment = wrap
+        ws_summary.cell(row=row_idx, column=2).font = bold_font
+        ws_summary.cell(row=row_idx, column=2).alignment = center
+    ws_summary.freeze_panes = "A3"
+
+    judge_headers = [
+        "Juez", "Cedula", "Correo", "Telefono", "Profesion o area", "Institucion",
+        "Activo", "Rol", "Categoria", "Evaluaciones", "Evalua ingles", "Expo previa",
+        "Asistencia", "Parqueo", "Invitacion enviada", "Respondio", "Error invitacion",
+        "Ultimo ingreso", "Registro publico", "Asignaciones confirmadas", "Asignaciones borrador",
+        "Documento", "Exposicion", "Ingles", "Proyectos asignados",
+    ]
+    judge_widths = [30, 18, 36, 18, 30, 32, 10, 16, 20, 24, 14, 14, 16, 12, 18, 18, 42, 18, 16, 18, 18, 12, 12, 12, 70]
+    ws_judges.append(judge_headers)
+    for col_idx, width in enumerate(judge_widths, start=1):
+        cell = ws_judges.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws_judges.column_dimensions[get_column_letter(col_idx)].width = width
+    for row in judge_rows:
+        ws_judges.append([row[key] for key in [
+            "name", "identity", "email", "phone", "job_title", "institution", "active", "role",
+            "category_scope", "evaluation_scope", "english", "previous_expo", "attendance", "parking",
+            "invitation_sent", "responded_at", "invitation_error", "last_login", "registered_public",
+            "confirmed_assignments", "draft_assignments", "doc_assignments", "expo_assignments",
+            "english_assignments", "projects",
+        ]])
+        row_idx = ws_judges.max_row
+        for col_idx in range(1, len(judge_headers) + 1):
+            ws_judges.cell(row=row_idx, column=col_idx).border = border
+            ws_judges.cell(row=row_idx, column=col_idx).alignment = wrap
+        if row["attendance"] == "Confirmado":
+            fill = good_fill
+        elif row["attendance"] == "No asiste":
+            fill = off_fill
+        else:
+            fill = warning_fill
+        for col_idx in range(1, len(judge_headers) + 1):
+            ws_judges.cell(row=row_idx, column=col_idx).fill = fill
+    ws_judges.freeze_panes = "A2"
+
+    assignment_headers = [
+        "Juez", "Correo", "Asistencia", "Proyecto", "Equipo", "Categoria", "Eje",
+        "Tipo", "Estado asignacion", "Documento", "Exposicion", "Proyecto ingles",
+        "Juez evalua ingles", "Alcance",
+    ]
+    assignment_widths = [30, 36, 16, 52, 28, 18, 28, 24, 18, 12, 12, 14, 16, 24]
+    ws_assignments.append(assignment_headers)
+    for col_idx, width in enumerate(assignment_widths, start=1):
+        cell = ws_assignments.cell(row=1, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        ws_assignments.column_dimensions[get_column_letter(col_idx)].width = width
+    for row in assignment_rows:
+        ws_assignments.append([row[key] for key in [
+            "judge", "email", "attendance", "project", "team", "category", "axis", "type",
+            "status", "document", "exposition", "english_project", "english_judge", "scope",
+        ]])
+        row_idx = ws_assignments.max_row
+        for col_idx in range(1, len(assignment_headers) + 1):
+            ws_assignments.cell(row=row_idx, column=col_idx).border = border
+            ws_assignments.cell(row=row_idx, column=col_idx).alignment = wrap
+        if row["status"] == "Borrador":
+            for col_idx in range(1, len(assignment_headers) + 1):
+                ws_assignments.cell(row=row_idx, column=col_idx).fill = warning_fill
+    ws_assignments.freeze_panes = "A2"
+
+    for ws in [ws_judges, ws_assignments]:
+        if ws.max_row > 1:
+            last_col = get_column_letter(ws.max_column)
+            table_name = f"Tabla{re.sub(r'[^A-Za-z0-9]', '', ws.title)}"
+            table = Table(displayName=table_name, ref=f"A1:{last_col}{ws.max_row}")
+            table.tableStyleInfo = TableStyleInfo(
+                name="TableStyleMedium2",
+                showFirstColumn=False,
+                showLastColumn=False,
+                showRowStripes=True,
+                showColumnStripes=False,
+            )
+            ws.add_table(table)
+        ws.sheet_view.showGridLines = False
+    ws_summary.sheet_view.showGridLines = False
+
+    buffer = BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    return send_file(
+        buffer,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"reporte_jueces_{datetime.now().strftime('%Y%m%d')}.xlsx",
+    )
 
 
 @admin_module_required("judge_pool")

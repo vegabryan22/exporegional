@@ -9,8 +9,7 @@
         </div>
         <div class="page-head-actions judge-pool-actions">
             <a class="action-btn outline-btn" href="{{ url_for('admin.assignments_page') }}">Asignar proyectos</a>
-            <a class="action-btn outline-btn" href="{{ url_for('admin.judges_report_excel') }}">Excel jueces</a>
-            <a class="action-btn outline-btn" href="{{ url_for('admin.pending_evaluations_report_excel') }}">Pendientes Excel</a>
+            <a class="action-btn outline-btn" href="{{ url_for('admin.reports_page') }}">Abrir reportes</a>
             <a class="action-btn secondary-btn" href="{{ url_for('admin.judges_page') }}">Gestionar cuentas</a>
             <form method="post" action="{{ action_url }}" onsubmit="return confirm('&iquest;Enviar invitaci&oacute;n de confirmaci&oacute;n de asistencia a todos los jueces activos?')">
                 <input type="hidden" name="next" value="{{ next_url }}">

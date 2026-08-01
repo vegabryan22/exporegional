@@ -1491,6 +1491,118 @@ a.tutors-export-btn svg {
     padding: .45rem .7rem !important;
 }
 
+.reports-page {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.reports-banner {
+    align-items: center;
+}
+
+.reports-directory {
+    display: grid;
+    gap: 1.4rem;
+}
+
+.reports-group {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.reports-group header {
+    align-items: center;
+    border-bottom: 1px solid #cfe0ee;
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 0.55rem;
+}
+
+.reports-group h4 {
+    color: #073b68;
+    font-size: 1.15rem;
+    margin: 0;
+}
+
+.reports-group header span {
+    background: #eaf3fb;
+    border: 1px solid #c7dff1;
+    border-radius: 999px;
+    color: #174d74;
+    font-weight: 800;
+    padding: 0.25rem 0.65rem;
+}
+
+.reports-grid {
+    display: grid;
+    gap: 0.9rem;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.reports-card {
+    background: #fff;
+    border: 1px solid #d3e3f0;
+    border-radius: 10px;
+    display: grid;
+    gap: 0.7rem;
+    padding: 1rem;
+}
+
+.reports-card-head {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.reports-card h5 {
+    color: #073b68;
+    font-size: 1.08rem;
+    margin: 0;
+}
+
+.reports-card p,
+.reports-card small {
+    color: #58708b;
+    line-height: 1.45;
+    margin: 0;
+}
+
+.reports-card small {
+    background: #f3f8fc;
+    border-radius: 8px;
+    padding: 0.65rem;
+}
+
+.reports-format {
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 900;
+    justify-self: start;
+    letter-spacing: 0.04em;
+    padding: 0.22rem 0.55rem;
+    text-transform: uppercase;
+}
+
+.reports-format.excel {
+    background: #eaf8ea;
+    color: #1f6f2b;
+}
+
+.reports-format.pdf {
+    background: #fdecef;
+    color: #a5283f;
+}
+
+.reports-download {
+    justify-content: center;
+    margin-top: 0.25rem;
+    width: 100%;
+}
+
+.reports-download svg {
+    height: 18px;
+    width: 18px;
+}
+
 .projects-logistics-metrics {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));

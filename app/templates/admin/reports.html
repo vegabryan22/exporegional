@@ -1,0 +1,44 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section reports-page">
+    <div class="maintenance-banner reports-banner">
+        <div>
+            <p class="maintenance-kicker">Centro de reportes</p>
+            <h3>Reportes de ExpoTécnica</h3>
+            <p>Una sola vista para descargar archivos de seguimiento, evaluación, logística y documentación.</p>
+        </div>
+        <span class="tag ok">{{ reports_count }} reportes disponibles</span>
+    </div>
+
+    {% if report_groups %}
+        <div class="reports-directory">
+            {% for group in report_groups %}
+                <section class="reports-group" aria-labelledby="reports-group-{{ loop.index }}">
+                    <header>
+                        <h4 id="reports-group-{{ loop.index }}">{{ group.name }}</h4>
+                        <span>{{ group.items|length }}</span>
+                    </header>
+                    <div class="reports-grid">
+                        {% for report in group.items %}
+                            <article class="reports-card">
+                                <div class="reports-card-head">
+                                    <span class="reports-format {{ report.format|lower }}">{{ report.format }}</span>
+                                    <h5>{{ report.title }}</h5>
+                                </div>
+                                <p>{{ report.description }}</p>
+                                <small>{{ report.contents }}</small>
+                                <a class="outline-btn reports-download" href="{{ report.url }}" {% if report.target %}target="{{ report.target }}"{% endif %}>
+                                    <svg aria-hidden="true"><use href="#ico-download"></use></svg>
+                                    Descargar
+                                </a>
+                            </article>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="muted-empty">No hay reportes disponibles para tu perfil.</p>
+    {% endif %}
+</section>
+{% endblock %}

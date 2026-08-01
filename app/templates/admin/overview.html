@@ -2,10 +2,9 @@
 {% macro logistics_pending_link(value, label, report_type) -%}
   {% if value > 0 %}
     <a
-      href="{{ url_for('admin.logistics_pending_report_excel', tipo=report_type) }}"
+      href="{{ url_for('admin.reports_page') }}"
       class="ov2-log-item bad ov2-log-download"
-      title="Descargar reporte detallado de {{ label }}"
-      download
+      title="Abrir centro de reportes para {{ label }}"
     >
       <strong>{{ value }}</strong> {{ label }}
     </a>
@@ -250,8 +249,8 @@
       </div>
 
       {% if m.projects_incomplete_logistics > 0 %}
-      <a href="{{ url_for('admin.logistics_pending_report_excel', tipo='all') }}" class="ov2-log-cta" download>
-        Descargar reporte detallado de pendientes &darr;
+      <a href="{{ url_for('admin.reports_page') }}" class="ov2-log-cta">
+        Abrir centro de reportes &darr;
       </a>
       {% else %}
       <p class="ov2-empty" style="margin-top:0.5rem;">Toda la log&iacute;stica est&aacute; al d&iacute;a.</p>

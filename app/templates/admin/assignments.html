@@ -1,4 +1,4 @@
-{% extends "admin/layout.html" %}
+﻿{% extends "admin/layout.html" %}
 {% block admin_content %}
 {% set active_projects = projects|selectattr('is_active')|list %}
 {% set active_project_ids = active_projects|map(attribute='id')|list %}
@@ -37,15 +37,12 @@
                 <div class="assignments-tool-head">
                     <span class="assignments-tool-icon"><svg aria-hidden="true"><use href="#ico-download"></use></svg></span>
                     <div>
-                        <strong>Exportar reportes</strong>
-                        <small>Descargas para control, revisi&oacute;n y log&iacute;stica.</small>
+                        <strong>Reportes centralizados</strong>
+                        <small>Descargas para control, revisi&oacute;n y log&iacute;stica desde una sola vista.</small>
                     </div>
                 </div>
                 <div class="assignments-action-group">
-                    <a class="outline-btn assignment-tool-btn" href="{{ url_for('admin.assignments_report_pdf') }}" target="_blank"><svg aria-hidden="true"><use href="#ico-doc"></use></svg><span>PDF asignaciones</span></a>
-                    <a class="outline-btn assignment-tool-btn" href="{{ url_for('admin.exposition_usher_report_excel') }}"><svg aria-hidden="true"><use href="#ico-download"></use></svg><span>Excel edecanes · exposición</span></a>
-                    <a class="outline-btn assignment-tool-btn" href="{{ url_for('admin.assignments_report_excel') }}"><svg aria-hidden="true"><use href="#ico-download"></use></svg><span>Excel asignaciones</span></a>
-                    <a class="outline-btn assignment-tool-btn" href="{{ url_for('admin.judge_presence_report_excel') }}"><svg aria-hidden="true"><use href="#ico-box"></use></svg><span>Excel presencial</span></a>
+                    <a class="outline-btn assignment-tool-btn" href="{{ url_for('admin.reports_page') }}"><svg aria-hidden="true"><use href="#ico-download"></use></svg><span>Abrir centro de reportes</span></a>
                 </div>
             </section>
 
@@ -81,7 +78,7 @@
                 <form method="post" action="{{ action_url }}" style="display:contents">
                     <input type="hidden" name="next" value="{{ next_url }}">
                     <input type="hidden" name="action" value="discard_draft_assignments">
-                    <button type="submit" class="ghost-btn" onclick="return confirm('¿Descartar todas las asignaciones en borrador? No se enviará ningún correo.')">Descartar borrador</button>
+                    <button type="submit" class="ghost-btn" onclick="return confirm('Â¿Descartar todas las asignaciones en borrador? No se enviarÃ¡ ningÃºn correo.')">Descartar borrador</button>
                 </form>
                 <form method="post" action="{{ action_url }}" style="display:contents">
                     <input type="hidden" name="next" value="{{ next_url }}">
@@ -357,10 +354,10 @@
                 <label>Nombre completo<input type="text" name="quick_judge_full_name" required></label>
                 <label>Correo<input type="email" name="quick_judge_email" required></label>
             </div>
-            <label>Contraseña inicial<input type="password" name="quick_judge_password" minlength="8"></label>
-            <label>Área que puede evaluar
+            <label>ContraseÃ±a inicial<input type="password" name="quick_judge_password" minlength="8"></label>
+            <label>Ãrea que puede evaluar
                 <select name="quick_judge_category_scope">
-                    <option value="ambas">Ambas categorías</option>
+                    <option value="ambas">Ambas categorÃ­as</option>
                     <option value="steam">STEAM</option>
                     <option value="emprendimiento">Emprendimiento</option>
                 </select>
@@ -369,7 +366,7 @@
             <div class="assignment-scope-group assignment-scope-group-wide">
                 <label><input type="checkbox" name="assignment_scope" value="documentacion" checked> Documento escrito</label>
                 <label><input type="checkbox" name="assignment_scope" value="exposicion" checked> Exposici&oacute;n oral</label>
-                <label><input type="checkbox" name="quick_judge_can_english" value="1"> Evalúa inglés</label>
+                <label><input type="checkbox" name="quick_judge_can_english" value="1"> EvalÃºa inglÃ©s</label>
             </div>
             <label>Proyecto
                 <select id="quick-judge-project-fallback">
@@ -720,7 +717,7 @@
         }
 
         if (!assignedProjects.length) {
-            summary.textContent = 'Este juez no tiene proyectos asignados todavía.';
+            summary.textContent = 'Este juez no tiene proyectos asignados todavÃ­a.';
             return;
         }
 

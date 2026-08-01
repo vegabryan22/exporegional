@@ -134,12 +134,12 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual((2, 7), (completed, total))
         self.assertEqual(29, tutors[0]["completion_percent"])
 
-    def test_tutors_page_has_filters_statistics_and_excel(self):
+    def test_tutors_page_has_filters_statistics_and_reports_center(self):
         template = Path("app/templates/admin/tutors.html").read_text(encoding="utf-8")
 
         self.assertIn("tutors_summary", template)
         self.assertIn("tutors-filter-text", template)
-        self.assertIn("tutors_report_excel", template)
+        self.assertIn("reports_page", template)
         self.assertIn('name="action" value="update_advisor"', template)
         self.assertIn('name="action" value="toggle_tutor"', template)
         self.assertIn("tutors-export-btn", template)
@@ -233,16 +233,31 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual("Ana Sofía de los Ángeles", members[0]["name"])
         self.assertEqual("12-1", members[0]["section"])
 
-    def test_projects_page_links_general_excel_report(self):
+    def test_projects_page_links_reports_center(self):
         template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
 
-        self.assertIn("projects_report_excel", template)
+        self.assertIn("reports_page", template)
+        self.assertIn("Reportes centralizados", template)
 
     def test_projects_page_links_reminder_center(self):
         template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
 
         self.assertIn("logistics_reminder_page", template)
         self.assertIn("Centro de recordatorios", template)
+
+    def test_reports_center_centralizes_downloads(self):
+        template = Path("app/templates/admin/reports.html").read_text(encoding="utf-8")
+        controller = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")
+        routes = Path("app/routes/admin_routes.py").read_text(encoding="utf-8")
+
+        self.assertIn("/reportes", routes)
+        self.assertIn("reports_page", controller)
+        self.assertIn("Centro de reportes", template)
+        self.assertIn("projects_report_excel", controller)
+        self.assertIn("tutors_report_excel", controller)
+        self.assertIn("judges_report_excel", controller)
+        self.assertIn("exposition_usher_report_excel", controller)
+        self.assertIn("participation_certificates_download", controller)
 
     def test_member_editor_can_delete_current_photo(self):
         template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
@@ -253,8 +268,8 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn('"delete_member_photo": "projects"', controller)
         self.assertIn('member.photo_url = None', controller)
         self.assertIn('_sync_project_logistics_status(member.project)', controller)
-        self.assertIn("Reporte de proyectos inscritos", template)
-        self.assertIn("Descargar Excel", template)
+        self.assertIn("Reportes centralizados", template)
+        self.assertIn("Abrir reportes", template)
 
     def test_members_dialog_uses_profile_cards_and_collapsible_history(self):
         template = Path("app/templates/admin/projects.html").read_text(encoding="utf-8")
@@ -263,14 +278,14 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn('class="member-profile-card"', template)
         self.assertIn('class="members-history"', template)
         self.assertIn("Historial de cambios", template)
-        self.assertNotIn("Bitácora de cambios de integrantes", template)
+        self.assertNotIn("BitÃ¡cora de cambios de integrantes", template)
         self.assertIn('data-parent-dialog="members-project-{{ project.id }}"', template)
         self.assertIn('{{ next_url }}#members-project-{{ project.id }}', template)
         self.assertIn('class="danger-btn member-delete-btn"', template)
 
     def test_registration_builds_structured_requirement_items(self):
         form_data = {
-            "requirement_item_name": ["Mesa de exhibición", "Extensión eléctrica"],
+            "requirement_item_name": ["Mesa de exhibiciÃ³n", "ExtensiÃ³n elÃ©ctrica"],
             "requirement_item_quantity": ["2", "1"],
             "requirement_item_unit": ["unidades", "unidad"],
             "requirement_item_notes": ["De 1,80 m", "De 10 metros"],
@@ -279,7 +294,7 @@ class RequirementsSeparationTest(unittest.TestCase):
         items = _build_requirement_items(form_data)
 
         self.assertEqual(2, len(items))
-        self.assertEqual("Mesa de exhibición", items[0]["name"])
+        self.assertEqual("Mesa de exhibiciÃ³n", items[0]["name"])
         self.assertEqual("2", items[0]["quantity"])
         self.assertEqual("unidades", items[0]["unit"])
         self.assertFalse(items[0]["confirmed"])
@@ -302,7 +317,7 @@ class RequirementsSeparationTest(unittest.TestCase):
                 [
                     {
                         "id": "item-1",
-                        "name": "Mesa de exhibición",
+                        "name": "Mesa de exhibiciÃ³n",
                         "quantity": "2",
                         "unit": "unidades",
                         "notes": "De 1,80 m",
@@ -317,7 +332,7 @@ class RequirementsSeparationTest(unittest.TestCase):
 
         self.assertEqual(
             project.requirements_missing_items,
-            ["Acceso a internet", "Insumos pendientes: Mesa de exhibición"],
+            ["Acceso a internet", "Insumos pendientes: Mesa de exhibiciÃ³n"],
         )
         self.assertFalse(project.requirements_complete)
 
@@ -326,7 +341,7 @@ class RequirementsSeparationTest(unittest.TestCase):
             [
                 {
                     "id": "item-1",
-                    "name": "Mesa de exhibición",
+                    "name": "Mesa de exhibiciÃ³n",
                     "quantity": "2",
                     "unit": "unidades",
                     "notes": "De 1,80 m",
@@ -521,12 +536,12 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual("Proyecto de prueba", rows[0]["project"])
         self.assertEqual("Tutor Ejemplo", rows[0]["tutor"])
 
-    def test_overview_pending_counters_download_reports(self):
+    def test_overview_pending_counters_link_reports_center(self):
         template = Path("app/templates/admin/overview.html").read_text(encoding="utf-8")
         controller = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")
 
-        self.assertIn("logistics_pending_report_excel", template)
-        self.assertIn("Descargar reporte detallado de pendientes", template)
+        self.assertIn("reports_page", template)
+        self.assertIn("Abrir centro de reportes", template)
         self.assertNotIn(
             'worksheet.auto_filter.ref = f"A5:E{max(worksheet.max_row, 5)}"',
             controller,
@@ -586,7 +601,7 @@ class RequirementsSeparationTest(unittest.TestCase):
             payload = _build_tutor_logistics_reminder_payload(
                 project,
                 deadline=None,
-                institution_name="ExpoTécnica",
+                institution_name="ExpoTÃ©cnica",
             )
 
         self.assertIsNotNone(payload)
@@ -615,7 +630,7 @@ class RequirementsSeparationTest(unittest.TestCase):
             payload = _build_tutor_logistics_reminder_payload(
                 project,
                 deadline=None,
-                institution_name="ExpoTécnica",
+                institution_name="ExpoTÃ©cnica",
                 logo_submission_email="logos@colegio.cr",
             )
 
@@ -628,7 +643,7 @@ class RequirementsSeparationTest(unittest.TestCase):
             payload = _build_tutor_logistics_reminder_payload(
                 project,
                 deadline=None,
-                institution_name="ExpoTécnica",
+                institution_name="ExpoTÃ©cnica",
                 logo_submission_email="logos@colegio.cr",
             )
 
@@ -669,7 +684,7 @@ class RequirementsSeparationTest(unittest.TestCase):
             payload = _build_tutor_logistics_digest_payload(
                 [project_b, project_a],
                 deadline=None,
-                institution_name="ExpoTécnica",
+                institution_name="ExpoTÃ©cnica",
                 logo_submission_email="logos@colegio.cr",
             )
 
@@ -692,7 +707,7 @@ class RequirementsSeparationTest(unittest.TestCase):
     def test_usher_report_contains_only_confirmed_exposition_assignments(self):
         exposition_judge = Judge(
             id=1,
-            full_name="Juez Exposición",
+            full_name="Juez ExposiciÃ³n",
             email="expo@example.com",
             phone="8888-8888",
             role=Judge.ROLE_JUDGE,
@@ -702,7 +717,7 @@ class RequirementsSeparationTest(unittest.TestCase):
         )
         documentation_judge = Judge(
             id=2,
-            full_name="Juez Documentación",
+            full_name="Juez DocumentaciÃ³n",
             email="doc@example.com",
             role=Judge.ROLE_JUDGE,
             password_hash="test",
@@ -711,7 +726,7 @@ class RequirementsSeparationTest(unittest.TestCase):
         )
         project = Project(
             id=30,
-            title="Proyecto para exposición",
+            title="Proyecto para exposiciÃ³n",
             team_name="Equipo",
             category="steam",
             is_active=True,
@@ -742,22 +757,22 @@ class RequirementsSeparationTest(unittest.TestCase):
         )
 
         self.assertEqual(1, len(rows))
-        self.assertEqual("Juez Exposición", rows[0]["judge"])
-        self.assertEqual("Proyecto para exposición", rows[0]["project"])
+        self.assertEqual("Juez ExposiciÃ³n", rows[0]["judge"])
+        self.assertEqual("Proyecto para exposiciÃ³n", rows[0]["project"])
         self.assertEqual("", rows[0]["location"])
 
-    def test_assignments_page_links_usher_report(self):
+    def test_assignments_page_links_reports_center(self):
         template = Path("app/templates/admin/assignments.html").read_text(encoding="utf-8")
 
-        self.assertIn("exposition_usher_report_excel", template)
-        self.assertIn("Excel edecanes · exposición", template)
+        self.assertIn("reports_page", template)
+        self.assertIn("Abrir centro de reportes", template)
 
-    def test_judge_pool_links_general_judges_excel_report(self):
+    def test_judge_pool_links_reports_center_and_route_keeps_excel(self):
         template = Path("app/templates/admin/judge_pool.html").read_text(encoding="utf-8")
         routes = Path("app/routes/admin_routes.py").read_text(encoding="utf-8")
 
-        self.assertIn("judges_report_excel", template)
-        self.assertIn("Excel jueces", template)
+        self.assertIn("reports_page", template)
+        self.assertIn("Abrir reportes", template)
         self.assertIn("/jueces/evaluacion/reporte/excel", routes)
 
     def test_judge_report_rows_include_attendance_and_assignments(self):

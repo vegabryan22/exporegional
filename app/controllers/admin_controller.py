@@ -140,6 +140,7 @@ ADMIN_MENU_ICONS = {
     "requirements": "settings",
     "evaluations": "chart",
     "documents": "doc",
+    "reports": "download",
     "smtp": "send",
     "institution": "box",
     "maintenance": "settings",
@@ -166,6 +167,7 @@ ADMIN_MENU_ITEMS = [
     ("requirements", "admin.requirements_page", "Requerimientos"),
     ("evaluations", "admin.evaluations_page", "Evaluaciones"),
     ("documents", "admin.documents_page", "Actas y certificados"),
+    ("reports", "admin.reports_page", "Reportes"),
     ("smtp", "admin.smtp_page", "SMTP"),
     ("institution", "admin.institution_page", "Institución"),
     ("maintenance", "admin.maintenance_page", "Mantenimiento"),
@@ -178,15 +180,15 @@ ADMIN_MENU_ITEMS = [
 
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
-    ("Documentos", ["documents"]),
+    ("Documentos", ["reports", "documents"]),
     ("Operación", ["assignments", "judge_pool", "projects", "tutors", "requirements", "evaluations", "students_stats"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
-    "logistica": {"overview", "assignments", "judge_pool", "projects", "tutors", "documents"},
-    "datos": {"overview", "evaluations", "documents"},
+    "logistica": {"overview", "assignments", "judge_pool", "projects", "tutors", "documents", "reports"},
+    "datos": {"overview", "evaluations", "documents", "reports"},
     "diseno": {"overview", "campaigns", "categories", "academic", "rubrics", "institution"},
     "qa": {"overview", "logs", "maintenance", "database", "gitops"},
 }
@@ -560,6 +562,12 @@ def _load_department_module_access():
         clean_modules = sorted({module for module in modules if module in valid_modules})
         if "projects" in clean_modules and "tutors" not in clean_modules:
             clean_modules.append("tutors")
+            clean_modules.sort()
+        if (
+            {"documents", "projects", "assignments", "judge_pool", "tutors", "evaluations"} & set(clean_modules)
+            and "reports" not in clean_modules
+        ):
+            clean_modules.append("reports")
             clean_modules.sort()
         if "overview" not in clean_modules:
             clean_modules.insert(0, "overview")
@@ -8589,6 +8597,191 @@ def documents_page():
     context = _base_context("documents")
     context.update(_build_documents_context())
     return render_template("admin/documents.html", **context)
+
+
+def _reports_catalog() -> list[dict]:
+    reports = [
+        {
+            "group": "Proyectos",
+            "module": "projects",
+            "title": "Proyectos inscritos",
+            "description": "Exporta la base general de proyectos activos e inactivos con datos relevantes para coordinación, revisión y seguimiento.",
+            "contents": "Proyecto, equipo, categoría, tutor, representante, estado logístico, requerimientos e integrantes.",
+            "format": "Excel",
+            "endpoint": "admin.projects_report_excel",
+        },
+        {
+            "group": "Logística",
+            "module": "overview",
+            "title": "Pendientes logísticos",
+            "description": "Lista detallada de proyectos con pendientes para dar seguimiento operativo sin abrir cada ficha.",
+            "contents": "Proyecto, sección, tutor, pendiente específico, integrante afectado cuando corresponde y observación.",
+            "format": "Excel",
+            "endpoint": "admin.logistics_pending_report_excel",
+            "params": {"tipo": "all"},
+        },
+        {
+            "group": "Logística",
+            "module": "overview",
+            "title": "Pendientes de fotografías",
+            "description": "Detalla proyectos e integrantes que aún requieren fotografías completas.",
+            "contents": "Proyecto, sección, tutor, estudiante afectado y pendiente fotográfico.",
+            "format": "Excel",
+            "endpoint": "admin.logistics_pending_report_excel",
+            "params": {"tipo": "photo"},
+        },
+        {
+            "group": "Logística",
+            "module": "overview",
+            "title": "Pendientes de logo",
+            "description": "Identifica proyectos que deben enviar o corregir el logo.",
+            "contents": "Proyecto, sección, tutor y estado del logo.",
+            "format": "Excel",
+            "endpoint": "admin.logistics_pending_report_excel",
+            "params": {"tipo": "logo"},
+        },
+        {
+            "group": "Logística",
+            "module": "overview",
+            "title": "Pendientes de documento",
+            "description": "Consolida proyectos sin documento escrito aceptado.",
+            "contents": "Proyecto, sección, tutor y pendiente asociado al PDF del proyecto.",
+            "format": "Excel",
+            "endpoint": "admin.logistics_pending_report_excel",
+            "params": {"tipo": "document"},
+        },
+        {
+            "group": "Logística",
+            "module": "overview",
+            "title": "Proyectos incompletos",
+            "description": "Muestra proyectos cuyo control logístico todavía no está completo.",
+            "contents": "Proyecto, sección, tutor y pendientes agrupados.",
+            "format": "Excel",
+            "endpoint": "admin.logistics_pending_report_excel",
+            "params": {"tipo": "logistics"},
+        },
+        {
+            "group": "Revisión",
+            "module": "projects",
+            "title": "Documentos en revisión",
+            "description": "Lista documentos reenviados por estudiantes que requieren decisión.",
+            "contents": "Proyecto, sección, tutor, estudiante cuando aplica y estado de revisión.",
+            "format": "Excel",
+            "endpoint": "admin.logistics_pending_report_excel",
+            "params": {"tipo": "revisions"},
+        },
+        {
+            "group": "Revisión",
+            "module": "projects",
+            "title": "Ediciones de datos pendientes",
+            "description": "Muestra solicitudes de corrección de integrantes pendientes de aprobar o rechazar.",
+            "contents": "Proyecto, sección, tutor, estudiante y tipo de cambio solicitado.",
+            "format": "Excel",
+            "endpoint": "admin.logistics_pending_report_excel",
+            "params": {"tipo": "edits"},
+        },
+        {
+            "group": "Tutores",
+            "module": "tutors",
+            "title": "Tutores y carga de proyectos",
+            "description": "Resume la información de cada tutor y su carga de acompañamiento para coordinación académica.",
+            "contents": "Tutor, contacto, especialidad, secciones, cantidad de proyectos, estudiantes y pendientes.",
+            "format": "Excel",
+            "endpoint": "admin.tutors_report_excel",
+        },
+        {
+            "group": "Jueces",
+            "module": "judge_pool",
+            "title": "Jueces evaluadores",
+            "description": "Base general de jueces para revisar datos, disponibilidad, asistencia y asignaciones.",
+            "contents": "Contacto, institución, asistencia, parqueo, disponibilidad, asignaciones confirmadas y borradores.",
+            "format": "Excel",
+            "endpoint": "admin.judges_report_excel",
+        },
+        {
+            "group": "Jueces",
+            "module": "judge_pool",
+            "title": "Evaluaciones pendientes",
+            "description": "Muestra qué evaluaciones aún no han sido registradas por los jueces.",
+            "contents": "Juez, proyecto, tipo de evaluación pendiente, estudiante cuando aplica y observación.",
+            "format": "Excel",
+            "endpoint": "admin.pending_evaluations_report_excel",
+        },
+        {
+            "group": "Asignaciones",
+            "module": "assignments",
+            "title": "Asignaciones de jueces",
+            "description": "Exporta el mapa general de jueces asignados a proyectos para control interno.",
+            "contents": "Proyecto, categoría, equipo, juez, correo, alcance y estado de asignación.",
+            "format": "Excel",
+            "endpoint": "admin.assignments_report_excel",
+        },
+        {
+            "group": "Asignaciones",
+            "module": "assignments",
+            "title": "Asignaciones en PDF",
+            "description": "Versión PDF del listado de asignaciones para imprimir o compartir sin edición.",
+            "contents": "Resumen de proyectos y jueces asignados en formato de lectura.",
+            "format": "PDF",
+            "endpoint": "admin.assignments_report_pdf",
+            "target": "_blank",
+        },
+        {
+            "group": "Edecanes",
+            "module": "assignments",
+            "title": "Guía de exposición para edecanes",
+            "description": "Reporte editable para que edecanes ubiquen jueces y proyectos en los recintos definidos por la organización.",
+            "contents": "Juez, proyecto, categoría, equipo, sección y columnas editables para recinto u observaciones.",
+            "format": "Excel",
+            "endpoint": "admin.exposition_usher_report_excel",
+        },
+        {
+            "group": "Asistencia",
+            "module": "assignments",
+            "title": "Jueces presenciales",
+            "description": "Base logística para alimentación, parqueo y seguimiento de jueces con exposición presencial.",
+            "contents": "Asistencia confirmada, pendiente o rechazada, parqueo, proyectos de exposición y respuesta.",
+            "format": "Excel",
+            "endpoint": "admin.judge_presence_report_excel",
+        },
+        {
+            "group": "Evaluaciones",
+            "module": "evaluations",
+            "title": "Acta general de evaluación",
+            "description": "Documento consolidado con resultados de evaluación para revisión general.",
+            "contents": "Resultados por proyecto y resumen de evaluaciones registradas.",
+            "format": "PDF",
+            "endpoint": "admin.evaluation_report_all_download",
+        },
+        {
+            "group": "Certificados",
+            "module": "documents",
+            "title": "Certificados de participación",
+            "description": "Genera el paquete de certificados de participación para proyectos activos.",
+            "contents": "Certificados listos para descarga en un solo PDF.",
+            "format": "PDF",
+            "endpoint": "admin.participation_certificates_download",
+        },
+    ]
+    visible_reports = []
+    for report in reports:
+        if not _can_access_module(report["module"]):
+            continue
+        visible = dict(report)
+        visible["url"] = url_for(report["endpoint"], **report.get("params", {}))
+        visible_reports.append(visible)
+    return visible_reports
+
+
+@admin_module_required("reports")
+def reports_page():
+    reports = _reports_catalog()
+    groups = []
+    for group_name in dict.fromkeys(report["group"] for report in reports):
+        groups.append({"name": group_name, "items": [report for report in reports if report["group"] == group_name]})
+    context = _base_context("reports")
+    context.update({"report_groups": groups, "reports_count": len(reports)})
+    return render_template("admin/reports.html", **context)
 
 
 @admin_module_required("evaluations")

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.3] - 2026-07-31
+
+### Cambiado
+
+- El reporte Excel de jueces abre directamente en la hoja de detalle de jueces, con datos de contacto, asistencia, parqueo, perfil y asignaciones.
+- La hoja de resumen queda como apoyo al final del archivo para no ocultar la información operativa solicitada.
+
 ## [0.25.2] - 2026-07-31
 
 ### Corregido

@@ -841,6 +841,13 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual("Si", assignment_rows[0]["document"])
         self.assertEqual("Si", assignment_rows[0]["exposition"])
 
+    def test_judges_report_opens_on_judge_detail_sheet(self):
+        source = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")
+
+        self.assertIn('ws_judges = wb.active', source)
+        self.assertIn('ws_judges.title = "Jueces"', source)
+        self.assertIn('ws_summary = wb.create_sheet("Resumen")', source)
+
     def test_logistics_department_does_not_receive_requirements_module(self):
         self.assertNotIn("requirements", ADMIN_DEPARTMENT_MODULE_ACCESS["logistica"])
         self.assertEqual(ACTION_MODULE_MAP["update_project_requirements"], "requirements")

@@ -7536,10 +7536,10 @@ def judges_report_excel():
     judge_rows, assignment_rows = _judge_report_rows(judges, assignments)
 
     wb = Workbook()
-    ws_summary = wb.active
-    ws_summary.title = "Resumen"
-    ws_judges = wb.create_sheet("Jueces")
+    ws_judges = wb.active
+    ws_judges.title = "Jueces"
     ws_assignments = wb.create_sheet("Asignaciones")
+    ws_summary = wb.create_sheet("Resumen")
 
     header_fill = PatternFill("solid", fgColor="1A4A7A")
     title_fill = PatternFill("solid", fgColor="063B68")

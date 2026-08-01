@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.2] - 2026-07-31
+
+### Corregido
+
+- Se corrige el error interno del centro de reportes usando acceso explícito a las claves de los grupos en la plantilla.
+- Se agrega una prueba de renderizado autenticado para confirmar que `/admin/reportes` carga correctamente.
+
 ## [0.25.1] - 2026-07-31
 
 ### Corregido

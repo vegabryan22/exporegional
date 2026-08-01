@@ -16,10 +16,10 @@
                 <section class="reports-group" aria-labelledby="reports-group-{{ loop.index }}">
                     <header>
                         <h4 id="reports-group-{{ loop.index }}">{{ group.name }}</h4>
-                        <span>{{ group.items|length }}</span>
+                        <span>{{ group["items"]|length }}</span>
                     </header>
                     <div class="reports-grid">
-                        {% for report in group.items %}
+                        {% for report in group["items"] %}
                             <article class="reports-card">
                                 <div class="reports-card-head">
                                     <span class="reports-format {{ report.format|lower }}">{{ report.format }}</span>

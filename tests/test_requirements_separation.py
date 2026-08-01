@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 from sqlalchemy import create_engine, text
 
-from app import _reconcile_existing_logistics_statuses, natural_title
+from app import _reconcile_existing_logistics_statuses, create_app, natural_title
 from app.controllers.admin_controller import (
     ACTION_MODULE_MAP,
     ADMIN_DEPARTMENT_MODULE_ACCESS,
@@ -33,6 +33,24 @@ from app.services import mail_service
 
 
 class RequirementsSeparationTest(unittest.TestCase):
+
+    def test_reports_center_renders_for_admin(self):
+        app = create_app()
+        app.config["TESTING"] = True
+
+        with app.app_context():
+            admin = Judge.query.filter(Judge.role == Judge.ROLE_SUPERADMIN).first()
+            self.assertIsNotNone(admin)
+
+            with app.test_client() as client:
+                with client.session_transaction() as session:
+                    session["_user_id"] = str(admin.id)
+                    session["_fresh"] = True
+
+                response = client.get("/admin/reportes")
+
+        self.assertEqual(200, response.status_code)
+        self.assertIn("Reportes de ExpoTécnica", response.get_data(as_text=True))
 
     def test_gmail_requires_account_and_app_password(self):
         values = {

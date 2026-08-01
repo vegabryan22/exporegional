@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.25.1] - 2026-07-31
+
+### Corregido
+
+- Se normaliza la plantilla de asignaciones a UTF-8 sin BOM y se corrigen textos con mojibake para restablecer el chequeo `text-encoding`.
+
 ## [0.25.0] - 2026-07-31
 
 ### Añadido

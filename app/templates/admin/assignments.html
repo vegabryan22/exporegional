@@ -1,4 +1,4 @@
-﻿{% extends "admin/layout.html" %}
+{% extends "admin/layout.html" %}
 {% block admin_content %}
 {% set active_projects = projects|selectattr('is_active')|list %}
 {% set active_project_ids = active_projects|map(attribute='id')|list %}
@@ -78,7 +78,7 @@
                 <form method="post" action="{{ action_url }}" style="display:contents">
                     <input type="hidden" name="next" value="{{ next_url }}">
                     <input type="hidden" name="action" value="discard_draft_assignments">
-                    <button type="submit" class="ghost-btn" onclick="return confirm('Â¿Descartar todas las asignaciones en borrador? No se enviarÃ¡ ningÃºn correo.')">Descartar borrador</button>
+                    <button type="submit" class="ghost-btn" onclick="return confirm('¿Descartar todas las asignaciones en borrador? No se enviará ningún correo.')">Descartar borrador</button>
                 </form>
                 <form method="post" action="{{ action_url }}" style="display:contents">
                     <input type="hidden" name="next" value="{{ next_url }}">
@@ -354,10 +354,10 @@
                 <label>Nombre completo<input type="text" name="quick_judge_full_name" required></label>
                 <label>Correo<input type="email" name="quick_judge_email" required></label>
             </div>
-            <label>ContraseÃ±a inicial<input type="password" name="quick_judge_password" minlength="8"></label>
-            <label>Ãrea que puede evaluar
+            <label>Contraseña inicial<input type="password" name="quick_judge_password" minlength="8"></label>
+            <label>Área que puede evaluar
                 <select name="quick_judge_category_scope">
-                    <option value="ambas">Ambas categorÃ­as</option>
+                    <option value="ambas">Ambas categorías</option>
                     <option value="steam">STEAM</option>
                     <option value="emprendimiento">Emprendimiento</option>
                 </select>
@@ -366,7 +366,7 @@
             <div class="assignment-scope-group assignment-scope-group-wide">
                 <label><input type="checkbox" name="assignment_scope" value="documentacion" checked> Documento escrito</label>
                 <label><input type="checkbox" name="assignment_scope" value="exposicion" checked> Exposici&oacute;n oral</label>
-                <label><input type="checkbox" name="quick_judge_can_english" value="1"> EvalÃºa inglÃ©s</label>
+                <label><input type="checkbox" name="quick_judge_can_english" value="1"> Evalúa inglés</label>
             </div>
             <label>Proyecto
                 <select id="quick-judge-project-fallback">
@@ -717,7 +717,7 @@
         }
 
         if (!assignedProjects.length) {
-            summary.textContent = 'Este juez no tiene proyectos asignados todavÃ­a.';
+            summary.textContent = 'Este juez no tiene proyectos asignados todavía.';
             return;
         }
 

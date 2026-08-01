@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.25.0] - 2026-07-31
+
+### Añadido
+
+- Se crea el módulo administrativo Reportes como vista única para descargar archivos Excel y PDF.
+- El centro agrupa reportes por propósito: proyectos, logística, revisión, tutores, jueces, asignaciones, edecanes, asistencia, evaluaciones y certificados.
+- Cada reporte muestra nombre, formato, descripción y contenido esperado antes de descargar.
+
+### Cambiado
+
+- Proyectos, tutores, jueces, asignaciones y resumen dirigen al centro de reportes en lugar de mostrar descargas generales dispersas.
+- Los permisos existentes habilitan Reportes automáticamente cuando el usuario ya tenía acceso a módulos que producen reportes.
+
 ## [0.24.0] - 2026-07-31
 
 ### AÃ±adido

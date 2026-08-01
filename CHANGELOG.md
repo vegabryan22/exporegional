@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.24.0] - 2026-07-31
+
+### AÃ±adido
+
+- La pantalla de jueces evaluadores incorpora un Excel general de jueces.
+- El reporte incluye resumen operativo, datos de contacto, estado de asistencia, parqueo, invitaciones, disponibilidad, estado activo y asignaciones.
+- Se agrega una hoja de asignaciones para revisar quÃ© proyecto evalÃºa cada juez, si es documento, exposiciÃ³n o inglÃ©s, y si la asignaciÃ³n estÃ¡ confirmada o en borrador.
+
 ## [0.23.2] - 2026-07-31
 
 ### Corregido

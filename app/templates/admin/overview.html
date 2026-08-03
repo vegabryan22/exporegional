@@ -93,11 +93,6 @@
         <strong>{{ m.pending_member_edits_count }}</strong> edición de datos pendiente
       </a>
       {% endif %}
-      {% if m.projects_incomplete_logistics > 0 %}
-      <a href="{{ url_for('admin.projects_page') }}" class="ov2-alert-chip neutral">
-        <strong>{{ m.projects_incomplete_logistics }}</strong> logística incompleta
-      </a>
-      {% endif %}
     </div>
   </div>
   {% endif %}
@@ -120,20 +115,6 @@
       </div>
     </div>
 
-    <div class="ov2-chart-card">
-      <div class="ov2-donut" style="--pct:{{ logistics_pct }};--clr:#0d5fa6;">
-        <span>{{ logistics_pct }}%</span>
-      </div>
-      <div class="ov2-chart-info">
-        <strong>Logística</strong>
-        <p>{{ m.logistics_complete }} de {{ m.active_projects }} completos</p>
-        {% if m.projects_incomplete_logistics > 0 %}
-        <span class="ov2-chart-sub warn">{{ m.projects_incomplete_logistics }} con pendientes</span>
-        {% else %}
-        <span class="ov2-chart-sub ok">Todo en orden</span>
-        {% endif %}
-      </div>
-    </div>
 
     <div class="ov2-chart-card">
       <div class="ov2-donut" style="--pct:{{ assign_pct }};--clr:#8b4cf7;">
@@ -220,41 +201,6 @@
           <strong>{{ m.judges_rejected }}</strong>
         </div>
       </div>
-    </section>
-
-    {# Logística — resumen compacto #}
-    <section class="ov2-block">
-      <div class="ov2-block-head">
-        <h4>Logística</h4>
-        <div class="ov2-block-head-actions">
-          <a href="{{ url_for('admin.logistics_reminder_page') }}" class="ov2-block-link">Recordatorio &rarr;</a>
-          <a href="{{ url_for('admin.projects_page') }}" class="ov2-block-link">Proyectos &rarr;</a>
-        </div>
-      </div>
-
-      <div class="ov2-log-progress-row">
-        <div class="ov2-bar-track ov2-log-bar">
-          <div class="ov2-bar-fill confirmed" style="width:{{ logistics_pct }}%"></div>
-        </div>
-        <span class="ov2-log-progress-label">{{ m.logistics_complete }}/{{ m.active_projects }} completos &mdash; {{ logistics_pct }}%</span>
-      </div>
-
-      <div class="ov2-log-mini-row">
-        {{ logistics_pending_link(m.members_without_photo, 'sin foto', 'photo') }}
-        {{ logistics_pending_link(m.projects_without_logo, 'sin logo', 'logo') }}
-        {{ logistics_pending_link(m.projects_without_document, 'sin doc.', 'document') }}
-        {{ logistics_pending_link(m.projects_incomplete_logistics, 'incompletos', 'logistics') }}
-        {{ logistics_pending_link(m.pending_document_revisions_count, 'doc. revisión', 'revisions') }}
-        {{ logistics_pending_link(m.pending_member_edits_count, 'edic. datos', 'edits') }}
-      </div>
-
-      {% if m.projects_incomplete_logistics > 0 %}
-      <a href="{{ url_for('admin.reports_page') }}" class="ov2-log-cta">
-        Abrir centro de reportes &darr;
-      </a>
-      {% else %}
-      <p class="ov2-empty" style="margin-top:0.5rem;">Toda la log&iacute;stica est&aacute; al d&iacute;a.</p>
-      {% endif %}
     </section>
 
   </div>

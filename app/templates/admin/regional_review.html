@@ -25,7 +25,7 @@
 
             <div class="regional-project-body">
                 <div class="regional-project-data"><span>Origen</span><strong>{{ project.origin_label }}</strong></div>
-                <div class="regional-project-data"><span>Expediente</span><strong>{{ project.members|length }} estudiantes</strong><small>{{ "PDF adjunto" if project.project_document_path else "PDF pendiente" }} · {{ "Logo adjunto" if project.project_logo_path else "Logo pendiente" }}</small></div>
+                <div class="regional-project-data"><span>Expediente documental</span><strong>{{ "Validado" if project.logistics_document_ok else "Pendiente de validación" }}</strong><small>{{ "PDF adjunto" if project.project_document_path else "PDF pendiente" }}</small></div>
                 <div class="regional-project-data regional-evaluation-progress"><span>Evaluaciones</span><strong>{{ row.completed }} de {{ row.expected }}</strong><div class="regional-progress-track"><i style="width: {{ ([((row.completed / row.expected * 100) if row.expected else 0), 100]|min) }}%"></i></div></div>
                 <div class="regional-project-data"><span>Nota final</span><strong>{{ "%.2f"|format(row.final_grade) if row.final_grade is not none else "Pendiente" }}</strong><small>promedio regional</small></div>
             </div>
@@ -34,7 +34,7 @@
                 {% if project.regional_status == 'submitted_by_school' %}
                 <div><strong>Confirmar recepción</strong><span>El proyecto fue enviado por el colegio.</span></div><form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="received"><button type="submit">Marcar recibido</button></form>
                 {% elif project.regional_status == 'received' %}
-                <div><strong>Revisar expediente</strong><span>Comprobá documentos, estudiantes y categoría.</span></div><form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="under_review"><button type="submit">Iniciar revisión</button></form>
+                <div><strong>Revisar expediente</strong><span>Comprobá la documentación enviada por el colegio.</span></div><form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="under_review"><button type="submit">Iniciar revisión</button></form>
                 {% elif project.regional_status == 'under_review' %}
                 <div><strong>Resolver revisión</strong><span>Aprobá el expediente o devolvelo con observaciones.</span></div><button type="button" data-dialog-open="review-project-{{ project.id }}">Resolver</button>
                 {% elif project.regional_status == 'returned_for_correction' %}

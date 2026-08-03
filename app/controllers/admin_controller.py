@@ -9873,6 +9873,58 @@ def institutions_page():
         institution_id = request.form.get("institution_id", type=int)
         institution = Institution.query.get(institution_id) if institution_id else None
 
+        if action == "update" and institution:
+            code = (request.form.get("code") or "").strip().upper()
+            name = (request.form.get("name") or "").strip()
+            responsible_name = (request.form.get("responsible_name") or "").strip()
+            responsible_email = (request.form.get("responsible_email") or "").strip().lower()
+            status = (request.form.get("participation_status") or "").strip()
+            if not code or not name or not responsible_name or not responsible_email or status not in Institution.VALID_STATUSES:
+                flash("Código, nombre, responsable, correo y estado válidos son obligatorios.", "error")
+                return redirect(url_for("admin.institutions_page", _anchor=f"edit-institution-{institution.id}"))
+            duplicate = Institution.query.filter(Institution.code == code, Institution.id != institution.id).first()
+            if duplicate:
+                flash("Ya existe otro colegio con ese código.", "error")
+                return redirect(url_for("admin.institutions_page", _anchor=f"edit-institution-{institution.id}"))
+            before = {"code": institution.code, "name": institution.name, "circuit": institution.circuit, "regional_directorate": institution.regional_directorate, "responsible_name": institution.responsible_name, "responsible_email": institution.responsible_email, "responsible_phone": institution.responsible_phone, "address": institution.address, "participation_status": institution.participation_status, "uses_institutional_platform": institution.uses_institutional_platform}
+            institution.code = code
+            institution.name = name
+            institution.circuit = (request.form.get("circuit") or "").strip() or None
+            institution.regional_directorate = (request.form.get("regional_directorate") or "").strip() or None
+            institution.responsible_name = responsible_name
+            institution.responsible_email = responsible_email
+            institution.responsible_phone = (request.form.get("responsible_phone") or "").strip() or None
+            institution.address = (request.form.get("address") or "").strip() or None
+            institution.participation_status = status
+            institution.is_active = status not in {Institution.STATUS_SUSPENDED, Institution.STATUS_CLOSED}
+            institution.uses_institutional_platform = request.form.get("uses_institutional_platform") == "1"
+            after = {key: getattr(institution, key) for key in before}
+            log_event("admin.institution.update", "institution", institution.id, json.dumps({"before": before, "after": after}, ensure_ascii=False, default=str))
+            db.session.commit()
+            flash("Colegio actualizado. El cambio quedó registrado en bitácora.", "success")
+            return redirect(url_for("admin.institutions_page"))
+
+        if action == "delete" and institution:
+            confirmation = (request.form.get("confirmation_code") or "").strip().upper()
+            if confirmation != institution.code.upper():
+                flash("Escribe el código exacto del colegio para confirmar la eliminación.", "error")
+                return redirect(url_for("admin.institutions_page", _anchor=f"delete-institution-{institution.id}"))
+            snapshot = {"id": institution.id, "code": institution.code, "name": institution.name, "projects_preserved": len(institution.projects), "users_unlinked": len(institution.users), "credentials_deleted": len(institution.api_credentials)}
+            for project in list(institution.projects):
+                project.institution_id = None
+            for user in list(institution.users):
+                user.institution_id = None
+                if user.effective_role == Judge.ROLE_SCHOOL_COORDINATOR:
+                    user.is_active_user = False
+            shield_path = institution.shield_path
+            deleted_id = institution.id
+            log_event("admin.institution.delete", "institution", deleted_id, json.dumps(snapshot, ensure_ascii=False))
+            db.session.delete(institution)
+            db.session.commit()
+            _delete_institution_logo_file(shield_path)
+            flash("Colegio eliminado. Sus proyectos regionales fueron preservados y la operación quedó en bitácora.", "success")
+            return redirect(url_for("admin.institutions_page"))
+
         if action == "create_api_credential" and institution:
             raw_token = f"exporeg_{secrets.token_urlsafe(32)}"
             credential = InstitutionApiCredential(
@@ -10005,12 +10057,17 @@ def regional_review_page():
         if target_status == Project.STATUS_RETURNED and not notes:
             flash("Debes indicar las correcciones solicitadas.", "error")
             return redirect(url_for("admin.regional_review_page"))
+        if target_status == Project.STATUS_APPROVED and not project.project_document_path:
+            flash("No se puede aprobar un expediente sin documento PDF.", "error")
+            return redirect(url_for("admin.regional_review_page"))
         try:
             transition_project(project, target_status, current_user, notes)
             if target_status == Project.STATUS_RETURNED:
                 project.regional_notes = notes
+                project.logistics_document_ok = False
             elif target_status == Project.STATUS_APPROVED:
                 project.regional_notes = None
+                project.logistics_document_ok = True
             log_event("admin.project.regional_transition", "project", project.id, f"Estado regional: {target_status}")
             db.session.commit()
             flash("Estado regional actualizado.", "success")

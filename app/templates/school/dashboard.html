@@ -8,7 +8,7 @@
 </section>
 <section class="card admin-section">
     <div class="table-wrap"><table>
-        <thead><tr><th>Proyecto</th><th>Categoría</th><th>Origen</th><th>Estado regional</th><th>Documentos</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Proyecto</th><th>Categoría</th><th>Origen</th><th>Estado regional</th><th>Expediente</th><th>Acciones</th></tr></thead>
         <tbody>
         {% for project in projects %}
             <tr>
@@ -18,6 +18,7 @@
                 <td><span class="tag">{{ project.regional_status_label }}</span></td>
                 <td>{{ "Documento adjunto" if project.project_document_path else "Documento pendiente" }} · {{ project.members|length }} estudiantes</td>
                 <td>
+                    <button type="button" class="outline-btn" data-dialog-open="logistics-project-{{ project.id }}">Archivos y logística</button>
                     {% if project.regional_status in ['draft', 'returned_for_correction'] %}
                         <a href="{{ url_for('school.project_edit', project_id=project.id) }}">Editar</a>
                         <form method="post" action="{{ url_for('school.project_submit', project_id=project.id) }}" class="inline-form"><button type="submit">Enviar</button></form>
@@ -28,6 +29,20 @@
         </tbody>
     </table></div>
 </section>
+{% for project in projects %}
+<dialog id="logistics-project-{{ project.id }}" class="maintenance-dialog institution-dialog"><div class="dialog-card"><div class="dialog-head"><div><h4>Archivos y logística</h4><p>{{ project.title }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+    <p>El colegio completa recursos, logo y fotografías. La coordinación regional valida únicamente los documentos enviados.</p>
+    <form method="post" action="{{ url_for('school.project_logistics', project_id=project.id) }}" enctype="multipart/form-data" class="institution-form-grid">
+        <label class="institution-field-wide">Recursos y necesidades operativas<textarea name="required_resources" rows="3">{{ project.required_resources or '' }}</textarea></label>
+        <label class="institution-field-wide">Otros requerimientos<textarea name="requirements_other" rows="2">{{ project.requirements_other or '' }}</textarea></label>
+        <label>Documento PDF<input type="file" name="project_document" accept="application/pdf"><small>{{ "Adjunto; reemplazarlo reinicia su validación regional." if project.project_document_path else "Pendiente." }}</small></label>
+        <label>Logo del proyecto<input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp"><small>{{ "Logo cargado." if project.has_real_logo else "Pendiente." }}</small></label>
+        {% for member in project.members %}<label>Foto de {{ member.full_name }}<input type="file" name="member_photo_{{ member.id }}" accept="image/png,image/jpeg,image/webp"><small>{{ "Foto cargada." if member.photo_url else "Pendiente." }}</small></label>{% endfor %}
+        <label class="institution-field-wide">Notas internas del colegio<textarea name="school_logistics_notes" rows="2">{{ project.logistics_notes or '' }}</textarea></label>
+        <div class="actions-row institution-field-wide"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar archivos y logística</button></div>
+    </form>
+</div></dialog>
+{% endfor %}
 <dialog id="school-profile-dialog" class="maintenance-dialog institution-dialog">
     <div class="dialog-card"><div class="dialog-head"><div><h4>Mi colegio</h4><p>Actualizá la información que verá la coordinación regional.</p></div><button type="button" class="ghost-btn dialog-close" data-school-profile-close>&times;</button></div>
         <form method="post" action="{{ url_for('school.profile') }}" enctype="multipart/form-data" class="institution-form-grid">

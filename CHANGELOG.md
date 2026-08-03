@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.33.0] - 2026-08-03
+
+### Responsabilidades
+
+- La logística operativa se concentra en el portal del colegio: recursos, necesidades, PDF, logo y fotografías de cada integrante.
+- El envío manual exige documento, logo y fotografías completas; el colegio es responsable de completar el expediente.
+- El panel regional deja de mostrar indicadores o bloques de logística y concentra la revisión en la validación documental.
+- Reemplazar el PDF desde el colegio reinicia su validación; aprobar el expediente regional registra el documento como validado.
+
+### Administración y auditoría
+
+- El administrador regional puede editar todos los datos y la modalidad de un colegio mediante un modal.
+- El administrador puede eliminar un colegio confirmando su código exacto.
+- La eliminación conserva los proyectos como registros históricos, desactiva las coordinaciones vinculadas y elimina las credenciales API.
+- Ediciones, eliminaciones y cargas logísticas quedan registradas en la bitácora con actor y detalle de los cambios.
+
 ## [0.32.1] - 2026-08-03
 
 ### Interfaz

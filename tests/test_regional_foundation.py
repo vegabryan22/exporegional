@@ -179,9 +179,13 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn("data-dialog-open", source)
         self.assertIn("<dialog", source)
         self.assertNotIn("upload_shield", source)
-        self.assertNotIn("Editar colegio", source)
+        self.assertIn("Editar colegio", source)
+        self.assertIn("Eliminar colegio", source)
+        self.assertIn('name="confirmation_code"', source)
         self.assertIn("institution_shield", school_source)
         self.assertIn("Mi colegio", school_source)
+        self.assertIn("Archivos y logística", school_source)
+        self.assertIn("member_photo_", school_source)
 
     def test_institutions_admin_page_renders(self):
         app = create_app()

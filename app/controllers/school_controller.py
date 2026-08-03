@@ -204,13 +204,54 @@ def project_form(project_id: int | None = None):
     return render_template("school/project_form.html", project=project, categories=categories, school=current_user.institution_ref)
 
 
+def project_logistics(project_id: int):
+    project = _owned_project(project_id)
+    if not project:
+        flash("Proyecto no encontrado.", "error")
+        return redirect(url_for("school.dashboard"))
+
+    try:
+        document_path = _save_project_file(project, request.files.get("project_document"), "document")
+        logo_path = _save_project_file(project, request.files.get("project_logo"), "logo")
+        received_photos = 0
+        for member in project.members:
+            photo_path = _save_project_file(project, request.files.get(f"member_photo_{member.id}"), "member_photo")
+            if photo_path:
+                member.photo_url = photo_path
+                received_photos += 1
+    except ValueError as error:
+        db.session.rollback()
+        flash(str(error), "error")
+        return redirect(url_for("school.dashboard", _anchor=f"logistics-project-{project.id}"))
+
+    if document_path:
+        project.project_document_path = document_path
+        project.logistics_document_ok = False
+    if logo_path:
+        project.project_logo_path = logo_path
+    project.logistics_logo_ok = bool(project.has_real_logo)
+    project.logistics_photos_ok = bool(project.members) and all(member.photo_url for member in project.members)
+    project.required_resources = (request.form.get("required_resources") or "").strip() or None
+    project.requirements_other = (request.form.get("requirements_other") or "").strip() or None
+    project.logistics_notes = (request.form.get("school_logistics_notes") or "").strip() or None
+    log_event(
+        "school.project.logistics.update",
+        "project",
+        project.id,
+        f"Colegio {current_user.institution_ref.code}: documento={'reemplazado' if document_path else 'sin cambio'}, logo={'reemplazado' if logo_path else 'sin cambio'}, fotos={received_photos}",
+    )
+    db.session.commit()
+    flash("Información operativa actualizada. El documento queda sujeto a validación regional.", "success")
+    return redirect(url_for("school.dashboard"))
+
+
 def submit_project(project_id: int):
     project = _owned_project(project_id)
     if not project:
         flash("Proyecto no encontrado.", "error")
         return redirect(url_for("school.dashboard"))
-    if not project.members or not project.project_document_path:
-        flash("Debes registrar estudiantes y adjuntar el documento antes de enviar.", "error")
+    if not project.members or not project.project_document_path or not project.has_real_logo or any(not member.photo_url for member in project.members):
+        flash("Antes de enviar debes completar estudiantes, documento PDF, logo del proyecto y fotografía de cada integrante.", "error")
         return redirect(url_for("school.project_edit", project_id=project.id))
     try:
         transition_project(project, Project.STATUS_SUBMITTED, current_user, request.form.get("notes", ""))

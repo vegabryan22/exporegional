@@ -131,3 +131,9 @@ La revisión base heredada está diseñada como punto de partida reproducible, n
 ## Formularios regionales
 
 La inscripción manual desde el portal de un colegio reutiliza el formulario oficial ExpoTEC-1 y su controlador de validación. No existe un segundo formulario simplificado para crear proyectos. La ruta regional determina el colegio desde la sesión, asigna el origen `regional_manual` y guarda inicialmente el proyecto en estado `draft`. El envío a coordinación continúa siendo una acción posterior y explícita desde el panel del colegio.
+
+## Responsabilidad logística y documental
+
+Cada colegio administra los recursos, necesidades operativas, logo y fotografías de sus proyectos. Para los registros manuales, el colegio también carga el PDF y no puede enviar el proyecto mientras falten el documento, el logo o alguna fotografía. La coordinación regional no completa ni aprueba logística: revisa el PDF y resuelve el expediente documental. Si el colegio reemplaza el documento, su validación regional se reinicia.
+
+El administrador regional conserva autoridad para corregir o eliminar colegios. Cada edición registra valores anteriores y posteriores. La eliminación exige escribir el código exacto, conserva los proyectos históricos sin institución activa, desactiva cuentas coordinadoras y elimina credenciales API.

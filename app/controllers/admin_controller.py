@@ -10014,7 +10014,7 @@ def institutions_page():
 
 @login_required
 def impersonate_institution(institution_id: int):
-    if not current_user.is_superadmin:
+    if not current_user.has_admin_access or not current_user.is_active_user:
         abort(403)
     if session.get("impersonator_admin_id"):
         flash("Ya existe una sesión de suplantación activa.", "error")

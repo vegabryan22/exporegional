@@ -28,7 +28,7 @@ Responsabilidad operativa:
 - Cada colegio mantiene su propio perfil, responsable, ubicación y escudo desde una cuenta coordinadora aislada.
 - Los colegios sin plataforma registran ganadores desde su portal; los que tienen plataforma institucional envían copias mediante API.
 - El panel regional no edita directamente la identidad ni los datos operativos del colegio.
-- Un superadministrador puede abrir una sesión de soporte como coordinación del colegio; la suplantación es visible, auditada y reversible sin conocer la contraseña.
+- Un administrador general activo puede abrir una sesión de soporte como coordinación del colegio; la suplantación es visible, auditada y reversible sin conocer la contraseña.
 
 La entidad `Institution` representa un centro educativo participante y conserva:
 

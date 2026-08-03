@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.33.1] - 2026-08-03
+
+### Corregido
+
+- La acción «Ingresar como colegio» vuelve a mostrarse para administradores generales activos, no solamente para el rol técnico de superadministración.
+- La restauración de la sesión acepta al administrador original mientras conserve acceso administrativo activo.
+- Se mantienen la franja visible, la prohibición de suplantaciones encadenadas y la bitácora de inicio/finalización.
+
 ## [0.33.0] - 2026-08-03
 
 ### Responsabilidades

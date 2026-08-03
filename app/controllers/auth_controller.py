@@ -101,7 +101,7 @@ def stop_impersonation():
     if not admin_id or not impersonated_user_id or current_user.id != impersonated_user_id:
         abort(403)
     admin = db.session.get(Judge, int(admin_id))
-    if not admin or not admin.is_active_user or not admin.is_superadmin:
+    if not admin or not admin.is_active_user or not admin.has_admin_access:
         logout_user()
         session.clear()
         flash("La sesión administrativa original ya no está disponible.", "error")

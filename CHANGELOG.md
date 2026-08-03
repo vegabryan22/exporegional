@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.31.0] - 2026-08-03
+
+### Añadido
+
+- Los superadministradores pueden ingresar temporalmente al portal de un colegio desde el directorio regional.
+- Una franja persistente identifica la sesión suplantada y permite regresar a la sesión administrativa original.
+- El cierre de sesión durante una suplantación restaura de forma segura al superadministrador.
+
+### Seguridad
+
+- Solo un superadministrador activo puede iniciar la suplantación y únicamente sobre cuentas coordinadoras activas.
+- No se permiten suplantaciones encadenadas ni se modifican o exponen contraseñas.
+- El inicio y final de cada suplantación quedan registrados en la bitácora del sistema.
+- Se prueba el ciclo completo de cambio de identidad y restauración de sesión.
+
 ## [0.30.0] - 2026-08-03
 
 ### Separación de responsabilidades

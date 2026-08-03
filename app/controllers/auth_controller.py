@@ -1,4 +1,4 @@
-from flask import flash, redirect, render_template, request, url_for
+from flask import abort, flash, redirect, render_template, request, session, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from app.extensions import db
@@ -84,9 +84,33 @@ def change_password():
 
 
 def logout():
+    if session.get("impersonator_admin_id"):
+        return stop_impersonation()
     if current_user.is_authenticated:
         log_event("auth.logout", "auth", entity_id=current_user.id, detail="Cierre de sesion")
         db.session.commit()
     logout_user()
     flash("Sesion cerrada.", "success")
     return redirect(url_for("auth.login"))
+
+
+@login_required
+def stop_impersonation():
+    admin_id = session.get("impersonator_admin_id")
+    impersonated_user_id = session.get("impersonated_user_id")
+    if not admin_id or not impersonated_user_id or current_user.id != impersonated_user_id:
+        abort(403)
+    admin = db.session.get(Judge, int(admin_id))
+    if not admin or not admin.is_active_user or not admin.is_superadmin:
+        logout_user()
+        session.clear()
+        flash("La sesión administrativa original ya no está disponible.", "error")
+        return redirect(url_for("auth.login"))
+    institution_name = session.get("impersonated_institution_name", "colegio")
+    log_event("admin.impersonation.stop", "institution", current_user.institution_id, f"Fin de suplantación de {institution_name}; regreso a {admin.email}")
+    db.session.commit()
+    for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at"]:
+        session.pop(key, None)
+    login_user(admin, fresh=True)
+    flash("Volviste a tu sesión administrativa.", "success")
+    return redirect(url_for("admin.institutions_page"))

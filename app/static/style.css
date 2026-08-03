@@ -687,6 +687,11 @@ nav a:hover,
 .maintenance-banner p {
     margin: 0;
 }
+.impersonation-banner { position: relative; z-index: 2000; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .65rem 1rem; border-bottom: 1px solid #d6a62c; background: #fff3c4; color: #5f4808; }
+.impersonation-banner > div { display: grid; gap: .1rem; }
+.impersonation-banner span { font-size: .82rem; }
+.impersonation-banner button { min-height: 36px; padding: .45rem .75rem; border-color: #755b12; background: #755b12; white-space: nowrap; }
+@media (max-width: 650px) { .impersonation-banner { align-items: stretch; flex-direction: column; } .impersonation-banner button { width: 100%; } }
 
 .tutors-banner {
     align-items: center;

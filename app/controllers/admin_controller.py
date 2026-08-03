@@ -16,7 +16,7 @@ from pathlib import Path
 from functools import wraps
 
 from flask import abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
-from flask_login import current_user, login_required
+from flask_login import current_user, login_required, login_user
 from sqlalchemy import or_, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import joinedload
@@ -9958,6 +9958,38 @@ def institutions_page():
             (Institution.STATUS_CLOSED, "Participación cerrada"),
         ],
     )
+
+
+@login_required
+def impersonate_institution(institution_id: int):
+    if not current_user.is_superadmin:
+        abort(403)
+    if session.get("impersonator_admin_id"):
+        flash("Ya existe una sesión de suplantación activa.", "error")
+        return redirect(url_for("admin.institutions_page"))
+    institution = db.session.get(Institution, institution_id)
+    if not institution or not institution.is_active:
+        flash("El colegio no existe o su participación está suspendida.", "error")
+        return redirect(url_for("admin.institutions_page"))
+    coordinator = (
+        Judge.query.filter_by(institution_id=institution.id, role=Judge.ROLE_SCHOOL_COORDINATOR, is_active_user=True)
+        .order_by(Judge.id.asc())
+        .first()
+    )
+    if not coordinator:
+        flash("Este colegio todavía no tiene una cuenta coordinadora para suplantar.", "error")
+        return redirect(url_for("admin.institutions_page"))
+    admin_id = current_user.id
+    admin_name = current_user.full_name
+    log_event("admin.impersonation.start", "institution", institution.id, f"{admin_name} ingresó como {coordinator.email} en {institution.code}")
+    db.session.commit()
+    session["impersonator_admin_id"] = admin_id
+    session["impersonated_user_id"] = coordinator.id
+    session["impersonated_institution_name"] = institution.name
+    session["impersonation_started_at"] = datetime.utcnow().isoformat()
+    login_user(coordinator, fresh=True)
+    flash(f"Ingresaste temporalmente como coordinación de {institution.name}.", "success")
+    return redirect(url_for("school.dashboard"))
 
 
 @admin_module_required("projects")

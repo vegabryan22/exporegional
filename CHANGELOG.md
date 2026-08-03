@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.34.2] - 2026-08-03
+
+### Sesiones
+
+- Se detectan y limpian automáticamente las suplantaciones huérfanas conservadas por el navegador después de un reinicio.
+- La franja de suplantación solo aparece cuando la cuenta activa es realmente la coordinación suplantada.
+- Un administrador restaurado puede volver a ingresar como colegio sin borrar cookies ni cerrar sesión.
+
 ## [0.34.1] - 2026-08-03
 
 ### Diseño del portal escolar

@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ asset_version }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
-    {% if session.get('impersonator_admin_id') %}
+    {% if session.get('impersonator_admin_id') and current_user.is_authenticated and current_user.id == session.get('impersonated_user_id') %}
     <aside class="impersonation-banner" role="alert"><div><strong>Sesión de suplantación activa</strong><span>Estás operando como {{ current_user.full_name }} · {{ session.get('impersonated_institution_name') }}</span></div><form method="post" action="{{ url_for('auth.stop_impersonation') }}"><button type="submit">Volver a mi sesión administrativa</button></form></aside>
     {% endif %}
     <header class="header">

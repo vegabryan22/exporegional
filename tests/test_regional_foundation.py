@@ -380,6 +380,35 @@ class RegionalFoundationTests(unittest.TestCase):
             db.session.delete(school)
             db.session.commit()
 
+    def test_admin_recovers_stale_impersonation_session_automatically(self):
+        app = create_app()
+        app.config["TESTING"] = True
+
+        with app.app_context():
+            school = Institution(code="STALE-SESSION", name="Colegio sesión", responsible_name="Responsable", responsible_email="stale-school@example.com", is_active=True, participation_status=Institution.STATUS_ENABLED)
+            admin = Judge(full_name="Administrador sesión", email="stale-admin@example.com", role=Judge.ROLE_ADMIN, password_hash="test-only", is_active_user=True, is_admin=True)
+            coordinator = Judge(full_name="Coordinación sesión", email="stale-coordinator@example.com", role=Judge.ROLE_SCHOOL_COORDINATOR, institution_ref=school, password_hash="test-only", is_active_user=True)
+            db.session.add_all([school, admin, coordinator])
+            db.session.commit()
+
+            with app.test_client() as client:
+                with client.session_transaction() as client_session:
+                    client_session["_user_id"] = str(admin.id)
+                    client_session["_fresh"] = True
+                    client_session["impersonator_admin_id"] = admin.id
+                    client_session["impersonated_user_id"] = coordinator.id
+                    client_session["impersonated_institution_name"] = school.name
+                page = client.get("/admin/colegios")
+                started = client.post(f"/admin/colegios/{school.id}/suplantar")
+                with client.session_transaction() as client_session:
+                    self.assertEqual(str(coordinator.id), client_session["_user_id"])
+
+            self.assertNotIn("Sesión de suplantación activa", page.get_data(as_text=True))
+            self.assertEqual(302, started.status_code)
+            db.session.delete(coordinator)
+            db.session.delete(admin)
+            db.session.delete(school)
+            db.session.commit()
 
 if __name__ == "__main__":
     unittest.main()

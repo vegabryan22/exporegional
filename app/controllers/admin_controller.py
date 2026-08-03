@@ -10015,9 +10015,17 @@ def institutions_page():
 def impersonate_institution(institution_id: int):
     if not current_user.has_admin_access or not current_user.is_active_user:
         abort(403)
-    if session.get("impersonator_admin_id"):
-        flash("Ya existe una sesión de suplantación activa.", "error")
-        return redirect(url_for("admin.institutions_page"))
+    existing_admin_id = session.get("impersonator_admin_id")
+    if existing_admin_id:
+        if int(existing_admin_id) == current_user.id:
+            for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at"]:
+                session.pop(key, None)
+            session.modified = True
+            log_event("admin.impersonation.stale_session_recovered", "auth", current_user.id, "Se limpió una suplantación huérfana antes de iniciar otra")
+            db.session.commit()
+        else:
+            flash("Ya existe una sesión de suplantación activa.", "error")
+            return redirect(url_for("admin.institutions_page"))
     institution = db.session.get(Institution, institution_id)
     if not institution or not institution.is_active:
         flash("El colegio no existe o su participación está suspendida.", "error")

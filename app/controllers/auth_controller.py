@@ -98,7 +98,7 @@ def logout():
 def stop_impersonation():
     admin_id = session.get("impersonator_admin_id")
     impersonated_user_id = session.get("impersonated_user_id")
-    if not admin_id or not impersonated_user_id or current_user.id != impersonated_user_id:
+    if not admin_id or not impersonated_user_id:
         abort(403)
     admin = db.session.get(Judge, int(admin_id))
     if not admin or not admin.is_active_user or not admin.has_admin_access:
@@ -106,6 +106,16 @@ def stop_impersonation():
         session.clear()
         flash("La sesión administrativa original ya no está disponible.", "error")
         return redirect(url_for("auth.login"))
+    if current_user.id == admin.id:
+        for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at"]:
+            session.pop(key, None)
+        session.modified = True
+        log_event("admin.impersonation.stale_session_recovered", "auth", admin.id, "El administrador original recuperó una sesión huérfana")
+        db.session.commit()
+        flash("La sesión de suplantación pendiente fue cerrada.", "success")
+        return redirect(url_for("admin.institutions_page"))
+    if current_user.id != int(impersonated_user_id):
+        abort(403)
     institution_name = session.get("impersonated_institution_name", "colegio")
     log_event("admin.impersonation.stop", "institution", current_user.institution_id, f"Fin de suplantación de {institution_name}; regreso a {admin.email}")
     db.session.commit()

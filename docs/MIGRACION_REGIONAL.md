@@ -79,13 +79,30 @@ No debe utilizarse un logo institucional de un colegio como reemplazo temporal d
 - Estados de participación.
 - Conteo derivado de proyectos.
 - Auditoría de altas, cambios y activación.
+- Creación de cuentas coordinadoras vinculadas con contraseña temporal y cambio obligatorio.
+- Portal `/colegio/panel` aislado por colegio.
+- Registro manual de proyectos ganadores como borradores.
+- Carga de PDF, logo, tutor y hasta tres estudiantes.
+- Envío y reenvío controlado hacia coordinación regional.
+- Bandeja `/admin/revision-regional` para recepción, revisión, devolución y aprobación.
+- Servicio único de transiciones utilizado por colegio y administración.
+
+## Reglas operativas de estados
+
+- Colegio: `draft → submitted_by_school`.
+- Coordinación regional: `submitted_by_school → received → under_review`.
+- Revisión: `under_review → approved_for_evaluation` o `returned_for_correction`.
+- Colegio: `returned_for_correction → submitted_by_school`.
+- Resultado: `approved_for_evaluation → evaluated → regional_winner`.
+
+No se permiten saltos de estado. Cada transición crea un registro en `project_status_history` con usuario, fecha y observación.
 
 ## Verificación
 
 - Reconstrucción completa del esquema en base temporal: satisfactoria.
 - Reversión de la migración regional hacia la línea base heredada: satisfactoria.
 - Aplicación de migraciones sobre `exporegional`: satisfactoria.
-- Pruebas automatizadas: 44 aprobadas.
+- Pruebas automatizadas: 49 aprobadas.
 - Compilación de módulos Python: satisfactoria.
 - Respuesta local de portada: HTTP 200.
 
@@ -97,10 +114,8 @@ La revisión base heredada está diseñada como punto de partida reproducible, n
 
 ## Próximas etapas
 
-1. Servicio central de transiciones de estado con reglas y auditoría.
-2. Asociación obligatoria de nuevos proyectos con colegio y categoría regional.
-3. Portal y permisos de coordinador de colegio.
-4. Inscripción manual regional con revisión, devolución y reenvío.
-5. Credenciales por colegio y API regional versionada e idempotente.
-6. Configuración de categorías, rúbricas, jueces y reportes regionales.
-7. Aplicación de escudo y paleta oficial cuando estén disponibles.
+1. Credenciales por colegio y API regional versionada e idempotente.
+2. Notificaciones por correo para envío, devolución y aprobación.
+3. Validaciones documentales regionales más detalladas.
+4. Configuración de categorías, rúbricas, jueces y reportes regionales.
+5. Aplicación de escudo y paleta oficial cuando estén disponibles.

@@ -106,6 +106,17 @@
                                 <input type="hidden" name="institution_id" value="{{ school.id }}">
                                 <button type="submit" class="ghost-btn">{{ "Desactivar" if school.is_active else "Activar" }}</button>
                             </form>
+                            <details>
+                                <summary>Crear coordinación</summary>
+                                <form method="post" class="compact-form">
+                                    <input type="hidden" name="action" value="create_coordinator">
+                                    <input type="hidden" name="institution_id" value="{{ school.id }}">
+                                    <label>Nombre<input type="text" name="coordinator_name" value="{{ school.responsible_name }}" required></label>
+                                    <label>Correo<input type="email" name="coordinator_email" value="{{ school.responsible_email }}" required></label>
+                                    <button type="submit">Crear cuenta</button>
+                                </form>
+                            </details>
+                            {% if school.users %}<small>{{ school.users|length }} cuentas vinculadas</small>{% endif %}
                         </td>
                     </tr>
                 {% else %}

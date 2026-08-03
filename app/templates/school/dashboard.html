@@ -1,0 +1,31 @@
+{% extends "school/layout.html" %}
+{% block school_content %}
+<section class="card admin-section">
+    <div class="section-heading-row">
+        <div><p class="maintenance-kicker">Etapa regional</p><h3>Proyectos ganadores de {{ school.name }}</h3><p>Guarda borradores, completa los documentos y envía cada proyecto a revisión regional.</p></div>
+        <a class="button" href="{{ url_for('school.project_form') }}">Registrar proyecto</a>
+    </div>
+</section>
+<section class="card admin-section">
+    <div class="table-wrap"><table>
+        <thead><tr><th>Proyecto</th><th>Categoría</th><th>Origen</th><th>Estado regional</th><th>Documentos</th><th>Acciones</th></tr></thead>
+        <tbody>
+        {% for project in projects %}
+            <tr>
+                <td><strong>{{ project.title }}</strong><br><small>{{ project.team_name }}</small></td>
+                <td>{{ project.category_ref.name if project.category_ref else project.category }}</td>
+                <td>{{ project.origin_label }}</td>
+                <td><span class="tag">{{ project.regional_status_label }}</span></td>
+                <td>{{ "Documento adjunto" if project.project_document_path else "Documento pendiente" }} · {{ project.members|length }} estudiantes</td>
+                <td>
+                    {% if project.regional_status in ['draft', 'returned_for_correction'] %}
+                        <a href="{{ url_for('school.project_edit', project_id=project.id) }}">Editar</a>
+                        <form method="post" action="{{ url_for('school.project_submit', project_id=project.id) }}" class="inline-form"><button type="submit">Enviar</button></form>
+                    {% else %}En seguimiento{% endif %}
+                </td>
+            </tr>
+        {% else %}<tr><td colspan="6">No hay proyectos registrados.</td></tr>{% endfor %}
+        </tbody>
+    </table></div>
+</section>
+{% endblock %}

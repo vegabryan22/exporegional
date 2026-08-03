@@ -1,0 +1,25 @@
+{% extends "school/layout.html" %}
+{% block school_content %}
+<section class="card admin-section">
+    <div><p class="maintenance-kicker">Inscripción manual regional</p><h3>{{ "Editar borrador" if project else "Registrar proyecto ganador" }}</h3><p>El proyecto quedará asociado únicamente a {{ school.name }}.</p></div>
+    {% if project and project.regional_status == 'returned_for_correction' %}<div class="alert error">Devuelto para corrección: {{ project.regional_notes or "Revisa la información solicitada por coordinación regional." }}</div>{% endif %}
+    <form method="post" enctype="multipart/form-data" class="compact-form form-grid">
+        <label class="field-span-2">Título<input type="text" name="title" value="{{ project.title if project else '' }}" required></label>
+        <label>Nombre del equipo<input type="text" name="team_name" value="{{ project.team_name if project else '' }}" required></label>
+        <label>Categoría regional<select name="category_id" required><option value="">Seleccionar</option>{% for category in categories %}<option value="{{ category.id }}" {% if project and project.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
+        <label class="field-span-2">Descripción<textarea name="description" rows="5" required>{{ project.description if project else '' }}</textarea></label>
+        <label>Tutor responsable<input type="text" name="advisor_name" value="{{ project.advisor_name if project else current_user.full_name }}" required></label>
+        <label>Correo del tutor<input type="email" name="advisor_email" value="{{ project.advisor_email if project else current_user.email }}" required></label>
+        <label>Teléfono del tutor<input type="text" name="advisor_phone" value="{{ project.advisor_phone if project else '' }}"></label>
+        <label>Documento PDF<input type="file" name="project_document" accept="application/pdf" {% if not project or not project.project_document_path %}required{% endif %}></label>
+        <label>Logo del proyecto<input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp"></label>
+        {% for number in [1, 2, 3] %}
+            {% set member = project.members[number - 1] if project and project.members|length >= number else none %}
+            <label>Estudiante {{ number }}<input type="text" name="student_{{ number }}_name" value="{{ member.full_name if member else '' }}" {% if number == 1 %}required{% endif %}></label>
+            <label>Correo estudiante {{ number }}<input type="email" name="student_{{ number }}_email" value="{{ member.email if member else '' }}"></label>
+        {% endfor %}
+        <label class="field-span-2">Notas del colegio<textarea name="school_notes" rows="3">{{ project.regional_notes if project else '' }}</textarea></label>
+        <div class="actions-row field-span-2"><button type="submit">Guardar borrador</button><a href="{{ url_for('school.dashboard') }}">Cancelar</a></div>
+    </form>
+</section>
+{% endblock %}

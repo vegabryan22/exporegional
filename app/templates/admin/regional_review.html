@@ -1,0 +1,33 @@
+{% extends "admin/layout.html" %}
+{% block admin_content %}
+<section class="card admin-section">
+    <div class="section-heading-row"><div><p class="maintenance-kicker">Control regional</p><h3>Bandeja de revisión regional</h3><p>Recepción, revisión, devolución y aprobación de proyectos enviados por los colegios.</p></div><span class="tag">{{ regional_projects|length }} proyectos</span></div>
+</section>
+<section class="card admin-section"><div class="table-wrap"><table>
+    <thead><tr><th>Colegio</th><th>Proyecto</th><th>Origen</th><th>Estado</th><th>Expediente</th><th>Siguiente acción</th></tr></thead>
+    <tbody>
+    {% for project in regional_projects %}
+        <tr>
+            <td>{{ project.institution.name if project.institution else project.institution_name or "Sin colegio" }}</td>
+            <td><strong>{{ project.title }}</strong><br><small>{{ project.team_name }} · {{ project.category_ref.name if project.category_ref else project.category }}</small></td>
+            <td>{{ project.origin_label }}</td>
+            <td><span class="tag">{{ project.regional_status_label }}</span>{% if project.regional_notes %}<br><small>{{ project.regional_notes }}</small>{% endif %}</td>
+            <td>{{ project.members|length }} estudiantes<br>{{ "PDF adjunto" if project.project_document_path else "Sin PDF" }} · {{ "Logo adjunto" if project.project_logo_path else "Sin logo" }}</td>
+            <td>
+                {% if project.regional_status == 'submitted_by_school' %}
+                    <form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="received"><button type="submit">Marcar recibido</button></form>
+                {% elif project.regional_status == 'received' %}
+                    <form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="under_review"><button type="submit">Iniciar revisión</button></form>
+                {% elif project.regional_status == 'under_review' %}
+                    <form method="post" class="compact-form"><input type="hidden" name="project_id" value="{{ project.id }}"><textarea name="notes" placeholder="Observaciones o correcciones"></textarea><button type="submit" name="target_status" value="approved_for_evaluation">Aprobar</button><button type="submit" name="target_status" value="returned_for_correction" class="ghost-btn">Devolver</button></form>
+                {% elif project.regional_status == 'approved_for_evaluation' %}
+                    <form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="evaluated"><button type="submit">Marcar evaluado</button></form>
+                {% elif project.regional_status == 'evaluated' %}
+                    <form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="regional_winner"><button type="submit">Declarar ganador</button></form>
+                {% else %}Sin acción pendiente{% endif %}
+            </td>
+        </tr>
+    {% else %}<tr><td colspan="6">No hay proyectos enviados a revisión.</td></tr>{% endfor %}
+    </tbody>
+</table></div></section>
+{% endblock %}

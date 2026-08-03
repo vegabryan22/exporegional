@@ -59,6 +59,7 @@ from app.services.evaluation_service import (
     project_evaluation_target_summary,
 )
 from app.services.mail_service import send_email, smtp_is_configured
+from app.services.regional_project_service import RegionalTransitionError, transition_project
 
 try:
     from reportlab.lib import colors
@@ -158,6 +159,7 @@ ADMIN_MENU_ICONS = {
 ADMIN_MENU_ITEMS = [
     ("overview", "admin.overview", "Resumen"),
     ("institutions", "admin.institutions_page", "Colegios participantes"),
+    ("regional_review", "admin.regional_review_page", "Revisión regional"),
     ("assignments", "admin.assignments_page", "Asignaciones"),
     ("judge_pool", "admin.judge_pool_page", "Jueces"),
     ("judges", "admin.judges_page", "Usuarios"),
@@ -185,13 +187,13 @@ ADMIN_MENU_ITEMS = [
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Documentos", ["reports", "documents"]),
-    ("Operación", ["institutions", "assignments", "judge_pool", "projects", "tutors", "requirements", "evaluations", "students_stats"]),
+    ("Operación", ["institutions", "regional_review", "assignments", "judge_pool", "projects", "tutors", "requirements", "evaluations", "students_stats"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
-    "logistica": {"overview", "assignments", "judge_pool", "projects", "tutors", "documents", "reports"},
+    "logistica": {"overview", "regional_review", "assignments", "judge_pool", "projects", "tutors", "documents", "reports"},
     "datos": {"overview", "evaluations", "documents", "reports"},
     "diseno": {"overview", "institutions", "campaigns", "categories", "academic", "rubrics", "institution"},
     "qa": {"overview", "logs", "maintenance", "database", "gitops"},
@@ -9867,6 +9869,35 @@ def institutions_page():
         institution_id = request.form.get("institution_id", type=int)
         institution = Institution.query.get(institution_id) if institution_id else None
 
+        if action == "create_coordinator" and institution:
+            coordinator_name = (request.form.get("coordinator_name") or institution.responsible_name or "").strip()
+            coordinator_email = (request.form.get("coordinator_email") or institution.responsible_email or "").strip().lower()
+            if not coordinator_name or not coordinator_email:
+                flash("Nombre y correo de la coordinación son obligatorios.", "error")
+                return redirect(url_for("admin.institutions_page"))
+            if Judge.query.filter_by(email=coordinator_email).first():
+                flash("Ya existe una cuenta con ese correo.", "error")
+                return redirect(url_for("admin.institutions_page"))
+            temporary_password = secrets.token_urlsafe(10)
+            coordinator = Judge(
+                full_name=coordinator_name,
+                email=coordinator_email,
+                role=Judge.ROLE_SCHOOL_COORDINATOR,
+                institution_id=institution.id,
+                institution=institution.name,
+                password_hash="",
+                is_active_user=True,
+                is_admin=False,
+                must_change_password=True,
+            )
+            coordinator.set_password(temporary_password)
+            db.session.add(coordinator)
+            db.session.flush()
+            log_event("admin.institution.coordinator.create", "judge", coordinator.id, f"Cuenta coordinadora para {institution.code}")
+            db.session.commit()
+            flash(f"Cuenta creada. Contraseña temporal: {temporary_password}", "success")
+            return redirect(url_for("admin.institutions_page"))
+
         if action == "toggle" and institution:
             institution.is_active = not institution.is_active
             log_event(
@@ -9938,6 +9969,41 @@ def institutions_page():
             (Institution.STATUS_CLOSED, "Participación cerrada"),
         ],
     )
+
+
+@admin_module_required("projects")
+def regional_review_page():
+    if request.method == "POST":
+        project_id = request.form.get("project_id", type=int)
+        target_status = (request.form.get("target_status") or "").strip()
+        notes = (request.form.get("notes") or "").strip()
+        project = db.session.get(Project, project_id) if project_id else None
+        if not project:
+            flash("Proyecto regional no encontrado.", "error")
+            return redirect(url_for("admin.regional_review_page"))
+        if target_status == Project.STATUS_RETURNED and not notes:
+            flash("Debes indicar las correcciones solicitadas.", "error")
+            return redirect(url_for("admin.regional_review_page"))
+        try:
+            transition_project(project, target_status, current_user, notes)
+            if target_status == Project.STATUS_RETURNED:
+                project.regional_notes = notes
+            elif target_status == Project.STATUS_APPROVED:
+                project.regional_notes = None
+            log_event("admin.project.regional_transition", "project", project.id, f"Estado regional: {target_status}")
+            db.session.commit()
+            flash("Estado regional actualizado.", "success")
+        except RegionalTransitionError as error:
+            db.session.rollback()
+            flash(str(error), "error")
+        return redirect(url_for("admin.regional_review_page"))
+
+    projects = (
+        Project.query.filter(Project.regional_status != Project.STATUS_DRAFT)
+        .order_by(Project.submitted_at.desc(), Project.created_at.desc())
+        .all()
+    )
+    return _render("admin/regional_review.html", "regional_review", regional_projects=projects)
 
 
 @admin_module_required("institution")

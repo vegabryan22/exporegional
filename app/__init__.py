@@ -64,11 +64,13 @@ def create_app():
     from app.routes.auth_routes import auth_bp
     from app.routes.judge_routes import judge_bp
     from app.routes.public_routes import public_bp
+    from app.routes.school_routes import school_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(judge_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(school_bp)
 
     with app.app_context():
         from app import models  # noqa: F401

@@ -13,14 +13,20 @@ def _safe_next_url():
     return ""
 
 
+def _role_home(user):
+    if user.has_admin_access:
+        return url_for("admin.overview")
+    if user.effective_role == Judge.ROLE_SCHOOL_COORDINATOR:
+        return url_for("school.dashboard")
+    return url_for("judge.dashboard")
+
+
 def login():
     if current_user.is_authenticated:
         next_url = _safe_next_url()
         if next_url:
             return redirect(next_url)
-        if current_user.has_admin_access:
-            return redirect(url_for("admin.overview"))
-        return redirect(url_for("judge.dashboard"))
+        return redirect(_role_home(current_user))
 
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
@@ -48,9 +54,7 @@ def login():
         next_url = _safe_next_url()
         if next_url:
             return redirect(next_url)
-        if judge.has_admin_access:
-            return redirect(url_for("admin.overview"))
-        return redirect(url_for("judge.dashboard"))
+        return redirect(_role_home(judge))
 
     return render_template("auth/login.html", next_url=_safe_next_url())
 
@@ -74,9 +78,7 @@ def change_password():
             log_event("auth.password.change", "auth", entity_id=current_user.id, detail="Cambio manual de contrasena")
             db.session.commit()
             flash("Contrasena actualizada.", "success")
-            if current_user.has_admin_access:
-                return redirect(url_for("admin.overview"))
-            return redirect(url_for("judge.dashboard"))
+            return redirect(_role_home(current_user))
 
     return render_template("auth/change_password.html")
 

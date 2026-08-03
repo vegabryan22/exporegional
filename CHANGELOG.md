@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.27.0] - 2026-08-03
+
+### Añadido
+
+- Se implementa el servicio central de transiciones de estados regionales con historial y reglas por rol.
+- Los coordinadores de colegio disponen de un portal aislado para registrar, editar y enviar proyectos ganadores.
+- La inscripción manual admite categoría regional, tutor, hasta tres estudiantes, documento PDF y logo.
+- El módulo de colegios permite generar cuentas coordinadoras vinculadas con contraseña temporal.
+- Se agrega la bandeja administrativa de recepción, revisión, aprobación y devolución de proyectos.
+
+### Seguridad
+
+- Los coordinadores solo pueden consultar y modificar proyectos asociados a su `institution_id`.
+- Las transiciones ejecutadas por colegios se limitan a envío inicial y reenvío después de correcciones.
+- Los proyectos enviados dejan de ser editables hasta que coordinación regional los devuelva.
+
+### Verificado
+
+- Se amplía la suite a 49 pruebas, incluyendo aislamiento entre colegios, secuencia de estados y render de la bandeja regional.
+
 ## [0.26.0] - 2026-08-03
 
 ### Añadido

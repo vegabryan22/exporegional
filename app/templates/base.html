@@ -69,6 +69,8 @@
                             <div class="nav-profile-actions">
                                 {% if current_user.has_admin_access %}
                                     <a href="{{ url_for('admin.overview') }}" data-no-iconify>Panel administrativo</a>
+                                {% elif current_user.effective_role == 'school_coordinator' %}
+                                    <a href="{{ url_for('school.dashboard') }}" data-no-iconify>Panel del colegio</a>
                                 {% else %}
                                     <a href="{{ url_for('judge.dashboard') }}" data-no-iconify>Panel de juez</a>
                                 {% endif %}

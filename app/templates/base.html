@@ -44,9 +44,6 @@
                             <a href="{{ url_for('public.projects') }}" data-no-iconify>Ver proyectos</a>
                         </div>
                     </details>
-                    {% if judge_public_registration_enabled %}
-                        <a href="{{ url_for('public.judge_registration_short') }}">Registro jueces</a>
-                    {% endif %}
                 </div>
                 {% if current_user.is_authenticated %}
                     <details class="nav-profile" data-no-iconify>

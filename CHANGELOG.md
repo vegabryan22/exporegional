@@ -782,3 +782,11 @@
 - Modulos de autenticacion, panel de jueces y panel administrativo.
 - Registro de proyectos y flujo de evaluacion por rubrica.
 - Estructura inicial de base de datos MySQL y comandos CLI operativos.
+## [0.39.0] - 2026-08-03
+
+- Se cerró el registro público y el webhook abierto de inscripción de jueces.
+- Cada coordinación escolar dispone ahora de un mantenimiento privado de sus jueces.
+- Los jueces quedan vinculados al colegio que los inscribe y no reciben privilegios administrativos.
+- El mínimo obligatorio por colegio es configurable desde la administración regional (valor inicial: 2).
+- El panel regional alerta cuáles colegios todavía no cumplen el mínimo.
+- Altas, cambios, intentos fuera de alcance y eliminaciones quedan registrados en bitácora.

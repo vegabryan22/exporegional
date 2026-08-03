@@ -370,7 +370,8 @@ def bootstrap_defaults(db):
         "maintenance_enabled": "0",
         "maintenance_message": "Estamos cargando informacion de proyectos. Vuelve pronto.",
         "maintenance_image_path": "",
-        "judge_public_registration_enabled": "1",
+        "judge_public_registration_enabled": "0",
+        "regional_minimum_judges_per_school": "2",
     }
     for key, value in default_settings.items():
         if SystemSetting.get_value(key) is None:

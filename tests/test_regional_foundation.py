@@ -352,6 +352,42 @@ class RegionalFoundationTests(unittest.TestCase):
             public_response = client.get("/inscripcion")
         self.assertEqual(404, public_response.status_code)
 
+    def test_judge_registration_is_private_and_scoped_to_school(self):
+        app = create_app()
+        app.config["TESTING"] = True
+
+        with app.app_context():
+            school = Institution(code="JUDGES-OWN", name="Colegio con jueces", responsible_name="Responsable", responsible_email="judges-school@example.com", is_active=True)
+            db.session.add(school)
+            db.session.flush()
+            coordinator = Judge(full_name="Coordinador de jueces", email="judges-coordinator@example.com", role=Judge.ROLE_SCHOOL_COORDINATOR, institution_id=school.id, password_hash="test-only", is_active_user=True)
+            db.session.add(coordinator)
+            db.session.flush()
+
+            with app.test_client() as client:
+                self.assertEqual(404, client.get("/registro-jueces").status_code)
+                with client.session_transaction() as session:
+                    session["_user_id"] = str(coordinator.id)
+                    session["_fresh"] = True
+                page = client.get("/colegio/jueces")
+                created = client.post("/colegio/jueces", data={
+                    "action": "create", "full_name": "Juez del colegio",
+                    "email": "school-judge@example.com", "category_scope": "steam",
+                    "evaluation_scope": "ambas", "is_active_user": "1",
+                })
+
+            judge = Judge.query.filter_by(email="school-judge@example.com").first()
+            self.assertEqual(200, page.status_code)
+            self.assertIn("Mínimo requerido", page.get_data(as_text=True))
+            self.assertEqual(302, created.status_code)
+            self.assertIsNotNone(judge)
+            self.assertEqual(school.id, judge.institution_id)
+            self.assertEqual(Judge.ROLE_JUDGE, judge.role)
+            db.session.delete(judge)
+            db.session.delete(coordinator)
+            db.session.delete(school)
+            db.session.commit()
+
     def test_school_coordinator_updates_only_own_institution_profile(self):
         app = create_app()
         app.config["TESTING"] = True

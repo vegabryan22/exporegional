@@ -1,5 +1,6 @@
 import json
 import os
+import secrets
 import uuid
 from functools import wraps
 
@@ -13,6 +14,7 @@ from app.models.judge import Judge
 from app.models.project import Project
 from app.models.project_member import ProjectMember
 from app.models.project_status_history import ProjectStatusHistory
+from app.models.system_setting import SystemSetting
 from app.services.audit_service import log_event
 from app.services.regional_project_service import RegionalTransitionError, transition_project
 
@@ -114,6 +116,107 @@ def dashboard():
         .all()
     )
     return render_template("school/dashboard.html", projects=projects, school=current_user.institution_ref)
+
+
+def _minimum_school_judges() -> int:
+    try:
+        return max(1, min(50, int(SystemSetting.get_value("regional_minimum_judges_per_school", "2"))))
+    except (TypeError, ValueError):
+        return 2
+
+
+def judges():
+    school = current_user.institution_ref
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip()
+        judge_id = request.form.get("judge_id", type=int)
+        judge = None
+        if judge_id:
+            judge = Judge.query.filter_by(
+                id=judge_id,
+                institution_id=school.id,
+                role=Judge.ROLE_JUDGE,
+            ).first()
+
+        if action in {"update", "delete"} and not judge:
+            log_event("school.judge.action_blocked", "judge", judge_id, f"Colegio={school.code}; acción={action}")
+            db.session.commit()
+            flash("El juez no pertenece a este colegio.", "error")
+            return redirect(url_for("school.judges"))
+
+        if action in {"create", "update"}:
+            full_name = (request.form.get("full_name") or "").strip()
+            email = (request.form.get("email") or "").strip().lower()
+            if not full_name or not email:
+                flash("Nombre y correo son obligatorios.", "error")
+                return redirect(url_for("school.judges"))
+            duplicate = Judge.query.filter(Judge.email == email, Judge.id != (judge.id if judge else 0)).first()
+            if duplicate:
+                flash("Ya existe una cuenta con ese correo.", "error")
+                return redirect(url_for("school.judges"))
+            before = None
+            if judge:
+                before = {"nombre": judge.full_name, "correo": judge.email, "activo": judge.is_active_user}
+            else:
+                temporary_password = secrets.token_urlsafe(10)
+                judge = Judge(
+                    role=Judge.ROLE_JUDGE,
+                    is_admin=False,
+                    institution_id=school.id,
+                    institution=school.name,
+                    is_active_user=True,
+                    must_change_password=True,
+                    registered_from_public_form=False,
+                )
+                judge.set_password(temporary_password)
+                db.session.add(judge)
+            judge.full_name = full_name
+            judge.email = email
+            judge.identity = (request.form.get("identity") or "").strip() or None
+            judge.phone = (request.form.get("phone") or "").strip() or None
+            judge.job_title = (request.form.get("job_title") or "").strip() or None
+            judge.previous_expo = (request.form.get("previous_expo") or "").strip() or None
+            judge.category_scope = request.form.get("category_scope") if request.form.get("category_scope") in {"steam", "emprendimiento", "ambas"} else "ambas"
+            scope = request.form.get("evaluation_scope", "ambas")
+            judge.can_evaluate_documentation = scope in {"documentacion", "ambas"}
+            judge.can_evaluate_exposition = scope in {"exposicion", "ambas"}
+            judge.can_evaluate_english = request.form.get("can_evaluate_english") == "1"
+            judge.is_active_user = request.form.get("is_active_user", "1") == "1"
+            judge.role = Judge.ROLE_JUDGE
+            judge.is_admin = False
+            judge.institution_id = school.id
+            judge.institution = school.name
+            db.session.flush()
+            after = {"nombre": judge.full_name, "correo": judge.email, "activo": judge.is_active_user}
+            log_event(
+                "school.judge.create" if before is None else "school.judge.update",
+                "judge", judge.id,
+                json.dumps({"colegio": school.code, "antes": before, "después": after}, ensure_ascii=False),
+            )
+            db.session.commit()
+            if before is None:
+                from app.controllers.admin_controller import _send_judge_credentials_email
+                _send_judge_credentials_email(judge, temporary_password)
+                db.session.commit()
+            flash("Juez inscrito correctamente." if before is None else "Información del juez actualizada.", "success")
+        elif action == "delete":
+            detail = json.dumps({"colegio": school.code, "juez": judge.full_name, "correo": judge.email}, ensure_ascii=False)
+            log_event("school.judge.delete", "judge", judge.id, detail)
+            db.session.delete(judge)
+            db.session.commit()
+            flash("Juez eliminado del registro del colegio.", "success")
+        else:
+            flash("Acción no válida.", "error")
+        return redirect(url_for("school.judges"))
+
+    school_judges = Judge.query.filter_by(institution_id=school.id, role=Judge.ROLE_JUDGE).order_by(Judge.full_name).all()
+    minimum = _minimum_school_judges()
+    active_count = sum(1 for judge in school_judges if judge.is_active_user)
+    return render_template(
+        "school/judges.html", school=school, judges=school_judges,
+        minimum_judges=minimum, active_judges=active_count,
+        missing_judges=max(0, minimum - active_count),
+    )
 
 
 def project_workspace(project_id: int):

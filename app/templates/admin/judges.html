@@ -39,35 +39,21 @@
         </article>
         <article class="users-action-card">
             <div>
-                <p class="maintenance-kicker">Registro público propio</p>
-                <h4>Formulario de jueces</h4>
-                <p>Enlace institucional del sistema. No se muestran integraciones externas ni datos técnicos en esta vista.</p>
+                <p class="maintenance-kicker">Participación regional</p>
+                <h4>Mínimo de jueces por colegio</h4>
+                <p>Cada coordinación escolar debe inscribir esta cantidad mínima desde su sesión privada.</p>
             </div>
             <form method="post" action="{{ action_url }}" class="judge-public-status-form">
                 <input type="hidden" name="next" value="{{ next_url }}">
-                <input type="hidden" name="action" value="save_judge_form_settings">
-                <input type="hidden" name="judge_form_url" value="{{ judge_form_settings.form_url }}">
-                <input type="hidden" name="judge_form_enabled" value="{{ '1' if judge_form_settings.enabled else '0' }}">
-                <input type="hidden" name="judge_form_auto_send_email" value="{{ '1' if judge_form_settings.auto_send_email else '0' }}">
+                <input type="hidden" name="action" value="save_school_judge_minimum">
                 <div class="judge-public-status-row">
                     <div>
-                        <span class="judge-public-status-label">Estado del registro</span>
-                        <strong class="tag {{ 'ok' if judge_form_settings.public_registration_enabled else 'off' }}">
-                            {{ 'Activo' if judge_form_settings.public_registration_enabled else 'Cerrado' }}
-                        </strong>
+                        <span class="judge-public-status-label">Cantidad obligatoria</span>
+                        <input type="number" name="minimum_judges" min="1" max="50" value="{{ minimum_judges_per_school }}" required>
                     </div>
-                    <label class="judge-public-switch">
-                        <input type="hidden" name="judge_public_registration_enabled" value="0">
-                        <input type="checkbox" name="judge_public_registration_enabled" value="1" {% if judge_form_settings.public_registration_enabled %}checked{% endif %}>
-                        <span>Permitir registro</span>
-                    </label>
                     <button type="submit" class="outline-btn">Guardar</button>
                 </div>
             </form>
-            <div class="users-public-link">
-                <input type="text" value="{{ judge_public_registration_url }}" readonly>
-                <a class="outline-btn" href="{{ url_for('public.judge_registration_short') }}" target="_blank" rel="noopener">Abrir</a>
-            </div>
         </article>
     </div>
 </section>

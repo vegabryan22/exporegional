@@ -301,7 +301,7 @@ def register_context_processors(app):
             },
             "campaign_is_open": active_campaign is not None,
             "asset_version": app.config.get("ASSET_VERSION", "dev"),
-            "judge_public_registration_enabled": SystemSetting.get_value("judge_public_registration_enabled", "1") == "1",
+            "judge_public_registration_enabled": False,
             "site_visibility": {
                 "maintenance_enabled": SystemSetting.get_value("maintenance_enabled", "0") == "1",
                 "maintenance_message": SystemSetting.get_value(

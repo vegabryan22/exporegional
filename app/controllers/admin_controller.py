@@ -230,6 +230,7 @@ ACTION_MODULE_MAP = {
     "toggle_judge_admin": "judges",
     "delete_judge": "judges",
     "save_judge_form_settings": "judges",
+    "save_school_judge_minimum": "judges",
     "rotate_judge_form_secret": "judges",
     "send_attendance_invitation": "judges",
     "send_all_attendance_invitations": "judges",
@@ -1422,6 +1423,19 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     judges_pending_att = sum(1 for j in attendance_judges if j.attendance_confirmed is None)
     judges_with_assignments = len({a.judge_id for a in active_assignments if a.judge_id})
     judges_without_assignments = max(0, len(active_judges) - judges_with_assignments)
+    try:
+        minimum_judges_per_school = max(1, min(50, int(SystemSetting.get_value("regional_minimum_judges_per_school", "2") or 2)))
+    except (TypeError, ValueError):
+        minimum_judges_per_school = 2
+    active_judge_counts = {}
+    for judge in active_judges:
+        if judge.institution_id:
+            active_judge_counts[judge.institution_id] = active_judge_counts.get(judge.institution_id, 0) + 1
+    schools_below_judge_minimum = []
+    for institution in Institution.query.filter_by(is_active=True).order_by(Institution.name).all():
+        registered = active_judge_counts.get(institution.id, 0)
+        if registered < minimum_judges_per_school:
+            schools_below_judge_minimum.append({"institution": institution, "registered": registered, "missing": minimum_judges_per_school - registered})
 
     # — Category breakdown —
     steam_projects = [p for p in active_projects if "steam" in (p.category or "").lower()]
@@ -1491,6 +1505,9 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "judges_pending_att": judges_pending_att,
         "judges_with_assignments": judges_with_assignments,
         "judges_without_assignments": judges_without_assignments,
+        "minimum_judges_per_school": minimum_judges_per_school,
+        "schools_below_judge_minimum": schools_below_judge_minimum,
+        "schools_below_judge_minimum_count": len(schools_below_judge_minimum),
         # category
         "steam_projects": len(steam_projects),
         "emp_projects": len(emp_projects),
@@ -4686,6 +4703,17 @@ def _handle_action(action: str):
             db.session.commit()
             flash("Usuario eliminado.", "success")
 
+    elif action == "save_school_judge_minimum":
+        minimum = request.form.get("minimum_judges", type=int)
+        if minimum is None or minimum < 1 or minimum > 50:
+            flash("El mínimo debe ser un número entre 1 y 50.", "error")
+        else:
+            previous = SystemSetting.get_value("regional_minimum_judges_per_school", "2")
+            SystemSetting.set_value("regional_minimum_judges_per_school", str(minimum))
+            log_event("admin.school_judges.minimum.update", "system_setting", detail=f"Mínimo de jueces por colegio: {previous} -> {minimum}")
+            db.session.commit()
+            flash("Mínimo de jueces por colegio actualizado.", "success")
+
     elif action == "save_judge_form_settings":
         form_url = request.form.get("judge_form_url", "").strip()
         enabled = _str_to_bool(request.form.get("judge_form_enabled"))
@@ -7145,8 +7173,8 @@ def _base_context(active_page: str, **kwargs):
             .all()
         )
         judge_form_settings = _judge_form_settings()
-    judge_form_webhook_url = url_for("public.judge_form_webhook", _external=True)
-    judge_public_registration_url = url_for("public.judge_registration_short", _external=True)
+    judge_form_webhook_url = ""
+    judge_public_registration_url = ""
     smtp_configured = False if (restore_safe_mode or database_light_mode) else smtp_is_configured()
     overview_metrics = _build_overview_metrics(
         projects,
@@ -7203,6 +7231,7 @@ def _base_context(active_page: str, **kwargs):
         "judge_form_logs": judge_form_logs,
         "judge_form_webhook_url": judge_form_webhook_url,
         "judge_public_registration_url": judge_public_registration_url,
+        "minimum_judges_per_school": max(1, min(50, int(SystemSetting.get_value("regional_minimum_judges_per_school", "2") or 2))),
         "overview_metrics": overview_metrics,
         "logistics_statuses": LOGISTICS_STATUSES,
         "logistics_status_map": {code: label for code, label in LOGISTICS_STATUSES},

@@ -73,7 +73,7 @@
   </div>
 
   {# ── ALERTS ── #}
-  {% set alert_count = m.projects_without_judges + m.pending_document_revisions_count + m.pending_member_edits_count %}
+  {% set alert_count = m.projects_without_judges + m.pending_logistics_total + m.pending_document_revisions_count + m.pending_member_edits_count %}
   {% if alert_count > 0 %}
   <div class="ov2-alerts">
     <p class="ov2-alerts-label">Requieren atención inmediata</p>
@@ -81,6 +81,11 @@
       {% if m.projects_without_judges > 0 %}
       <a href="{{ url_for('admin.assignments_page') }}" class="ov2-alert-chip critical">
         <strong>{{ m.projects_without_judges }}</strong> sin jueces
+      </a>
+      {% endif %}
+      {% if m.pending_logistics_total > 0 %}
+      <a href="#expedientes-pendientes" class="ov2-alert-chip warning">
+        <strong>{{ m.pending_logistics_total }}</strong> expediente{{ '' if m.pending_logistics_total == 1 else 's' }} incompleto{{ '' if m.pending_logistics_total == 1 else 's' }}
       </a>
       {% endif %}
       {% if m.pending_document_revisions_count > 0 %}
@@ -99,6 +104,15 @@
 
   {# ── PROGRESS CHARTS ── #}
   <div class="ov2-charts-row">
+
+    <div class="ov2-chart-card">
+      <div class="ov2-donut" style="--pct:{{ logistics_pct }};--clr:#d47a00;"><span>{{ logistics_pct }}%</span></div>
+      <div class="ov2-chart-info">
+        <strong>Expedientes completos</strong>
+        <p>{{ m.logistics_complete }} de {{ m.active_projects }} proyectos listos</p>
+        {% if m.pending_logistics_total > 0 %}<span class="ov2-chart-sub warn">{{ m.pending_logistics_total }} requieren seguimiento</span>{% else %}<span class="ov2-chart-sub ok">Todos completos</span>{% endif %}
+      </div>
+    </div>
 
     <div class="ov2-chart-card">
       <div class="ov2-donut" style="--pct:{{ eval_pct }};--clr:#1d7a22;">
@@ -147,6 +161,24 @@
   </div>
 
   {# ── WORK GRID ── #}
+  <section id="expedientes-pendientes" class="ov2-block ov2-full ov2-pending-block">
+    <div class="ov2-block-head">
+      <div><h4>Expedientes pendientes por colegio</h4><p class="ov2-block-note">Detalle de lo que debe completar cada colegio antes de ingresar a evaluación.</p></div>
+      <a href="{{ url_for('admin.reports_page') }}" class="ov2-block-link">Abrir reportes &rarr;</a>
+    </div>
+    {% if m.pending_logistics_projects %}
+    <table class="ov2-table ov2-pending-table">
+      <thead><tr><th>Colegio y proyecto</th><th>Requisitos pendientes</th><th>Seguimiento</th></tr></thead>
+      <tbody>{% for row in m.pending_logistics_projects[:m.pending_logistics_displayed] %}<tr>
+        <td><div class="ov2-pending-project"><strong>{{ row.project.institution.name if row.project.institution else row.project.institution_name or 'Sin colegio' }}</strong><small>{{ row.project.title }} · {{ row.project.team_name }}</small></div></td>
+        <td><ul class="ov2-requirement-list">{% for item in row.missing_logistics_items %}<li>{{ item }}</li>{% endfor %}</ul></td>
+        <td><a class="table-link-btn" href="{{ url_for('admin.projects_page') }}#project-row-{{ row.project.id }}">Abrir proyecto</a>{% if row.project.institution and row.project.institution.responsible_email %}<small>{{ row.project.institution.responsible_email }}</small>{% endif %}</td>
+      </tr>{% endfor %}</tbody>
+    </table>
+    {% if m.pending_logistics_total > m.pending_logistics_displayed %}<p class="ov2-block-note">Se muestran {{ m.pending_logistics_displayed }} de {{ m.pending_logistics_total }}. El reporte contiene el detalle completo.</p>{% endif %}
+    {% else %}<p class="ov2-empty">Todos los colegios tienen sus expedientes completos.</p>{% endif %}
+  </section>
+
   <div class="ov2-work-grid">
 
     {# Proyectos sin jueces #}

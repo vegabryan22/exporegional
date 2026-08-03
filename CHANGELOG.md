@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.38.1] - 2026-08-03
+
+### Seguimiento regional de expedientes
+
+- El resumen regional recupera el contador y porcentaje de expedientes completos.
+- Se agrega una alerta inmediata cuando existen proyectos con requisitos pendientes.
+- El panel detalla colegio, proyecto, requisitos faltantes, correo responsable y acceso a la ficha para seguimiento.
+- El resumen utiliza la misma regla que bloquea la aprobación para evaluación, evitando discrepancias entre panel y revisión.
+
 ## [0.38.0] - 2026-08-03
 
 ### Reutilización del mantenimiento existente

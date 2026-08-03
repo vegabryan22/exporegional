@@ -13460,6 +13460,9 @@ body {
 
 /* Donut charts */
 .ov2-charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.9rem; }
+.ov2-requirement-list { margin: 0; padding-left: 1.05rem; color: #743e00; }
+.ov2-requirement-list li + li { margin-top: .2rem; }
+.ov2-pending-project small { display: block; margin-top: .2rem; color: #647887; }
 .ov2-chart-card { background: #fff; border: 1px solid #d6e8f7; border-radius: 16px;
     padding: 1.1rem 1.3rem; display: flex; align-items: center; gap: 1.1rem; }
 .ov2-donut {

@@ -1386,8 +1386,8 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
 
         members_without_photos = [member for member in project.members if not member.photo_url]
         missing_member_photos = len(members_without_photos)
-        missing_logistics_items = _project_logistics_missing_items(project)
-        if project.logistics_status != "completo" or missing_logistics_items:
+        missing_logistics_items = approval_missing_requirements(project)
+        if missing_logistics_items:
             projects_pending_logistics.append(
                 {
                     "project": project,
@@ -1441,7 +1441,7 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         )
 
     # — Logistics completeness —
-    logistics_complete = sum(1 for p in active_projects if p.logistics_status == "completo" and not _project_logistics_missing_items(p))
+    logistics_complete = sum(1 for p in active_projects if not approval_missing_requirements(p))
 
     return {
         "active_projects": len(active_projects),
@@ -1453,7 +1453,7 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "projects_without_judges": len(projects_without_judges),
         "projects_pending_evaluations": len(projects_with_pending_evaluations),
         "projects_pending_review": len([project for project in active_projects if project.logistics_status == "pendiente_revision"]),
-        "projects_incomplete_logistics": len([project for project in active_projects if project.logistics_status == "incompleto" or _project_logistics_missing_items(project)]),
+        "projects_incomplete_logistics": len([project for project in active_projects if approval_missing_requirements(project)]),
         "logistics_complete": logistics_complete,
         "completed_evaluations": total_completed_evaluations,
         "expected_evaluations": total_expected_evaluations,

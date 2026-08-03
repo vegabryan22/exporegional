@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.40.2] - 2026-08-03
+
+- El catálogo público ahora organiza los proyectos por colegio y muestra la categoría debajo del título.
+- La portada pública aprovecha todo el ancho disponible con márgenes exteriores simétricos.
+- Se equilibró la distribución horizontal del encabezado en pantallas grandes.
+
 ## [0.40.1] - 2026-08-03
 
 - El mínimo obligatorio de jueces se trasladó a Configuración regional → Parámetros regionales.

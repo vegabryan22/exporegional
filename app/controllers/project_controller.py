@@ -1109,7 +1109,31 @@ def list_projects():
     for project in projects:
         projects_by_category.setdefault(project.category, []).append(project)
 
-    return render_template("public/home_projects.html", projects_by_category=projects_by_category, category_map=category_map)
+    school_groups = []
+    groups_by_school = {}
+    ordered_projects = sorted(
+        projects,
+        key=lambda item: (
+            (item.institution.name if item.institution else item.institution_name or "").lower(),
+            category_map.get(item.category, item.category or ""),
+        ),
+    )
+    for project in ordered_projects:
+        school_key = project.institution_id or f"name:{project.institution_name}"
+        if school_key not in groups_by_school:
+            groups_by_school[school_key] = {
+                "name": project.institution.name if project.institution else (project.institution_name or "Colegio sin identificar"),
+                "projects": [],
+            }
+            school_groups.append(groups_by_school[school_key])
+        groups_by_school[school_key]["projects"].append(project)
+
+    return render_template(
+        "public/home_projects.html",
+        projects_by_category=projects_by_category,
+        category_map=category_map,
+        school_groups=school_groups,
+    )
 
 
 def home_intro():

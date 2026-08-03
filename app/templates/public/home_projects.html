@@ -5,8 +5,8 @@
 {% set male_member_placeholder = url_for('static', filename='placeholders/sfh.svg') %}
 {% set project_logo_placeholder = url_for('static', filename='placeholders/project-logo-generic.svg') %}
 {% set ns = namespace(first_id='') %}
-{% for category_code, category_label in category_map.items() %}
-    {% for project in projects_by_category.get(category_code, []) %}
+{% for group in school_groups %}
+    {% for project in group.projects %}
         {% if ns.first_id == '' %}
             {% set ns.first_id = project.id|string %}
         {% endif %}
@@ -30,32 +30,31 @@
         </div>
 
         <div class="project-sidebar-list">
-            {% for category_code, category_label in category_map.items() %}
-                {% if projects_by_category.get(category_code) %}
-                    {% set category_state = namespace(has_first=false) %}
-                    {% for project in projects_by_category[category_code] %}
+            {% for group in school_groups %}
+                    {% set school_state = namespace(has_first=false) %}
+                    {% for project in group.projects %}
                         {% if ns.first_id == project.id|string %}
-                            {% set category_state.has_first = true %}
+                            {% set school_state.has_first = true %}
                         {% endif %}
                     {% endfor %}
-                    <details class="project-category-menu" {% if category_state.has_first %}open{% endif %}>
+                    <details class="project-category-menu" {% if school_state.has_first %}open{% endif %}>
                         <summary>
-                            <span>{{ category_label }}</span>
-                            <small>{{ projects_by_category[category_code]|length }} proyecto(s)</small>
+                            <span>{{ group.name }}</span>
+                            <small>{{ group.projects|length }} proyecto{{ '' if group.projects|length == 1 else 's' }}</small>
                         </summary>
                         <div class="project-category-list">
-                            {% for project in projects_by_category[category_code] %}
+                            {% for project in group.projects %}
                                 <button
                                     type="button"
                                     class="project-link {% if ns.first_id == project.id|string %}active{% endif %}"
                                     data-project-target="{{ project.id }}"
                                 >
-                                    {{ project.title }}
+                                    <strong>{{ project.title }}</strong>
+                                    <small>{{ category_map.get(project.category, project.category) }}</small>
                                 </button>
                             {% endfor %}
                         </div>
                     </details>
-                {% endif %}
             {% endfor %}
         </div>
     </aside>
@@ -95,8 +94,8 @@
                             {% endif %}
                         </div>
                         <div class="pd-hero-body">
-                            <span class="pd-category-badge">{{ category_label }}</span>
                             <h2 class="pd-title">{{ project.title }}</h2>
+                            <span class="pd-category-badge">{{ category_label }}</span>
                             {% if project.description and project.description != 'Proyecto registrado por formulario ExpoTEC-1.' %}
                                 <p class="pd-description">{{ project.description }}</p>
                             {% endif %}
@@ -164,6 +163,10 @@
         {% endfor %}
     </section>
 </div>
+
+<style>
+.project-category-menu summary span{line-height:1.2}.project-link{display:grid!important;gap:.18rem;text-align:left}.project-link strong{font-size:.92rem}.project-link small{font-size:.72rem;font-weight:800;opacity:.72;text-transform:uppercase;letter-spacing:.06em}.pd-title+.pd-category-badge{display:inline-flex;margin:.45rem 0 .35rem}
+</style>
 
 <script>
 (function () {

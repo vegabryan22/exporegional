@@ -250,6 +250,14 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn("Participación de jueces", institution_source)
         self.assertNotIn("save_school_judge_minimum", judges_source)
 
+    def test_public_catalog_groups_projects_by_school(self):
+        source = Path("app/templates/public/home_projects.html").read_text(encoding="utf-8")
+        controller = Path("app/controllers/project_controller.py").read_text(encoding="utf-8")
+        self.assertIn("school_groups", source)
+        self.assertIn("group.name", source)
+        self.assertIn("category_map.get(project.category", source)
+        self.assertIn("groups_by_school", controller)
+
     def test_institutions_admin_page_renders(self):
         app = create_app()
         app.config["TESTING"] = True

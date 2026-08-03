@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.1] - 2026-08-03
+
+### Corrección
+
+- Se incorpora al portal del colegio el controlador de apertura y cierre de diálogos que antes solo cargaba el panel administrativo.
+- El botón «Mantenimiento del proyecto» abre ahora su modal y también puede recuperarlo mediante un enlace con ancla.
+
 ## [0.36.0] - 2026-08-03
 
 ### Control de la coordinación escolar

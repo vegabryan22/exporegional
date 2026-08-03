@@ -196,6 +196,9 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn("Mantenimiento del proyecto", school_source)
         self.assertIn("member_photo_", school_source)
         self.assertIn("Descargar formularios", school_source)
+        school_layout_source = Path("app/templates/school/layout.html").read_text(encoding="utf-8")
+        self.assertIn("[data-dialog-open]", school_layout_source)
+        self.assertIn("showModal", school_layout_source)
 
     def test_public_project_corrections_are_not_registered(self):
         app = create_app()

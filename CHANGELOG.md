@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.32.1] - 2026-08-03
+
+### Interfaz
+
+- Se elimina la expresión redundante «proyecto ganador» del portal del colegio.
+- La navegación utiliza «Nuevo proyecto» y el formulario utiliza «Registrar proyecto».
+- El panel identifica el conjunto simplemente como «Proyectos de [colegio]».
+
 ## [0.32.0] - 2026-08-03
 
 ### Corregido

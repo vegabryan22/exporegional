@@ -286,7 +286,8 @@ class RegionalFoundationTests(unittest.TestCase):
 
         body = response.get_data(as_text=True)
         self.assertEqual(200, response.status_code)
-        self.assertIn("Registrar proyecto ganador", body)
+        self.assertIn("Registrar proyecto", body)
+        self.assertNotIn("Nuevo proyecto ganador", body)
         self.assertIn("Colegio del formulario", body)
         self.assertIn('name="student_1_identity"', body)
         self.assertIn('name="thematic_axis_id"', body)

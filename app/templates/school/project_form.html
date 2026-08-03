@@ -1,7 +1,7 @@
 {% extends "school/layout.html" %}
 {% block school_content %}
 <section class="card admin-section">
-    <div><p class="maintenance-kicker">Inscripción manual regional</p><h3>{{ "Editar borrador" if project else "Registrar proyecto ganador" }}</h3><p>El proyecto quedará asociado únicamente a {{ school.name }}.</p></div>
+    <div><p class="maintenance-kicker">Inscripción manual regional</p><h3>{{ "Editar borrador" if project else "Registrar proyecto" }}</h3><p>El proyecto quedará asociado únicamente a {{ school.name }}.</p></div>
     {% if project and project.regional_status == 'returned_for_correction' %}<div class="alert error">Devuelto para corrección: {{ project.regional_notes or "Revisa la información solicitada por coordinación regional." }}</div>{% endif %}
     <form method="post" enctype="multipart/form-data" class="compact-form form-grid">
         <label class="field-span-2">Título<input type="text" name="title" value="{{ project.title if project else '' }}" required></label>

@@ -2,7 +2,7 @@
 {% block school_content %}
 <section class="card admin-section">
     <div class="section-heading-row">
-        <div><p class="maintenance-kicker">Etapa regional</p><h3>Proyectos ganadores de {{ school.name }}</h3><p>Guarda borradores, completa los documentos y envía cada proyecto a revisión regional.</p></div>
+        <div><p class="maintenance-kicker">Etapa regional</p><h3>Proyectos de {{ school.name }}</h3><p>Guarda borradores, completa los documentos y envía cada proyecto a revisión regional.</p></div>
         <div class="actions-row"><button type="button" class="outline-btn" data-school-profile-open>Mi colegio</button><a class="button" href="{{ url_for('school.project_form') }}">Registrar proyecto</a></div>
     </div>
 </section>

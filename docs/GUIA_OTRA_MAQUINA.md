@@ -43,7 +43,7 @@ SOURCE sql/setup.sql;
 En MySQL, ejecutar:
 
 ```sql
-USE expotecnica_db;
+USE exporegional;
 SOURCE sql/backups/expotecnica_latest.sql;
 ```
 
@@ -72,7 +72,7 @@ Estos archivos deben existir después del pull:
 Opcional (si no usas el default de `config.py`):
 
 ```bash
-set DATABASE_URL=mysql+pymysql://expotecnica_user:expotecnica123@localhost/expotecnica_db?charset=utf8mb4
+set DATABASE_URL=mysql+pymysql://exporegional_user:exporegional123@localhost/exporegional?charset=utf8mb4
 ```
 
 Ejecutar app:

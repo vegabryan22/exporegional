@@ -21,9 +21,9 @@ SOURCE sql/setup.sql;
 O manual:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS expotecnica_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER IF NOT EXISTS 'expotecnica_user'@'localhost' IDENTIFIED BY 'expotecnica123';
-GRANT ALL PRIVILEGES ON expotecnica_db.* TO 'expotecnica_user'@'localhost';
+CREATE DATABASE IF NOT EXISTS exporegional CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER IF NOT EXISTS 'exporegional_user'@'localhost' IDENTIFIED BY 'exporegional123';
+GRANT ALL PRIVILEGES ON exporegional.* TO 'exporegional_user'@'localhost';
 FLUSH PRIVILEGES;
 ```
 
@@ -41,13 +41,13 @@ pip install -r requirements.txt
 Por defecto:
 
 ```text
-mysql+pymysql://root:123456@localhost/expotecnica_db?charset=utf8mb4
+mysql+pymysql://root:123456@localhost/exporegional?charset=utf8mb4
 ```
 
 Opcional:
 
 ```text
-set DATABASE_URL=mysql+pymysql://expotecnica_user:expotecnica123@localhost/expotecnica_db?charset=utf8mb4
+set DATABASE_URL=mysql+pymysql://exporegional_user:exporegional123@localhost/exporegional?charset=utf8mb4
 ```
 
 ## 5) Ejecutar

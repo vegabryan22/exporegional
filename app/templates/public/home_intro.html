@@ -3,15 +3,12 @@
 <section class="home-intro-block card">
     <div class="home-intro-hero">
         <div class="home-intro-copy">
-            <p class="home-intro-kicker">Colegio Tecnico Profesional</p>
-            <h2>{{ institution.name }}</h2>
-            <h3>Por que se realiza la Expo Técnica?</h3>
+            <p class="home-intro-kicker">Etapa regional</p>
+            <h2>ExpoTécnica Regional</h2>
+            <h3>Una región, múltiples centros educativos</h3>
             <p>
-                De acuerdo al MEP, "la Expo Técnica tiene como propósito brindar un espacio dirigido a potenciar el desarrollo
-                de competencias: técnicas, genéricas, lingüísticas y para el desarrollo humano en personas estudiantes que acceden
-                a los servicios de la educación técnica profesional, propiciando las capacidades emprendedoras, la innovación, la
-                investigacion y el uso de tecnologias con la finalidad de promover una formacion integral que facilite su
-                empleabilidad de forma sostenible y responsable." (MEP, 2024)
+                Esta plataforma centraliza los proyectos ganadores de los centros educativos participantes,
+                facilita su validación regional y organiza la evaluación mediante categorías, rúbricas y jueces regionales.
             </p>
         </div>
 
@@ -19,7 +16,7 @@
             {% if institution.expo_logo_path %}
                 <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica" class="home-expo-logo">
             {% else %}
-                <div class="home-expo-fallback">EXPO<br>TEC</div>
+                <div class="home-expo-fallback">EXPO<br>REGIONAL</div>
             {% endif %}
         </aside>
     </div>

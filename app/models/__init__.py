@@ -6,8 +6,10 @@ from app.models.evaluation import Evaluation
 from app.models.evaluation_score import EvaluationScore
 from app.models.evaluation_type import EvaluationType
 from app.models.judge import Judge
+from app.models.institution import Institution
 from app.models.level import Level
 from app.models.project import Project
+from app.models.project_status_history import ProjectStatusHistory
 from app.models.project_type import ProjectType
 from app.models.project_member_change import ProjectMemberChange
 from app.models.project_member import ProjectMember
@@ -23,7 +25,9 @@ from app.models.workshop import Workshop
 
 __all__ = [
     "Judge",
+    "Institution",
     "Project",
+    "ProjectStatusHistory",
     "ProjectType",
     "ProjectMember",
     "ProjectMemberChange",

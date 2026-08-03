@@ -31,6 +31,7 @@ from app.models.evaluation import Evaluation
 from app.models.evaluation_score import EvaluationScore
 from app.models.evaluation_type import EvaluationType
 from app.models.judge import Judge
+from app.models.institution import Institution
 from app.models.level import Level
 from app.models.project import Project
 from app.models.project_member_change import ProjectMemberChange
@@ -99,6 +100,7 @@ USER_ROLES = [
 
 ADMIN_MENU_ITEMS = [
     ("overview", "admin.overview", "Resumen"),
+    ("institutions", "admin.institutions_page", "Colegios participantes"),
     ("assignments", "admin.assignments_page", "Asignaciones"),
     ("judge_pool", "admin.judge_pool_page", "Jueces"),
     ("judges", "admin.judges_page", "Usuarios"),
@@ -111,7 +113,7 @@ ADMIN_MENU_ITEMS = [
     ("evaluations", "admin.evaluations_page", "Evaluaciones"),
     ("documents", "admin.documents_page", "Actas y certificados"),
     ("smtp", "admin.smtp_page", "SMTP"),
-    ("institution", "admin.institution_page", "Institución"),
+    ("institution", "admin.institution_page", "Configuración regional"),
     ("maintenance", "admin.maintenance_page", "Mantenimiento"),
     ("database", "admin.database_page", "Base de datos"),
     ("gitops", "admin.gitops_page", "Mantenimiento Git"),
@@ -120,13 +122,14 @@ ADMIN_MENU_ITEMS = [
 
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
-    ("Operación", ["assignments", "judge_pool", "projects", "evaluations"]),
+    ("Operación", ["institutions", "assignments", "judge_pool", "projects", "evaluations"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "logs"]),
 ]
 
 ADMIN_MENU_ICONS = {
     "overview": "settings",
+    "institutions": "box",
     "assignments": "users",
     "judge_pool": "users",
     "judges": "users",
@@ -154,6 +157,7 @@ ADMIN_MENU_ICONS = {
 # Override mojibake labels with clean UTF-8 text.
 ADMIN_MENU_ITEMS = [
     ("overview", "admin.overview", "Resumen"),
+    ("institutions", "admin.institutions_page", "Colegios participantes"),
     ("assignments", "admin.assignments_page", "Asignaciones"),
     ("judge_pool", "admin.judge_pool_page", "Jueces"),
     ("judges", "admin.judges_page", "Usuarios"),
@@ -181,7 +185,7 @@ ADMIN_MENU_ITEMS = [
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Documentos", ["reports", "documents"]),
-    ("Operación", ["assignments", "judge_pool", "projects", "tutors", "requirements", "evaluations", "students_stats"]),
+    ("Operación", ["institutions", "assignments", "judge_pool", "projects", "tutors", "requirements", "evaluations", "students_stats"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
@@ -189,7 +193,7 @@ ADMIN_MENU_GROUPS = [
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
     "logistica": {"overview", "assignments", "judge_pool", "projects", "tutors", "documents", "reports"},
     "datos": {"overview", "evaluations", "documents", "reports"},
-    "diseno": {"overview", "campaigns", "categories", "academic", "rubrics", "institution"},
+    "diseno": {"overview", "institutions", "campaigns", "categories", "academic", "rubrics", "institution"},
     "qa": {"overview", "logs", "maintenance", "database", "gitops"},
 }
 PERMISSIONS_SETTING_KEY = "permissions_department_modules"
@@ -1735,7 +1739,7 @@ def _build_judge_acta_context(judge_id: int):
 
 
 def _institution_name():
-    return SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+    return SystemSetting.get_value("school_name", "ExpoTécnica Regional")
 
 
 def _month_name_es(month_number: int) -> str:
@@ -2294,7 +2298,7 @@ def _render_judge_acta_pdf(context):
         f"Al ser las {generated_at.strftime('%I:%M %p').lower()}, del día {_long_date_es(generated_at)}, "
         f"se hace constar que la persona juez {judge.full_name}, integrante del Comité de Juzgamiento del centro "
         f"educativo {institution_name}, registró evaluación en los siguientes proyectos activos de la etapa "
-        f"institucional de la ExpoTÉCNICA, celebrada el {_long_date_es(generated_at)}."
+        f"regional de la ExpoTÉCNICA, celebrada el {_long_date_es(generated_at)}."
     )
     y = _pdf_draw_wrapped_line_set(pdf, opening_text, 46, y, width - 92, "Helvetica", 10, 15)
     y -= 8
@@ -2349,7 +2353,7 @@ def _render_participation_certificates_pdf(context):
     director_name = context.get("director_name") or "MSc. __________________"
     coordinator_name = context.get("technical_coordinator_name") or "MSc. __________________"
     script_font = _certificate_script_font()
-    template_path = os.path.join(current_app.static_folder, "certificates", "institucional_2026_bg.jpg")
+    template_path = os.path.join(current_app.static_folder, "certificates", "regional_bg.jpg")
 
     for index, recipient in enumerate(context["recipients"]):
         if index:
@@ -2383,7 +2387,7 @@ def _render_participation_certificates_pdf(context):
         pdf.drawCentredString(width / 2, 247, _pdf_normalize_text("Por su participaci\u00f3n en la:"))
 
         pdf.setFont(script_font, 23)
-        pdf.drawCentredString(width / 2, 194, _pdf_normalize_text("Etapa institucional de ExpoT\u00c9CNICA"))
+        pdf.drawCentredString(width / 2, 194, _pdf_normalize_text("Etapa regional de ExpoT\u00c9CNICA"))
 
         date_line = (
             f"Realizada el {generated_at.day} del mes de {_month_name_es(generated_at.month)} "
@@ -2417,7 +2421,7 @@ def _render_participation_certificates_pdf(context):
         pdf.drawCentredString(194, 61, _pdf_normalize_text(director_name))
         pdf.drawCentredString(526, 61, _pdf_normalize_text(coordinator_name))
         pdf.drawCentredString(194, 47, "Director del centro educativo")
-        pdf.drawCentredString(526, 47, _pdf_normalize_text("Coordinador Institucional ExpoT\u00c9CNICA"))
+        pdf.drawCentredString(526, 47, _pdf_normalize_text("Coordinación Regional ExpoT\u00c9CNICA"))
 
     pdf.save()
     buffer.seek(0)
@@ -3145,7 +3149,7 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
         return False
 
     login_url = url_for("auth.login", _external=True)
-    school_name = SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+    school_name = SystemSetting.get_value("school_name", "ExpoTécnica Regional")
     school_logo = SystemSetting.get_value("school_logo_path", "")
     expo_logo = SystemSetting.get_value("expo_logo_path", "")
     school_logo_url = url_for("static", filename=school_logo, _external=True) if school_logo else ""
@@ -3524,7 +3528,7 @@ def _send_assignment_email(judge: Judge, project: Project, assignment: Assignmen
 
     scope_label = assignment.scope_label if assignment else "Documento y exposición"
     panel_url = url_for("judge.dashboard", _external=True)
-    school_name = SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+    school_name = SystemSetting.get_value("school_name", "ExpoTécnica Regional")
     school_logo = SystemSetting.get_value("school_logo_path", "")
     expo_logo = SystemSetting.get_value("expo_logo_path", "")
     school_logo_url = url_for("static", filename=school_logo, _external=True) if school_logo else ""
@@ -3620,7 +3624,7 @@ def _send_document_evaluation_reminder_email(judge: Judge, items: list[dict], de
     if not smtp_is_configured() or not judge.email:
         return False
     panel_url = url_for("judge.dashboard", _external=True)
-    school_name = SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+    school_name = SystemSetting.get_value("school_name", "ExpoTécnica Regional")
     project_lines = "\n".join(f"- {item['project'].title} ({item['entry']['label']})" for item in items)
     project_items = "".join(
         f"<li><strong>{escape(item['project'].title)}</strong><br><span>{escape(item['entry']['label'])}</span></li>"
@@ -4727,20 +4731,20 @@ def _handle_action(action: str):
             judge.attendance_token = secrets.token_urlsafe(40)
             db.session.commit()
             confirm_url = url_for("public.judge_attendance_confirm", token=judge.attendance_token, _external=True)
-            subject = "Confirmación de asistencia — ExpoTécnica CTPRGV"
+            subject = "Confirmación de asistencia — ExpoTécnica Regional"
             body = (
                 f"Estimado/a {judge.full_name},\n\n"
-                "Le invitamos a confirmar su asistencia como evaluador en la ExpoTécnica CTPRGV.\n\n"
+                "Le invitamos a confirmar su asistencia como evaluador en la ExpoTécnica Regional.\n\n"
                 f"Por favor complete el formulario de confirmación en el siguiente enlace:\n{confirm_url}\n\n"
                 "Este enlace es personal e intransferible.\n\nGracias por su colaboración."
             )
             html_body = f"""
             <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:2rem;border:1px solid #dce8f4;border-radius:12px">
-                <h2 style="color:#0d2a4a;margin-bottom:0.5rem">ExpoTécnica CTPRGV</h2>
+                <h2 style="color:#263238;margin-bottom:0.5rem">ExpoTécnica Regional</h2>
                 <p style="color:#3a5a7a">Confirmación de asistencia como evaluador</p>
                 <hr style="border:none;border-top:1px solid #e4edf6;margin:1rem 0">
                 <p>Estimado/a <strong>{judge.full_name}</strong>,</p>
-                <p>Le invitamos a confirmar su participación como evaluador en la ExpoTécnica institucional.</p>
+                <p>Le invitamos a confirmar su participación como evaluador en la ExpoTécnica Regional.</p>
                 <div style="text-align:center;margin:2rem 0">
                     <a href="{confirm_url}" style="background:#1a4a7a;color:#fff;padding:0.85rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:1rem">
                         Confirmar asistencia
@@ -4778,19 +4782,19 @@ def _handle_action(action: str):
         db.session.commit()
         for judge in judges:
             confirm_url = url_for("public.judge_attendance_confirm", token=judge.attendance_token, _external=True)
-            subject = "Confirmación de asistencia — ExpoTécnica CTPRGV"
+            subject = "Confirmación de asistencia — ExpoTécnica Regional"
             body = (
                 f"Estimado/a {judge.full_name},\n\n"
-                "Le invitamos a confirmar su asistencia como evaluador en la ExpoTécnica CTPRGV.\n\n"
+                "Le invitamos a confirmar su asistencia como evaluador en la ExpoTécnica Regional.\n\n"
                 f"Por favor complete el formulario en:\n{confirm_url}\n\nGracias."
             )
             html_body = f"""
             <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:2rem;border:1px solid #dce8f4;border-radius:12px">
-                <h2 style="color:#0d2a4a;margin-bottom:0.5rem">ExpoTécnica CTPRGV</h2>
+                <h2 style="color:#263238;margin-bottom:0.5rem">ExpoTécnica Regional</h2>
                 <p style="color:#3a5a7a">Confirmación de asistencia como evaluador</p>
                 <hr style="border:none;border-top:1px solid #e4edf6;margin:1rem 0">
                 <p>Estimado/a <strong>{judge.full_name}</strong>,</p>
-                <p>Le invitamos a confirmar su participación como evaluador en la ExpoTécnica institucional.</p>
+                <p>Le invitamos a confirmar su participación como evaluador en la ExpoTécnica Regional.</p>
                 <div style="text-align:center;margin:2rem 0">
                     <a href="{confirm_url}" style="background:#1a4a7a;color:#fff;padding:0.85rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:1rem">
                         Confirmar asistencia
@@ -6483,13 +6487,13 @@ def _handle_action(action: str):
         logo_file = request.files.get("school_logo")
         expo_logo_file = request.files.get("expo_logo")
         if not name or not email:
-            flash("Nombre y correo institucional son obligatorios.", "error")
+            flash("Nombre y correo regional son obligatorios.", "error")
         else:
             SystemSetting.set_value("school_name", name)
             SystemSetting.set_value("school_address", address)
             SystemSetting.set_value("school_phone", phone)
             SystemSetting.set_value("school_email", email)
-            SystemSetting.set_value("expotec_stage", "Institucional")
+            SystemSetting.set_value("expotec_stage", "Regional")
             for setting_key in [
                 "expotec_school_year",
                 "expotec_service_type",
@@ -6518,9 +6522,9 @@ def _handle_action(action: str):
                 except ValueError as error:
                     flash(str(error), "error")
                     return
-            log_event("admin.institution.save", "institution", detail=f"Datos institucionales actualizados: {name}")
+            log_event("admin.institution.save", "institution", detail=f"Datos regionales actualizados: {name}")
             db.session.commit()
-            flash("Informacion institucional actualizada.", "success")
+            flash("Información regional actualizada.", "success")
 
     elif action == "save_maintenance_settings":
         maintenance_enabled = "1" if _str_to_bool(request.form.get("maintenance_enabled")) else "0"
@@ -6933,13 +6937,13 @@ def _base_context(active_page: str, **kwargs):
         pending_member_edit_requests = []
         smtp_settings = {"provider": "custom", "host": "", "port": "587", "username": "", "from_email": "", "use_tls": True, "use_ssl": False, "has_password": False}
         institution_settings = {
-            "name": "CTP Roberto Gamboa Valverde",
+            "name": "ExpoTécnica Regional",
             "address": "",
             "phone": "",
             "email": "",
             "logo_path": "",
             "expo_logo_path": "",
-            "expotec_stage": "Institucional",
+            "expotec_stage": "Regional",
             "expotec_school_year": "2026",
             "expotec_service_type": "Tecnico profesional",
             "expotec_program_office": "Direccion de Educacion Tecnica y Capacidades Emprendedoras",
@@ -7046,13 +7050,13 @@ def _base_context(active_page: str, **kwargs):
             "has_password": bool(SystemSetting.get_value("smtp_password", "")),
         }
         institution_settings = {
-            "name": SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde"),
+            "name": SystemSetting.get_value("school_name", "ExpoTécnica Regional"),
             "address": SystemSetting.get_value("school_address", ""),
             "phone": SystemSetting.get_value("school_phone", ""),
             "email": SystemSetting.get_value("school_email", ""),
             "logo_path": SystemSetting.get_value("school_logo_path", ""),
             "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
-            "expotec_stage": SystemSetting.get_value("expotec_stage", "Institucional"),
+            "expotec_stage": SystemSetting.get_value("expotec_stage", "Regional"),
             "expotec_school_year": SystemSetting.get_value("expotec_school_year", "2026"),
             "expotec_service_type": SystemSetting.get_value("expotec_service_type", "Tecnico profesional"),
             "expotec_program_office": SystemSetting.get_value(
@@ -7206,6 +7210,7 @@ def _base_context(active_page: str, **kwargs):
         "permission_modules": permission_modules,
         "permission_matrix": permission_matrix,
         "is_superadmin": current_user.is_superadmin,
+        **kwargs,
     }
 
 
@@ -9853,6 +9858,86 @@ def logs_page():
 @admin_module_required("campaigns")
 def campaigns_page():
     return _render("admin/campaigns.html", "campaigns")
+
+
+@admin_module_required("institutions")
+def institutions_page():
+    if request.method == "POST":
+        action = (request.form.get("action") or "create").strip().lower()
+        institution_id = request.form.get("institution_id", type=int)
+        institution = Institution.query.get(institution_id) if institution_id else None
+
+        if action == "toggle" and institution:
+            institution.is_active = not institution.is_active
+            log_event(
+                "admin.institution.toggle",
+                "institution",
+                institution.id,
+                f"Colegio {'activado' if institution.is_active else 'desactivado'}: {institution.name}",
+            )
+            db.session.commit()
+            flash("Estado del colegio actualizado.", "success")
+            return redirect(url_for("admin.institutions_page"))
+
+        code = re.sub(r"[^A-Z0-9_-]", "", (request.form.get("code") or "").strip().upper())
+        name = (request.form.get("name") or "").strip()
+        responsible_name = (request.form.get("responsible_name") or "").strip()
+        responsible_email = (request.form.get("responsible_email") or "").strip().lower()
+        status = (request.form.get("participation_status") or Institution.STATUS_INVITED).strip().lower()
+
+        if not code or not name or not responsible_name or not responsible_email:
+            flash("Código, nombre, responsable y correo son obligatorios.", "error")
+            return redirect(url_for("admin.institutions_page"))
+        if status not in Institution.VALID_STATUSES:
+            flash("Estado de participación inválido.", "error")
+            return redirect(url_for("admin.institutions_page"))
+
+        duplicate = Institution.query.filter_by(code=code).first()
+        if duplicate and (not institution or duplicate.id != institution.id):
+            flash("Ya existe un colegio con ese código.", "error")
+            return redirect(url_for("admin.institutions_page"))
+
+        if institution is None:
+            institution = Institution(
+                code=code,
+                name=name,
+                responsible_name=responsible_name,
+                responsible_email=responsible_email,
+            )
+            db.session.add(institution)
+            event_action = "admin.institution.create"
+        else:
+            event_action = "admin.institution.update"
+
+        institution.code = code
+        institution.name = name
+        institution.circuit = (request.form.get("circuit") or "").strip() or None
+        institution.regional_directorate = (request.form.get("regional_directorate") or "").strip() or None
+        institution.address = (request.form.get("address") or "").strip() or None
+        institution.responsible_name = responsible_name
+        institution.responsible_email = responsible_email
+        institution.responsible_phone = (request.form.get("responsible_phone") or "").strip() or None
+        institution.uses_institutional_platform = _str_to_bool(request.form.get("uses_institutional_platform"))
+        institution.participation_status = status
+        db.session.flush()
+        log_event(event_action, "institution", institution.id, f"Colegio regional: {institution.code} - {institution.name}")
+        db.session.commit()
+        flash("Colegio guardado correctamente.", "success")
+        return redirect(url_for("admin.institutions_page"))
+
+    institutions = Institution.query.order_by(Institution.name.asc()).all()
+    return _render(
+        "admin/institutions.html",
+        "institutions",
+        institutions=institutions,
+        institution_statuses=[
+            (Institution.STATUS_INVITED, "Invitado"),
+            (Institution.STATUS_REGISTERED, "Registrado"),
+            (Institution.STATUS_ENABLED, "Habilitado"),
+            (Institution.STATUS_SUSPENDED, "Suspendido"),
+            (Institution.STATUS_CLOSED, "Participación cerrada"),
+        ],
+    )
 
 
 @admin_module_required("institution")

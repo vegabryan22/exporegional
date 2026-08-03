@@ -351,13 +351,13 @@ def bootstrap_defaults(db):
         created = True
 
     default_settings = {
-        "school_name": "CTP Roberto Gamboa Valverde",
-        "school_address": "Direccion institucional no configurada",
+        "school_name": "ExpoTécnica Regional",
+        "school_address": "Sede regional por definir",
         "school_phone": "+506 0000-0000",
-        "school_email": "direccion@ctprgv.edu",
+        "school_email": "coordinacion@expotecnicaregional.local",
         "school_logo_path": "",
         "expo_logo_path": "",
-        "expotec_stage": "Institucional",
+        "expotec_stage": "Regional",
         "expotec_school_year": "2026",
         "expotec_service_type": "Tecnico profesional",
         "expotec_program_office": "Direccion de Educacion Tecnica y Capacidades Emprendedoras",

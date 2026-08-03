@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.26.0] - 2026-08-03
+
+### Añadido
+
+- Se incorpora Flask-Migrate/Alembic con una línea base reproducible y una migración para el núcleo regional.
+- Se crean las entidades de colegios participantes e historial de estados de proyectos.
+- Los proyectos incorporan colegio, categoría regional, origen, estado regional, identificador externo y trazabilidad de recepción y aprobación.
+- Se agrega el rol de coordinador de colegio y el módulo administrativo de colegios participantes.
+- Se añaden pruebas automatizadas del dominio regional y de eliminación de la identidad del colegio de origen.
+
+### Cambiado
+
+- La plataforma adopta la identidad ExpoTécnica Regional en portada, acceso, administración, invitaciones y documentos.
+- Se aplica una paleta neutral temporal hasta recibir el escudo y los colores oficiales.
+- El fondo institucional de certificados deja de utilizarse en la etapa regional.
+- La configuración de base de datos puede omitir la inicialización histórica mediante `AUTO_INIT_DB=0` durante migraciones y pruebas.
+
+### Documentado
+
+- Se crea `docs/MIGRACION_REGIONAL.md` con arquitectura, decisiones, validación y próximas etapas.
+- Se registra la evidencia del sprint regional del 3 de agosto de 2026.
+
 ## [0.25.3] - 2026-07-31
 
 ### Cambiado

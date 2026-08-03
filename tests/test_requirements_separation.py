@@ -24,6 +24,7 @@ from app.controllers.admin_controller import (
     _sync_project_photo_validation,
 )
 from app.controllers.project_controller import _build_requirement_items, _get_or_create_tutor_atomic
+from app.extensions import db
 from app.models.assignment import Assignment
 from app.models.judge import Judge
 from app.models.project import Project
@@ -40,7 +41,18 @@ class RequirementsSeparationTest(unittest.TestCase):
 
         with app.app_context():
             admin = Judge.query.filter(Judge.role == Judge.ROLE_SUPERADMIN).first()
-            self.assertIsNotNone(admin)
+            created_for_test = admin is None
+            if created_for_test:
+                admin = Judge(
+                    full_name="Administrador de prueba",
+                    email="admin-regional-test@example.com",
+                    role=Judge.ROLE_SUPERADMIN,
+                    password_hash="test-only",
+                    is_active_user=True,
+                    is_admin=True,
+                )
+                db.session.add(admin)
+                db.session.flush()
 
             with app.test_client() as client:
                 with client.session_transaction() as session:
@@ -48,6 +60,9 @@ class RequirementsSeparationTest(unittest.TestCase):
                     session["_fresh"] = True
 
                 response = client.get("/admin/reportes")
+
+            if created_for_test:
+                db.session.rollback()
 
         self.assertEqual(200, response.status_code)
         self.assertIn("Reportes de ExpoTécnica", response.get_data(as_text=True))

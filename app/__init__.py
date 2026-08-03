@@ -10,14 +10,14 @@ from sqlalchemy import inspect, text
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 from config import Config
-from app.extensions import db, login_manager
+from app.extensions import db, login_manager, migrate
 from app.services.parameter_service import bootstrap_defaults
 
 
 DEFAULT_DEPARTMENT_PERMISSIONS = {
     "logistica": ["assignments", "overview", "projects"],
     "datos": ["evaluations", "overview"],
-    "diseno": ["academic", "campaigns", "categories", "institution", "overview", "rubrics"],
+    "diseno": ["academic", "campaigns", "categories", "institution", "institutions", "overview", "rubrics"],
     "qa": ["logs", "maintenance", "overview"],
 }
 PERMISSIONS_SETTING_KEY = "permissions_department_modules"
@@ -57,6 +57,7 @@ def create_app():
     app.config["ASSET_VERSION"] = version_path.read_text(encoding="utf-8").strip() if version_path.exists() else "dev"
 
     db.init_app(app)
+    migrate.init_app(app, db)
     login_manager.init_app(app)
 
     from app.routes.admin_routes import admin_bp
@@ -72,7 +73,8 @@ def create_app():
     with app.app_context():
         from app import models  # noqa: F401
 
-        _initialize_database()
+        if app.config["AUTO_INIT_DB"]:
+            _initialize_database()
 
     register_cli(app)
     register_template_filters(app)
@@ -277,10 +279,10 @@ def register_context_processors(app):
 
         return {
             "institution": {
-                "name": SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde"),
-                "address": SystemSetting.get_value("school_address", "Direccion institucional no configurada"),
+                "name": SystemSetting.get_value("school_name", "ExpoTécnica Regional"),
+                "address": SystemSetting.get_value("school_address", "Sede regional por definir"),
                 "phone": SystemSetting.get_value("school_phone", "+506 0000-0000"),
-                "email": SystemSetting.get_value("school_email", "direccion@ctprgv.edu"),
+                "email": SystemSetting.get_value("school_email", "coordinacion@expotecnicaregional.local"),
                 "logo_path": SystemSetting.get_value("school_logo_path", ""),
                 "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
             },

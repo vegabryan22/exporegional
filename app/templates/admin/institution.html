@@ -3,9 +3,9 @@
 <section class="card admin-section maintenance-page institution-page">
     <div class="maintenance-banner institution-hero">
         <div>
-            <p class="maintenance-kicker">Parametros institucionales</p>
-            <h3>Institucion y documentos oficiales</h3>
-            <p>Estos datos alimentan el encabezado del sitio, el formulario ExpoTEC-1 y los consentimientos ExpoTEC-2.</p>
+            <p class="maintenance-kicker">Parámetros regionales</p>
+            <h3>Identidad y documentos regionales</h3>
+            <p>Estos datos alimentan el encabezado, los formularios y los documentos oficiales de la etapa regional.</p>
         </div>
         <span class="tag ok">Datos globales</span>
     </div>
@@ -13,7 +13,7 @@
     <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form institution-form">
         <input type="hidden" name="next" value="{{ next_url }}">
         <input type="hidden" name="action" value="save_institution">
-        <input type="hidden" name="expotec_stage" value="Institucional">
+        <input type="hidden" name="expotec_stage" value="Regional">
 
         <div class="institution-layout">
             <div class="institution-main">
@@ -21,25 +21,25 @@
                     <div class="institution-panel-head">
                         <span class="institution-step">01</span>
                         <div>
-                            <h4>Centro educativo</h4>
-                            <p>Informacion principal del colegio que aparece en pantallas publicas y documentos.</p>
+                            <h4>Organización regional</h4>
+                            <p>Información principal de la coordinación que aparece en pantallas públicas y documentos.</p>
                         </div>
                     </div>
 
                     <div class="institution-fields-grid">
-                        <label class="field-span-2">Nombre del centro educativo
+                        <label class="field-span-2">Nombre de la organización regional
                             <input type="text" name="school_name" value="{{ institution_settings.name }}" required>
                         </label>
                         <label>Tipo de servicio educativo
                             <input type="text" name="expotec_service_type" value="{{ institution_settings.expotec_service_type }}" placeholder="Ej: Tecnico profesional" required>
                         </label>
-                        <label>Telefono institucional
+                        <label>Teléfono regional
                             <input type="text" name="school_phone" value="{{ institution_settings.phone }}" placeholder="Ej: 2222-2222">
                         </label>
-                        <label class="field-span-2">Correo institucional
+                        <label class="field-span-2">Correo regional
                             <input type="email" name="school_email" value="{{ institution_settings.email }}" placeholder="correo@institucion.ed.cr" required>
                         </label>
-                        <label class="field-span-2">Direccion institucional
+                        <label class="field-span-2">Dirección o sede regional
                             <input type="text" name="school_address" value="{{ institution_settings.address }}">
                         </label>
                     </div>
@@ -56,7 +56,7 @@
 
                     <div class="institution-fields-grid">
                         <label>Etapa
-                            <input type="text" value="Institucional" readonly class="readonly-input">
+                            <input type="text" value="Regional" readonly class="readonly-input">
                         </label>
                         <label>Curso lectivo
                             <input type="text" name="expotec_school_year" value="{{ institution_settings.expotec_school_year }}" placeholder="2026" required>
@@ -71,8 +71,8 @@
                     <div class="institution-panel-head">
                         <span class="institution-step">03</span>
                         <div>
-                            <h4>Responsables institucionales</h4>
-                            <p>Se imprimen en ExpoTEC-1 junto al telefono y correos institucionales.</p>
+                            <h4>Responsables regionales</h4>
+                            <p>Se imprimen en los documentos junto al teléfono y correos regionales.</p>
                         </div>
                     </div>
 
@@ -106,10 +106,10 @@
                     <dl class="institution-preview-list">
                         <div>
                             <dt>Etapa</dt>
-                            <dd>Institucional</dd>
+                            <dd>Regional</dd>
                         </div>
                         <div>
-                            <dt>Centro</dt>
+                            <dt>Organización</dt>
                             <dd>{{ institution_settings.name or "Sin configurar" }}</dd>
                         </div>
                         <div>
@@ -121,7 +121,7 @@
                             <dd>{{ institution_settings.phone or "Sin configurar" }}</dd>
                         </div>
                         <div>
-                            <dt>Correo institucional</dt>
+                            <dt>Correo regional</dt>
                             <dd>{{ institution_settings.email or "Sin configurar" }}</dd>
                         </div>
                     </dl>
@@ -131,14 +131,14 @@
                     <div class="institution-panel-head compact">
                         <span class="institution-step">Logo</span>
                         <div>
-                            <h4>Colegio</h4>
-                            <p>Se usa en encabezados y documentos.</p>
+                            <h4>Identidad regional</h4>
+                            <p>Escudo o marca de la organización regional.</p>
                         </div>
                     </div>
 
                     <div class="institution-logo-preview compact">
                         {% if institution_settings.logo_path %}
-                            <img src="{{ url_for('static', filename=institution_settings.logo_path) }}" alt="Logo del colegio" class="institution-logo-image">
+                            <img src="{{ url_for('static', filename=institution_settings.logo_path) }}" alt="Identidad regional" class="institution-logo-image">
                         {% else %}
                             <div class="institution-logo-empty">
                                 <strong>Sin logo cargado</strong>
@@ -147,7 +147,7 @@
                         {% endif %}
                     </div>
 
-                    <label class="institution-upload-field">Actualizar logo del colegio
+                    <label class="institution-upload-field">Actualizar escudo regional
                         <input type="file" name="school_logo" accept="image/png,image/jpeg,image/webp,image/gif">
                     </label>
                 </section>
@@ -180,7 +180,7 @@
         </div>
 
         <div class="actions-row institution-actions">
-            <button type="submit">Guardar parametros institucionales</button>
+            <button type="submit">Guardar parámetros regionales</button>
         </div>
     </form>
 </section>

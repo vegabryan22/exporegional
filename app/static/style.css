@@ -1,15 +1,15 @@
 :root {
-    --bg: #f6f9fd;
+    --bg: #f4f6f7;
     --surface: #ffffff;
-    --surface-soft: #f7fbff;
-    --line: #d7e2ef;
-    --text: #55565a;
-    --muted: #64748a;
-    --primary: #123f6b;
-    --primary-2: #1f8fb5;
-    --primary-soft: #e8f5fb;
-    --accent: #f47a20;
-    --accent-soft: #fff1e6;
+    --surface-soft: #f7f9fa;
+    --line: #d5dde1;
+    --text: #263238;
+    --muted: #607078;
+    --primary: #263238;
+    --primary-2: #607d8b;
+    --primary-soft: #e8edef;
+    --accent: #78909c;
+    --accent-soft: #edf1f3;
     --success: #9ed34a;
     --success-bg: #eef8df;
     --success-text: #486d16;
@@ -17,7 +17,7 @@
     --warning-soft: #fff7d6;
     --error-bg: #fdecee;
     --error-text: #842029;
-    --shadow: 0 10px 30px rgba(18, 63, 107, 0.08);
+    --shadow: 0 10px 30px rgba(38, 50, 56, 0.10);
 }
 
 * { box-sizing: border-box; }
@@ -53,8 +53,8 @@ video {
 }
 
 .header {
-    background: linear-gradient(180deg, var(--primary) 0%, #0f3557 100%);
-    border-bottom: 3px solid rgba(31, 143, 181, 0.28);
+    background: linear-gradient(180deg, var(--primary) 0%, #182126 100%);
+    border-bottom: 3px solid rgba(144, 164, 174, 0.35);
     padding: 0.7rem 1rem;
     margin: 0;
     width: 100%;

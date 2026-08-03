@@ -356,7 +356,7 @@ def _draw_document_header(pdf, title, subtitle="Curso lectivo 2026"):
     width, height = letter
     school_logo = SystemSetting.get_value("school_logo_path", "")
     expo_logo = SystemSetting.get_value("expo_logo_path", "")
-    school_name = SystemSetting.get_value("school_name", "CTP Roberto Gamboa Valverde")
+    school_name = SystemSetting.get_value("school_name", "ExpoTécnica Regional")
 
     logo_y = height - 72
     if not _draw_pdf_logo(pdf, school_logo, 42, logo_y, max_width=62, max_height=54):
@@ -483,7 +483,7 @@ def _render_project_documents_packet(project: Project):
     width, height = landscape(letter)
     today = _pdf_date(project.registration_date or date.today())
     members = sorted(project.members, key=lambda item: item.student_number)
-    school_name = project.institution_name or _pdf_setting("school_name", "CTP Roberto Gamboa Valverde")
+    school_name = project.institution_name or _pdf_setting("school_name", "ExpoTécnica Regional")
     service_type = _pdf_setting("expotec_service_type", "Tecnico profesional")
     school_phone = _pdf_setting("school_phone", "")
     school_email = _pdf_setting("school_email", "")
@@ -498,7 +498,7 @@ def _render_project_documents_packet(project: Project):
         "",
     )
     course_year = _pdf_setting("expotec_school_year", "2026")
-    stage = _pdf_setting("expotec_stage", "Institucional")
+    stage = _pdf_setting("expotec_stage", "Regional")
     start_date = _pdf_date(project.project_start_date) or _pdf_date(project.campaign.start_date if project.campaign else "")
     end_date = _pdf_date(project.project_end_date) or _pdf_date(project.campaign.end_date if project.campaign else "")
 
@@ -575,14 +575,14 @@ def _render_project_documents_packet(project: Project):
     pdf.setStrokeColor(colors.HexColor("#c8d6e6"))
     pdf.line(36, height - 104, width - 36, height - 104)
 
-    y = clean_section("Datos institucionales", height - 122)
+    y = clean_section("Datos del centro educativo", height - 122)
     clean_field("Etapa", stage, 42, y - 26, 150)
     clean_field("Fecha de inscripcion", today, 210, y - 26, 150)
     clean_field("Nombre del centro educativo", school_name, 378, y - 26, 372)
     y -= 58
     clean_field("Tipo de servicio educativo", service_type, 42, y, 214)
-    clean_field("Telefono institucional", school_phone, 274, y, 166)
-    clean_field("Correo institucional", school_email, 458, y, 292)
+    clean_field("Teléfono del centro educativo", school_phone, 274, y, 166)
+    clean_field("Correo del centro educativo", school_email, 458, y, 292)
     y -= 48
     clean_field("Persona directora", director_name, 42, y, 276)
     clean_field("Correo persona directora", director_email, 336, y, 414)
@@ -878,7 +878,7 @@ def _render_project_documents_packet(project: Project):
         y -= 26
         info_text = (
             "Anuncio sin fines de lucro con mensaje dirigido al estudiantado del sistema educativo sobre la ExpoTECNICA "
-            "Institucional, Regional CORVEC y Nacional. Actividad que se realiza con el aval del Ministerio de Educacion "
+            "Regional y Nacional. Actividad que se realiza con el aval del Ministerio de Educacion "
             "Publica y que tiene como proposito estimular en las personas estudiantes la resolucion de problemas o "
             "necesidades en un contexto especifico de la sociedad, la innovacion, ingenieria y autoaprendizaje mediante "
             "procesos que involucran la observacion, el diseno y desarrollo de prototipos, asi como la experimentacion, "
@@ -1245,7 +1245,7 @@ def register_project():
             representative_name=(_draft_form_value(form_data, "student_1_full_name") or "").strip(),
             representative_email=(_draft_form_value(form_data, "student_1_email") or "").strip().lower(),
             representative_phone=_normalize_phone(_draft_form_value(form_data, "student_1_phone")),
-            institution_name="CTP Roberto Gamboa Valverde",
+            institution_name="ExpoTécnica Regional",
             grade_level=project_sections_summary,
             specialty=project_specialties_summary,
             section_id=None,

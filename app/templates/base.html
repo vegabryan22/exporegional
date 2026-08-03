@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ExpoTécnica CTPRGV</title>
+    <title>ExpoTécnica Regional</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ asset_version }}">
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -14,12 +14,12 @@
                     {% if institution.logo_path %}
                         <img src="{{ url_for('static', filename=institution.logo_path) }}" alt="Logo {{ institution.name }}" class="brand-logo">
                     {% else %}
-                        CTP
+                        REG
                     {% endif %}
                 </div>
                 <div>
-                    <h1>{{ institution.name }}</h1>
-                    <p>Feria institucional de innovación y emprendimiento</p>
+                    <h1>ExpoTécnica Regional</h1>
+                    <p>Plataforma regional de innovación y emprendimiento</p>
                 </div>
             </div>
             <button
@@ -101,9 +101,9 @@
     {% block footer %}
     <footer class="site-footer">
         <div class="site-footer-inner">
-            <p><strong>{{ institution.name }}</strong> | ExpoTécnica</p>
+            <p><strong>ExpoTécnica Regional</strong></p>
             <p>{{ institution.address }}</p>
-            <p>Contacto institucional: {{ institution.email }} | Tel: {{ institution.phone }}</p>
+            <p>Coordinación regional: {{ institution.email }} | Tel: {{ institution.phone }}</p>
         </div>
     </footer>
     {% endblock %}

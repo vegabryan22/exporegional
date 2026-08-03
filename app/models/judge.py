@@ -12,8 +12,9 @@ class Judge(UserMixin, db.Model):
     ROLE_JUDGE = "judge"
     ROLE_ADMIN = "admin"
     ROLE_SUPERADMIN = "superadmin"
+    ROLE_SCHOOL_COORDINATOR = "school_coordinator"
     ADMIN_ROLES = {ROLE_ADMIN, ROLE_SUPERADMIN}
-    VALID_ROLES = {ROLE_JUDGE, ROLE_ADMIN, ROLE_SUPERADMIN}
+    VALID_ROLES = {ROLE_JUDGE, ROLE_ADMIN, ROLE_SUPERADMIN, ROLE_SCHOOL_COORDINATOR}
 
     id = db.Column(db.Integer, primary_key=True)
     full_name = db.Column(db.String(120), nullable=False)
@@ -23,6 +24,7 @@ class Judge(UserMixin, db.Model):
     job_title = db.Column(db.String(120), nullable=True)
     identity = db.Column(db.String(40), nullable=True)
     institution = db.Column(db.String(160), nullable=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey("institutions.id", ondelete="SET NULL"), nullable=True, index=True)
     previous_expo = db.Column(db.String(10), nullable=True)
     phone = db.Column(db.String(40), nullable=True)
     can_evaluate_documentation = db.Column(db.Boolean, default=True, nullable=False)
@@ -80,6 +82,7 @@ class Judge(UserMixin, db.Model):
 
     assignments = db.relationship("Assignment", back_populates="judge", cascade="all, delete-orphan")
     evaluations = db.relationship("Evaluation", back_populates="judge")
+    institution_ref = db.relationship("Institution", back_populates="users")
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -112,6 +115,7 @@ class Judge(UserMixin, db.Model):
             self.ROLE_JUDGE: "Juez",
             self.ROLE_ADMIN: "Administrador",
             self.ROLE_SUPERADMIN: "Superadministrador",
+            self.ROLE_SCHOOL_COORDINATOR: "Coordinador de colegio",
         }
         return labels.get(self.effective_role, "Juez")
 

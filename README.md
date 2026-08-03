@@ -1,6 +1,10 @@
-# ExpoTécnica (Flask + MySQL, MVC)
+# ExpoTécnica Regional (Flask + MySQL, MVC)
 
-App web para feria científica con:
+Plataforma regional para centralizar colegios participantes, proyectos ganadores y evaluación regional.
+
+La transformación desde la plataforma institucional se documenta en `docs/MIGRACION_REGIONAL.md`.
+
+Funciones heredadas disponibles:
 - inscripción de proyectos (`STEAM` y `Emprendimiento`)
 - login de jueces y admin
 - evaluación por rúbrica
@@ -55,6 +59,17 @@ set DATABASE_URL=mysql+pymysql://exporegional_user:exporegional123@localhost/exp
 ```bash
 python run.py
 ```
+
+## Migraciones de base de datos
+
+El esquema regional se administra con Flask-Migrate/Alembic:
+
+```bash
+flask --app run.py db upgrade
+flask --app run.py db current
+```
+
+`AUTO_INIT_DB=0` deshabilita la conciliación histórica del esquema durante comandos de migración y pruebas.
 
 ## 6) Hooks automáticos (respaldo + sync de paquetes)
 

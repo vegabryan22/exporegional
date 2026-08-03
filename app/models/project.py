@@ -6,7 +6,33 @@ from app.extensions import db
 
 class Project(db.Model):
     __tablename__ = "projects"
+    __table_args__ = (
+        db.UniqueConstraint("institution_id", "external_project_id", name="uq_project_institution_external_id"),
+    )
     GENERIC_LOGO_PATH = "placeholders/project-logo-generic.svg"
+
+    ORIGIN_INSTITUTIONAL_API = "institutional_api"
+    ORIGIN_REGIONAL_MANUAL = "regional_manual"
+    VALID_ORIGINS = {ORIGIN_INSTITUTIONAL_API, ORIGIN_REGIONAL_MANUAL}
+
+    STATUS_DRAFT = "draft"
+    STATUS_SUBMITTED = "submitted_by_school"
+    STATUS_RECEIVED = "received"
+    STATUS_UNDER_REVIEW = "under_review"
+    STATUS_APPROVED = "approved_for_evaluation"
+    STATUS_RETURNED = "returned_for_correction"
+    STATUS_EVALUATED = "evaluated"
+    STATUS_REGIONAL_WINNER = "regional_winner"
+    VALID_REGIONAL_STATUSES = {
+        STATUS_DRAFT,
+        STATUS_SUBMITTED,
+        STATUS_RECEIVED,
+        STATUS_UNDER_REVIEW,
+        STATUS_APPROVED,
+        STATUS_RETURNED,
+        STATUS_EVALUATED,
+        STATUS_REGIONAL_WINNER,
+    }
 
     id = db.Column(db.Integer, primary_key=True)
     registration_date = db.Column(db.Date, nullable=True)
@@ -16,6 +42,19 @@ class Project(db.Model):
     representative_email = db.Column(db.String(120), nullable=False)
     representative_phone = db.Column(db.String(40), nullable=True)
     institution_name = db.Column(db.String(180), nullable=True)
+    institution_id = db.Column(db.Integer, db.ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=True, index=True)
+    category_id = db.Column(db.Integer, db.ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True)
+    origin = db.Column(db.String(30), nullable=False, default=ORIGIN_REGIONAL_MANUAL, index=True)
+    regional_status = db.Column(db.String(40), nullable=False, default=STATUS_DRAFT, index=True)
+    external_project_id = db.Column(db.String(120), nullable=True)
+    external_source = db.Column(db.String(160), nullable=True)
+    source_updated_at = db.Column(db.DateTime, nullable=True)
+    received_at = db.Column(db.DateTime, nullable=True)
+    submitted_at = db.Column(db.DateTime, nullable=True)
+    approved_at = db.Column(db.DateTime, nullable=True)
+    approved_by_id = db.Column(db.Integer, db.ForeignKey("judges.id", ondelete="SET NULL"), nullable=True, index=True)
+    regional_notes = db.Column(db.Text, nullable=True)
+    payload_version = db.Column(db.String(20), nullable=True)
     grade_level = db.Column(db.String(60), nullable=True)
     specialty = db.Column(db.String(120), nullable=True)
     section_id = db.Column(db.Integer, db.ForeignKey("sections.id"), nullable=True, index=True)
@@ -95,6 +134,35 @@ class Project(db.Model):
     workshop_ref = db.relationship("Workshop")
     campaign = db.relationship("Campaign", back_populates="projects")
     tutor = db.relationship("Tutor", back_populates="projects")
+    institution = db.relationship("Institution", back_populates="projects")
+    category_ref = db.relationship("Category", foreign_keys=[category_id])
+    approved_by = db.relationship("Judge", foreign_keys=[approved_by_id])
+    status_history = db.relationship(
+        "ProjectStatusHistory",
+        back_populates="project",
+        cascade="all, delete-orphan",
+        order_by="ProjectStatusHistory.created_at",
+    )
+
+    @property
+    def origin_label(self) -> str:
+        return {
+            self.ORIGIN_INSTITUTIONAL_API: "Importación institucional",
+            self.ORIGIN_REGIONAL_MANUAL: "Inscripción manual regional",
+        }.get(self.origin, self.origin)
+
+    @property
+    def regional_status_label(self) -> str:
+        return {
+            self.STATUS_DRAFT: "Borrador",
+            self.STATUS_SUBMITTED: "Enviado por colegio",
+            self.STATUS_RECEIVED: "Recibido",
+            self.STATUS_UNDER_REVIEW: "En revisión",
+            self.STATUS_APPROVED: "Aprobado para evaluación",
+            self.STATUS_RETURNED: "Devuelto para corrección",
+            self.STATUS_EVALUATED: "Evaluado",
+            self.STATUS_REGIONAL_WINNER: "Ganador regional",
+        }.get(self.regional_status, self.regional_status)
 
     @property
     def has_real_logo(self) -> bool:

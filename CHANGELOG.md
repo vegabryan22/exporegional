@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.40.5] - 2026-08-03
+
+- La acción de escudo ahora se identifica explícitamente como «Subir / reemplazar escudo» y utiliza un color destacado.
+
 ## [0.40.4] - 2026-08-03
 
 - Se agregó una acción visible «Escudo del colegio» en cada tarjeta del directorio administrativo.

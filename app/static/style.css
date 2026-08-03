@@ -15814,3 +15814,9 @@ dialog.maintenance-dialog.institution-dialog-small { width: min(540px, calc(100v
   .institution-facts > div { border-right: 0; border-bottom: 1px solid var(--border-color, #d8e0e5); }
   .institution-toggle-form { margin-left: 0; width: 100%; }
 }
+.institution-shield-action {
+    background: #7fc62b !important;
+    border-color: #67a91d !important;
+    color: #102f18 !important;
+    font-weight: 900 !important;
+}

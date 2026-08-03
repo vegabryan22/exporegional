@@ -27,7 +27,7 @@
             </div>
             <div class="institution-actions">
                 <button type="button" class="outline-btn" data-dialog-open="edit-institution-{{ school.id }}">Editar colegio</button>
-                <button type="button" class="secondary-btn" data-dialog-open="shield-institution-{{ school.id }}">Escudo del colegio</button>
+                <button type="button" class="secondary-btn institution-shield-action" data-dialog-open="shield-institution-{{ school.id }}">Subir / reemplazar escudo</button>
                 <button type="button" class="outline-btn" data-dialog-open="access-institution-{{ school.id }}">Acceso del colegio</button>
                 {% if school.uses_institutional_platform %}<button type="button" class="secondary-btn" data-dialog-open="api-institution-{{ school.id }}">Conexión API</button>{% endif %}
                 {% if current_user.has_admin_access and school.users|selectattr('is_active_user')|selectattr('effective_role', 'equalto', 'school_coordinator')|list %}<form method="post" action="{{ url_for('admin.impersonate_institution', institution_id=school.id) }}"><button type="submit" class="secondary-btn">Ingresar como colegio</button></form>{% endif %}

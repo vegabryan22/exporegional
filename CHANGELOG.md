@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.40.6] - 2026-08-03
+
+- Se eliminó la acción redundante de escudo en la tarjeta del colegio.
+- La carga y sustitución del escudo queda centralizada dentro de Editar colegio.
+
 ## [0.40.5] - 2026-08-03
 
 - La acción de escudo ahora se identifica explícitamente como «Subir / reemplazar escudo» y utiliza un color destacado.

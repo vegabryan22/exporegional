@@ -27,7 +27,6 @@
             </div>
             <div class="institution-actions">
                 <button type="button" class="outline-btn" data-dialog-open="edit-institution-{{ school.id }}">Editar colegio</button>
-                <button type="button" class="secondary-btn institution-shield-action" data-dialog-open="shield-institution-{{ school.id }}">Subir / reemplazar escudo</button>
                 <button type="button" class="outline-btn" data-dialog-open="access-institution-{{ school.id }}">Acceso del colegio</button>
                 {% if school.uses_institutional_platform %}<button type="button" class="secondary-btn" data-dialog-open="api-institution-{{ school.id }}">Conexión API</button>{% endif %}
                 {% if current_user.has_admin_access and school.users|selectattr('is_active_user')|selectattr('effective_role', 'equalto', 'school_coordinator')|list %}<form method="post" action="{{ url_for('admin.impersonate_institution', institution_id=school.id) }}"><button type="submit" class="secondary-btn">Ingresar como colegio</button></form>{% endif %}
@@ -35,19 +34,6 @@
                 <button type="button" class="ghost-btn danger" data-dialog-open="delete-institution-{{ school.id }}">Eliminar colegio</button>
             </div>
         </article>
-
-        <dialog id="shield-institution-{{ school.id }}" class="maintenance-dialog institution-dialog institution-dialog-small">
-            <div class="dialog-card">
-                <div class="dialog-head"><div><h4>{{ 'Reemplazar' if school.shield_path else 'Subir' }} escudo</h4><p>{{ school.name }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
-                <form method="post" enctype="multipart/form-data" class="compact-form">
-                    <input type="hidden" name="action" value="update_shield">
-                    <input type="hidden" name="institution_id" value="{{ school.id }}">
-                    <div class="school-profile-shield">{% if school.shield_path %}<img src="{{ url_for('static', filename=school.shield_path) }}" alt="Escudo actual de {{ school.name }}">{% else %}<span>{{ school.code }}</span>{% endif %}</div>
-                    <label>Archivo del escudo<input type="file" name="institution_shield" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" required><small>PNG, JPG, WEBP o GIF.</small></label>
-                    <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar escudo</button></div>
-                </form>
-            </div>
-        </dialog>
 
         <dialog id="edit-institution-{{ school.id }}" class="maintenance-dialog institution-dialog"><div class="dialog-card"><div class="dialog-head"><div><h4>Editar colegio</h4><p>{{ school.name }} · los cambios se bitacorizan</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" enctype="multipart/form-data" class="institution-form-grid"><input type="hidden" name="action" value="update"><input type="hidden" name="institution_id" value="{{ school.id }}"><div class="school-profile-shield institution-field-wide">{% if school.shield_path %}<img src="{{ url_for('static', filename=school.shield_path) }}" alt="Escudo de {{ school.name }}">{% else %}<span>{{ school.code }}</span>{% endif %}<label>{{ 'Reemplazar' if school.shield_path else 'Subir' }} escudo del colegio<input type="file" name="institution_shield" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif"><small>PNG, JPG, WEBP o GIF. Si no seleccionás un archivo, se conserva el escudo actual.</small></label></div><label>Código<input type="text" name="code" value="{{ school.code }}" required></label><label>Nombre<input type="text" name="name" value="{{ school.name }}" required></label><label>Circuito<input type="text" name="circuit" value="{{ school.circuit or '' }}"></label><label>Dirección regional<input type="text" name="regional_directorate" value="{{ school.regional_directorate or '' }}"></label><label>Responsable<input type="text" name="responsible_name" value="{{ school.responsible_name }}" required></label><label>Correo<input type="email" name="responsible_email" value="{{ school.responsible_email }}" required></label><label>Teléfono<input type="text" name="responsible_phone" value="{{ school.responsible_phone or '' }}"></label><label>Estado<select name="participation_status" required>{% for value, label in institution_statuses %}<option value="{{ value }}" {% if school.participation_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label class="institution-field-wide">Dirección física<input type="text" name="address" value="{{ school.address or '' }}"></label><label class="institution-field-wide"><input type="checkbox" name="uses_institutional_platform" value="1" {% if school.uses_institutional_platform %}checked{% endif %}> Usa plataforma institucional/API</label><div class="actions-row institution-field-wide"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar cambios</button></div></form></div></dialog>
 

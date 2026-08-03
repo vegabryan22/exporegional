@@ -63,9 +63,9 @@
     <section class="project-view">
         <header class="institutional-banner institutional-banner-compact card">
             <div>
-                <span class="banner-kicker">Etapa regional</span>
-                <h1>Proyectos de especialidades técnicas</h1>
-                <p>Muestra oficial de proyectos de especialidades técnicas.</p>
+                <span class="banner-kicker">Catálogo regional</span>
+                <h1>Proyectos de la región</h1>
+                <p>Explorá proyectos aprobados por categoría y centro educativo.</p>
             </div>
         </header>
 
@@ -83,7 +83,7 @@
                     {% set principal_is_logo = true %}
                 {% endif %}
 
-                <article class="project-detail card {% if ns.first_id == project.id|string %}active{% endif %}" data-project-panel="{{ project.id }}">
+                <article id="project-{{ project.id }}" class="project-detail card {% if ns.first_id == project.id|string %}active{% endif %}" data-project-panel="{{ project.id }}">
 
                     {# ── Hero: logo + título + descripción ─────────────────── #}
                     <div class="pd-hero">
@@ -100,9 +100,6 @@
                             {% if project.description and project.description != 'Proyecto registrado por formulario ExpoTEC-1.' %}
                                 <p class="pd-description">{{ project.description }}</p>
                             {% endif %}
-                            {% if project.project_document_path %}
-                                <a href="{{ url_for('static', filename=project.project_document_path) }}" class="project-action pd-doc-btn" target="_blank">Ver documentación</a>
-                            {% endif %}
                         </div>
                     </div>
 
@@ -111,6 +108,10 @@
                         <div>
                             <dt>Equipo</dt>
                             <dd>{{ project.team_name }}</dd>
+                        </div>
+                        <div>
+                            <dt>Colegio</dt>
+                            <dd>{{ project.institution.name if project.institution else project.institution_name }}</dd>
                         </div>
                         {% if project.thematic_axis %}
                         <div>

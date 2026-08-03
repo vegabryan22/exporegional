@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.40.0] - 2026-08-03
+
+- Nueva portada pública inspirada en la identidad azul del sitio regional anterior.
+- Directorio dinámico de colegios con escudos, circuitos, búsqueda y cantidad de proyectos publicados.
+- Resumen público de participación, categorías y proyectos destacados.
+- El catálogo público muestra únicamente proyectos aprobados, evaluados o ganadores regionales.
+- Los documentos internos del expediente dejaron de estar expuestos en la ficha pública.
+- Diseño adaptable para escritorio, tableta y teléfono, separado de los paneles operativos.
+
 ## [0.38.1] - 2026-08-03
 
 ### Seguimiento regional de expedientes

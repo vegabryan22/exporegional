@@ -1,135 +1,60 @@
 {% extends "base.html" %}
+{% block body_class %}regional-public-home{% endblock %}
 {% block content %}
-<section class="home-intro-block card">
-    <div class="home-intro-hero">
-        <div class="home-intro-copy">
-            <p class="home-intro-kicker">Etapa regional</p>
-            <h2>ExpoTécnica Regional</h2>
-            <h3>Una región, múltiples centros educativos</h3>
-            <p>
-                Esta plataforma centraliza los proyectos ganadores de los centros educativos participantes,
-                facilita su validación regional y organiza la evaluación mediante categorías, rúbricas y jueces regionales.
-            </p>
-        </div>
-
-        <aside class="home-expo-brand">
-            {% if institution.expo_logo_path %}
-                <img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica" class="home-expo-logo">
-            {% else %}
-                <div class="home-expo-fallback">EXPO<br>REGIONAL</div>
-            {% endif %}
-        </aside>
-    </div>
-
-    <div class="home-objectives-wrap">
-        <h3>Objetivos</h3>
-        <div class="home-objectives-grid">
-            <article class="objective-card objective-card-1">
-                <span class="objective-number">01</span>
-                <div>
-                    <h4>Brindar oportunidades</h4>
-                    <p>Permitir que los estudiantes apliquen conocimientos teóricos en situaciones prácticas, fortaleciendo habilidades técnicas y de resolución de problemas.</p>
-                </div>
-            </article>
-            <article class="objective-card objective-card-2">
-                <span class="objective-number">02</span>
-                <div>
-                    <h4>Fomentar el interes</h4>
-                    <p>Aumentar el interes y la pasion por la investigacion mediante proyectos creativos y practicos.</p>
-                </div>
-            </article>
-            <article class="objective-card objective-card-3">
-                <span class="objective-number">03</span>
-                <div>
-                    <h4>Incentivar trabajo en equipo</h4>
-                    <p>Promover la colaboracion y la comunicacion efectiva para el desarrollo conjunto de cada proyecto.</p>
-                </div>
-            </article>
-            <article class="objective-card objective-card-4">
-                <span class="objective-number">04</span>
-                <div>
-                    <h4>Aumentar la creatividad</h4>
-                    <p>Incentivar la innovación al diseñar soluciones originales para problemas reales o imaginarios.</p>
-                </div>
-            </article>
-            <article class="objective-card objective-card-5">
-                <span class="objective-number">05</span>
-                <div>
-                    <h4>Desarrollar habilidades</h4>
-                    <p>Impulsar habilidades de presentacion y comunicacion para explicar proyectos con claridad y persuasion.</p>
-                </div>
-            </article>
+<link rel="stylesheet" href="{{ url_for('static', filename='regional-public.css') }}?v={{ asset_version }}">
+<section class="regional-hero">
+    <div class="regional-hero-copy">
+        <p class="regional-eyebrow">CORVEC · Unidos por la excelencia</p>
+        <h2>ExpoTécnica<br><span>Regional</span></h2>
+        <p class="regional-hero-lead">El punto de encuentro de los proyectos, el talento y la innovación de nuestros centros educativos.</p>
+        <div class="regional-hero-actions">
+            <a class="regional-primary-action" href="{{ url_for('public.projects') }}">Explorar proyectos</a>
+            <a class="regional-secondary-action" href="#colegios-participantes">Ver colegios</a>
         </div>
     </div>
-
-    <div class="home-logos-panel">
-        <h3>Conoce nuestros proyectos</h3>
-        <div class="logos-carousel" data-carousel>
-            <div class="logos-track">
-                {% for category_code, category_label in category_map.items() %}
-                    {% for project in projects_by_category.get(category_code, []) %}
-                        {% if project.display_logo_path.startswith('http://') or project.display_logo_path.startswith('https://') %}
-                            {% set logo_src = project.display_logo_path %}
-                        {% else %}
-                            {% set logo_src = url_for('static', filename=project.display_logo_path) %}
-                        {% endif %}
-                        <figure class="logo-slide" data-slide>
-                            <img src="{{ logo_src }}" alt="Logo de {{ project.title }}">
-                            <figcaption>{{ project.title }}</figcaption>
-                        </figure>
-                    {% endfor %}
-                {% endfor %}
-            </div>
-            <div class="logos-dots" data-dots></div>
-        </div>
+    <div class="regional-hero-visual" aria-label="Identidad de ExpoTécnica Regional">
+        <div class="regional-orbit orbit-one"></div><div class="regional-orbit orbit-two"></div>
+        {% if institution.expo_logo_path %}<img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica Regional">
+        {% else %}<div class="regional-hero-monogram"><strong>EXPO</strong><span>REGIONAL</span></div>{% endif %}
     </div>
 </section>
 
-<script>
-(function () {
-    var carousel = document.querySelector('[data-carousel]');
-    if (!carousel) {
-        return;
-    }
+<section class="regional-stats" aria-label="Resumen de participación">
+    <article><strong>{{ school_rows|length }}</strong><span>Colegios participantes</span></article>
+    <article><strong>{{ projects|length }}</strong><span>Proyectos publicados</span></article>
+    <article><strong>{{ category_map|length }}</strong><span>Categorías regionales</span></article>
+</section>
 
-    var slides = carousel.querySelectorAll('[data-slide]');
-    var dotsWrap = carousel.querySelector('[data-dots]');
-    if (!slides.length || !dotsWrap) {
-        return;
-    }
+<section class="regional-section regional-about">
+    <div class="regional-section-heading"><p class="regional-eyebrow">Etapa regional</p><h3>Una región que transforma ideas</h3><p>La plataforma reúne la participación de cada colegio y permite descubrir los proyectos que ya completaron el proceso de validación regional.</p></div>
+    <div class="regional-purpose-grid">
+        <article><span>01</span><h4>Innovación</h4><p>Soluciones creativas desarrolladas por estudiantes para necesidades reales.</p></article>
+        <article><span>02</span><h4>Colaboración</h4><p>Centros educativos unidos en una experiencia regional compartida.</p></article>
+        <article><span>03</span><h4>Excelencia</h4><p>Proyectos validados y evaluados con criterios regionales transparentes.</p></article>
+    </div>
+</section>
 
-    var index = 0;
-    var dots = [];
+<section id="colegios-participantes" class="regional-section regional-schools-section">
+    <div class="regional-section-heading regional-heading-row"><div><p class="regional-eyebrow">Participación regional</p><h3>Colegios participantes</h3><p>Explorá los centros educativos que forman parte de esta edición.</p></div><label class="regional-search">Buscar colegio<input type="search" placeholder="Nombre o circuito" data-school-search></label></div>
+    <div class="regional-school-grid" data-school-grid>
+        {% for row in school_rows %}<article class="regional-school-card" data-school-card data-search="{{ (row.school.name ~ ' ' ~ (row.school.circuit or '') ~ ' ' ~ row.school.code)|lower }}">
+            <div class="regional-school-shield">{% if row.school.shield_path %}<img src="{{ url_for('static', filename=row.school.shield_path) }}" alt="Escudo de {{ row.school.name }}">{% else %}<span>{{ row.school.code[:3] }}</span>{% endif %}</div>
+            <div><h4>{{ row.school.name }}</h4><p>{{ 'Circuito ' ~ row.school.circuit if row.school.circuit else 'Circuito por confirmar' }}</p><span>{{ row.project_count }} proyecto{{ '' if row.project_count == 1 else 's' }} publicado{{ '' if row.project_count == 1 else 's' }}</span></div>
+        </article>{% else %}<p>No hay colegios participantes publicados.</p>{% endfor %}
+    </div>
+</section>
 
-    function render() {
-        slides.forEach(function (slide, i) {
-            slide.classList.toggle('active', i === index);
-        });
-        dots.forEach(function (dot, i) {
-            dot.classList.toggle('active', i === index);
-        });
-    }
+<section class="regional-section regional-project-preview">
+    <div class="regional-section-heading regional-heading-row"><div><p class="regional-eyebrow">Muestra regional</p><h3>Proyectos destacados</h3><p>Una vista rápida de los proyectos disponibles en el catálogo público.</p></div><a href="{{ url_for('public.projects') }}">Ver catálogo completo →</a></div>
+    <div class="regional-project-grid">
+        {% for project in projects[:6] %}<article class="regional-project-card">
+            <div class="regional-project-logo">{% if project.has_real_logo %}<img src="{{ project.project_logo_path if project.project_logo_path.startswith('http') else url_for('static', filename=project.project_logo_path) }}" alt="Logo de {{ project.title }}">{% else %}<span>{{ project.title[:2]|upper }}</span>{% endif %}</div>
+            <div><span class="regional-project-category">{{ category_map.get(project.category, project.category) }}</span><h4>{{ project.title }}</h4><p>{{ project.institution.name if project.institution else project.institution_name }}</p><a href="{{ url_for('public.projects') }}#project-{{ project.id }}">Conocer proyecto</a></div>
+        </article>{% else %}<div class="regional-empty"><strong>La muestra pública está en preparación</strong><p>Los proyectos aparecerán aquí cuando sean aprobados para evaluación regional.</p></div>{% endfor %}
+    </div>
+</section>
 
-    slides.forEach(function (_, i) {
-        var dot = document.createElement('button');
-        dot.type = 'button';
-        dot.className = 'logo-dot';
-        dot.addEventListener('click', function () {
-            index = i;
-            render();
-        });
-        dotsWrap.appendChild(dot);
-        dots.push(dot);
-    });
+<section class="regional-access-strip"><div><p class="regional-eyebrow">Acceso privado</p><h3>¿Sos coordinación de colegio o juez regional?</h3><p>Ingresá al espacio operativo para gestionar proyectos, jueces o evaluaciones.</p></div><a href="{{ url_for('auth.login') }}">Ingresar a la plataforma</a></section>
 
-    render();
-    if (slides.length > 1) {
-        setInterval(function () {
-            index = (index + 1) % slides.length;
-            render();
-        }, 3500);
-    }
-})();
-</script>
+<script>(()=>{const input=document.querySelector('[data-school-search]');if(!input)return;input.addEventListener('input',()=>{const term=input.value.trim().toLowerCase();document.querySelectorAll('[data-school-card]').forEach(card=>card.hidden=!card.dataset.search.includes(term));});})();</script>
 {% endblock %}
-

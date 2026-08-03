@@ -26,6 +26,7 @@ from app.models.specialty import Specialty
 from app.models.system_setting import SystemSetting
 from app.models.thematic_axis import ThematicAxis
 from app.models.judge import Judge
+from app.models.institution import Institution
 from app.services.audit_service import log_event
 from app.services.assignment_service import reassign_absent_judge_assignments
 from app.services.mail_service import send_email, smtp_is_configured
@@ -1093,7 +1094,10 @@ def list_projects():
         )
 
     projects = (
-        Project.query.filter(Project.is_active.is_(True))
+        Project.query.filter(
+            Project.is_active.is_(True),
+            Project.regional_status.in_([Project.STATUS_APPROVED, Project.STATUS_EVALUATED, Project.STATUS_REGIONAL_WINNER]),
+        )
         .options(joinedload(Project.members), joinedload(Project.section), joinedload(Project.specialty_ref), joinedload(Project.workshop_ref))
         .order_by(Project.created_at.desc())
         .all()
@@ -1110,7 +1114,10 @@ def list_projects():
 
 def home_intro():
     projects = (
-        Project.query.filter(Project.is_active.is_(True))
+        Project.query.filter(
+            Project.is_active.is_(True),
+            Project.regional_status.in_([Project.STATUS_APPROVED, Project.STATUS_EVALUATED, Project.STATUS_REGIONAL_WINNER]),
+        )
         .options(joinedload(Project.members), joinedload(Project.section), joinedload(Project.specialty_ref), joinedload(Project.workshop_ref))
         .order_by(Project.created_at.desc())
         .all()
@@ -1122,7 +1129,20 @@ def home_intro():
     for project in projects:
         projects_by_category.setdefault(project.category, []).append(project)
 
-    return render_template("public/home_intro.html", projects_by_category=projects_by_category, category_map=category_map)
+    schools = Institution.query.filter_by(is_active=True).order_by(Institution.name).all()
+    school_rows = []
+    for school in schools:
+        visible_projects = [project for project in projects if project.institution_id == school.id]
+        school_rows.append({"school": school, "project_count": len(visible_projects)})
+
+    return render_template(
+        "public/home_intro.html",
+        projects=projects,
+        projects_by_category=projects_by_category,
+        category_map=category_map,
+        school_rows=school_rows,
+        schools_with_projects=sum(1 for row in school_rows if row["project_count"]),
+    )
 
 
 def register_project():

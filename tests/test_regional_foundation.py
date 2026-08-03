@@ -211,6 +211,27 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn("[data-dialog-open]", school_layout_source)
         self.assertIn("showModal", school_layout_source)
 
+    def test_public_home_is_regional_directory_and_hides_unapproved_projects(self):
+        app = create_app()
+        app.config["TESTING"] = True
+        with app.app_context():
+            school = Institution(code="PUBLIC-HOME", name="Colegio del directorio", responsible_name="Responsable", responsible_email="public-home@example.com", is_active=True)
+            db.session.add(school)
+            db.session.flush()
+            draft = Project(title="Proyecto privado en borrador", team_name="Equipo", representative_name="Estudiante", representative_email="student@example.com", institution_id=school.id, institution_name=school.name, category="steam", description="No publicar", regional_status=Project.STATUS_DRAFT, is_active=True)
+            db.session.add(draft)
+            db.session.commit()
+            with app.test_client() as client:
+                response = client.get("/")
+            body = response.get_data(as_text=True)
+            self.assertEqual(200, response.status_code)
+            self.assertIn("Colegios participantes", body)
+            self.assertIn("Colegio del directorio", body)
+            self.assertNotIn("Proyecto privado en borrador", body)
+            db.session.delete(draft)
+            db.session.delete(school)
+            db.session.commit()
+
     def test_public_project_corrections_are_not_registered(self):
         app = create_app()
         rules = {rule.rule for rule in app.url_map.iter_rules()}

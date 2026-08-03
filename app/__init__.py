@@ -463,7 +463,7 @@ def ensure_schema_updates():
                 """
                 UPDATE judges
                 SET role = CASE
-                    WHEN role IN ('judge', 'admin', 'superadmin') THEN role
+                    WHEN role IN ('judge', 'admin', 'superadmin', 'school_coordinator') THEN role
                     WHEN is_admin = 1 THEN 'admin'
                     ELSE 'judge'
                 END

@@ -110,6 +110,13 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertEqual("Coordinador de colegio", user.role_label)
         self.assertFalse(user.has_admin_access)
 
+    def test_school_coordinators_are_excluded_from_judge_management(self):
+        source = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")
+        bootstrap = Path("app/__init__.py").read_text(encoding="utf-8")
+        self.assertIn("Judge.role != Judge.ROLE_SCHOOL_COORDINATOR", source)
+        self.assertIn("existing_user.role = Judge.ROLE_SCHOOL_COORDINATOR", source)
+        self.assertIn("'school_coordinator'", bootstrap)
+
     def test_status_history_model_is_linked_to_project(self):
         history = ProjectStatusHistory(from_status=Project.STATUS_DRAFT, to_status=Project.STATUS_SUBMITTED)
 

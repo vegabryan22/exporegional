@@ -137,3 +137,5 @@ La inscripción manual desde el portal de un colegio reutiliza el formulario ofi
 Cada colegio administra los recursos, necesidades operativas, logo y fotografías de sus proyectos. Para los registros manuales, el colegio también carga el PDF y no puede enviar el proyecto mientras falten el documento, el logo o alguna fotografía. La coordinación regional no completa ni aprueba logística: revisa el PDF y resuelve el expediente documental. Si el colegio reemplaza el documento, su validación regional se reinicia.
 
 El administrador regional conserva autoridad para corregir o eliminar colegios. Cada edición registra valores anteriores y posteriores. La eliminación exige escribir el código exacto, conserva los proyectos históricos sin institución activa, desactiva cuentas coordinadoras y elimina credenciales API.
+
+Las coordinaciones de colegio usan el rol independiente `school_coordinator`; no son jueces, no aparecen en su módulo ni participan en asignaciones o evaluaciones. La revisión `d18f4c2a91e7` corrige cuentas heredadas vinculadas a una institución que conservaran el rol antiguo `judge`.

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.33.2] - 2026-08-03
+
+### Corregido
+
+- Las cuentas coordinadoras de colegio dejan de clasificarse y mostrarse como jueces regionales.
+- Se migra automáticamente cualquier cuenta heredada vinculada a un colegio que todavía conserve el rol `judge`.
+- El módulo de jueces/usuarios excluye coordinaciones, administradas desde «Acceso del colegio».
+- Una cuenta existente puede convertirse y vincularse como coordinación sin duplicarla.
+
 ## [0.33.1] - 2026-08-03
 
 ### Corregido

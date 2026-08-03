@@ -7937,7 +7937,8 @@ def pending_evaluations_report_excel():
 
 @admin_module_required("judges")
 def judges_page():
-    return _render("admin/judges.html", "judges")
+    system_users = Judge.query.filter(Judge.role != Judge.ROLE_SCHOOL_COORDINATOR).order_by(Judge.full_name.asc()).all()
+    return _render("admin/judges.html", "judges", judges=system_users)
 
 
 @admin_module_required("permissions")
@@ -9958,8 +9959,22 @@ def institutions_page():
             if not coordinator_name or not coordinator_email:
                 flash("Nombre y correo de la coordinación son obligatorios.", "error")
                 return redirect(url_for("admin.institutions_page"))
-            if Judge.query.filter_by(email=coordinator_email).first():
-                flash("Ya existe una cuenta con ese correo.", "error")
+            existing_user = Judge.query.filter_by(email=coordinator_email).first()
+            if existing_user:
+                if existing_user.institution_id not in {None, institution.id}:
+                    flash("Ese correo pertenece a otro colegio.", "error")
+                    return redirect(url_for("admin.institutions_page"))
+                previous_role = existing_user.effective_role
+                existing_user.full_name = coordinator_name
+                existing_user.role = Judge.ROLE_SCHOOL_COORDINATOR
+                existing_user.institution_id = institution.id
+                existing_user.institution = institution.name
+                existing_user.is_admin = False
+                existing_user.is_active_user = True
+                existing_user.department = None
+                log_event("admin.institution.coordinator.convert", "judge", existing_user.id, f"Cuenta convertida de {previous_role} a coordinación de {institution.code}")
+                db.session.commit()
+                flash("La cuenta existente fue vinculada correctamente como coordinación del colegio.", "success")
                 return redirect(url_for("admin.institutions_page"))
             temporary_password = secrets.token_urlsafe(10)
             coordinator = Judge(

@@ -127,3 +127,7 @@ La revisión base heredada está diseñada como punto de partida reproducible, n
 3. Validaciones documentales regionales más detalladas.
 4. Configuración de categorías, rúbricas, jueces y reportes regionales.
 5. Aplicación de escudo y paleta oficial cuando estén disponibles.
+
+## Formularios regionales
+
+La inscripción manual desde el portal de un colegio reutiliza el formulario oficial ExpoTEC-1 y su controlador de validación. No existe un segundo formulario simplificado para crear proyectos. La ruta regional determina el colegio desde la sesión, asigna el origen `regional_manual` y guarda inicialmente el proyecto en estado `draft`. El envío a coordinación continúa siendo una acción posterior y explícita desde el panel del colegio.

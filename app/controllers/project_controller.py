@@ -949,9 +949,20 @@ def _draft_context(form_data=None, temp_document_path=""):
         {
             "temp_document_path": resolved_temp_path,
             "temp_document_name": temp_document_name,
+            "school_registration": _is_school_registration(),
+            "school": current_user.institution_ref if _is_school_registration() else None,
         }
     )
     return context
+
+
+def _is_school_registration() -> bool:
+    return bool(
+        current_user.is_authenticated
+        and current_user.effective_role == Judge.ROLE_SCHOOL_COORDINATOR
+        and current_user.institution_id
+        and request.blueprint == "school"
+    )
 
 
 def _required_student_numbers(form_data):
@@ -1152,6 +1163,7 @@ def home_intro():
 
 
 def register_project():
+    school_registration = _is_school_registration()
     active_campaign = (
         Campaign.query.filter(
             Campaign.is_active.is_(True),
@@ -1161,7 +1173,7 @@ def register_project():
         .order_by(Campaign.start_date.desc())
         .first()
     )
-    if not active_campaign:
+    if not active_campaign and not school_registration:
         flash("No hay una campaña de inscripción activa en este momento.", "error")
         return redirect(url_for("public.index"))
 
@@ -1238,6 +1250,7 @@ def register_project():
                 "phone": _normalize_phone(_draft_form_value(form_data, "advisor_phone")),
             }
 
+        valid_categories_records = Category.query.filter_by(is_active=True).all()
         project = Project(
             registration_date=registration_date,
             title=(_draft_form_value(form_data, "title") or "").strip(),
@@ -1245,7 +1258,11 @@ def register_project():
             representative_name=(_draft_form_value(form_data, "student_1_full_name") or "").strip(),
             representative_email=(_draft_form_value(form_data, "student_1_email") or "").strip().lower(),
             representative_phone=_normalize_phone(_draft_form_value(form_data, "student_1_phone")),
-            institution_name="ExpoTécnica Regional",
+            institution_name=current_user.institution_ref.name if school_registration else "ExpoTécnica Regional",
+            institution_id=current_user.institution_id if school_registration else None,
+            category_id=next((item.id for item in valid_categories_records if item.code == category), None),
+            origin=Project.ORIGIN_REGIONAL_MANUAL,
+            regional_status=Project.STATUS_DRAFT,
             grade_level=project_sections_summary,
             specialty=project_specialties_summary,
             section_id=None,
@@ -1253,7 +1270,7 @@ def register_project():
             thematic_axis_id=thematic_axis_id,
             project_type_id=project_type_id,
             workshop_id=None,
-            campaign_id=active_campaign.id,
+            campaign_id=active_campaign.id if active_campaign else None,
             tutor_id=selected_tutor.id if selected_tutor else None,
             advisor_name=advisor_values["name"],
             advisor_identity=advisor_identity,
@@ -1292,7 +1309,7 @@ def register_project():
             consent_terms=(_draft_form_value(form_data, "declaration") or "").strip().lower() == "si",
         )
 
-        valid_categories = {item.code for item in Category.query.filter_by(is_active=True).all()}
+        valid_categories = {item.code for item in valid_categories_records}
 
         if not registration_date:
             flash("La fecha es obligatoria.", "error")
@@ -1425,7 +1442,7 @@ def register_project():
             db.session.add(ProjectMember(project_id=project.id, **student_payload))
 
         log_event(
-            "public.project.create",
+            "school.project.create" if school_registration else "public.project.create",
             "project",
             entity_id=project.id,
             detail=(
@@ -1435,6 +1452,9 @@ def register_project():
         )
         db.session.commit()
         _clear_registration_draft()
+        if school_registration:
+            flash("Proyecto guardado como borrador con el formulario oficial ExpoTEC-1.", "success")
+            return redirect(url_for("school.dashboard"))
         flash("Proyecto inscrito correctamente con formato ExpoTEC-1.", "success")
         return redirect(url_for("public.project_documents", project_id=project.id))
 

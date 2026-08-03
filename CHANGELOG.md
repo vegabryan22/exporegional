@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.32.0] - 2026-08-03
+
+### Corregido
+
+- La inscripción manual de un colegio reutiliza el formulario oficial ExpoTEC-1 completo en lugar del formulario regional reducido.
+- Se conservan en un solo flujo las validaciones de proyecto, requerimientos, documento PDF, estudiantes, tutor, mentor y declaración.
+- El colegio y el origen ya no se solicitan: se asignan de forma segura desde la sesión como inscripción manual regional.
+- El proyecto se guarda como borrador del colegio para que pueda revisarse antes de enviarlo a coordinación regional.
+
+### Pruebas
+
+- Se verifica que la ruta del colegio renderice los campos esenciales del formulario oficial y mantenga el contexto institucional.
+- Suite completa: 56 pruebas aprobadas.
+
 ## [0.31.0] - 2026-08-03
 
 ### Añadido

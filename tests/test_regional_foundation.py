@@ -264,6 +264,37 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn("Proyecto visible", body)
         self.assertNotIn("Proyecto oculto", body)
 
+    def test_school_registration_reuses_the_complete_official_form(self):
+        app = create_app()
+        app.config["TESTING"] = True
+
+        with app.app_context():
+            school = Institution(code="FORM-OWN", name="Colegio del formulario", responsible_name="Responsable", responsible_email="form@example.com", is_active=True)
+            db.session.add(school)
+            db.session.flush()
+            coordinator = Judge(full_name="Coordinador del formulario", email="form-coordinator@example.com", role=Judge.ROLE_SCHOOL_COORDINATOR, institution_id=school.id, password_hash="test-only", is_active_user=True)
+            db.session.add(coordinator)
+            db.session.flush()
+
+            with app.test_client() as client:
+                with client.session_transaction() as session:
+                    session["_user_id"] = str(coordinator.id)
+                    session["_fresh"] = True
+                response = client.get("/colegio/proyectos/nuevo")
+
+            db.session.rollback()
+
+        body = response.get_data(as_text=True)
+        self.assertEqual(200, response.status_code)
+        self.assertIn("Registrar proyecto ganador", body)
+        self.assertIn("Colegio del formulario", body)
+        self.assertIn('name="student_1_identity"', body)
+        self.assertIn('name="thematic_axis_id"', body)
+        self.assertIn('name="project_type_id"', body)
+        self.assertIn('name="advisor_identity"', body)
+        self.assertIn('name="mentor_has"', body)
+        self.assertIn('name="declaration"', body)
+
     def test_school_coordinator_updates_only_own_institution_profile(self):
         app = create_app()
         app.config["TESTING"] = True

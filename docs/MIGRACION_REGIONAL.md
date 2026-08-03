@@ -55,8 +55,8 @@ Estados iniciales:
 4. `under_review` — En revisión.
 5. `approved_for_evaluation` — Aprobado para evaluación.
 6. `returned_for_correction` — Devuelto para corrección.
-7. `evaluated` — Evaluado.
-8. `regional_winner` — Ganador regional.
+7. `evaluated` — Evaluado, asignado automáticamente al completar todas las evaluaciones requeridas.
+8. `regional_winner` — Ganador regional, calculado automáticamente por categoría cuando todos sus proyectos están evaluados.
 
 ### Usuarios
 
@@ -93,7 +93,7 @@ No debe utilizarse un logo institucional de un colegio como reemplazo temporal d
 - Coordinación regional: `submitted_by_school → received → under_review`.
 - Revisión: `under_review → approved_for_evaluation` o `returned_for_correction`.
 - Colegio: `returned_for_correction → submitted_by_school`.
-- Resultado: `approved_for_evaluation → evaluated → regional_winner`.
+- Resultado automático: `approved_for_evaluation → evaluated → regional_winner`; no existen botones administrativos para declarar estos estados.
 
 No se permiten saltos de estado. Cada transición crea un registro en `project_status_history` con usuario, fecha y observación.
 

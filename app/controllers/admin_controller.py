@@ -56,12 +56,14 @@ from app.services.evaluation_service import (
     build_admin_evaluation_overview,
     get_assignment_evaluation_entries,
     get_project_available_evaluation_types,
+    get_project_evaluations_summary,
     infer_evaluation_type_kind,
     project_evaluation_count_summary,
     project_evaluation_target_summary,
 )
 from app.services.mail_service import send_email, smtp_is_configured
 from app.services.regional_project_service import RegionalTransitionError, transition_project
+from app.services.regional_outcome_service import sync_regional_outcomes
 
 try:
     from reportlab.lib import colors
@@ -10046,12 +10048,21 @@ def regional_review_page():
             flash(str(error), "error")
         return redirect(url_for("admin.regional_review_page"))
 
+    outcome_result = sync_regional_outcomes()
+    if outcome_result["changed"]:
+        db.session.commit()
     projects = (
         Project.query.filter(Project.regional_status != Project.STATUS_DRAFT)
         .order_by(Project.submitted_at.desc(), Project.created_at.desc())
         .all()
     )
-    return _render("admin/regional_review.html", "regional_review", regional_projects=projects)
+    rows = []
+    for project in projects:
+        target = project_evaluation_target_summary(project)
+        count = project_evaluation_count_summary(project)
+        summary = get_project_evaluations_summary(project)
+        rows.append({"project": project, "expected": target["expected_evaluations"], "completed": count["completed_evaluations"], "final_grade": summary.get("final_grade")})
+    return _render("admin/regional_review.html", "regional_review", regional_projects=projects, regional_rows=rows)
 
 
 @admin_module_required("institution")

@@ -23,6 +23,7 @@ from app.services.evaluation_service import (
     infer_evaluation_type_kind,
 )
 from app.services.parameter_service import get_active_evaluation_types, get_active_rubrics_map
+from app.services.regional_outcome_service import sync_regional_outcomes
 
 
 def _str_to_bool(value) -> bool:
@@ -307,6 +308,9 @@ def evaluate(project_id: int):
                 f"integrante={project_member.full_name if project_member else 'proyecto'}, porcentaje={percentage}"
             ),
         )
+        db.session.flush()
+        db.session.expire_all()
+        sync_regional_outcomes()
         db.session.commit()
         flash("Evaluacion registrada correctamente.", "success")
         return redirect(url_for("judge.dashboard"))

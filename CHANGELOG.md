@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.29.0] - 2026-08-03
+
+### Cambiado
+
+- La bandeja regional adopta fichas operativas con expediente, progreso de evaluaciones, nota y siguiente paso.
+- Se eliminan las acciones manuales «Marcar evaluado» y «Declarar ganador».
+- Un proyecto pasa a evaluado únicamente cuando completa las seis evaluaciones regionales requeridas.
+- El ganador se calcula por mayor nota dentro de la categoría cuando todos sus proyectos están evaluados.
+
+### Reglas
+
+- Si existe empate en el primer lugar, el sistema no elige un ganador arbitrariamente.
+- Los estados derivados se recalculan al guardar una evaluación y al abrir la bandeja regional.
+- Los estados manuales antiguos se corrigen automáticamente según la evidencia real de evaluaciones.
+
+### Verificado
+
+- El proyecto que había sido declarado ganador manualmente volvió a «Aprobado para evaluación» porque registra 0 de 6 evaluaciones.
+
 ## [0.28.1] - 2026-08-03
 
 ### Añadido

@@ -145,6 +145,16 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertEqual(Project.STATUS_APPROVED, project.regional_status)
         self.assertEqual(1, project.approved_by_id)
 
+    def test_evaluated_and_winner_states_are_not_manual_transitions(self):
+        admin = Judge(id=1, role=Judge.ROLE_SUPERADMIN, is_admin=True)
+        approved = Project(id=31, regional_status=Project.STATUS_APPROVED)
+        evaluated = Project(id=32, regional_status=Project.STATUS_EVALUATED)
+
+        with self.assertRaises(RegionalTransitionError):
+            transition_project(approved, Project.STATUS_EVALUATED, admin)
+        with self.assertRaises(RegionalTransitionError):
+            transition_project(evaluated, Project.STATUS_REGIONAL_WINNER, admin)
+
     def test_visible_branding_no_longer_names_the_original_school(self):
         paths = [
             Path("app/templates/base.html"),
@@ -201,18 +211,25 @@ class RegionalFoundationTests(unittest.TestCase):
         app.config["TESTING"] = True
 
         with app.app_context():
-            admin = Judge(full_name="Revisor regional", email="review-page-test@example.com", role=Judge.ROLE_SUPERADMIN, password_hash="test-only", is_active_user=True, is_admin=True)
-            db.session.add(admin)
-            db.session.flush()
+            admin = Judge.query.filter_by(email="review-page-test@example.com").first()
+            if admin is None:
+                admin = Judge(full_name="Revisor regional", email="review-page-test@example.com", role=Judge.ROLE_SUPERADMIN, password_hash="test-only", is_active_user=True, is_admin=True)
+                db.session.add(admin)
+                db.session.flush()
             with app.test_client() as client:
                 with client.session_transaction() as session:
                     session["_user_id"] = str(admin.id)
                     session["_fresh"] = True
                 response = client.get("/admin/revision-regional")
-            db.session.rollback()
+            db.session.delete(admin)
+            db.session.commit()
 
         self.assertEqual(200, response.status_code)
-        self.assertIn("Bandeja de revisión regional", response.get_data(as_text=True))
+        body = response.get_data(as_text=True)
+        self.assertIn("Revisión de proyectos", body)
+        self.assertIn("Evaluado automáticamente", body)
+        self.assertNotIn("Marcar evaluado", body)
+        self.assertNotIn("Declarar ganador", body)
 
     def test_school_dashboard_is_scoped_to_coordinator_institution(self):
         app = create_app()

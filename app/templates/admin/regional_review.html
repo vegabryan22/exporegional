@@ -1,33 +1,58 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section">
-    <div class="section-heading-row"><div><p class="maintenance-kicker">Control regional</p><h3>Bandeja de revisión regional</h3><p>Recepción, revisión, devolución y aprobación de proyectos enviados por los colegios.</p></div><span class="tag">{{ regional_projects|length }} proyectos</span></div>
-</section>
-<section class="card admin-section"><div class="table-wrap"><table>
-    <thead><tr><th>Colegio</th><th>Proyecto</th><th>Origen</th><th>Estado</th><th>Expediente</th><th>Siguiente acción</th></tr></thead>
-    <tbody>
-    {% for project in regional_projects %}
-        <tr>
-            <td>{{ project.institution.name if project.institution else project.institution_name or "Sin colegio" }}</td>
-            <td><strong>{{ project.title }}</strong><br><small>{{ project.team_name }} · {{ project.category_ref.name if project.category_ref else project.category }}</small></td>
-            <td>{{ project.origin_label }}</td>
-            <td><span class="tag">{{ project.regional_status_label }}</span>{% if project.regional_notes %}<br><small>{{ project.regional_notes }}</small>{% endif %}</td>
-            <td>{{ project.members|length }} estudiantes<br>{{ "PDF adjunto" if project.project_document_path else "Sin PDF" }} · {{ "Logo adjunto" if project.project_logo_path else "Sin logo" }}</td>
-            <td>
+<div class="regional-review-page">
+    <section class="card regional-review-hero">
+        <div><p class="maintenance-kicker">Control regional</p><h2>Revisión de proyectos</h2><p>Validá expedientes antes de enviarlos a evaluación. Los resultados se determinan automáticamente.</p></div>
+        <div class="regional-review-count"><strong>{{ regional_rows|length }}</strong><span>proyectos recibidos</span></div>
+    </section>
+
+    <section class="regional-auto-rule" aria-label="Reglas automáticas">
+        <div><strong>Evaluado automáticamente</strong><span>cuando completa todas las evaluaciones requeridas</span></div>
+        <div><strong>Ganador por categoría</strong><span>mayor nota cuando toda la categoría está completa</span></div>
+        <div><strong>Empates protegidos</strong><span>el sistema no selecciona un ganador arbitrariamente</span></div>
+    </section>
+
+    <section class="regional-project-list">
+        {% for row in regional_rows %}{% set project = row.project %}
+        <article class="card regional-project-card">
+            <header class="regional-project-head">
+                <div class="regional-project-school">
+                    {% if project.institution and project.institution.shield_path %}<img src="{{ url_for('static', filename=project.institution.shield_path) }}" alt="Escudo de {{ project.institution.name }}">{% else %}<span>{{ (project.institution.code if project.institution else 'REG')[:4] }}</span>{% endif %}
+                    <div><small>{{ project.institution.name if project.institution else project.institution_name or "Sin colegio" }}</small><h3>{{ project.title }}</h3><p>{{ project.team_name }} · {{ project.category_ref.name if project.category_ref else project.category }}</p></div>
+                </div>
+                <span class="regional-status regional-status-{{ project.regional_status }}">{{ project.regional_status_label }}</span>
+            </header>
+
+            <div class="regional-project-body">
+                <div class="regional-project-data"><span>Origen</span><strong>{{ project.origin_label }}</strong></div>
+                <div class="regional-project-data"><span>Expediente</span><strong>{{ project.members|length }} estudiantes</strong><small>{{ "PDF adjunto" if project.project_document_path else "PDF pendiente" }} · {{ "Logo adjunto" if project.project_logo_path else "Logo pendiente" }}</small></div>
+                <div class="regional-project-data regional-evaluation-progress"><span>Evaluaciones</span><strong>{{ row.completed }} de {{ row.expected }}</strong><div class="regional-progress-track"><i style="width: {{ ([((row.completed / row.expected * 100) if row.expected else 0), 100]|min) }}%"></i></div></div>
+                <div class="regional-project-data"><span>Nota final</span><strong>{{ "%.2f"|format(row.final_grade) if row.final_grade is not none else "Pendiente" }}</strong><small>promedio regional</small></div>
+            </div>
+
+            <footer class="regional-project-action">
                 {% if project.regional_status == 'submitted_by_school' %}
-                    <form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="received"><button type="submit">Marcar recibido</button></form>
+                <div><strong>Confirmar recepción</strong><span>El proyecto fue enviado por el colegio.</span></div><form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="received"><button type="submit">Marcar recibido</button></form>
                 {% elif project.regional_status == 'received' %}
-                    <form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="under_review"><button type="submit">Iniciar revisión</button></form>
+                <div><strong>Revisar expediente</strong><span>Comprobá documentos, estudiantes y categoría.</span></div><form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="under_review"><button type="submit">Iniciar revisión</button></form>
                 {% elif project.regional_status == 'under_review' %}
-                    <form method="post" class="compact-form"><input type="hidden" name="project_id" value="{{ project.id }}"><textarea name="notes" placeholder="Observaciones o correcciones"></textarea><button type="submit" name="target_status" value="approved_for_evaluation">Aprobar</button><button type="submit" name="target_status" value="returned_for_correction" class="ghost-btn">Devolver</button></form>
+                <div><strong>Resolver revisión</strong><span>Aprobá el expediente o devolvelo con observaciones.</span></div><button type="button" data-dialog-open="review-project-{{ project.id }}">Resolver</button>
+                {% elif project.regional_status == 'returned_for_correction' %}
+                <div><strong>Esperando corrección</strong><span>{{ project.regional_notes or "El colegio debe corregir y reenviar el expediente." }}</span></div>
                 {% elif project.regional_status == 'approved_for_evaluation' %}
-                    <form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="evaluated"><button type="submit">Marcar evaluado</button></form>
+                <div><strong>Evaluación en curso</strong><span>El estado cambiará automáticamente al completar {{ row.expected }} evaluaciones.</span></div>
                 {% elif project.regional_status == 'evaluated' %}
-                    <form method="post"><input type="hidden" name="project_id" value="{{ project.id }}"><input type="hidden" name="target_status" value="regional_winner"><button type="submit">Declarar ganador</button></form>
-                {% else %}Sin acción pendiente{% endif %}
-            </td>
-        </tr>
-    {% else %}<tr><td colspan="6">No hay proyectos enviados a revisión.</td></tr>{% endfor %}
-    </tbody>
-</table></div></section>
+                <div><strong>Evaluación completa</strong><span>Esperando que todos los proyectos de la categoría terminen para calcular el ganador.</span></div>
+                {% elif project.regional_status == 'regional_winner' %}
+                <div class="regional-winner-note"><strong>Ganador calculado automáticamente</strong><span>Primera posición de {{ project.category_ref.name if project.category_ref else project.category }} con nota {{ "%.2f"|format(row.final_grade) if row.final_grade is not none else "N/D" }}.</span></div>
+                {% else %}<div><strong>Sin acción pendiente</strong><span>El proyecto continúa en su flujo regional.</span></div>{% endif %}
+            </footer>
+        </article>
+
+        {% if project.regional_status == 'under_review' %}
+        <dialog id="review-project-{{ project.id }}" class="maintenance-dialog institution-dialog institution-dialog-small"><div class="dialog-card"><div class="dialog-head"><div><h4>Resolver revisión</h4><p>{{ project.title }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><form method="post" class="compact-form"><input type="hidden" name="project_id" value="{{ project.id }}"><label>Observaciones<textarea name="notes" rows="4" placeholder="Obligatorias únicamente si devolvés el proyecto"></textarea></label><div class="actions-row"><button type="submit" name="target_status" value="returned_for_correction" class="ghost-btn">Devolver para corrección</button><button type="submit" name="target_status" value="approved_for_evaluation">Aprobar para evaluación</button></div></form></div></dialog>
+        {% endif %}
+        {% else %}<div class="card institutions-empty"><h3>No hay proyectos en revisión regional</h3><p>Los proyectos enviados por colegios aparecerán aquí.</p></div>{% endfor %}
+    </section>
+</div>
 {% endblock %}

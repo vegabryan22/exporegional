@@ -15511,6 +15511,46 @@ dialog.maintenance-dialog.institution-dialog-small { width: min(540px, calc(100v
   .institution-facts > div:nth-child(2) { border-right: 0; }
   .institution-facts > div:nth-child(-n+2) { border-bottom: 1px solid var(--border-color, #d8e0e5); }
 }
+
+/* Regional project review workspace */
+.regional-review-page { display: grid; gap: 1rem; min-width: 0; }
+.regional-review-hero { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.35rem 1.5rem; }
+.regional-review-hero h2 { margin: .1rem 0 .35rem; color: #15384d; }
+.regional-review-hero p { margin: 0; color: #60737e; }
+.regional-review-count { display: grid; min-width: 130px; padding: .8rem 1rem; border-radius: 14px; background: #eaf3f7; text-align: center; }
+.regional-review-count strong { color: #174b66; font-size: 1.55rem; }
+.regional-review-count span { color: #526c7a; font-size: .78rem; }
+.regional-auto-rule { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid #cddce4; border-radius: 14px; overflow: hidden; background: #f7fafb; }
+.regional-auto-rule > div { display: grid; gap: .2rem; padding: .85rem 1rem; border-right: 1px solid #d8e3e8; }
+.regional-auto-rule > div:last-child { border-right: 0; }
+.regional-auto-rule strong { color: #214b61; font-size: .84rem; }
+.regional-auto-rule span { color: #647883; font-size: .78rem; line-height: 1.35; }
+.regional-project-list { display: grid; gap: 1rem; }
+.regional-project-card { padding: 0; overflow: hidden; }
+.regional-project-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 1.1rem 1.25rem; border-bottom: 1px solid #dbe5ea; }
+.regional-project-school { display: flex; align-items: center; gap: .85rem; min-width: 0; }
+.regional-project-school > img, .regional-project-school > span { width: 52px; height: 52px; flex: 0 0 52px; object-fit: contain; display: grid; place-items: center; padding: 4px; border: 1px solid #d4e0e6; border-radius: 12px; background: #f4f8fa; color: #24566f; font-size: .72rem; font-weight: 850; }
+.regional-project-school small { color: #57717f; font-weight: 700; }
+.regional-project-school h3 { margin: .1rem 0; color: #16394d; font-size: 1.12rem; }
+.regional-project-school p { margin: 0; color: #657984; font-size: .88rem; }
+.regional-status { padding: .45rem .7rem; border: 1px solid #bfd3dd; border-radius: 999px; background: #eef5f8; color: #28586f; font-size: .78rem; font-weight: 800; }
+.regional-status-regional_winner { border-color: #c6a94a; background: #fff7d8; color: #765c08; }
+.regional-status-evaluated { border-color: #82b899; background: #edf8f1; color: #24623c; }
+.regional-project-body { display: grid; grid-template-columns: 1fr 1.25fr 1.15fr .75fr; }
+.regional-project-data { display: grid; align-content: start; gap: .2rem; min-width: 0; padding: 1rem 1.25rem; border-right: 1px solid #e0e8ec; }
+.regional-project-data:last-child { border-right: 0; }
+.regional-project-data > span { color: #70828b; font-size: .7rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+.regional-project-data strong { color: #213d4c; overflow-wrap: anywhere; }
+.regional-project-data small { color: #657984; }
+.regional-progress-track { height: 6px; margin-top: .3rem; overflow: hidden; border-radius: 99px; background: #dfe8ec; }
+.regional-progress-track i { display: block; height: 100%; border-radius: inherit; background: #347b9b; }
+.regional-project-action { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 68px; padding: .8rem 1.25rem; border-top: 1px solid #dbe5ea; background: #f7fafb; }
+.regional-project-action > div { display: grid; gap: .12rem; }
+.regional-project-action strong { color: #23485c; }
+.regional-project-action span { color: #657984; font-size: .83rem; }
+.regional-winner-note strong { color: #765c08; }
+@media (max-width: 900px) { .regional-auto-rule { grid-template-columns: 1fr; } .regional-auto-rule > div { border-right: 0; border-bottom: 1px solid #d8e3e8; } .regional-project-body { grid-template-columns: repeat(2, 1fr); } .regional-project-data:nth-child(2) { border-right: 0; } }
+@media (max-width: 620px) { .regional-review-hero, .regional-project-head, .regional-project-action { align-items: stretch; flex-direction: column; } .regional-project-body { grid-template-columns: 1fr; } .regional-project-data { border-right: 0; border-bottom: 1px solid #e0e8ec; } }
 @media (max-width: 680px) {
   .institutions-hero, .institution-card-header { align-items: stretch; flex-direction: column; }
   .institution-form-grid, .institution-facts { grid-template-columns: 1fr; }

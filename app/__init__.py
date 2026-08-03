@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
@@ -84,6 +84,15 @@ def create_app():
     register_template_filters(app)
     register_context_processors(app)
     register_error_handlers(app)
+
+    @app.after_request
+    def prevent_stale_admin_pages(response):
+        if request.path.startswith("/admin/"):
+            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        return response
+
     return app
 
 

@@ -230,6 +230,7 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn("Evaluado automáticamente", body)
         self.assertNotIn("Marcar evaluado", body)
         self.assertNotIn("Declarar ganador", body)
+        self.assertIn("no-store", response.headers.get("Cache-Control", ""))
 
     def test_school_dashboard_is_scoped_to_coordinator_institution(self):
         app = create_app()

@@ -230,7 +230,6 @@ ACTION_MODULE_MAP = {
     "toggle_judge_admin": "judges",
     "delete_judge": "judges",
     "save_judge_form_settings": "judges",
-    "save_school_judge_minimum": "judges",
     "rotate_judge_form_secret": "judges",
     "send_attendance_invitation": "judges",
     "send_all_attendance_invitations": "judges",
@@ -4703,17 +4702,6 @@ def _handle_action(action: str):
             db.session.commit()
             flash("Usuario eliminado.", "success")
 
-    elif action == "save_school_judge_minimum":
-        minimum = request.form.get("minimum_judges", type=int)
-        if minimum is None or minimum < 1 or minimum > 50:
-            flash("El mínimo debe ser un número entre 1 y 50.", "error")
-        else:
-            previous = SystemSetting.get_value("regional_minimum_judges_per_school", "2")
-            SystemSetting.set_value("regional_minimum_judges_per_school", str(minimum))
-            log_event("admin.school_judges.minimum.update", "system_setting", detail=f"Mínimo de jueces por colegio: {previous} -> {minimum}")
-            db.session.commit()
-            flash("Mínimo de jueces por colegio actualizado.", "success")
-
     elif action == "save_judge_form_settings":
         form_url = request.form.get("judge_form_url", "").strip()
         enabled = _str_to_bool(request.form.get("judge_form_enabled"))
@@ -6517,14 +6505,19 @@ def _handle_action(action: str):
         email = request.form.get("school_email", "").strip()
         logo_file = request.files.get("school_logo")
         expo_logo_file = request.files.get("expo_logo")
+        minimum_judges = request.form.get("regional_minimum_judges_per_school", type=int)
         if not name or not email:
             flash("Nombre y correo regional son obligatorios.", "error")
+        elif minimum_judges is None or minimum_judges < 1 or minimum_judges > 50:
+            flash("El mínimo de jueces por colegio debe estar entre 1 y 50.", "error")
         else:
             SystemSetting.set_value("school_name", name)
             SystemSetting.set_value("school_address", address)
             SystemSetting.set_value("school_phone", phone)
             SystemSetting.set_value("school_email", email)
             SystemSetting.set_value("expotec_stage", "Regional")
+            previous_minimum = SystemSetting.get_value("regional_minimum_judges_per_school", "2")
+            SystemSetting.set_value("regional_minimum_judges_per_school", str(minimum_judges))
             for setting_key in [
                 "expotec_school_year",
                 "expotec_service_type",
@@ -6553,7 +6546,7 @@ def _handle_action(action: str):
                 except ValueError as error:
                     flash(str(error), "error")
                     return
-            log_event("admin.institution.save", "institution", detail=f"Datos regionales actualizados: {name}")
+            log_event("admin.institution.save", "institution", detail=f"Datos regionales actualizados: {name}; mínimo de jueces {previous_minimum} -> {minimum_judges}")
             db.session.commit()
             flash("Información regional actualizada.", "success")
 
@@ -6982,6 +6975,7 @@ def _base_context(active_page: str, **kwargs):
             "expotec_director_email": "",
             "expotec_technical_coordinator_name": "",
             "expotec_technical_coordinator_email": "",
+            "regional_minimum_judges_per_school": 2,
         }
         maintenance_settings = {
             "maintenance_enabled": False,
@@ -7098,6 +7092,7 @@ def _base_context(active_page: str, **kwargs):
             "expotec_director_email": SystemSetting.get_value("expotec_director_email", ""),
             "expotec_technical_coordinator_name": SystemSetting.get_value("expotec_technical_coordinator_name", ""),
             "expotec_technical_coordinator_email": SystemSetting.get_value("expotec_technical_coordinator_email", ""),
+            "regional_minimum_judges_per_school": max(1, min(50, int(SystemSetting.get_value("regional_minimum_judges_per_school", "2") or 2))),
         }
         maintenance_settings = {
             "maintenance_enabled": SystemSetting.get_value("maintenance_enabled", "0") == "1",

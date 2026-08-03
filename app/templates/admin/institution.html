@@ -91,6 +91,22 @@
                         </label>
                     </div>
                 </section>
+
+                <section class="institution-panel">
+                    <div class="institution-panel-head">
+                        <span class="institution-step">04</span>
+                        <div>
+                            <h4>Participación de jueces</h4>
+                            <p>Obligación mínima que debe cumplir cada colegio participante.</p>
+                        </div>
+                    </div>
+                    <div class="institution-fields-grid">
+                        <label>Mínimo de jueces por colegio
+                            <input type="number" name="regional_minimum_judges_per_school" min="1" max="50" value="{{ institution_settings.regional_minimum_judges_per_school }}" required>
+                            <small>Se contabilizan únicamente jueces activos vinculados al colegio.</small>
+                        </label>
+                    </div>
+                </section>
             </div>
 
             <aside class="institution-side">

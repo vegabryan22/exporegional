@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.40.1] - 2026-08-03
+
+- El mínimo obligatorio de jueces se trasladó a Configuración regional → Parámetros regionales.
+- El mantenimiento de usuarios ya no permite modificar este parámetro.
+- El guardado regional valida valores entre 1 y 50 y bitacoriza el cambio.
+
 ## [0.40.0] - 2026-08-03
 
 - Nueva portada pública inspirada en la identidad azul del sitio regional anterior.

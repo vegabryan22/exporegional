@@ -37,24 +37,6 @@
             </div>
             <button type="button" class="secondary-btn" data-dialog-open="create-judge-dialog">Crear usuario</button>
         </article>
-        <article class="users-action-card">
-            <div>
-                <p class="maintenance-kicker">Participación regional</p>
-                <h4>Mínimo de jueces por colegio</h4>
-                <p>Cada coordinación escolar debe inscribir esta cantidad mínima desde su sesión privada.</p>
-            </div>
-            <form method="post" action="{{ action_url }}" class="judge-public-status-form">
-                <input type="hidden" name="next" value="{{ next_url }}">
-                <input type="hidden" name="action" value="save_school_judge_minimum">
-                <div class="judge-public-status-row">
-                    <div>
-                        <span class="judge-public-status-label">Cantidad obligatoria</span>
-                        <input type="number" name="minimum_judges" min="1" max="50" value="{{ minimum_judges_per_school }}" required>
-                    </div>
-                    <button type="submit" class="outline-btn">Guardar</button>
-                </div>
-            </form>
-        </article>
     </div>
 </section>
 

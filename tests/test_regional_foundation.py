@@ -243,6 +243,13 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertNotIn("Actualizar documento escrito", base_source)
         self.assertNotIn("Corregir mis datos", base_source)
 
+    def test_judge_minimum_is_managed_from_regional_parameters(self):
+        institution_source = Path("app/templates/admin/institution.html").read_text(encoding="utf-8")
+        judges_source = Path("app/templates/admin/judges.html").read_text(encoding="utf-8")
+        self.assertIn('name="regional_minimum_judges_per_school"', institution_source)
+        self.assertIn("Participación de jueces", institution_source)
+        self.assertNotIn("save_school_judge_minimum", judges_source)
+
     def test_institutions_admin_page_renders(self):
         app = create_app()
         app.config["TESTING"] = True

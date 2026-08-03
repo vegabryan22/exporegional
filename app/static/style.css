@@ -15027,6 +15027,186 @@ body.admin-page .site-footer {
     display: none;
 }
 
+/* Portal de colegios: navegación compacta y proyectos en tarjetas. */
+body.school-portal-page .admin-shell {
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+body.school-portal-page .admin-sidebar {
+    top: 1rem;
+    padding: 1.15rem;
+    border-radius: 20px;
+    background: #f5f9fc;
+    box-shadow: 0 12px 30px rgba(23, 54, 75, 0.06);
+}
+
+body.school-portal-page .admin-sidebar-top {
+    padding: 0.2rem 0.25rem 1rem;
+    border-bottom: 1px solid #dbe6ed;
+}
+
+body.school-portal-page .admin-sidebar-top h2 {
+    font-size: 1.32rem;
+    line-height: 1.2;
+}
+
+body.school-portal-page .admin-menu {
+    gap: 0.35rem;
+    padding-top: 0.8rem;
+}
+
+body.school-portal-page .admin-menu a {
+    padding: 0.72rem 0.8rem;
+    border-radius: 10px;
+}
+
+body.school-portal-page .admin-menu a:hover {
+    background: #e6f1f7;
+    border-color: #c5dce8;
+}
+
+.school-dashboard-hero {
+    padding: 1.25rem 1.4rem;
+    border-radius: 18px;
+}
+
+.school-dashboard-hero h3 {
+    margin: 0.1rem 0 0.35rem;
+    font-size: 1.65rem;
+}
+
+.school-project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr));
+    gap: 1rem;
+}
+
+.school-project-card {
+    display: grid;
+    gap: 1rem;
+    padding: 1.2rem;
+    border-radius: 18px;
+    box-shadow: 0 12px 28px rgba(23, 54, 75, 0.07);
+}
+
+.school-project-card-head {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 0.85rem;
+    align-items: center;
+}
+
+.school-project-mark {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    aspect-ratio: 1;
+    border-radius: 13px;
+    background: #e4f1f7;
+    color: #174d68;
+    font-weight: 900;
+}
+
+.school-project-title span,
+.school-project-title p,
+.school-project-meta span {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.school-project-title h3 {
+    margin: 0.08rem 0;
+    font-size: 1.3rem;
+}
+
+.school-project-title p {
+    margin: 0;
+}
+
+.school-project-status {
+    max-width: 190px;
+    padding: 0.5rem 0.72rem;
+    border: 1px solid #bfd7e3;
+    border-radius: 999px;
+    background: #edf5f8;
+    color: #173f55;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-align: center;
+}
+
+.school-project-meta {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border: 1px solid #dce6ec;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.school-project-meta > div {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.8rem;
+    border-right: 1px solid #dce6ec;
+}
+
+.school-project-meta > div:last-child {
+    border-right: 0;
+}
+
+.school-project-meta strong {
+    font-size: 0.9rem;
+}
+
+.school-project-meta .is-ready { color: #287118; }
+.school-project-meta .is-pending { color: #9a5b00; }
+
+.school-project-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    padding-top: 0.9rem;
+    border-top: 1px solid #e1e9ee;
+}
+
+.school-project-card-actions form { margin: 0; }
+.school-project-card-actions .outline-btn,
+.school-project-card-actions button { min-height: 42px; }
+
+.school-project-followup {
+    margin-left: auto;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.school-project-empty {
+    padding: 2rem;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    body.school-portal-page .admin-shell { grid-template-columns: 1fr; }
+    body.school-portal-page .admin-sidebar { position: static; }
+    .school-project-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .school-project-meta > div:nth-child(2) { border-right: 0; }
+    .school-project-meta > div:nth-child(-n+2) { border-bottom: 1px solid #dce6ec; }
+}
+
+@media (max-width: 560px) {
+    .school-project-card-head { grid-template-columns: 42px minmax(0, 1fr); }
+    .school-project-status { grid-column: 1 / -1; max-width: none; }
+    .school-project-meta { grid-template-columns: 1fr; }
+    .school-project-meta > div { border-right: 0; border-bottom: 1px solid #dce6ec; }
+    .school-project-card-actions > * { width: 100%; }
+    .school-project-card-actions button,
+    .school-project-card-actions .outline-btn { width: 100%; text-align: center; }
+}
+
 @media (max-width: 900px) {
     body.admin-page .container {
         height: calc(100dvh - var(--fixed-header-height, 68px));

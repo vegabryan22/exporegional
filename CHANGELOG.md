@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.34.1] - 2026-08-03
+
+### Diseño del portal escolar
+
+- Se reemplaza la tabla rígida de proyectos por tarjetas adaptables con jerarquía visual clara.
+- Estado, origen, integrantes, documento y recursos visuales se presentan como información resumida y legible.
+- Las acciones se agrupan como «Gestionar archivos», «Editar información» y «Enviar a regional».
+- Se compacta el menú lateral, se corrigen los botones del encabezado y se añade adaptación para tablet y móvil.
+
 ## [0.34.0] - 2026-08-03
 
 ### Simplificación regional

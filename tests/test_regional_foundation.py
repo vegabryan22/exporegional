@@ -190,8 +190,10 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn("Eliminar colegio", source)
         self.assertIn('name="confirmation_code"', source)
         self.assertIn("institution_shield", school_source)
-        self.assertIn("Mi colegio", school_source)
-        self.assertIn("Archivos y logística", school_source)
+        self.assertIn("Datos del colegio", school_source)
+        self.assertIn("school-project-card", school_source)
+        self.assertNotIn("<table", school_source)
+        self.assertIn("Gestionar archivos", school_source)
         self.assertIn("member_photo_", school_source)
 
     def test_institutions_admin_page_renders(self):

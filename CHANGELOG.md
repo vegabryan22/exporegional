@@ -6,6 +6,7 @@
 
 - API v1 autenticada para recibir, actualizar y consultar ganadores de cada colegio.
 - Carga separada de documentos y logos, credenciales revocables almacenadas como hash y bitácora de importaciones.
+- Recepción de fotografías individuales y asociación por número de estudiante.
 - Administración de credenciales por colegio y contrato operativo documentado.
 
 ### Seguridad

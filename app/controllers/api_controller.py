@@ -171,9 +171,15 @@ def upload_regional_project_files(external_project_id: str):
     try:
         document_path = _save_project_file(project, request.files.get("project_document"), "document")
         logo_path = _save_project_file(project, request.files.get("project_logo"), "logo")
+        received_photos = 0
+        for member in project.members:
+            photo_path = _save_project_file(project, request.files.get(f"member_photo_{member.student_number}"), "member_photo")
+            if photo_path:
+                member.photo_url = photo_path
+                received_photos += 1
     except ValueError as error:
         return _json_error("invalid_file", str(error), 422)
-    if not document_path and not logo_path:
+    if not document_path and not logo_path and not received_photos:
         return _json_error("missing_files", "Debes adjuntar al menos un archivo.", 422)
     if document_path:
         project.project_document_path = document_path
@@ -181,7 +187,7 @@ def upload_regional_project_files(external_project_id: str):
         project.project_logo_path = logo_path
     _record_event("files_updated", 200, external_project_id, project, "Archivos institucionales recibidos.")
     db.session.commit()
-    return jsonify({"ok": True, "result": "files_updated", "regional_project_id": project.id, "document_received": bool(document_path), "logo_received": bool(logo_path)})
+    return jsonify({"ok": True, "result": "files_updated", "regional_project_id": project.id, "document_received": bool(document_path), "logo_received": bool(logo_path), "member_photos_received": received_photos})
 
 
 @api_credential_required

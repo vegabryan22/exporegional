@@ -1,7 +1,10 @@
 import hashlib
+import io
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+
+from flask import current_app
 
 from app import create_app
 from app.extensions import db
@@ -54,14 +57,24 @@ class RegionalFoundationTests(unittest.TestCase):
                 first = client.post("/api/v1/regional-projects", json=payload, headers=headers)
                 payload["title"] = "Ganador institucional actualizado"
                 second = client.post("/api/v1/regional-projects", json=payload, headers=headers)
+                photos = client.post(
+                    "/api/v1/regional-projects/API-TEST-001/files",
+                    data={"member_photo_1": (io.BytesIO(b"test-image"), "student.jpg")},
+                    headers=headers,
+                    content_type="multipart/form-data",
+                )
 
             projects = Project.query.filter_by(institution_id=school.id, external_project_id="API-TEST-001").all()
             self.assertEqual(201, first.status_code)
             self.assertEqual(200, second.status_code)
             self.assertEqual("updated", second.get_json()["result"])
+            self.assertEqual(200, photos.status_code)
+            self.assertEqual(1, photos.get_json()["member_photos_received"])
             self.assertEqual(1, len(projects))
             self.assertEqual("Ganador institucional actualizado", projects[0].title)
             self.assertEqual(Project.ORIGIN_INSTITUTIONAL_API, projects[0].origin)
+            self.assertTrue(projects[0].members[0].photo_url)
+            (Path(current_app.static_folder) / projects[0].members[0].photo_url).unlink(missing_ok=True)
             ProjectImportEvent.query.filter_by(institution_id=school.id).delete(synchronize_session=False)
             db.session.delete(projects[0])
             InstitutionApiCredential.query.filter_by(institution_id=school.id).delete(synchronize_session=False)

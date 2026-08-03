@@ -15,7 +15,7 @@ Para rotar una credencial: crear una nueva, configurarla y probarla en el sistem
 Base local: `http://127.0.0.1:5001/api/v1`. En producción debe utilizarse HTTPS.
 
 - `POST /regional-projects`: crea o actualiza un ganador.
-- `POST /regional-projects/{external_project_id}/files`: adjunta `project_document` y/o `project_logo` como multipart.
+- `POST /regional-projects/{external_project_id}/files`: adjunta `project_document`, `project_logo` y fotografías `member_photo_1` a `member_photo_3` como multipart.
 - `GET /regional-projects/{external_project_id}/status`: consulta estado y observaciones regionales.
 
 La cabecera `Idempotency-Key` debe ser estable por proyecto. Además, la combinación colegio + `external_project_id` es única: un reintento actualiza el mismo registro mientras siga en `received` o `returned`.
@@ -37,7 +37,7 @@ Ejemplo mínimo del JSON:
 }
 ```
 
-Se aceptan entre uno y tres estudiantes. La categoría debe existir y estar activa en la plataforma regional.
+Se aceptan entre uno y tres estudiantes. La categoría debe existir y estar activa en la plataforma regional. El sufijo numérico de cada fotografía corresponde a `student_number` y permite vincularla con el integrante correcto.
 
 ## Respuestas y operación
 

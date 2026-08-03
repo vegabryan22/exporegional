@@ -42,9 +42,13 @@ def _save_project_file(project: Project, uploaded_file, kind: str) -> str | None
     if not uploaded_file or not uploaded_file.filename:
         return None
     extension = os.path.splitext(secure_filename(uploaded_file.filename))[1].lower()
-    allowed = {"document": {".pdf"}, "logo": {".png", ".jpg", ".jpeg", ".webp"}}[kind]
+    allowed = {
+        "document": {".pdf"},
+        "logo": {".png", ".jpg", ".jpeg", ".webp"},
+        "member_photo": {".png", ".jpg", ".jpeg", ".webp"},
+    }[kind]
     if extension not in allowed:
-        raise ValueError("El documento debe ser PDF y el logo PNG, JPG, JPEG o WEBP.")
+        raise ValueError("El documento debe ser PDF; logos y fotografías deben ser PNG, JPG, JPEG o WEBP.")
     relative_dir = os.path.join("uploads", "regional_projects", str(project.id))
     absolute_dir = os.path.join(current_app.static_folder, relative_dir)
     os.makedirs(absolute_dir, exist_ok=True)

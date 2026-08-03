@@ -1,4 +1,4 @@
-{% extends "admin/layout.html" %}
+{% extends "school/layout.html" if school_mode else "admin/layout.html" %}
 {% block admin_content %}
 {% set female_member_placeholder = url_for('static', filename='placeholders/sfm.svg') %}
 {% set male_member_placeholder = url_for('static', filename='placeholders/sfh.svg') %}
@@ -6,20 +6,20 @@
 <section class="card admin-section maintenance-page">
     <div class="maintenance-banner">
         <div>
-            <p class="maintenance-kicker">Control de logística</p>
-            <h3>Mantenimiento de proyectos</h3>
-            <p>Gestiona actividad, jueces, documentación, formularios, fotografías e integrantes. Los recursos técnicos se controlan en Requerimientos.</p>
+            <p class="maintenance-kicker">{{ "Coordinación del colegio" if school_mode else "Control regional" }}</p>
+            <h3>{{ "Proyecto y expediente" if school_mode else "Mantenimiento de proyectos" }}</h3>
+            <p>{{ "Gestioná información, expediente, formularios, fotografías e integrantes desde la ficha existente del proyecto." if school_mode else "Gestiona actividad, jueces, documentación, formularios, fotografías e integrantes. Los recursos técnicos se controlan en Requerimientos." }}</p>
         </div>
         <div class="projects-header-actions">
             <span class="tag ok">{{ projects|length }} proyectos</span>
-            <a class="outline-btn projects-reminder-link" href="{{ url_for('admin.logistics_reminder_page') }}">
+            {% if not school_mode %}<a class="outline-btn projects-reminder-link" href="{{ url_for('admin.logistics_reminder_page') }}">
                 <svg aria-hidden="true"><use href="#ico-send"></use></svg>
                 Centro de recordatorios
-            </a>
+            </a>{% else %}<a class="outline-btn" href="{{ url_for('school.dashboard') }}">Volver a mis proyectos</a>{% endif %}
         </div>
     </div>
 
-    <div class="projects-logistics-metrics" aria-label="Resumen de proyectos">
+    {% if not school_mode %}<div class="projects-logistics-metrics" aria-label="Resumen de proyectos">
         <article>
             <span>Proyectos activos</span>
             <strong>{{ project_logistics_summary.active }}</strong>
@@ -243,7 +243,7 @@
             {% endfor %}
         </div>
     </section>
-    {% endif %}
+    {% endif %}{% endif %}
 
     <div id="projects-list" class="projects-card-list">
         {% for project in projects %}
@@ -271,7 +271,7 @@
                     <div class="project-maintenance-statebar" aria-label="Estado del proyecto">
                         <span class="tag {{ 'ok' if project.is_active else 'off' }}">{{ 'Activo' if project.is_active else 'Inactivo' }}</span>
                         <span class="tag logistics-status-tag {{ 'ok' if logistics_ok else 'off' }}">
-                            {{ logistics_status_map.get(project.logistics_status, project.logistics_status) if logistics_ok else 'Pendiente logística' }}
+                            {{ logistics_status_map.get(project.logistics_status, project.logistics_status) if logistics_ok else 'Expediente pendiente' }}
                         </span>
                         <span class="tag member-count-badge member-count-{{ member_count if member_count < 4 else 3 }}">{{ member_count }} integrante{{ '' if member_count == 1 else 's' }}</span>
                     </div>
@@ -289,13 +289,13 @@
                                 </ul>
                             </details>
                         {% else %}
-                            <span>Documentación logística completa</span>
+                            <span>Expediente completo</span>
                         {% endif %}
                     </div>
                     <div class="project-action-group project-action-group-manage">
                         <span class="project-action-label">Gestionar</span>
                         <button type="button" class="project-action-btn action-edit" data-dialog-open="edit-project-{{ project.id }}" data-no-iconify>Editar</button>
-                        <button type="button" class="project-action-btn action-logistics logistics-open-btn" data-dialog-open="logistics-project-{{ project.id }}" data-no-iconify>Log&iacute;stica</button>
+                        <button type="button" class="project-action-btn action-logistics logistics-open-btn" data-dialog-open="logistics-project-{{ project.id }}" data-no-iconify>Expediente</button>
                         <button type="button" class="project-action-btn action-members" data-dialog-open="members-project-{{ project.id }}" data-no-iconify>Integrantes</button>
                     </div>
                     <div class="project-action-group project-action-group-docs">
@@ -368,13 +368,13 @@
 
 <dialog id="logistics-project-{{ project.id }}" class="maintenance-dialog">
     <div class="dialog-card">
-        <div class="dialog-head"><h4>Control logistico</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+        <div class="dialog-head"><h4>Mantenimiento del expediente</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
         <p><strong>{{ project.title }}</strong> - {{ project.team_name }}</p>
         <form method="post" action="{{ action_url }}" class="compact-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="update_project_logistics">
             <input type="hidden" name="project_id" value="{{ project.id }}">
-            <div class="grid-2">
+            {% if not school_mode %}<div class="grid-2">
                 <label>Estado del proyecto
                     <select name="project_is_active" required>
                         <option value="1" {% if project.is_active %}selected{% endif %}>Activo</option>
@@ -411,7 +411,7 @@
                         <span class="check-card-help">Se verifica automáticamente cuando todos los integrantes tienen fotografía.</span>
                     </label>
                 </div>
-            </div>
+            </div>{% endif %}
             <div class="logistics-review-card">
                 <div>
                     <h5>Documentos fisicos firmados</h5>
@@ -468,13 +468,13 @@
                     </div>
                 </div>
             </div>
-            <label>Observaciones de logística
+            <label>Observaciones del expediente
                 <textarea name="logistics_notes" rows="4">{{ project.logistics_notes or '' }}</textarea>
             </label>
-            <div class="actions-row"><button type="submit">Guardar control logistico</button></div>
+            <div class="actions-row"><button type="submit">Guardar expediente</button></div>
         </form>
 
-        <div class="tutor-reminder-bar">
+        {% if not school_mode %}<div class="tutor-reminder-bar">
             {% if project.advisor_email %}
             <form method="post" action="{{ action_url }}" class="tutor-reminder-form">
                 <input type="hidden" name="next" value="{{ next_url }}">
@@ -486,7 +486,7 @@
             {% else %}
             <span class="tutor-no-email-note">Sin correo de tutor registrado</span>
             {% endif %}
-        </div>
+        </div>{% endif %}
 
         {% set all_revisions = project.document_revisions | sort(attribute='created_at', reverse=True) %}
         {% if all_revisions %}

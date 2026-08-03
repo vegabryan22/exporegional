@@ -10,7 +10,7 @@
             <a href="{{ url_for('school.dashboard') }}#school-profile-dialog">Mi colegio</a>
         </nav>
     </aside>
-    <div class="admin-main">{% block school_content %}{% endblock %}</div>
+    <div class="admin-main">{% block school_content %}{% block admin_content %}{% endblock %}{% endblock %}</div>
 </div>
 <script>
 (() => {

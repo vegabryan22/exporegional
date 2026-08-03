@@ -116,6 +116,49 @@ def dashboard():
     return render_template("school/dashboard.html", projects=projects, school=current_user.institution_ref)
 
 
+def project_workspace(project_id: int):
+    from app.controllers import admin_controller
+
+    project = _owned_project(project_id)
+    if not project:
+        flash("Proyecto no encontrado.", "error")
+        return redirect(url_for("school.dashboard"))
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip()
+        allowed_actions = {
+            "update_project", "update_project_logistics", "replace_project_document",
+            "upload_project_logo", "upload_member_photo", "delete_member_photo",
+            "create_project_member", "update_project_member", "delete_project_member", "delete_project",
+        }
+        target_project_id = request.form.get("project_id", type=int)
+        member_id = request.form.get("member_id", type=int)
+        if member_id:
+            member = db.session.get(ProjectMember, member_id)
+            target_project_id = member.project_id if member else None
+        if action not in allowed_actions or target_project_id != project.id:
+            log_event("school.project.action_blocked", "project", project.id, f"Acción fuera de alcance: {action or 'vacía'}")
+            db.session.commit()
+            flash("La acción solicitada no pertenece a este proyecto o no está permitida.", "error")
+            return redirect(url_for("school.project_workspace", project_id=project.id))
+        admin_controller._handle_action(action)
+        if action == "delete_project" and db.session.get(Project, project_id) is None:
+            return redirect(url_for("school.dashboard"))
+        return redirect(url_for("school.project_workspace", project_id=project.id))
+
+    context = admin_controller._base_context("projects")
+    context["projects"] = [project]
+    context["advisor_stats"] = admin_controller._build_advisor_stats([project])
+    context["project_logistics_summary"] = admin_controller._build_project_logistics_summary([project])
+    context["pending_document_revisions"] = []
+    context["pending_member_edit_requests"] = []
+    context["action_url"] = url_for("school.project_workspace", project_id=project.id)
+    context["next_url"] = request.path
+    context["school_mode"] = True
+    context["school"] = current_user.institution_ref
+    return render_template("admin/projects.html", **context)
+
+
 def profile():
     school = current_user.institution_ref
     name = (request.form.get("name") or "").strip()
@@ -271,79 +314,6 @@ def project_form(project_id: int | None = None):
         return redirect(url_for("school.dashboard"))
 
     return render_template("school/project_form.html", project=project, categories=categories, school=current_user.institution_ref)
-
-
-def project_maintenance(project_id: int):
-    project = _owned_project(project_id)
-    if not project:
-        flash("Proyecto no encontrado.", "error")
-        return redirect(url_for("school.dashboard"))
-
-    try:
-        document_path = _save_project_file(project, request.files.get("project_document"), "document")
-        logo_path = _save_project_file(project, request.files.get("project_logo"), "logo")
-        previous_member_photos = {member.id: member.photo_url for member in project.members}
-        received_member_photos = {}
-        received_photos = 0
-        for member in project.members:
-            photo_path = _save_project_file(project, request.files.get(f"member_photo_{member.id}"), "member_photo")
-            if photo_path:
-                received_member_photos[member.id] = photo_path
-                received_photos += 1
-    except ValueError as error:
-        db.session.rollback()
-        flash(str(error), "error")
-        return redirect(url_for("school.dashboard", _anchor=f"maintenance-project-{project.id}"))
-
-    obsolete_paths = []
-    document_changed = bool(document_path)
-    if document_path:
-        if project.project_document_path:
-            obsolete_paths.append(project.project_document_path)
-        project.project_document_path = document_path
-        project.logistics_document_ok = False
-    elif request.form.get("remove_project_document") == "1" and project.project_document_path:
-        obsolete_paths.append(project.project_document_path)
-        project.project_document_path = None
-        project.logistics_document_ok = False
-        document_changed = True
-    if logo_path:
-        if project.has_real_logo:
-            obsolete_paths.append(project.project_logo_path)
-        project.project_logo_path = logo_path
-    elif request.form.get("remove_project_logo") == "1" and project.has_real_logo:
-        obsolete_paths.append(project.project_logo_path)
-        project.project_logo_path = None
-    removed_photos = 0
-    for member in project.members:
-        new_photo = received_member_photos.get(member.id)
-        previous_photo = previous_member_photos.get(member.id)
-        if new_photo:
-            if previous_photo:
-                obsolete_paths.append(previous_photo)
-            member.photo_url = new_photo
-        elif request.form.get(f"remove_member_photo_{member.id}") == "1" and previous_photo:
-            obsolete_paths.append(previous_photo)
-            member.photo_url = None
-            removed_photos += 1
-    if document_changed and project.regional_status not in {Project.STATUS_DRAFT, Project.STATUS_RETURNED, Project.STATUS_SUBMITTED, Project.STATUS_RECEIVED}:
-        _return_project_to_regional_review(project, "El colegio actualizó el documento; requiere nueva validación regional.")
-    project.logistics_logo_ok = bool(project.has_real_logo)
-    project.logistics_photos_ok = bool(project.members) and all(member.photo_url for member in project.members)
-    project.required_resources = (request.form.get("required_resources") or "").strip() or None
-    project.requirements_other = (request.form.get("requirements_other") or "").strip() or None
-    project.logistics_notes = (request.form.get("school_logistics_notes") or "").strip() or None
-    log_event(
-        "school.project.maintenance.update",
-        "project",
-        project.id,
-        f"Colegio {current_user.institution_ref.code}: documento={'actualizado' if document_changed else 'sin cambio'}, logo={'reemplazado' if logo_path else 'sin cambio'}, fotos_nuevas={received_photos}, fotos_retiradas={removed_photos}",
-    )
-    db.session.commit()
-    for path in obsolete_paths:
-        _delete_project_asset(path)
-    flash("Mantenimiento del proyecto guardado correctamente.", "success")
-    return redirect(url_for("school.dashboard"))
 
 
 def submit_project(project_id: int):

@@ -4998,10 +4998,12 @@ def _handle_action(action: str):
         if not project:
             flash("Proyecto no encontrado.", "error")
         else:
-            project.is_active = _str_to_bool(request.form.get("project_is_active", "1"))
-            project.logistics_document_ok = _str_to_bool(request.form.get("logistics_document_ok"))
-            project.logistics_logo_ok = _str_to_bool(request.form.get("logistics_logo_ok"))
-            project.logistics_photos_ok = _str_to_bool(request.form.get("logistics_photos_ok"))
+            school_mode = current_user.effective_role == Judge.ROLE_SCHOOL_COORDINATOR
+            if not school_mode:
+                project.is_active = _str_to_bool(request.form.get("project_is_active", "1"))
+                project.logistics_document_ok = _str_to_bool(request.form.get("logistics_document_ok"))
+                project.logistics_logo_ok = _str_to_bool(request.form.get("logistics_logo_ok"))
+            project.logistics_photos_ok = bool(project.members) and all(member.photo_url for member in project.members)
             project.logistics_registration_form_signed_ok = _str_to_bool(request.form.get("logistics_registration_form_signed_ok"))
             project.logistics_cedula_tutor_ok = _str_to_bool(request.form.get("logistics_cedula_tutor_ok"))
             # per-member consent and cedula checkboxes

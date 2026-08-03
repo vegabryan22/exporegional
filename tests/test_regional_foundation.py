@@ -204,8 +204,8 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn("Datos del colegio", school_source)
         self.assertIn("school-project-card", school_source)
         self.assertNotIn("<table", school_source)
-        self.assertIn("Mantenimiento del proyecto", school_source)
-        self.assertIn("member_photo_", school_source)
+        self.assertIn("Gestionar proyecto", school_source)
+        self.assertIn("school.project_workspace", school_source)
         self.assertIn("Descargar formularios", school_source)
         school_layout_source = Path("app/templates/school/layout.html").read_text(encoding="utf-8")
         self.assertIn("[data-dialog-open]", school_layout_source)
@@ -295,6 +295,8 @@ class RegionalFoundationTests(unittest.TestCase):
                     session["_user_id"] = str(coordinator.id)
                     session["_fresh"] = True
                 response = client.get("/colegio/panel")
+                workspace = client.get(f"/colegio/proyectos/{own_project.id}/gestionar")
+                foreign_workspace = client.get(f"/colegio/proyectos/{other_project.id}/gestionar", follow_redirects=True)
 
             db.session.rollback()
 
@@ -302,6 +304,13 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn("Proyecto visible", body)
         self.assertNotIn("Proyecto oculto", body)
+        workspace_body = workspace.get_data(as_text=True)
+        self.assertEqual(200, workspace.status_code)
+        self.assertIn("Proyecto y expediente", workspace_body)
+        self.assertIn("Expediente", workspace_body)
+        self.assertIn("Integrantes", workspace_body)
+        self.assertNotIn("Proyecto oculto", workspace_body)
+        self.assertNotIn("Proyecto oculto", foreign_workspace.get_data(as_text=True))
 
     def test_school_registration_reuses_the_complete_official_form(self):
         app = create_app()

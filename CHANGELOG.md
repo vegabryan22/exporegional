@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.38.0] - 2026-08-03
+
+### Reutilización del mantenimiento existente
+
+- La coordinación del colegio utiliza ahora la misma ficha de mantenimiento de proyectos que ya existía en administración.
+- Se conservan los controles existentes de edición, integrantes, fotografías, documento, logo, formularios, consentimientos y eliminación.
+- «Logística» pasa a llamarse «Expediente» en esta sección regional.
+- La ficha se filtra al proyecto y colegio de la coordinación autenticada; las acciones fuera de ese alcance se bloquean y auditan.
+- Se elimina el modal escolar simplificado que duplicaba archivos e integrantes.
+
 ## [0.37.0] - 2026-08-03
 
 ### Elegibilidad para evaluación

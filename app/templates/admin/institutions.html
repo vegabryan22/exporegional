@@ -1,142 +1,110 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section">
-    <div class="section-heading-row">
+<div class="institutions-page">
+    <section class="card admin-section institutions-hero">
         <div>
             <p class="maintenance-kicker">Participación regional</p>
             <h3>Colegios participantes</h3>
-            <p>Registro central de centros educativos y su modalidad de envío de proyectos ganadores.</p>
+            <p>Administrá centros educativos, coordinaciones y conexiones con plataformas institucionales.</p>
         </div>
-        <span class="tag ok">{{ institutions|length }} registrados</span>
-    </div>
-
-    <form method="post" class="compact-form form-grid">
-        <input type="hidden" name="action" value="create">
-        <label>Código o identificador
-            <input type="text" name="code" maxlength="40" placeholder="Ej. CTP-001" required>
-        </label>
-        <label>Nombre del colegio
-            <input type="text" name="name" maxlength="180" required>
-        </label>
-        <label>Circuito
-            <input type="text" name="circuit" maxlength="80">
-        </label>
-        <label>Dirección regional
-            <input type="text" name="regional_directorate" maxlength="160">
-        </label>
-        <label>Persona responsable
-            <input type="text" name="responsible_name" maxlength="160" required>
-        </label>
-        <label>Correo responsable
-            <input type="email" name="responsible_email" maxlength="160" required>
-        </label>
-        <label>Teléfono
-            <input type="text" name="responsible_phone" maxlength="40">
-        </label>
-        <label>Estado de participación
-            <select name="participation_status">
-                {% for code, label in institution_statuses %}
-                    <option value="{{ code }}">{{ label }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <label class="field-span-2">Dirección física
-            <input type="text" name="address" maxlength="300">
-        </label>
-        <label class="checkbox-row field-span-2">
-            <input type="checkbox" name="uses_institutional_platform" value="1">
-            Usa plataforma institucional y enviará ganadores mediante API
-        </label>
-        <div class="actions-row field-span-2">
-            <button type="submit">Registrar colegio</button>
+        <div class="institutions-hero-actions">
+            <span class="tag ok">{{ institutions|length }} registrados</span>
+            <button type="button" class="institutions-primary" data-toggle-school-form>Agregar colegio</button>
         </div>
-    </form>
-</section>
+    </section>
 
-<section class="card admin-section">
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Colegio</th>
-                    <th>Ubicación administrativa</th>
-                    <th>Responsable</th>
-                    <th>Origen esperado</th>
-                    <th>Estado</th>
-                    <th>Proyectos</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for school in institutions %}
-                    <tr>
-                        <td><strong>{{ school.name }}</strong><br><small>{{ school.code }}</small></td>
-                        <td>{{ school.regional_directorate or "Sin dirección regional" }}<br><small>Circuito {{ school.circuit or "N/D" }}</small></td>
-                        <td>{{ school.responsible_name }}<br><small>{{ school.responsible_email }}{% if school.responsible_phone %} · {{ school.responsible_phone }}{% endif %}</small></td>
-                        <td>{{ "API institucional" if school.uses_institutional_platform else "Inscripción manual" }}</td>
-                        <td><span class="tag {{ 'ok' if school.is_active else 'off' }}">{{ school.participation_status_label }}</span></td>
-                        <td>{{ school.project_count }}</td>
-                        <td>
-                            <details>
-                                <summary>Editar</summary>
-                                <form method="post" class="compact-form form-grid">
-                                    <input type="hidden" name="action" value="update">
-                                    <input type="hidden" name="institution_id" value="{{ school.id }}">
-                                    <label>Código<input type="text" name="code" value="{{ school.code }}" required></label>
-                                    <label>Nombre<input type="text" name="name" value="{{ school.name }}" required></label>
-                                    <label>Circuito<input type="text" name="circuit" value="{{ school.circuit or '' }}"></label>
-                                    <label>Dirección regional<input type="text" name="regional_directorate" value="{{ school.regional_directorate or '' }}"></label>
-                                    <label>Responsable<input type="text" name="responsible_name" value="{{ school.responsible_name }}" required></label>
-                                    <label>Correo<input type="email" name="responsible_email" value="{{ school.responsible_email }}" required></label>
-                                    <label>Teléfono<input type="text" name="responsible_phone" value="{{ school.responsible_phone or '' }}"></label>
-                                    <label>Estado
-                                        <select name="participation_status">
-                                            {% for code, label in institution_statuses %}
-                                                <option value="{{ code }}" {% if school.participation_status == code %}selected{% endif %}>{{ label }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </label>
-                                    <label class="field-span-2">Dirección<input type="text" name="address" value="{{ school.address or '' }}"></label>
-                                    <label class="checkbox-row field-span-2"><input type="checkbox" name="uses_institutional_platform" value="1" {% if school.uses_institutional_platform %}checked{% endif %}> Usa plataforma institucional</label>
-                                    <button type="submit">Guardar cambios</button>
-                                </form>
-                            </details>
-                            <form method="post" class="inline-form">
-                                <input type="hidden" name="action" value="toggle">
-                                <input type="hidden" name="institution_id" value="{{ school.id }}">
-                                <button type="submit" class="ghost-btn">{{ "Desactivar" if school.is_active else "Activar" }}</button>
-                            </form>
-                            <details>
-                                <summary>Crear coordinación</summary>
-                                <form method="post" class="compact-form">
-                                    <input type="hidden" name="action" value="create_coordinator">
-                                    <input type="hidden" name="institution_id" value="{{ school.id }}">
-                                    <label>Nombre<input type="text" name="coordinator_name" value="{{ school.responsible_name }}" required></label>
-                                    <label>Correo<input type="email" name="coordinator_email" value="{{ school.responsible_email }}" required></label>
-                                    <button type="submit">Crear cuenta</button>
-                                </form>
-                            </details>
-                            {% if school.users %}<small>{{ school.users|length }} cuentas vinculadas</small>{% endif %}
-                            <details>
-                                <summary>Integración API</summary>
-                                <form method="post" class="compact-form">
-                                    <input type="hidden" name="action" value="create_api_credential">
-                                    <input type="hidden" name="institution_id" value="{{ school.id }}">
-                                    <label>Nombre de credencial<input type="text" name="credential_name" value="Plataforma institucional" required></label>
-                                    <button type="submit">Generar credencial</button>
-                                </form>
-                                {% for credential in school.api_credentials %}
-                                    <div><small>{{ credential.name }} · {{ credential.token_prefix }}… · {{ "Activa" if credential.is_active else "Revocada" }}</small>
-                                    {% if credential.is_active %}<form method="post" class="inline-form"><input type="hidden" name="action" value="revoke_api_credential"><input type="hidden" name="institution_id" value="{{ school.id }}"><input type="hidden" name="credential_id" value="{{ credential.id }}"><button type="submit" class="ghost-btn">Revocar</button></form>{% endif %}</div>
-                                {% endfor %}
-                            </details>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr><td colspan="7">Todavía no hay colegios participantes registrados.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</section>
+    <section class="card admin-section institution-create-panel" data-school-form hidden>
+        <div class="section-heading-row">
+            <div><h3>Registrar colegio</h3><p>Los campos marcados son necesarios para habilitar la participación.</p></div>
+            <button type="button" class="ghost-btn" data-toggle-school-form>Cerrar</button>
+        </div>
+        <form method="post" class="institution-form-grid">
+            <input type="hidden" name="action" value="create">
+            <label>Código o identificador <span>*</span><input type="text" name="code" maxlength="40" placeholder="Ej. CTP-001" required></label>
+            <label>Nombre del colegio <span>*</span><input type="text" name="name" maxlength="180" required></label>
+            <label>Circuito<input type="text" name="circuit" maxlength="80"></label>
+            <label>Dirección regional<input type="text" name="regional_directorate" maxlength="160"></label>
+            <label>Persona responsable <span>*</span><input type="text" name="responsible_name" maxlength="160" required></label>
+            <label>Correo responsable <span>*</span><input type="email" name="responsible_email" maxlength="160" required></label>
+            <label>Teléfono<input type="text" name="responsible_phone" maxlength="40"></label>
+            <label>Estado de participación<select name="participation_status">{% for code, label in institution_statuses %}<option value="{{ code }}">{{ label }}</option>{% endfor %}</select></label>
+            <label class="institution-field-wide">Dirección física<input type="text" name="address" maxlength="300"></label>
+            <label class="checkbox-row institution-field-wide"><input type="checkbox" name="uses_institutional_platform" value="1"> Usa plataforma institucional y enviará ganadores mediante API</label>
+            <div class="actions-row institution-field-wide"><button type="submit">Registrar colegio</button><button type="button" class="ghost-btn" data-toggle-school-form>Cancelar</button></div>
+        </form>
+    </section>
+
+    <section class="institutions-list" aria-label="Colegios registrados">
+        {% for school in institutions %}
+        <article class="card institution-card">
+            <header class="institution-card-header">
+                <div class="institution-identity">
+                    <span class="institution-code">{{ school.code }}</span>
+                    <div><h3>{{ school.name }}</h3><p>{{ school.regional_directorate or "Dirección regional pendiente" }} · Circuito {{ school.circuit or "N/D" }}</p></div>
+                </div>
+                <span class="tag {{ 'ok' if school.is_active else 'off' }}">{{ school.participation_status_label }}</span>
+            </header>
+
+            <div class="institution-facts">
+                <div><span>Responsable</span><strong>{{ school.responsible_name }}</strong><small>{{ school.responsible_email }}{% if school.responsible_phone %} · {{ school.responsible_phone }}{% endif %}</small></div>
+                <div><span>Modalidad</span><strong>{{ "API institucional" if school.uses_institutional_platform else "Inscripción manual" }}</strong><small>{{ school.api_credentials|selectattr('is_active')|list|length }} credenciales activas</small></div>
+                <div><span>Proyectos</span><strong>{{ school.project_count }}</strong><small>recibidos o inscritos</small></div>
+                <div><span>Coordinaciones</span><strong>{{ school.users|length }}</strong><small>cuentas vinculadas</small></div>
+            </div>
+
+            <div class="institution-actions">
+                <details>
+                    <summary>Editar información</summary>
+                    <form method="post" class="institution-form-grid institution-action-form">
+                        <input type="hidden" name="action" value="update"><input type="hidden" name="institution_id" value="{{ school.id }}">
+                        <label>Código<input type="text" name="code" value="{{ school.code }}" required></label>
+                        <label>Nombre<input type="text" name="name" value="{{ school.name }}" required></label>
+                        <label>Circuito<input type="text" name="circuit" value="{{ school.circuit or '' }}"></label>
+                        <label>Dirección regional<input type="text" name="regional_directorate" value="{{ school.regional_directorate or '' }}"></label>
+                        <label>Responsable<input type="text" name="responsible_name" value="{{ school.responsible_name }}" required></label>
+                        <label>Correo<input type="email" name="responsible_email" value="{{ school.responsible_email }}" required></label>
+                        <label>Teléfono<input type="text" name="responsible_phone" value="{{ school.responsible_phone or '' }}"></label>
+                        <label>Estado<select name="participation_status">{% for code, label in institution_statuses %}<option value="{{ code }}" {% if school.participation_status == code %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+                        <label class="institution-field-wide">Dirección<input type="text" name="address" value="{{ school.address or '' }}"></label>
+                        <label class="checkbox-row institution-field-wide"><input type="checkbox" name="uses_institutional_platform" value="1" {% if school.uses_institutional_platform %}checked{% endif %}> Usa plataforma institucional</label>
+                        <div class="institution-field-wide"><button type="submit">Guardar cambios</button></div>
+                    </form>
+                </details>
+                <details>
+                    <summary>Coordinación</summary>
+                    <form method="post" class="institution-action-form compact-form">
+                        <input type="hidden" name="action" value="create_coordinator"><input type="hidden" name="institution_id" value="{{ school.id }}">
+                        <label>Nombre<input type="text" name="coordinator_name" value="{{ school.responsible_name }}" required></label>
+                        <label>Correo<input type="email" name="coordinator_email" value="{{ school.responsible_email }}" required></label>
+                        <button type="submit">Crear cuenta</button>
+                    </form>
+                </details>
+                <details>
+                    <summary>Integración API</summary>
+                    <div class="institution-api-panel">
+                        <form method="post" class="institution-action-form compact-form">
+                            <input type="hidden" name="action" value="create_api_credential"><input type="hidden" name="institution_id" value="{{ school.id }}">
+                            <label>Nombre de credencial<input type="text" name="credential_name" value="Plataforma institucional" required></label>
+                            <button type="submit">Generar credencial</button>
+                        </form>
+                        {% for credential in school.api_credentials %}
+                        <div class="institution-credential"><span><strong>{{ credential.name }}</strong><small>{{ credential.token_prefix }}… · {{ "Activa" if credential.is_active else "Revocada" }}</small></span>{% if credential.is_active %}<form method="post"><input type="hidden" name="action" value="revoke_api_credential"><input type="hidden" name="institution_id" value="{{ school.id }}"><input type="hidden" name="credential_id" value="{{ credential.id }}"><button type="submit" class="ghost-btn">Revocar</button></form>{% endif %}</div>
+                        {% else %}<p class="empty-note">Este colegio todavía no tiene credenciales API.</p>{% endfor %}
+                    </div>
+                </details>
+                <form method="post" class="institution-toggle-form"><input type="hidden" name="action" value="toggle"><input type="hidden" name="institution_id" value="{{ school.id }}"><button type="submit" class="ghost-btn">{{ "Desactivar colegio" if school.is_active else "Activar colegio" }}</button></form>
+            </div>
+        </article>
+        {% else %}
+        <div class="card institutions-empty"><h3>No hay colegios registrados</h3><p>Agregá el primer centro educativo para iniciar la participación regional.</p><button type="button" data-toggle-school-form>Agregar colegio</button></div>
+        {% endfor %}
+    </section>
+</div>
+<script>
+document.querySelectorAll('[data-toggle-school-form]').forEach((button) => button.addEventListener('click', () => {
+    const panel = document.querySelector('[data-school-form]');
+    panel.hidden = !panel.hidden;
+    if (!panel.hidden) panel.scrollIntoView({behavior: 'smooth', block: 'start'});
+}));
+</script>
 {% endblock %}

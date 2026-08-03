@@ -157,6 +157,14 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertNotIn("CTPRGV", visible_source)
         self.assertIn("ExpoTécnica Regional", visible_source)
 
+    def test_institutions_workspace_has_clean_text_and_full_width_actions(self):
+        source = Path("app/templates/admin/institutions.html").read_text(encoding="utf-8")
+
+        self.assertNotIn("Ã", source)
+        self.assertNotIn("Â", source)
+        self.assertIn("institution-card", source)
+        self.assertIn("institution-action-form", source)
+
     def test_institutions_admin_page_renders(self):
         app = create_app()
         app.config["TESTING"] = True

@@ -23,13 +23,12 @@ from app.controllers.admin_controller import (
     _sync_project_logistics_status,
     _sync_project_photo_validation,
 )
-from app.controllers.project_controller import _build_requirement_items, _get_or_create_tutor_atomic
+from app.controllers.project_controller import _build_requirement_items
 from app.extensions import db
 from app.models.assignment import Assignment
 from app.models.judge import Judge
 from app.models.project import Project
 from app.models.project_member import ProjectMember
-from app.models.tutor import Tutor
 from app.services import mail_service
 
 
@@ -167,37 +166,14 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual((2, 7), (completed, total))
         self.assertEqual(29, tutors[0]["completion_percent"])
 
-    def test_tutors_page_has_filters_statistics_and_reports_center(self):
-        template = Path("app/templates/admin/tutors.html").read_text(encoding="utf-8")
-
-        self.assertIn("tutors_summary", template)
-        self.assertIn("tutors-filter-text", template)
-        self.assertIn("reports_page", template)
-        self.assertIn('name="action" value="update_advisor"', template)
-        self.assertIn('name="action" value="toggle_tutor"', template)
-        self.assertIn("tutors-export-btn", template)
-        stylesheet = Path("app/static/style.css").read_text(encoding="utf-8")
-        self.assertIn(".tutor-card-actions button", stylesheet)
-        self.assertIn("grid-template-columns: repeat(5, minmax(0, 1fr));", stylesheet)
-
-    def test_registration_uses_private_central_tutor_catalog(self):
+    def test_registration_uses_tutor_name_only(self):
         template = Path("app/templates/public/register_project.html").read_text(encoding="utf-8")
-
-        self.assertIn('name="tutor_mode" value="existing"', template)
-        self.assertIn('name="tutor_id"', template)
-        self.assertIn("Registrar otro tutor", template)
-        self.assertIn("La información privada permanece protegida", template)
-        self.assertNotIn("tutor.identity_number", template)
-        self.assertNotIn("tutor.birth_date", template)
-        self.assertEqual("tutors", Tutor.__tablename__)
-        self.assertIn("toggle_tutor", ACTION_MODULE_MAP)
-
-    def test_tutor_creation_uses_atomic_mysql_upsert(self):
-        import inspect
-
-        source = inspect.getsource(_get_or_create_tutor_atomic)
-        self.assertIn("ON DUPLICATE KEY UPDATE", source)
-        self.assertIn("LAST_INSERT_ID(id)", source)
+        routes = Path("app/routes/admin_routes.py").read_text(encoding="utf-8")
+        self.assertIn('name="regional_tutor_name"', template)
+        self.assertNotIn('name="tutor_id"', template)
+        self.assertNotIn('name="advisor_identity"', template)
+        self.assertNotIn('/tutores', routes)
+        self.assertNotIn("toggle_tutor", ACTION_MODULE_MAP)
 
     def test_registration_only_requests_mentor_data_when_applicable(self):
         template = Path("app/templates/public/register_project.html").read_text(encoding="utf-8")

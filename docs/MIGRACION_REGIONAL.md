@@ -139,3 +139,7 @@ Cada colegio administra los recursos, necesidades operativas, logo y fotografía
 El administrador regional conserva autoridad para corregir o eliminar colegios. Cada edición registra valores anteriores y posteriores. La eliminación exige escribir el código exacto, conserva los proyectos históricos sin institución activa, desactiva cuentas coordinadoras y elimina credenciales API.
 
 Las coordinaciones de colegio usan el rol independiente `school_coordinator`; no son jueces, no aparecen en su módulo ni participan en asignaciones o evaluaciones. La revisión `d18f4c2a91e7` corrige cuentas heredadas vinculadas a una institución que conservaran el rol antiguo `judge`.
+
+## Tutor como dato simple
+
+En la plataforma regional el tutor no tiene catálogo, mantenimiento ni estadísticas. Tanto la API como la inscripción manual guardan solamente `advisor_name`; los demás campos heredados quedan vacíos. La inscripción manual no está disponible públicamente: se ejecuta dentro del portal escolar y toma `institution_id` de la sesión autenticada.

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.34.0] - 2026-08-03
+
+### Simplificación regional
+
+- El tutor deja de ser una entidad operativa regional: cada proyecto conserva únicamente su nombre.
+- Se retiran del menú y de las rutas regionales el mantenimiento y el reporte estadístico de tutores.
+- La API ignora correo y teléfono del tutor; solo copia `tutor.name`.
+- La inscripción manual elimina cédula, nacimiento, género, especialidad, correo y teléfono del tutor.
+
+### Inscripción por colegio
+
+- Se elimina la ruta pública `/inscripcion`; el registro manual exige una sesión de coordinación de colegio.
+- El formulario oficial ahora se muestra dentro del panel escolar, conservando el menú lateral y el formato del portal.
+- La institución propietaria se obtiene exclusivamente de la sesión y nunca de campos enviados por el formulario.
+
 ## [0.33.2] - 2026-08-03
 
 ### Corregido

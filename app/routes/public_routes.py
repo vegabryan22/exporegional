@@ -16,12 +16,6 @@ def projects():
 
 
 public_bp.add_url_rule(
-    "/inscripcion",
-    view_func=project_controller.register_project,
-    methods=["GET", "POST"],
-)
-
-public_bp.add_url_rule(
     "/proyecto/<int:project_id>/evaluar",
     view_func=project_controller.evaluate_project_entry,
     methods=["GET"],

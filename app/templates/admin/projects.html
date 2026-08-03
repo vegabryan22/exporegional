@@ -42,13 +42,6 @@
         </article>
     </div>
 
-    {% if 'tutors' in allowed_modules %}
-    <div class="projects-tutors-link">
-        <span><strong>{{ advisor_stats|length }} tutores vinculados</strong><small>Consulte información, carga, estadísticas y pendientes en el módulo especializado.</small></span>
-        <a class="outline-btn" href="{{ url_for('admin.tutors_page') }}">Abrir Tutores</a>
-    </div>
-    {% endif %}
-
     <div class="projects-report-actions">
         <div class="projects-report-copy">
             <span class="projects-report-icon"><svg aria-hidden="true"><use href="#ico-box"></use></svg></span>

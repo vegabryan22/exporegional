@@ -144,7 +144,6 @@ ADMIN_MENU_ICONS = {
     "academic": "doc",
     "rubrics": "chart",
     "projects": "box",
-    "tutors": "users",
     "requirements": "settings",
     "evaluations": "chart",
     "documents": "doc",
@@ -173,7 +172,6 @@ ADMIN_MENU_ITEMS = [
     ("academic", "admin.academic_page", "Académico"),
     ("rubrics", "admin.rubrics_page", "Rúbricas"),
     ("projects", "admin.projects_page", "Proyectos"),
-    ("tutors", "admin.tutors_page", "Tutores"),
     ("requirements", "admin.requirements_page", "Requerimientos"),
     ("evaluations", "admin.evaluations_page", "Evaluaciones"),
     ("documents", "admin.documents_page", "Actas y certificados"),
@@ -191,13 +189,13 @@ ADMIN_MENU_ITEMS = [
 ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Documentos", ["reports", "documents"]),
-    ("Operación", ["institutions", "regional_review", "assignments", "judge_pool", "projects", "tutors", "requirements", "evaluations", "students_stats"]),
+    ("Operación", ["institutions", "regional_review", "assignments", "judge_pool", "projects", "requirements", "evaluations", "students_stats"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
     ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
-    "logistica": {"overview", "regional_review", "assignments", "judge_pool", "projects", "tutors", "documents", "reports"},
+    "logistica": {"overview", "regional_review", "assignments", "judge_pool", "projects", "documents", "reports"},
     "datos": {"overview", "evaluations", "documents", "reports"},
     "diseno": {"overview", "institutions", "campaigns", "categories", "academic", "rubrics", "institution"},
     "qa": {"overview", "logs", "maintenance", "database", "gitops"},
@@ -236,8 +234,6 @@ ACTION_MODULE_MAP = {
     "send_pending_attendance_invitations": "judges",
     "balance_judge_assignments": "judge_pool",
     "reassign_absent_judges": "judge_pool",
-    "update_advisor": "tutors",
-    "toggle_tutor": "tutors",
     "update_project": "projects",
     "update_project_logistics": "projects",
     "update_project_requirements": "requirements",
@@ -570,11 +566,8 @@ def _load_department_module_access():
         if not isinstance(modules, list):
             modules = defaults.get(dept_code, ["overview"])
         clean_modules = sorted({module for module in modules if module in valid_modules})
-        if "projects" in clean_modules and "tutors" not in clean_modules:
-            clean_modules.append("tutors")
-            clean_modules.sort()
         if (
-            {"documents", "projects", "assignments", "judge_pool", "tutors", "evaluations"} & set(clean_modules)
+            {"documents", "projects", "assignments", "judge_pool", "evaluations"} & set(clean_modules)
             and "reports" not in clean_modules
         ):
             clean_modules.append("reports")
@@ -8691,15 +8684,6 @@ def _reports_catalog() -> list[dict]:
             "format": "Excel",
             "endpoint": "admin.logistics_pending_report_excel",
             "params": {"tipo": "edits"},
-        },
-        {
-            "group": "Tutores",
-            "module": "tutors",
-            "title": "Tutores y carga de proyectos",
-            "description": "Resume la información de cada tutor y su carga de acompañamiento para coordinación académica.",
-            "contents": "Tutor, contacto, especialidad, secciones, cantidad de proyectos, estudiantes y pendientes.",
-            "format": "Excel",
-            "endpoint": "admin.tutors_report_excel",
         },
         {
             "group": "Jueces",

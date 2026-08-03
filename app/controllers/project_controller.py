@@ -26,7 +26,6 @@ from app.models.specialty import Specialty
 from app.models.system_setting import SystemSetting
 from app.models.thematic_axis import ThematicAxis
 from app.models.judge import Judge
-from app.models.tutor import Tutor
 from app.services.audit_service import log_event
 from app.services.assignment_service import reassign_absent_judge_assignments
 from app.services.mail_service import send_email, smtp_is_configured
@@ -75,40 +74,6 @@ def _normalize_identity(raw_value: str) -> str:
 
 def _normalize_phone(raw_value: str) -> str:
     return re.sub(r"\D+", "", raw_value or "")
-
-
-def _get_or_create_tutor_atomic(project: Project) -> Tutor:
-    """Resolve a tutor by identity in one MySQL statement, safe under concurrent registrations."""
-    result = db.session.execute(
-        text(
-            """
-            INSERT INTO tutors (
-                full_name, identity_number, birth_date, gender, specialty,
-                email, phone, is_active, created_at, updated_at
-            ) VALUES (
-                :full_name, :identity_number, :birth_date, :gender, :specialty,
-                :email, :phone, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            )
-            ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id)
-            """
-        ),
-        {
-            "full_name": project.advisor_name,
-            "identity_number": project.advisor_identity,
-            "birth_date": project.advisor_birth_date,
-            "gender": project.advisor_gender,
-            "specialty": project.advisor_specialty,
-            "email": project.advisor_email,
-            "phone": project.advisor_phone,
-        },
-    )
-    tutor_id = result.lastrowid
-    tutor = db.session.get(Tutor, tutor_id) if tutor_id else None
-    if tutor is None:
-        tutor = Tutor.query.filter_by(identity_number=project.advisor_identity).first()
-    if tutor is None:
-        raise RuntimeError("No se pudo resolver el perfil del tutor.")
-    return tutor
 
 
 def _phone_error(phone: str, label: str) -> str | None:
@@ -1081,7 +1046,6 @@ def _current_form_context(form_data):
     specialties = Specialty.query.filter_by(is_active=True).order_by(Specialty.sort_order.asc()).all()
     thematic_axes = ThematicAxis.query.filter_by(is_active=True).order_by(ThematicAxis.sort_order.asc(), ThematicAxis.name.asc()).all()
     project_types = ProjectType.query.filter_by(is_active=True).order_by(ProjectType.sort_order.asc(), ProjectType.name.asc()).all()
-    tutors = Tutor.query.filter_by(is_active=True).order_by(Tutor.full_name.asc()).all()
     req_values = form_data.getlist("requirements") if hasattr(form_data, "getlist") else _draft_form_list(form_data, "requirements")
     requirement_items = _build_requirement_items(form_data)
     if not requirement_items:
@@ -1107,7 +1071,6 @@ def _current_form_context(form_data):
         "specialties": specialties,
         "thematic_axes": thematic_axes,
         "project_types": project_types,
-        "tutors": tutors,
         "requirements_options": REQUIREMENTS_OPTIONS,
         "active_campaign": active_campaign,
     }
@@ -1164,6 +1127,9 @@ def home_intro():
 
 def register_project():
     school_registration = _is_school_registration()
+    if not school_registration:
+        flash("La inscripción manual requiere ingresar con una cuenta de colegio.", "error")
+        return redirect(url_for("auth.login"))
     active_campaign = (
         Campaign.query.filter(
             Campaign.is_active.is_(True),
@@ -1224,31 +1190,18 @@ def register_project():
         project_specialties_summary = ", ".join(
             sorted({student["specialty"] for student in required_student_records if student["specialty"]})
         )
-        advisor_identity = _normalize_identity(_draft_form_value(form_data, "advisor_identity"))
+        advisor_identity = ""
         mentor_has = (_draft_form_value(form_data, "mentor_has") or "").strip().lower()
         mentor_identity = _normalize_identity(_draft_form_value(form_data, "mentor_identity")) if mentor_has == "si" else ""
-        tutor_mode = (_draft_form_value(form_data, "tutor_mode") or "existing").strip().lower()
-        selected_tutor_id = request.form.get("tutor_id", type=int)
-        selected_tutor = Tutor.query.filter_by(id=selected_tutor_id, is_active=True).first() if selected_tutor_id else None
-        if tutor_mode == "existing" and selected_tutor:
-            advisor_identity = selected_tutor.identity_number
-            advisor_values = {
-                "name": selected_tutor.full_name,
-                "birth_date": selected_tutor.birth_date,
-                "gender": selected_tutor.gender,
-                "specialty": selected_tutor.specialty,
-                "email": selected_tutor.email,
-                "phone": selected_tutor.phone,
-            }
-        else:
-            advisor_values = {
-                "name": (_draft_form_value(form_data, "advisor_name") or "").strip(),
-                "birth_date": _parse_date(_draft_form_value(form_data, "advisor_birth_date")),
-                "gender": _normalize_person_gender(form_data, "advisor_gender"),
-                "specialty": (_draft_form_value(form_data, "advisor_specialty") or "").strip(),
-                "email": (_draft_form_value(form_data, "advisor_email") or "").strip().lower(),
-                "phone": _normalize_phone(_draft_form_value(form_data, "advisor_phone")),
-            }
+        selected_tutor = None
+        advisor_values = {
+            "name": (_draft_form_value(form_data, "regional_tutor_name") or "").strip(),
+            "birth_date": None,
+            "gender": "",
+            "specialty": "",
+            "email": "",
+            "phone": "",
+        }
 
         valid_categories_records = Category.query.filter_by(is_active=True).all()
         project = Project(
@@ -1355,32 +1308,8 @@ def register_project():
             flash(students_error, "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
-        if tutor_mode == "existing" and not selected_tutor:
-            flash("Selecciona un docente tutor registrado o elige registrar uno nuevo.", "error")
-            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-
-        if not all([
-            project.advisor_name,
-            project.advisor_identity,
-            project.advisor_birth_date,
-            project.advisor_gender,
-            project.advisor_specialty,
-            project.advisor_phone,
-            project.advisor_email,
-        ]):
-            flash("Completa los datos del docente tutor.", "error")
-            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-        advisor_identity_error = _identity_error(project.advisor_identity, "La cedula/documento del docente")
-        if advisor_identity_error:
-            flash(advisor_identity_error, "error")
-            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-        advisor_phone_error = _phone_error(project.advisor_phone, "El telefono del docente")
-        if advisor_phone_error:
-            flash(advisor_phone_error, "error")
-            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-        advisor_email_error = _email_error(project.advisor_email, "El correo del docente")
-        if advisor_email_error:
-            flash(advisor_email_error, "error")
+        if not project.advisor_name:
+            flash("Indica el nombre de la persona tutora.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
         if project.mentor_identity:
             mentor_identity_error = _identity_error(project.mentor_identity, "La cedula/documento de la persona mentora")
@@ -1415,17 +1344,6 @@ def register_project():
         if not project.consent_terms:
             flash("Debes aceptar la declaracion para finalizar la inscripcion.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
-
-        if tutor_mode != "existing":
-            selected_tutor = _get_or_create_tutor_atomic(project)
-            project.tutor = selected_tutor
-            project.advisor_name = selected_tutor.full_name
-            project.advisor_identity = selected_tutor.identity_number
-            project.advisor_birth_date = selected_tutor.birth_date
-            project.advisor_gender = selected_tutor.gender
-            project.advisor_specialty = selected_tutor.specialty
-            project.advisor_email = selected_tutor.email
-            project.advisor_phone = selected_tutor.phone
 
         try:
             project.project_document_path = _promote_temp_project_document(temp_document_path)

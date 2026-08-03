@@ -4,6 +4,8 @@
 
 La plataforma regional recibe una copia de los proyectos ganadores. Cada plataforma institucional conserva su propia base de datos y se comunica exclusivamente por HTTPS/JSON y carga multipart. La credencial determina el colegio propietario; el cliente no puede elegir otro colegio en el contenido enviado.
 
+En la etapa regional el tutor es únicamente un nombre asociado al proyecto. Si se envía el objeto `tutor`, solo se utiliza `tutor.name`; correo, teléfono y demás datos personales no se almacenan ni se requieren.
+
 ## Credenciales
 
 Desde **Administración > Colegios participantes** se genera un token para un colegio habilitado. El valor completo se muestra una sola vez y la base regional conserva únicamente su hash SHA-256. Debe enviarse como `Authorization: Bearer <token>`.

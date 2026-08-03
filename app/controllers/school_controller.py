@@ -158,8 +158,8 @@ def project_form(project_id: int | None = None):
                 category_id=category.id,
                 description=description,
                 advisor_name=(request.form.get("advisor_name") or "").strip() or current_user.full_name,
-                advisor_email=(request.form.get("advisor_email") or "").strip().lower() or current_user.email,
-                advisor_phone=(request.form.get("advisor_phone") or "").strip() or None,
+                advisor_email=None,
+                advisor_phone=None,
             )
             db.session.add(project)
             db.session.flush()
@@ -176,8 +176,8 @@ def project_form(project_id: int | None = None):
         project.representative_name = student_names[0]
         project.representative_email = student_emails[0] or current_user.email
         project.advisor_name = (request.form.get("advisor_name") or "").strip() or current_user.full_name
-        project.advisor_email = (request.form.get("advisor_email") or "").strip().lower() or current_user.email
-        project.advisor_phone = (request.form.get("advisor_phone") or "").strip() or None
+        project.advisor_email = None
+        project.advisor_phone = None
         project.regional_notes = (request.form.get("school_notes") or "").strip() or None
 
         for index, (name, email) in enumerate(zip(student_names, student_emails), start=1):

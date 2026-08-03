@@ -8,9 +8,7 @@
         <label>Nombre del equipo<input type="text" name="team_name" value="{{ project.team_name if project else '' }}" required></label>
         <label>Categoría regional<select name="category_id" required><option value="">Seleccionar</option>{% for category in categories %}<option value="{{ category.id }}" {% if project and project.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
         <label class="field-span-2">Descripción<textarea name="description" rows="5" required>{{ project.description if project else '' }}</textarea></label>
-        <label>Tutor responsable<input type="text" name="advisor_name" value="{{ project.advisor_name if project else current_user.full_name }}" required></label>
-        <label>Correo del tutor<input type="email" name="advisor_email" value="{{ project.advisor_email if project else current_user.email }}" required></label>
-        <label>Teléfono del tutor<input type="text" name="advisor_phone" value="{{ project.advisor_phone if project else '' }}"></label>
+        <label class="field-span-2">Nombre del tutor<input type="text" name="advisor_name" value="{{ project.advisor_name if project else '' }}" required></label>
         <label>Documento PDF<input type="file" name="project_document" accept="application/pdf" {% if not project or not project.project_document_path %}required{% endif %}></label>
         <label>Logo del proyecto<input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp"></label>
         {% for number in [1, 2, 3] %}

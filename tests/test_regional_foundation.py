@@ -303,9 +303,17 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn('name="student_1_identity"', body)
         self.assertIn('name="thematic_axis_id"', body)
         self.assertIn('name="project_type_id"', body)
-        self.assertIn('name="advisor_identity"', body)
+        self.assertIn('name="regional_tutor_name"', body)
+        self.assertNotIn('name="advisor_identity"', body)
+        self.assertNotIn('name="advisor_email"', body)
         self.assertIn('name="mentor_has"', body)
         self.assertIn('name="declaration"', body)
+        self.assertIn("Mis proyectos regionales", body)
+        self.assertIn("admin-sidebar", body)
+
+        with app.test_client() as client:
+            public_response = client.get("/inscripcion")
+        self.assertEqual(404, public_response.status_code)
 
     def test_school_coordinator_updates_only_own_institution_profile(self):
         app = create_app()

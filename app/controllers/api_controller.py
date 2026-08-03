@@ -134,8 +134,8 @@ def upsert_regional_project():
     project.representative_name = str(students[0].get("name") or "").strip()
     project.representative_email = str(students[0].get("email") or g.api_institution.responsible_email).strip().lower()
     project.advisor_name = str(tutor.get("name") or g.api_institution.responsible_name).strip()
-    project.advisor_email = str(tutor.get("email") or g.api_institution.responsible_email).strip().lower()
-    project.advisor_phone = str(tutor.get("phone") or "").strip() or None
+    project.advisor_email = None
+    project.advisor_phone = None
     project.external_source = str(payload.get("external_source") or g.api_institution.code).strip()[:160]
     project.payload_version = str(payload.get("payload_version") or "1.0").strip()[:20]
     project.source_updated_at = datetime.utcnow()

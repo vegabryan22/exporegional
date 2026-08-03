@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.40.7] - 2026-08-03
+
+- El mantenimiento Git puede leer el puerto y el archivo PID de Gunicorn desde `GITOPS_BIND` y `GITOPS_PIDFILE`.
+- La recarga posterior a un despliegue funciona con el servicio systemd independiente de la plataforma regional.
+
 ## [0.40.6] - 2026-08-03
 
 - Se eliminó la acción redundante de escudo en la tarjeta del colegio.

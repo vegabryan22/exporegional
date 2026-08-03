@@ -805,8 +805,16 @@ def _extract_gunicorn_value(config_text: str, key: str, default: str = "") -> st
 def _gitops_service_config() -> dict:
     repo_path = _git_repo_path()
     config_text = _read_gunicorn_config_text()
-    bind = _extract_gunicorn_value(config_text, "bind", "127.0.0.1:5055")
-    pidfile = _extract_gunicorn_value(config_text, "pidfile", str(repo_path / "logs" / "expotecnica.pid"))
+    bind = (os.getenv("GITOPS_BIND") or "").strip() or _extract_gunicorn_value(
+        config_text,
+        "bind",
+        "127.0.0.1:5055",
+    )
+    pidfile = (os.getenv("GITOPS_PIDFILE") or "").strip() or _extract_gunicorn_value(
+        config_text,
+        "pidfile",
+        str(repo_path / "logs" / "expotecnica.pid"),
+    )
     if "chdir +" in pidfile:
         pidfile = str(repo_path / "logs" / "expotecnica.pid")
     return {

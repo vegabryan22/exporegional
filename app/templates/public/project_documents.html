@@ -35,12 +35,6 @@
         </article>
     </div>
 
-    <section class="project-documents-card doc-revision-cta-card">
-        <h3>¿Tienes correcciones del proyecto escrito?</h3>
-        <p>Si tu tutor indicó cambios al documento, puedes enviar una versión actualizada. La organización la revisará antes de activarla como versión oficial.</p>
-        <a class="project-action project-action-secondary" href="{{ url_for('public.project_document_revision', project_id=project.id) }}">Enviar documento actualizado &rarr;</a>
-    </section>
-
     <section class="project-documents-card">
         <h3>Estudiantes incluidos</h3>
         <div class="project-documents-members">
@@ -56,10 +50,6 @@
                         <div><dt>Beca comedor</dt><dd>{{ 'Sí' if member.has_dining_scholarship else 'No' }}</dd></div>
                         <div><dt>Expone en inglés</dt><dd>{{ 'Sí' if member.participates_in_english else 'No' }}</dd></div>
                     </dl>
-                    <a class="project-action project-action-secondary member-edit-link"
-                       href="{{ url_for('public.project_member_edit', project_id=project.id, member_id=member.id) }}">
-                        Solicitar corrección de datos &rarr;
-                    </a>
                 </article>
             {% else %}
                 <p class="muted-empty">No hay estudiantes registrados.</p>

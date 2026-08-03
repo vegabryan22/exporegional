@@ -195,6 +195,18 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertNotIn("<table", school_source)
         self.assertIn("Mantenimiento del proyecto", school_source)
         self.assertIn("member_photo_", school_source)
+        self.assertIn("Descargar formularios", school_source)
+
+    def test_public_project_corrections_are_not_registered(self):
+        app = create_app()
+        rules = {rule.rule for rule in app.url_map.iter_rules()}
+        base_source = Path("app/templates/base.html").read_text(encoding="utf-8")
+
+        self.assertNotIn("/actualizar-documento", rules)
+        self.assertNotIn("/editar-datos", rules)
+        self.assertNotIn("/formularios", rules)
+        self.assertNotIn("Actualizar documento escrito", base_source)
+        self.assertNotIn("Corregir mis datos", base_source)
 
     def test_institutions_admin_page_renders(self):
         app = create_app()

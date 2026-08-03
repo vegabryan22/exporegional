@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.36.0] - 2026-08-03
+
+### Control de la coordinación escolar
+
+- Se eliminan del portal público la búsqueda de formularios, la actualización del documento y la corrección de datos estudiantiles.
+- Las rutas públicas heredadas de corrección dejan de estar registradas; no pueden utilizarse mediante una URL directa.
+- La descarga de formularios pasa a las acciones de cada proyecto en el panel del colegio y exige la coordinación propietaria o administración regional.
+- La coordinación puede corregir proyecto e integrantes mientras no haya sido evaluado, conservando las fotografías existentes.
+- Los cambios posteriores al envío devuelven el expediente a revisión regional y registran en bitácora los valores anteriores y posteriores.
+- La bitácora identifica explícitamente a la cuenta actuante con el rol `school_coordinator` y conserva también el historial del cambio de estado.
+
 ## [0.35.0] - 2026-08-03
 
 ### Mantenimiento de proyectos

@@ -20,7 +20,7 @@ def log_event(action: str, entity: str, entity_id=None, detail: str = ""):
     if getattr(current_user, "is_authenticated", False):
         actor_name = current_user.full_name or "Usuario"
         actor_email = current_user.email
-        actor_role = "admin" if getattr(current_user, "is_admin", False) else (getattr(current_user, "department", None) or "usuario")
+        actor_role = getattr(current_user, "effective_role", None) or ("admin" if getattr(current_user, "is_admin", False) else (getattr(current_user, "department", None) or "usuario"))
 
     ip_address = _safe_request_value(lambda: request.headers.get("X-Forwarded-For", request.remote_addr))
     user_agent = _safe_request_value(lambda: request.user_agent.string[:255] if request.user_agent else None)

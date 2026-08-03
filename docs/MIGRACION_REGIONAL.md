@@ -138,6 +138,8 @@ Cada colegio mantiene desde su propio panel los recursos, necesidades operativas
 
 Los nombres técnicos heredados con el prefijo `logistics_` se conservan temporalmente en la base de datos para evitar una migración destructiva, pero ya no representan un módulo ni una responsabilidad regional independiente.
 
+La edición pública heredada queda deshabilitada. Solo la coordinación autenticada del colegio propietario puede cambiar información del proyecto, integrantes, documento y recursos visuales; la administración regional conserva acceso de supervisión. Los formularios se descargan desde la tarjeta del proyecto. Cada cambio identifica al actor en la bitácora y las modificaciones efectuadas después del envío regresan el expediente a revisión regional.
+
 El administrador regional conserva autoridad para corregir o eliminar colegios. Cada edición registra valores anteriores y posteriores. La eliminación exige escribir el código exacto, conserva los proyectos históricos sin institución activa, desactiva cuentas coordinadoras y elimina credenciales API.
 
 Las coordinaciones de colegio usan el rol independiente `school_coordinator`; no son jueces, no aparecen en su módulo ni participan en asignaciones o evaluaciones. La revisión `d18f4c2a91e7` corrige cuentas heredadas vinculadas a una institución que conservaran el rol antiguo `judge`.

@@ -23,8 +23,11 @@
         </div>
         <footer class="school-project-card-actions">
             <button type="button" class="outline-btn" data-dialog-open="maintenance-project-{{ project.id }}">Mantenimiento del proyecto</button>
-            {% if project.regional_status in ['draft', 'returned_for_correction'] %}
+            <a class="outline-btn" href="{{ url_for('public.project_documents_packet', project_id=project.id) }}">Descargar formularios</a>
+            {% if project.regional_status not in ['evaluated', 'regional_winner'] %}
                 <a class="outline-btn" href="{{ url_for('school.project_edit', project_id=project.id) }}">Editar información</a>
+            {% endif %}
+            {% if project.regional_status in ['draft', 'returned_for_correction'] %}
                 <form method="post" action="{{ url_for('school.project_submit', project_id=project.id) }}"><button type="submit">Enviar a regional</button></form>
             {% else %}<span class="school-project-followup">En seguimiento regional</span>{% endif %}
         </footer>

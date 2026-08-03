@@ -5,7 +5,7 @@ import json
 from io import BytesIO
 from datetime import date, datetime
 
-from flask import current_app, flash, redirect, render_template, request, send_file, session, url_for
+from flask import abort, current_app, flash, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user
 from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
@@ -1392,6 +1392,7 @@ def project_documents(project_id: int):
         .filter(Project.id == project_id)
         .first_or_404()
     )
+    _require_project_management_access(project)
     return render_template("public/project_documents.html", project=project)
 
 
@@ -1408,6 +1409,7 @@ def project_documents_packet(project_id: int):
         .filter(Project.id == project_id)
         .first_or_404()
     )
+    _require_project_management_access(project)
     if not REPORTLAB_AVAILABLE:
         flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
         return redirect(url_for("public.project_documents", project_id=project.id))
@@ -1419,6 +1421,16 @@ def project_documents_packet(project_id: int):
         as_attachment=True,
         download_name=f"expotec_documentos_{project.id}_{safe_title or 'proyecto'}.pdf",
     )
+
+
+def _require_project_management_access(project: Project):
+    if not current_user.is_authenticated:
+        abort(403)
+    if current_user.has_admin_access:
+        return
+    if current_user.effective_role == Judge.ROLE_SCHOOL_COORDINATOR and current_user.institution_id == project.institution_id:
+        return
+    abort(403)
 
 
 def search_project_for_forms():

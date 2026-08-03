@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 from functools import wraps
@@ -11,6 +12,7 @@ from app.models.category import Category
 from app.models.judge import Judge
 from app.models.project import Project
 from app.models.project_member import ProjectMember
+from app.models.project_status_history import ProjectStatusHistory
 from app.services.audit_service import log_event
 from app.services.regional_project_service import RegionalTransitionError, transition_project
 
@@ -89,6 +91,22 @@ def _delete_project_asset(relative_path: str | None):
         os.remove(target)
 
 
+def _return_project_to_regional_review(project: Project, reason: str):
+    previous_status = project.regional_status
+    if previous_status != Project.STATUS_UNDER_REVIEW:
+        db.session.add(ProjectStatusHistory(
+            project=project,
+            from_status=previous_status,
+            to_status=Project.STATUS_UNDER_REVIEW,
+            changed_by_id=current_user.id,
+            notes=reason,
+        ))
+    project.regional_status = Project.STATUS_UNDER_REVIEW
+    project.approved_at = None
+    project.approved_by_id = None
+    project.regional_notes = reason
+
+
 def dashboard():
     projects = (
         Project.query.filter_by(institution_id=current_user.institution_id)
@@ -135,12 +153,22 @@ def project_form(project_id: int | None = None):
     if project_id and not project:
         flash("Proyecto no encontrado.", "error")
         return redirect(url_for("school.dashboard"))
-    if project and project.regional_status not in {Project.STATUS_DRAFT, Project.STATUS_RETURNED}:
-        flash("El proyecto ya fue enviado y no admite edición en este estado.", "error")
+    if project and project.regional_status in {Project.STATUS_EVALUATED, Project.STATUS_REGIONAL_WINNER}:
+        flash("Un proyecto evaluado no puede modificarse desde el colegio.", "error")
         return redirect(url_for("school.dashboard"))
 
     categories = Category.query.filter_by(is_active=True).order_by(Category.sort_order, Category.name).all()
     if request.method == "POST":
+        before = None
+        if project:
+            before = {
+                "title": project.title,
+                "team_name": project.team_name,
+                "description": project.description,
+                "category_id": project.category_id,
+                "advisor_name": project.advisor_name,
+                "members": [{"id": member.id, "number": member.student_number, "name": member.full_name, "email": member.email} for member in project.members],
+            }
         title = (request.form.get("title") or "").strip()
         team_name = (request.form.get("team_name") or "").strip()
         description = (request.form.get("description") or "").strip()
@@ -174,7 +202,6 @@ def project_form(project_id: int | None = None):
             db.session.flush()
             event_action = "school.project.create"
         else:
-            project.members.clear()
             event_action = "school.project.update"
 
         project.title = title
@@ -189,9 +216,20 @@ def project_form(project_id: int | None = None):
         project.advisor_phone = None
         project.regional_notes = (request.form.get("school_notes") or "").strip() or None
 
+        existing_members = {member.student_number: member for member in project.members}
+        removed_member_photos = []
         for index, (name, email) in enumerate(zip(student_names, student_emails), start=1):
+            member = existing_members.get(index)
             if name:
-                project.members.append(ProjectMember(student_number=index, full_name=name, email=email or None))
+                if member is None:
+                    member = ProjectMember(student_number=index)
+                    project.members.append(member)
+                member.full_name = name
+                member.email = email or None
+            elif member is not None:
+                if member.photo_url:
+                    removed_member_photos.append(member.photo_url)
+                project.members.remove(member)
 
         try:
             document_path = _save_project_file(project, request.files.get("project_document"), "document")
@@ -200,13 +238,35 @@ def project_form(project_id: int | None = None):
             db.session.rollback()
             flash(str(error), "error")
             return redirect(request.url)
+        obsolete_paths = list(removed_member_photos)
+        document_changed = bool(document_path)
         if document_path:
+            if project.project_document_path:
+                obsolete_paths.append(project.project_document_path)
             project.project_document_path = document_path
+            project.logistics_document_ok = False
         if logo_path:
+            if project.has_real_logo:
+                obsolete_paths.append(project.project_logo_path)
             project.project_logo_path = logo_path
 
-        log_event(event_action, "project", project.id, f"Proyecto manual regional del colegio {current_user.institution_ref.code}")
+        after = {
+            "title": project.title,
+            "team_name": project.team_name,
+            "description": project.description,
+            "category_id": project.category_id,
+            "advisor_name": project.advisor_name,
+            "members": [{"id": member.id, "number": member.student_number, "name": member.full_name, "email": member.email} for member in project.members],
+        }
+        information_changed = before is not None and before != after
+        if (information_changed or document_changed) and project.regional_status not in {Project.STATUS_DRAFT, Project.STATUS_RETURNED}:
+            _return_project_to_regional_review(project, "El colegio actualizó la información del proyecto; requiere nueva validación regional.")
+
+        audit_change = json.dumps({"colegio": current_user.institution_ref.code, "antes": before, "después": after}, ensure_ascii=False, default=str)
+        log_event(event_action, "project", project.id, audit_change)
         db.session.commit()
+        for path in obsolete_paths:
+            _delete_project_asset(path)
         flash("Borrador guardado correctamente.", "success")
         return redirect(url_for("school.dashboard"))
 
@@ -267,10 +327,7 @@ def project_maintenance(project_id: int):
             member.photo_url = None
             removed_photos += 1
     if document_changed and project.regional_status not in {Project.STATUS_DRAFT, Project.STATUS_RETURNED, Project.STATUS_SUBMITTED, Project.STATUS_RECEIVED}:
-        project.regional_status = Project.STATUS_UNDER_REVIEW
-        project.approved_at = None
-        project.approved_by_id = None
-        project.regional_notes = "El colegio actualizó el documento; requiere nueva validación regional."
+        _return_project_to_regional_review(project, "El colegio actualizó el documento; requiere nueva validación regional.")
     project.logistics_logo_ok = bool(project.has_real_logo)
     project.logistics_photos_ok = bool(project.members) and all(member.photo_url for member in project.members)
     project.required_resources = (request.form.get("required_resources") or "").strip() or None

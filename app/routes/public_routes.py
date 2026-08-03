@@ -29,41 +29,6 @@ public_bp.add_url_rule(
 )
 
 public_bp.add_url_rule(
-    "/proyecto/<int:project_id>/actualizar-documento",
-    endpoint="project_document_revision",
-    view_func=project_controller.submit_document_revision,
-    methods=["GET", "POST"],
-)
-
-public_bp.add_url_rule(
-    "/formularios",
-    endpoint="search_project_forms",
-    view_func=project_controller.search_project_for_forms,
-    methods=["GET"],
-)
-
-public_bp.add_url_rule(
-    "/actualizar-documento",
-    endpoint="search_project_revision",
-    view_func=project_controller.search_project_for_revision,
-    methods=["GET"],
-)
-
-public_bp.add_url_rule(
-    "/proyecto/<int:project_id>/integrante/<int:member_id>/editar",
-    endpoint="project_member_edit",
-    view_func=project_controller.submit_member_edit,
-    methods=["GET", "POST"],
-)
-
-public_bp.add_url_rule(
-    "/editar-datos",
-    endpoint="search_member_edit",
-    view_func=project_controller.search_project_for_member_edit,
-    methods=["GET"],
-)
-
-public_bp.add_url_rule(
     "/proyecto/<int:project_id>/documentos/paquete",
     endpoint="project_documents_packet",
     view_func=project_controller.project_documents_packet,

@@ -4,6 +4,7 @@ from app.extensions import db
 from app.models.judge import Judge
 from app.models.project import Project
 from app.models.project_status_history import ProjectStatusHistory
+from app.services.regional_readiness_service import approval_missing_requirements
 
 
 REGIONAL_TRANSITIONS = {
@@ -33,6 +34,10 @@ def transition_project(project: Project, target_status: str, actor: Judge, notes
     allowed_targets = REGIONAL_TRANSITIONS.get(source_status, set())
     if target_status not in allowed_targets:
         raise RegionalTransitionError(f"No se permite pasar de {source_status} a {target_status}.")
+    if target_status == Project.STATUS_APPROVED:
+        missing = approval_missing_requirements(project)
+        if missing:
+            raise RegionalTransitionError("El proyecto no cumple todos los requisitos: " + "; ".join(missing) + ".")
 
     is_school_coordinator = actor.effective_role == Judge.ROLE_SCHOOL_COORDINATOR
     if is_school_coordinator:

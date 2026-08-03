@@ -39,6 +39,7 @@ from app.models.project import Project
 from app.models.project_member_change import ProjectMemberChange
 from app.models.project_member import ProjectMember
 from app.models.project_member_edit_request import ProjectMemberEditRequest
+from app.models.project_status_history import ProjectStatusHistory
 from app.models.project_type import ProjectType
 from app.models.rubric_criterion import RubricCriterion
 from app.models.section import Section
@@ -63,6 +64,7 @@ from app.services.evaluation_service import (
 )
 from app.services.mail_service import send_email, smtp_is_configured
 from app.services.regional_project_service import RegionalTransitionError, transition_project
+from app.services.regional_readiness_service import approval_missing_requirements
 from app.services.regional_outcome_service import sync_regional_outcomes
 
 try:
@@ -10064,9 +10066,14 @@ def regional_review_page():
         if target_status == Project.STATUS_RETURNED and not notes:
             flash("Debes indicar las correcciones solicitadas.", "error")
             return redirect(url_for("admin.regional_review_page"))
-        if target_status == Project.STATUS_APPROVED and not project.project_document_path:
-            flash("No se puede aprobar un expediente sin documento PDF.", "error")
-            return redirect(url_for("admin.regional_review_page"))
+        if target_status == Project.STATUS_APPROVED:
+            missing_requirements = approval_missing_requirements(project)
+            if missing_requirements:
+                detail = "Aprobación rechazada. Faltantes: " + "; ".join(missing_requirements)
+                log_event("admin.project.approval_blocked", "project", project.id, detail)
+                db.session.commit()
+                flash("No se puede aprobar para evaluación. Faltan: " + "; ".join(missing_requirements) + ".", "error")
+                return redirect(url_for("admin.regional_review_page"))
         try:
             transition_project(project, target_status, current_user, notes)
             if target_status == Project.STATUS_RETURNED:
@@ -10083,20 +10090,36 @@ def regional_review_page():
             flash(str(error), "error")
         return redirect(url_for("admin.regional_review_page"))
 
-    outcome_result = sync_regional_outcomes()
-    if outcome_result["changed"]:
-        db.session.commit()
     projects = (
         Project.query.filter(Project.regional_status != Project.STATUS_DRAFT)
         .order_by(Project.submitted_at.desc(), Project.created_at.desc())
         .all()
     )
+    readiness_reconciled = False
+    for project in projects:
+        missing_requirements = approval_missing_requirements(project)
+        if project.regional_status == Project.STATUS_APPROVED and missing_requirements:
+            previous_status = project.regional_status
+            reason = "Aprobación anulada automáticamente por requisitos pendientes: " + "; ".join(missing_requirements)
+            project.regional_status = Project.STATUS_UNDER_REVIEW
+            project.approved_at = None
+            project.approved_by_id = None
+            db.session.add(ProjectStatusHistory(project=project, from_status=previous_status, to_status=Project.STATUS_UNDER_REVIEW, notes=reason))
+            log_event("system.project.approval_revoked", "project", project.id, reason)
+            readiness_reconciled = True
+    if readiness_reconciled:
+        db.session.commit()
+
+    outcome_result = sync_regional_outcomes()
+    if outcome_result["changed"]:
+        db.session.commit()
     rows = []
     for project in projects:
         target = project_evaluation_target_summary(project)
         count = project_evaluation_count_summary(project)
         summary = get_project_evaluations_summary(project)
-        rows.append({"project": project, "expected": target["expected_evaluations"], "completed": count["completed_evaluations"], "final_grade": summary.get("final_grade")})
+        missing_requirements = approval_missing_requirements(project)
+        rows.append({"project": project, "expected": target["expected_evaluations"], "completed": count["completed_evaluations"], "final_grade": summary.get("final_grade"), "missing_requirements": missing_requirements, "ready_for_evaluation": not missing_requirements})
     return _render("admin/regional_review.html", "regional_review", regional_projects=projects, regional_rows=rows)
 
 

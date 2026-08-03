@@ -13,6 +13,7 @@ from app.models.institution_api_credential import InstitutionApiCredential
 from app.models.category import Category
 from app.models.judge import Judge
 from app.models.project import Project
+from app.models.project_member import ProjectMember
 from app.models.project_import_event import ProjectImportEvent
 from app.models.project_status_history import ProjectStatusHistory
 from app.services.regional_project_service import RegionalTransitionError, transition_project
@@ -142,7 +143,8 @@ class RegionalFoundationTests(unittest.TestCase):
 
     def test_regional_admin_can_review_and_approve_in_sequence(self):
         admin = Judge(id=1, role=Judge.ROLE_SUPERADMIN, is_admin=True)
-        project = Project(id=30, regional_status=Project.STATUS_SUBMITTED)
+        project = Project(id=30, regional_status=Project.STATUS_SUBMITTED, title="Proyecto", team_name="Equipo", category_id=1, advisor_name="Tutor", project_document_path="uploads/project.pdf", project_logo_path="uploads/logo.png", logistics_registration_form_signed_ok=True)
+        project.members.append(ProjectMember(full_name="Estudiante", student_number=1, photo_url="uploads/student.png", consent_signed_ok=True))
 
         with patch.object(db.session, "add"):
             transition_project(project, Project.STATUS_RECEIVED, admin)
@@ -151,6 +153,15 @@ class RegionalFoundationTests(unittest.TestCase):
 
         self.assertEqual(Project.STATUS_APPROVED, project.regional_status)
         self.assertEqual(1, project.approved_by_id)
+
+    def test_regional_approval_requires_complete_project_record(self):
+        admin = Judge(id=1, role=Judge.ROLE_SUPERADMIN, is_admin=True)
+        project = Project(id=31, regional_status=Project.STATUS_UNDER_REVIEW, title="Proyecto incompleto", team_name="Equipo")
+
+        with self.assertRaisesRegex(RegionalTransitionError, "no cumple todos los requisitos"):
+            transition_project(project, Project.STATUS_APPROVED, admin)
+
+        self.assertEqual(Project.STATUS_UNDER_REVIEW, project.regional_status)
 
     def test_evaluated_and_winner_states_are_not_manual_transitions(self):
         admin = Judge(id=1, role=Judge.ROLE_SUPERADMIN, is_admin=True)

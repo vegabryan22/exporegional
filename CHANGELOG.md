@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.37.0] - 2026-08-03
+
+### Elegibilidad para evaluación
+
+- «Aprobado para evaluación» exige título, equipo, categoría, tutor, integrantes, PDF, logo, fotografías, formulario firmado y consentimientos firmados.
+- La regla se aplica en el servicio de estados y no puede evitarse enviando una petición directa.
+- La revisión regional muestra los requisitos faltantes y deshabilita la aprobación mientras exista alguno.
+- Todo intento de aprobación bloqueado queda en bitácora.
+- Los proyectos aprobados anteriormente que estén incompletos regresan automáticamente a revisión con historial de estado y auditoría.
+
 ## [0.36.2] - 2026-08-03
 
 ### Diseño del editor escolar

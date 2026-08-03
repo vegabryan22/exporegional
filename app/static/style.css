@@ -15227,6 +15227,15 @@ body.school-portal-page .admin-menu a:hover {
 .school-student-editor > span { color: #235773; font-size: .78rem; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
 .school-project-editor-actions { display: flex; justify-content: flex-end; align-items: center; gap: .7rem; padding-top: .2rem; }
 
+.regional-requirements-blocked,
+.regional-requirements-ready { padding: .85rem 1rem; border-radius: 12px; }
+.regional-requirements-blocked { border: 1px solid #efb7bd; background: #fff1f2; color: #8f2230; }
+.regional-requirements-ready { display: grid; gap: .2rem; border: 1px solid #b9daa8; background: #f1faec; color: #316d1d; }
+.regional-requirements-blocked p { margin: .25rem 0; color: inherit; }
+.regional-requirements-blocked ul { margin: .4rem 0 0; padding-left: 1.25rem; }
+.regional-requirements-blocked li + li { margin-top: .25rem; }
+.regional-requirements-ready span { color: #4c7240; }
+
 .school-project-followup {
     margin-left: auto;
     color: var(--muted);

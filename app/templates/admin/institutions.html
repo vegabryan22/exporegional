@@ -117,6 +117,19 @@
                                 </form>
                             </details>
                             {% if school.users %}<small>{{ school.users|length }} cuentas vinculadas</small>{% endif %}
+                            <details>
+                                <summary>Integración API</summary>
+                                <form method="post" class="compact-form">
+                                    <input type="hidden" name="action" value="create_api_credential">
+                                    <input type="hidden" name="institution_id" value="{{ school.id }}">
+                                    <label>Nombre de credencial<input type="text" name="credential_name" value="Plataforma institucional" required></label>
+                                    <button type="submit">Generar credencial</button>
+                                </form>
+                                {% for credential in school.api_credentials %}
+                                    <div><small>{{ credential.name }} · {{ credential.token_prefix }}… · {{ "Activa" if credential.is_active else "Revocada" }}</small>
+                                    {% if credential.is_active %}<form method="post" class="inline-form"><input type="hidden" name="action" value="revoke_api_credential"><input type="hidden" name="institution_id" value="{{ school.id }}"><input type="hidden" name="credential_id" value="{{ credential.id }}"><button type="submit" class="ghost-btn">Revocar</button></form>{% endif %}</div>
+                                {% endfor %}
+                            </details>
                         </td>
                     </tr>
                 {% else %}

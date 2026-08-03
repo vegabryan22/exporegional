@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.28.0] - 2026-08-03
+
+### Añadido
+
+- API v1 autenticada para recibir, actualizar y consultar ganadores de cada colegio.
+- Carga separada de documentos y logos, credenciales revocables almacenadas como hash y bitácora de importaciones.
+- Administración de credenciales por colegio y contrato operativo documentado.
+
+### Seguridad
+
+- El colegio se obtiene de la credencial y no del JSON; cada consulta queda aislada por institución.
+- La combinación colegio e identificador externo evita duplicados y bloquea reemplazos cuando el proyecto avanza en el flujo regional.
+
+### Verificado
+
+- Pruebas de autenticación e idempotencia, más una transferencia real entre las bases locales independientes.
+
 ## [0.27.0] - 2026-08-03
 
 ### Añadido

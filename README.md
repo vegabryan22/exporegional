@@ -3,6 +3,7 @@
 Plataforma regional para centralizar colegios participantes, proyectos ganadores y evaluación regional.
 
 La transformación desde la plataforma institucional se documenta en `docs/MIGRACION_REGIONAL.md`.
+El contrato para recibir ganadores institucionales se documenta en `docs/API_INTEGRACION_INSTITUCIONAL.md`.
 
 Funciones heredadas disponibles:
 - inscripción de proyectos (`STEAM` y `Emprendimiento`)

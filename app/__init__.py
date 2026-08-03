@@ -61,12 +61,14 @@ def create_app():
     login_manager.init_app(app)
 
     from app.routes.admin_routes import admin_bp
+    from app.routes.api_routes import api_bp
     from app.routes.auth_routes import auth_bp
     from app.routes.judge_routes import judge_bp
     from app.routes.public_routes import public_bp
     from app.routes.school_routes import school_bp
 
     app.register_blueprint(public_bp)
+    app.register_blueprint(api_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(judge_bp)
     app.register_blueprint(admin_bp)

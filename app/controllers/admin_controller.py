@@ -6,6 +6,7 @@ import json
 import subprocess
 import base64
 import hmac
+import hashlib
 import shutil
 from html import escape
 from io import BytesIO
@@ -32,6 +33,7 @@ from app.models.evaluation_score import EvaluationScore
 from app.models.evaluation_type import EvaluationType
 from app.models.judge import Judge
 from app.models.institution import Institution
+from app.models.institution_api_credential import InstitutionApiCredential
 from app.models.level import Level
 from app.models.project import Project
 from app.models.project_member_change import ProjectMemberChange
@@ -9868,6 +9870,33 @@ def institutions_page():
         action = (request.form.get("action") or "create").strip().lower()
         institution_id = request.form.get("institution_id", type=int)
         institution = Institution.query.get(institution_id) if institution_id else None
+
+        if action == "create_api_credential" and institution:
+            raw_token = f"exporeg_{secrets.token_urlsafe(32)}"
+            credential = InstitutionApiCredential(
+                institution_id=institution.id,
+                name=(request.form.get("credential_name") or "Integración institucional").strip()[:120],
+                token_hash=hashlib.sha256(raw_token.encode("utf-8")).hexdigest(),
+                token_prefix=raw_token[:16],
+                is_active=True,
+            )
+            db.session.add(credential)
+            db.session.flush()
+            log_event("admin.institution.api_credential.create", "institution", institution.id, f"Credencial API creada: {credential.name}")
+            db.session.commit()
+            flash(f"Credencial creada. Cópiala ahora, no volverá a mostrarse: {raw_token}", "success")
+            return redirect(url_for("admin.institutions_page"))
+
+        if action == "revoke_api_credential" and institution:
+            credential_id = request.form.get("credential_id", type=int)
+            credential = InstitutionApiCredential.query.filter_by(id=credential_id, institution_id=institution.id).first()
+            if credential:
+                credential.is_active = False
+                credential.revoked_at = datetime.utcnow()
+                log_event("admin.institution.api_credential.revoke", "institution", institution.id, f"Credencial API revocada: {credential.name}")
+                db.session.commit()
+                flash("Credencial API revocada.", "success")
+            return redirect(url_for("admin.institutions_page"))
 
         if action == "create_coordinator" and institution:
             coordinator_name = (request.form.get("coordinator_name") or institution.responsible_name or "").strip()

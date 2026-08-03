@@ -36,6 +36,7 @@ class Institution(db.Model):
 
     projects = db.relationship("Project", back_populates="institution")
     users = db.relationship("Judge", back_populates="institution_ref")
+    api_credentials = db.relationship("InstitutionApiCredential", back_populates="institution", cascade="all, delete-orphan")
 
     @property
     def project_count(self) -> int:

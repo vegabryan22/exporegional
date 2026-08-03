@@ -1,3 +1,4 @@
+import hashlib
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -5,13 +6,68 @@ from unittest.mock import patch
 from app import create_app
 from app.extensions import db
 from app.models.institution import Institution
+from app.models.institution_api_credential import InstitutionApiCredential
+from app.models.category import Category
 from app.models.judge import Judge
 from app.models.project import Project
+from app.models.project_import_event import ProjectImportEvent
 from app.models.project_status_history import ProjectStatusHistory
 from app.services.regional_project_service import RegionalTransitionError, transition_project
 
 
 class RegionalFoundationTests(unittest.TestCase):
+    def test_api_requires_bearer_credential(self):
+        app = create_app()
+        app.config["TESTING"] = True
+
+        with app.test_client() as client:
+            response = client.post("/api/v1/regional-projects", json={})
+
+        self.assertEqual(401, response.status_code)
+        self.assertEqual("missing_credentials", response.get_json()["error"]["code"])
+
+    def test_api_import_is_scoped_and_idempotent(self):
+        app = create_app()
+        app.config["TESTING"] = True
+        token = "regional-test-token"
+
+        with app.app_context():
+            school = Institution(code="API-TEST", name="Colegio API", responsible_name="Responsable", responsible_email="api@example.com", is_active=True)
+            category = Category.query.filter_by(code="steam").first()
+            self.assertIsNotNone(category)
+            db.session.add(school)
+            db.session.flush()
+            db.session.add(InstitutionApiCredential(institution_id=school.id, name="Prueba", token_hash=hashlib.sha256(token.encode()).hexdigest(), token_prefix="regional"))
+            db.session.flush()
+            payload = {
+                "external_project_id": "API-TEST-001",
+                "title": "Ganador institucional",
+                "team_name": "Equipo API",
+                "category_code": category.code,
+                "description": "Proyecto enviado por contrato JSON.",
+                "students": [{"name": "Estudiante Uno", "email": "student@example.com"}],
+                "tutor": {"name": "Tutor Uno", "email": "tutor@example.com"},
+            }
+            headers = {"Authorization": f"Bearer {token}", "Idempotency-Key": "API-TEST-001"}
+
+            with app.test_client() as client:
+                first = client.post("/api/v1/regional-projects", json=payload, headers=headers)
+                payload["title"] = "Ganador institucional actualizado"
+                second = client.post("/api/v1/regional-projects", json=payload, headers=headers)
+
+            projects = Project.query.filter_by(institution_id=school.id, external_project_id="API-TEST-001").all()
+            self.assertEqual(201, first.status_code)
+            self.assertEqual(200, second.status_code)
+            self.assertEqual("updated", second.get_json()["result"])
+            self.assertEqual(1, len(projects))
+            self.assertEqual("Ganador institucional actualizado", projects[0].title)
+            self.assertEqual(Project.ORIGIN_INSTITUTIONAL_API, projects[0].origin)
+            ProjectImportEvent.query.filter_by(institution_id=school.id).delete(synchronize_session=False)
+            db.session.delete(projects[0])
+            InstitutionApiCredential.query.filter_by(institution_id=school.id).delete(synchronize_session=False)
+            db.session.delete(school)
+            db.session.commit()
+
     def test_institution_exposes_regional_participation_fields(self):
         school = Institution(
             code="CTP-001",

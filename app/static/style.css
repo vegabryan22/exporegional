@@ -15208,6 +15208,25 @@ body.school-portal-page .admin-menu a:hover {
 .project-maintenance-preview img { width: 52px; height: 52px; object-fit: cover; border: 1px solid #cbdbe4; border-radius: 10px; background: #fff; }
 .project-maintenance-preview > div { display: grid; gap: .35rem; }
 
+.school-project-editor-shell { padding: 1.35rem; border-radius: 18px; }
+.school-project-editor-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; margin-bottom: 1.25rem; }
+.school-project-editor-head h3 { margin: .1rem 0 .35rem; font-size: 1.55rem; }
+.school-project-editor-head p:last-child { margin: 0; }
+.school-project-editor { display: grid; gap: 1rem; }
+.school-project-editor fieldset { min-width: 0; margin: 0; padding: 1rem; border: 1px solid #d8e4eb; border-radius: 14px; background: #fbfdfe; }
+.school-project-editor legend { padding: 0 .45rem; color: #244b63; font-size: .9rem; font-weight: 850; }
+.school-project-editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem 1rem; }
+.school-project-editor-grid .editor-span-2 { grid-column: 1 / -1; }
+.school-project-editor label { color: #263f50; font-size: .86rem; font-weight: 750; }
+.school-project-editor input,
+.school-project-editor select,
+.school-project-editor textarea { margin-top: .25rem; border-radius: 9px; }
+.school-project-editor small { color: #657986; font-weight: 500; }
+.school-student-editor-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .85rem; }
+.school-student-editor { display: grid; gap: .7rem; min-width: 0; padding: .9rem; border: 1px solid #dce7ed; border-radius: 12px; background: #fff; }
+.school-student-editor > span { color: #235773; font-size: .78rem; font-weight: 850; letter-spacing: .04em; text-transform: uppercase; }
+.school-project-editor-actions { display: flex; justify-content: flex-end; align-items: center; gap: .7rem; padding-top: .2rem; }
+
 .school-project-followup {
     margin-left: auto;
     color: var(--muted);
@@ -15226,9 +15245,15 @@ body.school-portal-page .admin-menu a:hover {
     .school-project-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .school-project-meta > div:nth-child(2) { border-right: 0; }
     .school-project-meta > div:nth-child(-n+2) { border-bottom: 1px solid #dce6ec; }
+    .school-student-editor-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {
+    .school-project-editor-head { display: grid; gap: .8rem; }
+    .school-project-editor-grid { grid-template-columns: 1fr; }
+    .school-project-editor-grid .editor-span-2 { grid-column: auto; }
+    .school-project-editor-actions { display: grid; }
+    .school-project-editor-actions > * { width: 100%; text-align: center; }
     .school-project-card-head { grid-template-columns: 42px minmax(0, 1fr); }
     .school-project-status { grid-column: 1 / -1; max-width: none; }
     .school-project-meta { grid-template-columns: 1fr; }

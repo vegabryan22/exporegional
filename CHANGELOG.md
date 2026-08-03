@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.36.2] - 2026-08-03
+
+### Diseño del editor escolar
+
+- El formulario deja de apilar todos los campos en una única columna.
+- La información general se organiza en dos columnas y los estudiantes en tres tarjetas paralelas.
+- Archivos, seguimiento y acciones tienen secciones diferenciadas; en pantallas pequeñas el contenido se adapta a una columna.
+
 ## [0.36.1] - 2026-08-03
 
 ### Corrección

@@ -1,23 +1,27 @@
 {% extends "school/layout.html" %}
 {% block school_content %}
-<section class="card admin-section">
-    <div><p class="maintenance-kicker">Coordinación del colegio</p><h3>{{ "Editar proyecto e integrantes" if project else "Registrar proyecto" }}</h3><p>Solo la coordinación de {{ school.name }} puede modificar esta información. Cada cambio queda registrado en bitácora.</p></div>
+<section class="card admin-section school-project-editor-shell">
+    <div class="school-project-editor-head"><div><p class="maintenance-kicker">Coordinación del colegio</p><h3>{{ "Editar proyecto e integrantes" if project else "Registrar proyecto" }}</h3><p>Solo la coordinación de {{ school.name }} puede modificar esta información. Cada cambio queda registrado en bitácora.</p></div><a class="outline-btn" href="{{ url_for('school.dashboard') }}">Volver a mis proyectos</a></div>
     {% if project and project.regional_status == 'returned_for_correction' %}<div class="alert error">Devuelto para corrección: {{ project.regional_notes or "Revisa la información solicitada por coordinación regional." }}</div>{% endif %}
-    <form method="post" enctype="multipart/form-data" class="compact-form form-grid">
-        <label class="field-span-2">Título<input type="text" name="title" value="{{ project.title if project else '' }}" required></label>
-        <label>Nombre del equipo<input type="text" name="team_name" value="{{ project.team_name if project else '' }}" required></label>
-        <label>Categoría regional<select name="category_id" required><option value="">Seleccionar</option>{% for category in categories %}<option value="{{ category.id }}" {% if project and project.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
-        <label class="field-span-2">Descripción<textarea name="description" rows="5" required>{{ project.description if project else '' }}</textarea></label>
-        <label class="field-span-2">Nombre del tutor<input type="text" name="advisor_name" value="{{ project.advisor_name if project else '' }}" required></label>
-        <label>Documento PDF<input type="file" name="project_document" accept="application/pdf" {% if not project or not project.project_document_path %}required{% endif %}></label>
-        <label>Logo del proyecto<input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp"></label>
-        {% for number in [1, 2, 3] %}
-            {% set member = project.members[number - 1] if project and project.members|length >= number else none %}
-            <label>Estudiante {{ number }}<input type="text" name="student_{{ number }}_name" value="{{ member.full_name if member else '' }}" {% if number == 1 %}required{% endif %}></label>
-            <label>Correo estudiante {{ number }}<input type="email" name="student_{{ number }}_email" value="{{ member.email if member else '' }}"></label>
-        {% endfor %}
-        <label class="field-span-2">Notas del colegio<textarea name="school_notes" rows="3">{{ project.regional_notes if project else '' }}</textarea></label>
-        <div class="actions-row field-span-2"><button type="submit">Guardar borrador</button><a href="{{ url_for('school.dashboard') }}">Cancelar</a></div>
+    <form method="post" enctype="multipart/form-data" class="school-project-editor">
+        <fieldset><legend>Información del proyecto</legend><div class="school-project-editor-grid">
+            <label class="editor-span-2">Título<input type="text" name="title" value="{{ project.title if project else '' }}" required></label>
+            <label>Nombre del equipo<input type="text" name="team_name" value="{{ project.team_name if project else '' }}" required></label>
+            <label>Categoría regional<select name="category_id" required><option value="">Seleccionar</option>{% for category in categories %}<option value="{{ category.id }}" {% if project and project.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>{% endfor %}</select></label>
+            <label class="editor-span-2">Descripción<textarea name="description" rows="4" required>{{ project.description if project else '' }}</textarea></label>
+            <label class="editor-span-2">Nombre del tutor<input type="text" name="advisor_name" value="{{ project.advisor_name if project else '' }}" required></label>
+        </div></fieldset>
+        <fieldset><legend>Personas estudiantes</legend><div class="school-student-editor-grid">
+            {% for number in [1, 2, 3] %}{% set member = project.members[number - 1] if project and project.members|length >= number else none %}
+            <section class="school-student-editor"><span>Estudiante {{ number }}{% if number == 1 %} · requerido{% endif %}</span><label>Nombre completo<input type="text" name="student_{{ number }}_name" value="{{ member.full_name if member else '' }}" {% if number == 1 %}required{% endif %}></label><label>Correo electrónico<input type="email" name="student_{{ number }}_email" value="{{ member.email if member else '' }}"></label></section>
+            {% endfor %}
+        </div></fieldset>
+        <fieldset><legend>Archivos y seguimiento</legend><div class="school-project-editor-grid">
+            <label>Documento PDF<input type="file" name="project_document" accept="application/pdf" {% if not project or not project.project_document_path %}required{% endif %}><small>{{ 'Seleccioná un archivo solo para reemplazar el actual.' if project and project.project_document_path else 'Documento obligatorio.' }}</small></label>
+            <label>Logo del proyecto<input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp"><small>{{ 'Seleccioná una imagen solo para reemplazar la actual.' if project and project.has_real_logo else 'PNG, JPG o WEBP.' }}</small></label>
+            <label class="editor-span-2">Notas del colegio<textarea name="school_notes" rows="3">{{ project.regional_notes if project else '' }}</textarea></label>
+        </div></fieldset>
+        <div class="school-project-editor-actions"><a class="outline-btn" href="{{ url_for('school.dashboard') }}">Cancelar</a><button type="submit">Guardar cambios</button></div>
     </form>
 </section>
 {% endblock %}

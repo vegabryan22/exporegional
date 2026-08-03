@@ -15466,7 +15466,6 @@ body.admin-page .site-footer {
 .institutions-hero h3, .institution-card h3 { margin: 0; }
 .institutions-hero-actions { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 .institutions-primary { white-space: nowrap; }
-.institution-create-panel[hidden] { display: none; }
 .institution-form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
 .institution-form-grid label { min-width: 0; }
 .institution-form-grid label > span { color: #b42318; }
@@ -15483,12 +15482,12 @@ body.admin-page .site-footer {
 .institution-facts > div:last-child { border-right: 0; }
 .institution-facts span { color: var(--muted, #5c6b73); font-size: .78rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .institution-facts strong, .institution-facts small { overflow-wrap: anywhere; }
-.institution-actions { display: flex; align-items: flex-start; gap: .65rem; padding: .85rem 1.25rem; background: #f7fafc; border-top: 1px solid var(--border-color, #d8e0e5); flex-wrap: wrap; }
-.institution-actions details { flex: 0 1 auto; }
-.institution-actions details[open] { flex-basis: 100%; order: 2; border: 1px solid #ccd9e0; border-radius: .75rem; background: #fff; padding: .85rem; }
-.institution-actions summary { cursor: pointer; font-weight: 750; color: #17384a; }
-.institution-action-form, .institution-api-panel { margin-top: 1rem; }
+.institution-actions { display: flex; align-items: center; gap: .65rem; padding: .85rem 1.25rem; background: #f7fafc; border-top: 1px solid var(--border-color, #d8e0e5); flex-wrap: wrap; }
 .institution-toggle-form { margin-left: auto; }
+.institution-dialog { width: min(920px, calc(100vw - 2rem)); }
+.institution-dialog-small { width: min(620px, calc(100vw - 2rem)); }
+.institution-dialog .dialog-head p { margin: .2rem 0 0; color: var(--muted, #5c6b73); }
+.institution-credentials-list { margin-top: 1rem; }
 .institution-credential { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .7rem 0; border-top: 1px solid #e4eaee; }
 .institution-credential span { display: grid; }
 .institutions-empty { padding: 3rem; text-align: center; }

@@ -163,7 +163,9 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertNotIn("Ã", source)
         self.assertNotIn("Â", source)
         self.assertIn("institution-card", source)
-        self.assertIn("institution-action-form", source)
+        self.assertNotIn("<details", source)
+        self.assertIn("data-dialog-open", source)
+        self.assertIn("<dialog", source)
 
     def test_institutions_admin_page_renders(self):
         app = create_app()

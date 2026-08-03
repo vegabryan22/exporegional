@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.3] - 2026-08-03
+
+### Interfaz
+
+- Se corrige «Nuevo proyecto» para mostrarse como botón primario y no como enlace sin formato.
+- Las acciones del encabezado escolar quedan alineadas, separadas y con la misma altura.
+
 ## [0.34.2] - 2026-08-03
 
 ### Sesiones

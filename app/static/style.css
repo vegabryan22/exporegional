@@ -15077,6 +15077,18 @@ body.school-portal-page .admin-menu a:hover {
     font-size: 1.65rem;
 }
 
+.school-dashboard-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.65rem;
+}
+
+.school-dashboard-actions > * {
+    min-height: 44px;
+    margin: 0;
+}
+
 .school-project-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr));

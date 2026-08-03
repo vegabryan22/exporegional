@@ -170,6 +170,7 @@ class RegionalFoundationTests(unittest.TestCase):
 
     def test_institutions_workspace_has_clean_text_and_full_width_actions(self):
         source = Path("app/templates/admin/institutions.html").read_text(encoding="utf-8")
+        school_source = Path("app/templates/school/dashboard.html").read_text(encoding="utf-8")
 
         self.assertNotIn("Ã", source)
         self.assertNotIn("Â", source)
@@ -177,7 +178,10 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertNotIn("<details", source)
         self.assertIn("data-dialog-open", source)
         self.assertIn("<dialog", source)
-        self.assertIn("upload_shield", source)
+        self.assertNotIn("upload_shield", source)
+        self.assertNotIn("Editar colegio", source)
+        self.assertIn("institution_shield", school_source)
+        self.assertIn("Mi colegio", school_source)
 
     def test_institutions_admin_page_renders(self):
         app = create_app()
@@ -259,6 +263,35 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn("Proyecto visible", body)
         self.assertNotIn("Proyecto oculto", body)
+
+    def test_school_coordinator_updates_only_own_institution_profile(self):
+        app = create_app()
+        app.config["TESTING"] = True
+
+        with app.app_context():
+            own_school = Institution(code="PROFILE-OWN", name="Nombre anterior", responsible_name="Responsable", responsible_email="profile-own@example.com", is_active=True)
+            other_school = Institution(code="PROFILE-OTHER", name="Colegio sin cambios", responsible_name="Otra persona", responsible_email="profile-other@example.com", is_active=True)
+            db.session.add_all([own_school, other_school])
+            db.session.flush()
+            coordinator = Judge(full_name="Coordinador de perfil", email="profile-coordinator@example.com", role=Judge.ROLE_SCHOOL_COORDINATOR, institution_id=own_school.id, password_hash="test-only", is_active_user=True)
+            db.session.add(coordinator)
+            db.session.commit()
+
+            with app.test_client() as client:
+                with client.session_transaction() as session:
+                    session["_user_id"] = str(coordinator.id)
+                    session["_fresh"] = True
+                response = client.post("/colegio/perfil", data={"name": "Colegio actualizado", "responsible_name": "Nueva responsable", "responsible_email": "nuevo@example.com"})
+
+            db.session.refresh(own_school)
+            db.session.refresh(other_school)
+            self.assertEqual(302, response.status_code)
+            self.assertEqual("Colegio actualizado", own_school.name)
+            self.assertEqual("Colegio sin cambios", other_school.name)
+            db.session.delete(coordinator)
+            db.session.delete(own_school)
+            db.session.delete(other_school)
+            db.session.commit()
 
 
 if __name__ == "__main__":

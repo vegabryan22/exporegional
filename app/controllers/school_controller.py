@@ -57,6 +57,29 @@ def _save_project_file(project: Project, uploaded_file, kind: str) -> str | None
     return os.path.join(relative_dir, filename).replace("\\", "/")
 
 
+def _save_school_shield(uploaded_file) -> str | None:
+    if not uploaded_file or not uploaded_file.filename:
+        return None
+    extension = os.path.splitext(secure_filename(uploaded_file.filename))[1].lower()
+    if extension not in {".png", ".jpg", ".jpeg", ".webp", ".gif"}:
+        raise ValueError("El escudo debe ser PNG, JPG, JPEG, WEBP o GIF.")
+    relative_dir = os.path.join("uploads", "institution")
+    absolute_dir = os.path.join(current_app.static_folder, relative_dir)
+    os.makedirs(absolute_dir, exist_ok=True)
+    filename = f"shield-{uuid.uuid4().hex}{extension}"
+    uploaded_file.save(os.path.join(absolute_dir, filename))
+    return os.path.join(relative_dir, filename).replace("\\", "/")
+
+
+def _delete_school_shield(relative_path: str | None):
+    if not relative_path or relative_path.startswith(("http://", "https://")):
+        return
+    static_root = os.path.realpath(current_app.static_folder)
+    target = os.path.realpath(os.path.join(static_root, relative_path.replace("/", os.sep)))
+    if os.path.commonpath([static_root, target]) == static_root and os.path.isfile(target):
+        os.remove(target)
+
+
 def dashboard():
     projects = (
         Project.query.filter_by(institution_id=current_user.institution_id)
@@ -64,6 +87,38 @@ def dashboard():
         .all()
     )
     return render_template("school/dashboard.html", projects=projects, school=current_user.institution_ref)
+
+
+def profile():
+    school = current_user.institution_ref
+    name = (request.form.get("name") or "").strip()
+    responsible_name = (request.form.get("responsible_name") or "").strip()
+    responsible_email = (request.form.get("responsible_email") or "").strip().lower()
+    if not name or not responsible_name or not responsible_email:
+        flash("Nombre, responsable y correo son obligatorios.", "error")
+        return redirect(url_for("school.dashboard"))
+    previous_shield = school.shield_path
+    try:
+        new_shield = _save_school_shield(request.files.get("institution_shield"))
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("school.dashboard"))
+    school.name = name
+    school.circuit = (request.form.get("circuit") or "").strip() or None
+    school.regional_directorate = (request.form.get("regional_directorate") or "").strip() or None
+    school.address = (request.form.get("address") or "").strip() or None
+    school.responsible_name = responsible_name
+    school.responsible_email = responsible_email
+    school.responsible_phone = (request.form.get("responsible_phone") or "").strip() or None
+    if new_shield:
+        school.shield_path = new_shield
+    db.session.flush()
+    if new_shield:
+        _delete_school_shield(previous_shield)
+    log_event("school.profile.update", "institution", school.id, f"Perfil actualizado por coordinación: {school.code}")
+    db.session.commit()
+    flash("Información del colegio actualizada.", "success")
+    return redirect(url_for("school.dashboard"))
 
 
 def project_form(project_id: int | None = None):

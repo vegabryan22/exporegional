@@ -3,7 +3,7 @@
 <section class="card admin-section">
     <div class="section-heading-row">
         <div><p class="maintenance-kicker">Etapa regional</p><h3>Proyectos ganadores de {{ school.name }}</h3><p>Guarda borradores, completa los documentos y envía cada proyecto a revisión regional.</p></div>
-        <a class="button" href="{{ url_for('school.project_form') }}">Registrar proyecto</a>
+        <div class="actions-row"><button type="button" class="outline-btn" data-school-profile-open>Mi colegio</button><a class="button" href="{{ url_for('school.project_form') }}">Registrar proyecto</a></div>
     </div>
 </section>
 <section class="card admin-section">
@@ -28,4 +28,26 @@
         </tbody>
     </table></div>
 </section>
+<dialog id="school-profile-dialog" class="maintenance-dialog institution-dialog">
+    <div class="dialog-card"><div class="dialog-head"><div><h4>Mi colegio</h4><p>Actualizá la información que verá la coordinación regional.</p></div><button type="button" class="ghost-btn dialog-close" data-school-profile-close>&times;</button></div>
+        <form method="post" action="{{ url_for('school.profile') }}" enctype="multipart/form-data" class="institution-form-grid">
+            <div class="school-profile-shield institution-field-wide">{% if school.shield_path %}<img src="{{ url_for('static', filename=school.shield_path) }}" alt="Escudo de {{ school.name }}">{% else %}<span>{{ school.code }}</span>{% endif %}<label>Escudo del colegio<input type="file" name="institution_shield" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif"><small>Dejalo vacío para conservar el actual.</small></label></div>
+            <label>Nombre del colegio<input type="text" name="name" value="{{ school.name }}" required></label><label>Código<input type="text" value="{{ school.code }}" disabled><small>El código regional no puede modificarse.</small></label>
+            <label>Circuito<input type="text" name="circuit" value="{{ school.circuit or '' }}"></label><label>Dirección regional<input type="text" name="regional_directorate" value="{{ school.regional_directorate or '' }}"></label>
+            <label>Persona responsable<input type="text" name="responsible_name" value="{{ school.responsible_name }}" required></label><label>Correo responsable<input type="email" name="responsible_email" value="{{ school.responsible_email }}" required></label>
+            <label>Teléfono<input type="text" name="responsible_phone" value="{{ school.responsible_phone or '' }}"></label><label>Dirección física<input type="text" name="address" value="{{ school.address or '' }}"></label>
+            <div class="actions-row institution-field-wide"><button type="button" class="ghost-btn" data-school-profile-close>Cancelar</button><button type="submit">Guardar información</button></div>
+        </form>
+    </div>
+</dialog>
+<script>
+(() => {
+    const dialog = document.getElementById('school-profile-dialog');
+    document.querySelectorAll('[data-school-profile-open]').forEach(button => button.addEventListener('click', () => dialog.showModal()));
+    document.querySelectorAll('[data-school-profile-close]').forEach(button => button.addEventListener('click', () => dialog.close()));
+    const openFromHash = () => { if (window.location.hash === '#school-profile-dialog' && !dialog.open) dialog.showModal(); };
+    window.addEventListener('hashchange', openFromHash);
+    openFromHash();
+})();
+</script>
 {% endblock %}

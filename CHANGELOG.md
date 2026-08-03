@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.30.0] - 2026-08-03
+
+### Separación de responsabilidades
+
+- «Colegios participantes» pasa a ser un directorio regional de consulta y control de participación.
+- La coordinación regional ya no puede crear ni editar directamente el perfil o el escudo de un colegio.
+- El panel regional conserva únicamente habilitación/suspensión y el aprovisionamiento técnico de accesos o credenciales API.
+- Cada coordinación de colegio dispone de «Mi colegio» para administrar su información de contacto, ubicación y escudo.
+
+### Seguridad
+
+- El perfil se determina por la institución asociada a la sesión; el formulario no acepta identificadores de otro colegio.
+- Las acciones antiguas de edición regional son rechazadas también en el servidor, no solo ocultadas en la interfaz.
+- Se verifica mediante prueba automatizada que una coordinación no modifica los datos de otra institución.
+
 ## [0.29.0] - 2026-08-03
 
 ### Cambiado

@@ -22,6 +22,13 @@ La aplicación conserva temporalmente `AUTO_INIT_DB=1` para compatibilidad con l
 
 ### Colegio participante
 
+Responsabilidad operativa:
+
+- La coordinación regional consulta el directorio, habilita o suspende participación y proporciona el acceso técnico.
+- Cada colegio mantiene su propio perfil, responsable, ubicación y escudo desde una cuenta coordinadora aislada.
+- Los colegios sin plataforma registran ganadores desde su portal; los que tienen plataforma institucional envían copias mediante API.
+- El panel regional no edita directamente la identidad ni los datos operativos del colegio.
+
 La entidad `Institution` representa un centro educativo participante y conserva:
 
 - código único;

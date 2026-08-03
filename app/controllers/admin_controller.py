@@ -9873,25 +9873,6 @@ def institutions_page():
         institution_id = request.form.get("institution_id", type=int)
         institution = Institution.query.get(institution_id) if institution_id else None
 
-        if action == "upload_shield" and institution:
-            shield_file = request.files.get("institution_shield")
-            if not shield_file or not shield_file.filename:
-                flash("Selecciona un archivo para el escudo.", "error")
-                return redirect(url_for("admin.institutions_page"))
-            try:
-                new_path = _save_institution_logo(shield_file)
-            except ValueError as error:
-                flash(str(error), "error")
-                return redirect(url_for("admin.institutions_page"))
-            previous_path = institution.shield_path
-            institution.shield_path = new_path
-            db.session.flush()
-            _delete_institution_logo_file(previous_path)
-            log_event("admin.institution.shield.upload", "institution", institution.id, f"Escudo actualizado: {institution.code}")
-            db.session.commit()
-            flash("Escudo del colegio actualizado.", "success")
-            return redirect(url_for("admin.institutions_page"))
-
         if action == "create_api_credential" and institution:
             raw_token = f"exporeg_{secrets.token_urlsafe(32)}"
             credential = InstitutionApiCredential(
@@ -9950,6 +9931,7 @@ def institutions_page():
 
         if action == "toggle" and institution:
             institution.is_active = not institution.is_active
+            institution.participation_status = Institution.STATUS_ENABLED if institution.is_active else Institution.STATUS_SUSPENDED
             log_event(
                 "admin.institution.toggle",
                 "institution",
@@ -9960,50 +9942,7 @@ def institutions_page():
             flash("Estado del colegio actualizado.", "success")
             return redirect(url_for("admin.institutions_page"))
 
-        code = re.sub(r"[^A-Z0-9_-]", "", (request.form.get("code") or "").strip().upper())
-        name = (request.form.get("name") or "").strip()
-        responsible_name = (request.form.get("responsible_name") or "").strip()
-        responsible_email = (request.form.get("responsible_email") or "").strip().lower()
-        status = (request.form.get("participation_status") or Institution.STATUS_INVITED).strip().lower()
-
-        if not code or not name or not responsible_name or not responsible_email:
-            flash("Código, nombre, responsable y correo son obligatorios.", "error")
-            return redirect(url_for("admin.institutions_page"))
-        if status not in Institution.VALID_STATUSES:
-            flash("Estado de participación inválido.", "error")
-            return redirect(url_for("admin.institutions_page"))
-
-        duplicate = Institution.query.filter_by(code=code).first()
-        if duplicate and (not institution or duplicate.id != institution.id):
-            flash("Ya existe un colegio con ese código.", "error")
-            return redirect(url_for("admin.institutions_page"))
-
-        if institution is None:
-            institution = Institution(
-                code=code,
-                name=name,
-                responsible_name=responsible_name,
-                responsible_email=responsible_email,
-            )
-            db.session.add(institution)
-            event_action = "admin.institution.create"
-        else:
-            event_action = "admin.institution.update"
-
-        institution.code = code
-        institution.name = name
-        institution.circuit = (request.form.get("circuit") or "").strip() or None
-        institution.regional_directorate = (request.form.get("regional_directorate") or "").strip() or None
-        institution.address = (request.form.get("address") or "").strip() or None
-        institution.responsible_name = responsible_name
-        institution.responsible_email = responsible_email
-        institution.responsible_phone = (request.form.get("responsible_phone") or "").strip() or None
-        institution.uses_institutional_platform = _str_to_bool(request.form.get("uses_institutional_platform"))
-        institution.participation_status = status
-        db.session.flush()
-        log_event(event_action, "institution", institution.id, f"Colegio regional: {institution.code} - {institution.name}")
-        db.session.commit()
-        flash("Colegio guardado correctamente.", "success")
+        flash("El perfil y el escudo deben ser actualizados por la coordinación del colegio.", "error")
         return redirect(url_for("admin.institutions_page"))
 
     institutions = Institution.query.order_by(Institution.name.asc()).all()

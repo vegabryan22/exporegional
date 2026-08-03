@@ -9886,6 +9886,29 @@ def institutions_page():
         institution_id = request.form.get("institution_id", type=int)
         institution = Institution.query.get(institution_id) if institution_id else None
 
+        if action == "update_shield" and institution:
+            uploaded_shield = request.files.get("institution_shield")
+            if not uploaded_shield or not uploaded_shield.filename:
+                flash("Seleccioná el archivo del escudo.", "error")
+                return redirect(url_for("admin.institutions_page", _anchor=f"shield-institution-{institution.id}"))
+            try:
+                new_shield_path = _save_institution_logo(uploaded_shield)
+            except ValueError as error:
+                flash(str(error), "error")
+                return redirect(url_for("admin.institutions_page", _anchor=f"shield-institution-{institution.id}"))
+            previous_shield_path = institution.shield_path
+            institution.shield_path = new_shield_path
+            log_event(
+                "admin.institution.shield.update",
+                "institution",
+                institution.id,
+                json.dumps({"colegio": institution.code, "anterior": previous_shield_path, "nuevo": new_shield_path}, ensure_ascii=False),
+            )
+            db.session.commit()
+            _delete_institution_logo_file(previous_shield_path)
+            flash("Escudo del colegio actualizado.", "success")
+            return redirect(url_for("admin.institutions_page"))
+
         if action == "update" and institution:
             code = (request.form.get("code") or "").strip().upper()
             name = (request.form.get("name") or "").strip()

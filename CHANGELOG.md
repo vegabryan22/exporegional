@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.40.4] - 2026-08-03
+
+- Se agregó una acción visible «Escudo del colegio» en cada tarjeta del directorio administrativo.
+- La carga o sustitución se realiza en un modal exclusivo, sin depender del formulario general de edición.
+
 ## [0.40.3] - 2026-08-03
 
 - El administrador regional puede subir o reemplazar el escudo desde Editar colegio.

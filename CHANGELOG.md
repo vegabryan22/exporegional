@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.28.1] - 2026-08-03
+
+### Añadido
+
+- Cada colegio participante puede almacenar, mostrar, subir y reemplazar su propio escudo.
+- La gestión del escudo se realiza desde un modal independiente con vista previa y validación de formato.
+- Se incorpora un script idempotente para crear diez colegios provisionales mientras se completan sus datos oficiales.
+
+### Base de datos
+
+- Nueva columna `institutions.shield_path` mediante la migración `a642ef30c18b`.
+- Se crearon localmente los registros provisionales `REG-001` a `REG-010` sin modificar el colegio existente.
+
 ## [0.28.0] - 2026-08-03
 
 ### Añadido

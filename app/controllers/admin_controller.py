@@ -9871,6 +9871,25 @@ def institutions_page():
         institution_id = request.form.get("institution_id", type=int)
         institution = Institution.query.get(institution_id) if institution_id else None
 
+        if action == "upload_shield" and institution:
+            shield_file = request.files.get("institution_shield")
+            if not shield_file or not shield_file.filename:
+                flash("Selecciona un archivo para el escudo.", "error")
+                return redirect(url_for("admin.institutions_page"))
+            try:
+                new_path = _save_institution_logo(shield_file)
+            except ValueError as error:
+                flash(str(error), "error")
+                return redirect(url_for("admin.institutions_page"))
+            previous_path = institution.shield_path
+            institution.shield_path = new_path
+            db.session.flush()
+            _delete_institution_logo_file(previous_path)
+            log_event("admin.institution.shield.upload", "institution", institution.id, f"Escudo actualizado: {institution.code}")
+            db.session.commit()
+            flash("Escudo del colegio actualizado.", "success")
+            return redirect(url_for("admin.institutions_page"))
+
         if action == "create_api_credential" and institution:
             raw_token = f"exporeg_{secrets.token_urlsafe(32)}"
             credential = InstitutionApiCredential(

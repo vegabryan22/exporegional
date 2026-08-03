@@ -15478,6 +15478,9 @@ body.admin-page .site-footer {
 .institution-identity h3 { font-size: 1.15rem; }
 .institution-identity p { margin: .2rem 0 0; color: var(--muted, #5c6b73); }
 .institution-code { display: inline-grid; place-items: center; min-width: 4.5rem; min-height: 2.7rem; padding: .35rem .65rem; border-radius: .65rem; background: #e8f0f5; color: #17384a; font-weight: 800; }
+.institution-shield { width: 58px; height: 58px; flex: 0 0 58px; object-fit: contain; padding: 4px; border: 1px solid #d5e0e6; border-radius: 12px; background: #fff; }
+.institution-shield-preview { display: grid; place-items: center; min-height: 190px; padding: 1rem; border: 1px dashed #bdced8; border-radius: 14px; background: #f7fafb; }
+.institution-shield-preview img { width: min(220px, 60vw); height: 180px; object-fit: contain; }
 .institution-facts { display: grid; grid-template-columns: 2fr 1.25fr .65fr .75fr; gap: 0; }
 .institution-facts > div { display: grid; align-content: start; gap: .2rem; padding: 1rem 1.25rem; border-right: 1px solid var(--border-color, #d8e0e5); min-width: 0; }
 .institution-facts > div:last-child { border-right: 0; }

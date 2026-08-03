@@ -28,6 +28,7 @@ class Institution(db.Model):
     responsible_name = db.Column(db.String(160), nullable=False)
     responsible_email = db.Column(db.String(160), nullable=False, index=True)
     responsible_phone = db.Column(db.String(40), nullable=True)
+    shield_path = db.Column(db.String(300), nullable=True)
     uses_institutional_platform = db.Column(db.Boolean, nullable=False, default=False)
     participation_status = db.Column(db.String(30), nullable=False, default=STATUS_INVITED, index=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True, index=True)

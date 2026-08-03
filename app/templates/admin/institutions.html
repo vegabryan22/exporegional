@@ -10,7 +10,7 @@
         {% for school in institutions %}
         <article class="card institution-card">
             <header class="institution-card-header">
-                <div class="institution-identity"><span class="institution-code">{{ school.code }}</span><div><h3>{{ school.name }}</h3><p>{{ school.regional_directorate or "Dirección regional pendiente" }} · Circuito {{ school.circuit or "N/D" }}</p></div></div>
+                <div class="institution-identity">{% if school.shield_path %}<img class="institution-shield" src="{{ url_for('static', filename=school.shield_path) }}" alt="Escudo de {{ school.name }}">{% else %}<span class="institution-code">{{ school.code }}</span>{% endif %}<div><h3>{{ school.name }}</h3><p>{{ school.regional_directorate or "Dirección regional pendiente" }} · Circuito {{ school.circuit or "N/D" }}</p></div></div>
                 <span class="tag {{ 'ok' if school.is_active else 'off' }}">{{ school.participation_status_label }}</span>
             </header>
             <div class="institution-facts">
@@ -21,6 +21,7 @@
             </div>
             <div class="institution-actions">
                 <button type="button" class="outline-btn" data-dialog-open="edit-institution-{{ school.id }}">Editar información</button>
+                <button type="button" class="outline-btn" data-dialog-open="shield-institution-{{ school.id }}">{{ "Reemplazar escudo" if school.shield_path else "Subir escudo" }}</button>
                 <button type="button" class="outline-btn" data-dialog-open="coordinator-institution-{{ school.id }}">Coordinación</button>
                 <button type="button" class="secondary-btn" data-dialog-open="api-institution-{{ school.id }}">Integración API</button>
                 <form method="post" class="institution-toggle-form"><input type="hidden" name="action" value="toggle"><input type="hidden" name="institution_id" value="{{ school.id }}"><button type="submit" class="ghost-btn">{{ "Desactivar colegio" if school.is_active else "Activar colegio" }}</button></form>
@@ -37,6 +38,13 @@
                     <label class="institution-field-wide">Dirección física<input type="text" name="address" value="{{ school.address or '' }}"></label><label class="institution-platform-option institution-field-wide"><input type="checkbox" name="uses_institutional_platform" value="1" {% if school.uses_institutional_platform %}checked{% endif %}><span><strong>Plataforma institucional</strong><small>Este colegio enviará sus proyectos ganadores mediante la API regional.</small></span></label>
                     <div class="actions-row institution-field-wide"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar cambios</button></div>
                 </form>
+            </div>
+        </dialog>
+
+        <dialog id="shield-institution-{{ school.id }}" class="maintenance-dialog institution-dialog institution-dialog-small">
+            <div class="dialog-card"><div class="dialog-head"><div><h4>{{ "Reemplazar escudo" if school.shield_path else "Subir escudo" }}</h4><p>{{ school.name }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close aria-label="Cerrar">&times;</button></div>
+                {% if school.shield_path %}<div class="institution-shield-preview"><img src="{{ url_for('static', filename=school.shield_path) }}" alt="Escudo actual de {{ school.name }}"></div>{% endif %}
+                <form method="post" enctype="multipart/form-data" class="compact-form"><input type="hidden" name="action" value="upload_shield"><input type="hidden" name="institution_id" value="{{ school.id }}"><label>Archivo del escudo<input type="file" name="institution_shield" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" required></label><small>Formatos permitidos: PNG, JPG, JPEG, WEBP o GIF.</small><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar escudo</button></div></form>
             </div>
         </dialog>
 

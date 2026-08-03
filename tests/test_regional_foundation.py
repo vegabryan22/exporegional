@@ -93,6 +93,7 @@ class RegionalFoundationTests(unittest.TestCase):
 
         self.assertEqual("Habilitado", school.participation_status_label)
         self.assertTrue(school.uses_institutional_platform)
+        self.assertIsNone(school.shield_path)
 
     def test_project_origin_and_status_labels(self):
         project = Project(
@@ -166,6 +167,7 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertNotIn("<details", source)
         self.assertIn("data-dialog-open", source)
         self.assertIn("<dialog", source)
+        self.assertIn("upload_shield", source)
 
     def test_institutions_admin_page_renders(self):
         app = create_app()

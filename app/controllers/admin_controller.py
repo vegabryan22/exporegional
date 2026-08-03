@@ -9899,7 +9899,16 @@ def institutions_page():
             if duplicate:
                 flash("Ya existe otro colegio con ese código.", "error")
                 return redirect(url_for("admin.institutions_page", _anchor=f"edit-institution-{institution.id}"))
-            before = {"code": institution.code, "name": institution.name, "circuit": institution.circuit, "regional_directorate": institution.regional_directorate, "responsible_name": institution.responsible_name, "responsible_email": institution.responsible_email, "responsible_phone": institution.responsible_phone, "address": institution.address, "participation_status": institution.participation_status, "uses_institutional_platform": institution.uses_institutional_platform}
+            uploaded_shield = request.files.get("institution_shield")
+            new_shield_path = None
+            if uploaded_shield and uploaded_shield.filename:
+                try:
+                    new_shield_path = _save_institution_logo(uploaded_shield)
+                except ValueError as error:
+                    flash(str(error), "error")
+                    return redirect(url_for("admin.institutions_page", _anchor=f"edit-institution-{institution.id}"))
+            before = {"code": institution.code, "name": institution.name, "circuit": institution.circuit, "regional_directorate": institution.regional_directorate, "responsible_name": institution.responsible_name, "responsible_email": institution.responsible_email, "responsible_phone": institution.responsible_phone, "address": institution.address, "participation_status": institution.participation_status, "uses_institutional_platform": institution.uses_institutional_platform, "shield_path": institution.shield_path}
+            previous_shield_path = institution.shield_path
             institution.code = code
             institution.name = name
             institution.circuit = (request.form.get("circuit") or "").strip() or None
@@ -9911,9 +9920,13 @@ def institutions_page():
             institution.participation_status = status
             institution.is_active = status not in {Institution.STATUS_SUSPENDED, Institution.STATUS_CLOSED}
             institution.uses_institutional_platform = request.form.get("uses_institutional_platform") == "1"
+            if new_shield_path:
+                institution.shield_path = new_shield_path
             after = {key: getattr(institution, key) for key in before}
             log_event("admin.institution.update", "institution", institution.id, json.dumps({"before": before, "after": after}, ensure_ascii=False, default=str))
             db.session.commit()
+            if new_shield_path:
+                _delete_institution_logo_file(previous_shield_path)
             flash("Colegio actualizado. El cambio quedó registrado en bitácora.", "success")
             return redirect(url_for("admin.institutions_page"))
 

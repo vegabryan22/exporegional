@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.40.3] - 2026-08-03
+
+- El administrador regional puede subir o reemplazar el escudo desde Editar colegio.
+- Dejar el campo de archivo vacío conserva el escudo existente.
+- Los reemplazos actualizan la ficha pública y quedan registrados en bitácora.
+
 ## [0.40.2] - 2026-08-03
 
 - El catálogo público ahora organiza los proyectos por colegio y muestra la categoría debajo del título.

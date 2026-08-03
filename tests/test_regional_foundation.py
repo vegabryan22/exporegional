@@ -199,6 +199,8 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertNotIn("upload_shield", source)
         self.assertIn("Editar colegio", source)
         self.assertIn("Eliminar colegio", source)
+        self.assertIn('name="institution_shield"', source)
+        self.assertIn('enctype="multipart/form-data"', source)
         self.assertIn('name="confirmation_code"', source)
         self.assertIn("institution_shield", school_source)
         self.assertIn("Datos del colegio", school_source)

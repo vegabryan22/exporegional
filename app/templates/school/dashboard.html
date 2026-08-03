@@ -22,7 +22,7 @@
             <div><span>Recursos visuales</span><strong class="{{ 'is-ready' if project.has_real_logo and project.logistics_photos_ok else 'is-pending' }}">{{ "Completos" if project.has_real_logo and project.logistics_photos_ok else "Por completar" }}</strong></div>
         </div>
         <footer class="school-project-card-actions">
-            <button type="button" class="outline-btn" data-dialog-open="logistics-project-{{ project.id }}">Gestionar archivos</button>
+            <button type="button" class="outline-btn" data-dialog-open="maintenance-project-{{ project.id }}">Mantenimiento del proyecto</button>
             {% if project.regional_status in ['draft', 'returned_for_correction'] %}
                 <a class="outline-btn" href="{{ url_for('school.project_edit', project_id=project.id) }}">Editar información</a>
                 <form method="post" action="{{ url_for('school.project_submit', project_id=project.id) }}"><button type="submit">Enviar a regional</button></form>
@@ -33,16 +33,16 @@
 </section>
 
 {% for project in projects %}
-<dialog id="logistics-project-{{ project.id }}" class="maintenance-dialog institution-dialog"><div class="dialog-card"><div class="dialog-head"><div><h4>Archivos del proyecto</h4><p>{{ project.title }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
-    <p>El colegio completa recursos, logo y fotografías. La coordinación regional valida únicamente los documentos enviados.</p>
-    <form method="post" action="{{ url_for('school.project_logistics', project_id=project.id) }}" enctype="multipart/form-data" class="institution-form-grid">
+<dialog id="maintenance-project-{{ project.id }}" class="maintenance-dialog institution-dialog"><div class="dialog-card"><div class="dialog-head"><div><h4>Mantenimiento del proyecto</h4><p>{{ project.title }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+    <p>Actualizá archivos, recursos y necesidades del proyecto. La coordinación regional valida únicamente el documento PDF.</p>
+    <form method="post" action="{{ url_for('school.project_maintenance', project_id=project.id) }}" enctype="multipart/form-data" class="institution-form-grid">
         <label class="institution-field-wide">Recursos y necesidades operativas<textarea name="required_resources" rows="3">{{ project.required_resources or '' }}</textarea></label>
         <label class="institution-field-wide">Otros requerimientos<textarea name="requirements_other" rows="2">{{ project.requirements_other or '' }}</textarea></label>
-        <label>Documento PDF<input type="file" name="project_document" accept="application/pdf"><small>{{ "Adjunto; reemplazarlo reinicia su validación regional." if project.project_document_path else "Pendiente." }}</small></label>
-        <label>Logo del proyecto<input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp"><small>{{ "Logo cargado." if project.has_real_logo else "Pendiente." }}</small></label>
-        {% for member in project.members %}<label>Foto de {{ member.full_name }}<input type="file" name="member_photo_{{ member.id }}" accept="image/png,image/jpeg,image/webp"><small>{{ "Foto cargada." if member.photo_url else "Pendiente." }}</small></label>{% endfor %}
+        <div class="project-maintenance-file"><label>Documento PDF<input type="file" name="project_document" accept="application/pdf"></label>{% if project.project_document_path %}<div class="project-maintenance-current"><a href="{{ url_for('static', filename=project.project_document_path) }}" target="_blank" rel="noopener">Ver documento actual</a><label><input type="checkbox" name="remove_project_document" value="1"> Retirar</label></div><small>Si lo reemplazás o retirás, deberá validarse nuevamente.</small>{% else %}<small class="is-pending">Documento pendiente.</small>{% endif %}</div>
+        <div class="project-maintenance-file"><label>Logo del proyecto<input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp"></label>{% if project.has_real_logo %}<div class="project-maintenance-preview"><img src="{{ url_for('static', filename=project.project_logo_path) }}" alt="Logo actual de {{ project.title }}"><div><a href="{{ url_for('static', filename=project.project_logo_path) }}" target="_blank" rel="noopener">Ver logo actual</a><label><input type="checkbox" name="remove_project_logo" value="1"> Retirar</label></div></div>{% else %}<small class="is-pending">Logo pendiente.</small>{% endif %}</div>
+        {% for member in project.members %}<div class="project-maintenance-file"><label>Foto de {{ member.full_name }}<input type="file" name="member_photo_{{ member.id }}" accept="image/png,image/jpeg,image/webp"></label>{% if member.photo_url %}<div class="project-maintenance-preview"><img src="{{ url_for('static', filename=member.photo_url) }}" alt="Foto actual de {{ member.full_name }}"><div><a href="{{ url_for('static', filename=member.photo_url) }}" target="_blank" rel="noopener">Ver foto actual</a><label><input type="checkbox" name="remove_member_photo_{{ member.id }}" value="1"> Retirar</label></div></div>{% else %}<small class="is-pending">Fotografía pendiente.</small>{% endif %}</div>{% endfor %}
         <label class="institution-field-wide">Notas internas del colegio<textarea name="school_logistics_notes" rows="2">{{ project.logistics_notes or '' }}</textarea></label>
-        <div class="actions-row institution-field-wide"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar archivos</button></div>
+        <div class="actions-row institution-field-wide"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar mantenimiento</button></div>
     </form>
 </div></dialog>
 {% endfor %}

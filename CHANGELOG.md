@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.35.0] - 2026-08-03
+
+### Mantenimiento de proyectos
+
+- La antigua gestión logística del colegio pasa a llamarse «Mantenimiento del proyecto».
+- Cada colegio puede consultar, cargar, reemplazar o retirar el PDF, el logo y las fotografías de integrantes desde la tarjeta del proyecto.
+- Los recursos, necesidades y notas internas se administran en el mismo mantenimiento.
+- Reemplazar o retirar el PDF reinicia su aprobación documental y devuelve el expediente a revisión regional; modificar recursos visuales no altera el estado de evaluación.
+- Todas las modificaciones quedan registradas en la bitácora como mantenimiento del proyecto.
+
 ## [0.34.3] - 2026-08-03
 
 ### Interfaz

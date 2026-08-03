@@ -80,6 +80,15 @@ def _delete_school_shield(relative_path: str | None):
         os.remove(target)
 
 
+def _delete_project_asset(relative_path: str | None):
+    if not relative_path or relative_path == Project.GENERIC_LOGO_PATH or relative_path.startswith(("http://", "https://")):
+        return
+    static_root = os.path.realpath(current_app.static_folder)
+    target = os.path.realpath(os.path.join(static_root, relative_path.replace("/", os.sep)))
+    if os.path.commonpath([static_root, target]) == static_root and os.path.isfile(target):
+        os.remove(target)
+
+
 def dashboard():
     projects = (
         Project.query.filter_by(institution_id=current_user.institution_id)
@@ -204,7 +213,7 @@ def project_form(project_id: int | None = None):
     return render_template("school/project_form.html", project=project, categories=categories, school=current_user.institution_ref)
 
 
-def project_logistics(project_id: int):
+def project_maintenance(project_id: int):
     project = _owned_project(project_id)
     if not project:
         flash("Proyecto no encontrado.", "error")
@@ -213,35 +222,70 @@ def project_logistics(project_id: int):
     try:
         document_path = _save_project_file(project, request.files.get("project_document"), "document")
         logo_path = _save_project_file(project, request.files.get("project_logo"), "logo")
+        previous_member_photos = {member.id: member.photo_url for member in project.members}
+        received_member_photos = {}
         received_photos = 0
         for member in project.members:
             photo_path = _save_project_file(project, request.files.get(f"member_photo_{member.id}"), "member_photo")
             if photo_path:
-                member.photo_url = photo_path
+                received_member_photos[member.id] = photo_path
                 received_photos += 1
     except ValueError as error:
         db.session.rollback()
         flash(str(error), "error")
-        return redirect(url_for("school.dashboard", _anchor=f"logistics-project-{project.id}"))
+        return redirect(url_for("school.dashboard", _anchor=f"maintenance-project-{project.id}"))
 
+    obsolete_paths = []
+    document_changed = bool(document_path)
     if document_path:
+        if project.project_document_path:
+            obsolete_paths.append(project.project_document_path)
         project.project_document_path = document_path
         project.logistics_document_ok = False
+    elif request.form.get("remove_project_document") == "1" and project.project_document_path:
+        obsolete_paths.append(project.project_document_path)
+        project.project_document_path = None
+        project.logistics_document_ok = False
+        document_changed = True
     if logo_path:
+        if project.has_real_logo:
+            obsolete_paths.append(project.project_logo_path)
         project.project_logo_path = logo_path
+    elif request.form.get("remove_project_logo") == "1" and project.has_real_logo:
+        obsolete_paths.append(project.project_logo_path)
+        project.project_logo_path = None
+    removed_photos = 0
+    for member in project.members:
+        new_photo = received_member_photos.get(member.id)
+        previous_photo = previous_member_photos.get(member.id)
+        if new_photo:
+            if previous_photo:
+                obsolete_paths.append(previous_photo)
+            member.photo_url = new_photo
+        elif request.form.get(f"remove_member_photo_{member.id}") == "1" and previous_photo:
+            obsolete_paths.append(previous_photo)
+            member.photo_url = None
+            removed_photos += 1
+    if document_changed and project.regional_status not in {Project.STATUS_DRAFT, Project.STATUS_RETURNED, Project.STATUS_SUBMITTED, Project.STATUS_RECEIVED}:
+        project.regional_status = Project.STATUS_UNDER_REVIEW
+        project.approved_at = None
+        project.approved_by_id = None
+        project.regional_notes = "El colegio actualizó el documento; requiere nueva validación regional."
     project.logistics_logo_ok = bool(project.has_real_logo)
     project.logistics_photos_ok = bool(project.members) and all(member.photo_url for member in project.members)
     project.required_resources = (request.form.get("required_resources") or "").strip() or None
     project.requirements_other = (request.form.get("requirements_other") or "").strip() or None
     project.logistics_notes = (request.form.get("school_logistics_notes") or "").strip() or None
     log_event(
-        "school.project.logistics.update",
+        "school.project.maintenance.update",
         "project",
         project.id,
-        f"Colegio {current_user.institution_ref.code}: documento={'reemplazado' if document_path else 'sin cambio'}, logo={'reemplazado' if logo_path else 'sin cambio'}, fotos={received_photos}",
+        f"Colegio {current_user.institution_ref.code}: documento={'actualizado' if document_changed else 'sin cambio'}, logo={'reemplazado' if logo_path else 'sin cambio'}, fotos_nuevas={received_photos}, fotos_retiradas={removed_photos}",
     )
     db.session.commit()
-    flash("Información operativa actualizada. El documento queda sujeto a validación regional.", "success")
+    for path in obsolete_paths:
+        _delete_project_asset(path)
+    flash("Mantenimiento del proyecto guardado correctamente.", "success")
     return redirect(url_for("school.dashboard"))
 
 

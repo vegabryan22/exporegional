@@ -13,5 +13,5 @@ school_bp.add_url_rule(
     methods=["GET", "POST"],
 )
 school_bp.add_url_rule("/proyectos/<int:project_id>/editar", endpoint="project_edit", view_func=school_controller.school_coordinator_required(school_controller.project_form), methods=["GET", "POST"])
-school_bp.add_url_rule("/proyectos/<int:project_id>/logistica", endpoint="project_logistics", view_func=school_controller.school_coordinator_required(school_controller.project_logistics), methods=["POST"])
+school_bp.add_url_rule("/proyectos/<int:project_id>/mantenimiento", endpoint="project_maintenance", view_func=school_controller.school_coordinator_required(school_controller.project_maintenance), methods=["POST"])
 school_bp.add_url_rule("/proyectos/<int:project_id>/enviar", endpoint="project_submit", view_func=school_controller.school_coordinator_required(school_controller.submit_project), methods=["POST"])

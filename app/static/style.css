@@ -15189,6 +15189,25 @@ body.school-portal-page .admin-menu a:hover {
 .school-project-card-actions .outline-btn,
 .school-project-card-actions button { min-height: 42px; }
 
+.project-maintenance-file {
+    min-width: 0;
+    padding: .85rem;
+    border: 1px solid #d8e3ea;
+    border-radius: 12px;
+    background: #f8fbfc;
+}
+.project-maintenance-file > label { display: block; }
+.project-maintenance-file small { display: block; margin-top: .55rem; color: #60737e; }
+.project-maintenance-current,
+.project-maintenance-preview { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .65rem; }
+.project-maintenance-current label,
+.project-maintenance-preview label { display: flex; align-items: center; gap: .35rem; font-size: .78rem; color: #8f2330; cursor: pointer; }
+.project-maintenance-current a,
+.project-maintenance-preview a { font-weight: 750; color: #215c7a; }
+.project-maintenance-preview { justify-content: flex-start; }
+.project-maintenance-preview img { width: 52px; height: 52px; object-fit: cover; border: 1px solid #cbdbe4; border-radius: 10px; background: #fff; }
+.project-maintenance-preview > div { display: grid; gap: .35rem; }
+
 .school-project-followup {
     margin-left: auto;
     color: var(--muted);

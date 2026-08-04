@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.41.2] - 2026-08-04
+
+- Se rediseñó el formulario de inscripción y edición de jueces del colegio.
+- La información se organiza en secciones de datos personales y perfil de evaluación, con mejor jerarquía y dimensiones responsivas.
+- La opción de evaluación en inglés ahora es un control completo, legible y unido a su descripción.
+
 ## [0.41.1] - 2026-08-04
 
 - Datos del colegio pasó de un modal con desplazamiento interno a una vista completa del portal de coordinación.

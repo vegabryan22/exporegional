@@ -1,5 +1,7 @@
 # Migración de ExpoTécnica institucional a ExpoTécnica Regional
 
+> Desde la versión 0.40.10, la plataforma regional no utiliza departamentos administrativos heredados. Los accesos se definen por rol (`superadmin`, `admin`, `school_coordinator` y `judge`) y la coordinación se limita mediante `institution_id`.
+
 ## Propósito
 
 Este repositorio es una plataforma regional independiente. No representa al CTP Roberto Gamboa Valverde ni comparte su base de datos. Su objetivo es centralizar colegios participantes, recibir proyectos ganadores, validarlos y ejecutar la evaluación regional.

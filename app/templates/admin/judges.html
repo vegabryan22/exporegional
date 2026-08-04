@@ -35,7 +35,7 @@
             <div>
                 <p class="maintenance-kicker">Acción principal</p>
                 <h4>Crear cuenta manual</h4>
-                <p>Úsalo para administradores, logística, datos, diseño, QA o jueces que deban quedar activos de inmediato.</p>
+                <p>Úsalo para administradores regionales, coordinaciones de colegio o jueces que deban quedar activos de inmediato.</p>
             </div>
             <button type="button" class="secondary-btn" data-dialog-open="create-judge-dialog">Crear usuario</button>
         </article>
@@ -47,17 +47,11 @@
         <div>
             <p class="maintenance-kicker">Cuentas</p>
             <h3>Listado de usuarios</h3>
-            <p class="table-subtext">Busca por nombre, correo, rol, departamento o colegio.</p>
+            <p class="table-subtext">Busca por nombre, correo, rol o colegio.</p>
         </div>
         <div class="page-head-actions users-search-wrap">
             <input type="search" id="usersSearchInput" placeholder="Buscar usuario...">
         </div>
-    </div>
-
-    <div class="users-role-legend">
-        {% for department_code, department_name in user_departments %}
-            <span>{{ department_name }}</span>
-        {% endfor %}
     </div>
 
     <div class="table-wrap users-table-wrap">
@@ -74,7 +68,7 @@
             </thead>
             <tbody>
             {% for judge in judges %}
-                <tr data-user-row data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ judge.department_label ~ ' ' ~ judge.role_label ~ ' ' ~ (judge.job_title or '') ~ ' ' ~ (judge.institution_ref.name if judge.institution_ref else ''))|lower }}">
+                <tr data-user-row data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ judge.role_label ~ ' ' ~ (judge.job_title or '') ~ ' ' ~ (judge.institution_ref.name if judge.institution_ref else ''))|lower }}">
                     <td data-label="Usuario">
                         <div class="user-identity-cell">
                             <strong>{{ judge.full_name }}</strong>
@@ -85,7 +79,7 @@
                     <td data-label="Perfil">
                         <div class="user-profile-cell">
                             <span class="tag {{ 'ok' if judge.has_admin_access else 'neutral' }}">{{ judge.role_label }}</span>
-                            <span>{{ 'Coordinación institucional' if judge.effective_role == 'school_coordinator' else judge.department_label }}</span>
+                            <span>{{ 'Coordinación institucional' if judge.effective_role == 'school_coordinator' else ('Administración regional' if judge.has_admin_access else 'Evaluación regional') }}</span>
                             {% if judge.effective_role == 'judge' %}
                                 <small>Disponibilidad: {{ judge.evaluation_scope_label }}</small>
                             {% endif %}
@@ -134,17 +128,9 @@
         <form method="post" action="{{ action_url }}" class="compact-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="create_judge">
-            <div class="grid-3">
+            <div class="grid-2">
                 <label>Nombre completo<input type="text" name="judge_full_name" required></label>
                 <label>Correo<input type="email" name="judge_email" required></label>
-                <label>Departamento
-                    <select name="judge_department" data-department-select>
-                        <option value="">Seleccione...</option>
-                        {% for department_code, department_name in user_departments %}
-                            <option value="{{ department_code }}">{{ department_name }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
             </div>
             <div class="grid-3">
                 <label>Cargo<input type="text" name="judge_job_title"></label>
@@ -159,7 +145,6 @@
                     </select>
                 </label>
             </div>
-            <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
             <div data-coordinator-fields hidden>
                 <label>Colegio que coordina
                     <select name="judge_institution_id">
@@ -240,7 +225,7 @@
             </div>
 
             <p class="judge-edit-section-label">Estado y acceso</p>
-            <div class="grid-3">
+            <div class="grid-2">
                 <label>Estado
                     <select name="judge_is_active_user">
                         <option value="1" {% if judge.is_active_user %}selected{% endif %}>Activo</option>
@@ -256,16 +241,7 @@
                         {% endfor %}
                     </select>
                 </label>
-                <label>Departamento
-                    <select name="judge_department" data-department-select>
-                        <option value="">Seleccione...</option>
-                        {% for department_code, department_name in user_departments %}
-                            <option value="{{ department_code }}" {% if judge.department == department_code %}selected{% endif %}>{{ department_name }}</option>
-                        {% endfor %}
-                    </select>
-                </label>
             </div>
-            <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
             <div data-coordinator-fields {% if judge.effective_role != 'school_coordinator' %}hidden{% endif %}>
                 <label>Colegio que coordina
                     <select name="judge_institution_id">
@@ -309,7 +285,7 @@
 <dialog id="password-judge-{{ judge.id }}" class="maintenance-dialog">
     <div class="dialog-card">
         <div class="dialog-head"><h4>Contraseña de usuario</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
-        <p><strong>{{ judge.full_name }}</strong><br>{{ judge.email }} | {{ judge.department_label }}</p>
+        <p><strong>{{ judge.full_name }}</strong><br>{{ judge.email }} | {{ judge.role_label }}{% if judge.institution_ref %} · {{ judge.institution_ref.name }}{% endif %}</p>
 
         <form method="post" action="{{ action_url }}" class="compact-form">
             <input type="hidden" name="next" value="{{ next_url }}">
@@ -342,37 +318,14 @@
 
 <script>
     (() => {
-        const syncDepartmentState = (form) => {
+        const syncRoleState = (form) => {
             const roleSelect = form.querySelector("[data-role-select]");
-            const departmentSelect = form.querySelector("[data-department-select]");
-            const help = form.querySelector("[data-department-help]");
-            if (!roleSelect || !departmentSelect) {
+            if (!roleSelect) {
                 return;
             }
 
-            const departmentRequired = ["admin", "superadmin"].includes(roleSelect.value);
             const isJudge = roleSelect.value === "judge";
             const isCoordinator = roleSelect.value === "school_coordinator";
-            if (!departmentRequired && departmentSelect.value) {
-                departmentSelect.dataset.previousValue = departmentSelect.value;
-            }
-            if (departmentRequired && !departmentSelect.value && departmentSelect.dataset.previousValue) {
-                departmentSelect.value = departmentSelect.dataset.previousValue;
-            }
-
-            departmentSelect.required = departmentRequired;
-            departmentSelect.disabled = !departmentRequired;
-            if (!departmentRequired) {
-                departmentSelect.value = "";
-            }
-
-            if (help) {
-                help.textContent = departmentRequired
-                    ? "Selecciona el departamento del usuario administrativo."
-                    : (isCoordinator
-                        ? "La coordinación se organiza por colegio, no por departamento."
-                        : "Los jueces no se asignan a un departamento.");
-            }
 
             form.querySelectorAll("[data-judge-fields]").forEach((section) => {
                 section.hidden = !isJudge;
@@ -394,8 +347,8 @@
             if (!roleSelect) {
                 return;
             }
-            syncDepartmentState(form);
-            roleSelect.addEventListener("change", () => syncDepartmentState(form));
+            syncRoleState(form);
+            roleSelect.addEventListener("change", () => syncRoleState(form));
         });
 
         const searchInput = document.getElementById("usersSearchInput");

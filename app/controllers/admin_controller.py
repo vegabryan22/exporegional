@@ -93,12 +93,7 @@ REQUIREMENTS_STATUSES = [
     ("completo", "Completo"),
     ("no_aplica", "No aplica"),
 ]
-USER_DEPARTMENTS = [
-    ("logistica", "Logistica"),
-    ("datos", "Datos"),
-    ("diseno", "Diseno"),
-    ("qa", "QA"),
-]
+USER_DEPARTMENTS = []
 USER_ROLES = [
     (Judge.ROLE_JUDGE, "Juez"),
     (Judge.ROLE_SCHOOL_COORDINATOR, "Coordinador de colegio"),
@@ -112,7 +107,6 @@ ADMIN_MENU_ITEMS = [
     ("assignments", "admin.assignments_page", "Asignaciones"),
     ("judge_pool", "admin.judge_pool_page", "Jueces"),
     ("judges", "admin.judges_page", "Usuarios"),
-    ("permissions", "admin.permissions_page", "Permisos"),
     ("campaigns", "admin.campaigns_page", "Campañas"),
     ("categories", "admin.categories_page", "Categorías"),
     ("academic", "admin.academic_page", "Académico"),
@@ -132,7 +126,7 @@ ADMIN_MENU_GROUPS = [
     ("General", ["overview"]),
     ("Operación", ["institutions", "assignments", "judge_pool", "projects", "evaluations"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
-    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "logs"]),
+    ("Sistema", ["judges", "smtp", "institution", "maintenance", "database", "gitops", "logs"]),
 ]
 
 ADMIN_MENU_ICONS = {
@@ -169,7 +163,6 @@ ADMIN_MENU_ITEMS = [
     ("assignments", "admin.assignments_page", "Asignaciones"),
     ("judge_pool", "admin.judge_pool_page", "Jueces"),
     ("judges", "admin.judges_page", "Usuarios"),
-    ("permissions", "admin.permissions_page", "Permisos"),
     ("campaigns", "admin.campaigns_page", "Campañas"),
     ("categories", "admin.categories_page", "Categorías"),
     ("academic", "admin.academic_page", "Académico"),
@@ -194,7 +187,7 @@ ADMIN_MENU_GROUPS = [
     ("Documentos", ["reports", "documents"]),
     ("Operación", ["institutions", "regional_review", "assignments", "judge_pool", "projects", "requirements", "evaluations", "students_stats"]),
     ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
-    ("Sistema", ["judges", "permissions", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
+    ("Sistema", ["judges", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
@@ -588,17 +581,14 @@ def _save_department_module_access(access_map):
 def _allowed_modules_for_current_user():
     if not current_user.is_authenticated or not current_user.has_admin_access:
         return set()
-    if current_user.is_superadmin:
+    if current_user.is_superadmin or _current_role() == Judge.ROLE_ADMIN:
         return {module for module, _, _ in ADMIN_MENU_ITEMS}
-    if _current_role() == Judge.ROLE_ADMIN:
-        dynamic_map = _load_department_module_access()
-        return set(dynamic_map.get(_current_department(), {"overview"}))
     return set()
 
 
 def _can_access_module(module_key: str):
     if module_key == "permissions":
-        return current_user.is_superadmin
+        return False
     return module_key in _allowed_modules_for_current_user()
 
 
@@ -648,17 +638,15 @@ def _str_to_bool(value: str):
 
 
 def _valid_department(value: str):
-    department = (value or "").strip().lower()
-    valid_departments = {code for code, _ in USER_DEPARTMENTS}
-    return department if department in valid_departments else ""
+    return ""
 
 
 def _role_requires_department(role: str) -> bool:
-    return role in Judge.ADMIN_ROLES
+    return False
 
 
 def _normalize_department_for_role(role: str, department: str) -> str:
-    return department if _role_requires_department(role) else ""
+    return ""
 
 
 def _parse_date(raw_value):

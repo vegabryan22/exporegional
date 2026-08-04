@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.40.10] - 2026-08-04
+
+- Se eliminaron los departamentos heredados Logística, Datos, Diseño y QA de la administración regional.
+- Los usuarios regionales se administran únicamente por rol y, cuando corresponde, por colegio.
+- Los administradores regionales tienen acceso administrativo completo; coordinación y jueces conservan sus permisos específicos.
+- Se retiró del menú la matriz de permisos por departamento.
+
 ## [0.40.9] - 2026-08-04
 
 - Los respaldos MySQL usan TCP local para ser compatibles con servidores cuyo socket no está en la ruta estándar.

@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.41.1] - 2026-08-04
+
+- Datos del colegio pasó de un modal con desplazamiento interno a una vista completa del portal de coordinación.
+- La vista conserva el menú lateral, organiza el perfil por secciones y mantiene la carga o sustitución del escudo.
+- Los errores y confirmaciones del perfil regresan a la misma vista para evitar perder el contexto de edición.
+
 ## [0.41.0] - 2026-08-04
 
 - La coordinación de cada colegio dispone de un resumen privado de sus proyectos, expedientes, jueces y avance de evaluaciones.

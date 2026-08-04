@@ -15132,6 +15132,16 @@ body.school-portal-page .admin-menu a:hover {
     margin: 0;
 }
 
+.school-profile-page { padding: 1.35rem; border-radius: 18px; }
+.school-profile-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1.5rem; padding-bottom: 1.15rem; border-bottom: 1px solid #dce6ec; }
+.school-profile-page-head h3 { margin: .1rem 0 .35rem; font-size: 1.7rem; }
+.school-profile-page-head p:last-child { max-width: 760px; margin: 0; }
+.school-profile-form { max-width: 1080px; margin-top: 1.25rem; }
+.school-profile-section-title { display: grid; gap: .15rem; margin-top: .35rem; padding: .8rem 0 .35rem; border-bottom: 1px solid #dce6ec; }
+.school-profile-section-title strong { color: #173f55; font-size: 1rem; }
+.school-profile-section-title span { color: var(--muted); font-size: .82rem; }
+.school-profile-actions { display: flex; justify-content: flex-end; gap: .7rem; padding-top: .5rem; }
+
 .school-summary-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -15354,6 +15364,9 @@ body.school-portal-page .admin-menu a:hover {
 }
 
 @media (max-width: 560px) {
+    .school-profile-page-head { display: grid; }
+    .school-profile-actions { display: grid; }
+    .school-profile-actions > * { width: 100%; text-align: center; }
     .school-project-editor-head { display: grid; gap: .8rem; }
     .school-project-editor-grid { grid-template-columns: 1fr; }
     .school-project-editor-grid .editor-span-2 { grid-column: auto; }

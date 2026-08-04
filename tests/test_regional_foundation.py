@@ -398,6 +398,35 @@ class RegionalFoundationTests(unittest.TestCase):
             public_response = client.get("/inscripcion")
         self.assertEqual(404, public_response.status_code)
 
+    def test_school_profile_is_a_scoped_full_page_instead_of_a_dialog(self):
+        app = create_app()
+        app.config["TESTING"] = True
+
+        with app.app_context():
+            school = Institution(code="PROFILE-OWN", name="Colegio perfil", responsible_name="Responsable", responsible_email="profile@example.com", is_active=True)
+            db.session.add(school)
+            db.session.flush()
+            coordinator = Judge(full_name="Coordinador perfil", email="profile-coordinator@example.com", role=Judge.ROLE_SCHOOL_COORDINATOR, institution_id=school.id, password_hash="test-only", is_active_user=True)
+            db.session.add(coordinator)
+            db.session.flush()
+
+            with app.test_client() as client:
+                with client.session_transaction() as session:
+                    session["_user_id"] = str(coordinator.id)
+                    session["_fresh"] = True
+                response = client.get("/colegio/perfil")
+                dashboard = client.get("/colegio/panel")
+
+            db.session.rollback()
+
+        body = response.get_data(as_text=True)
+        self.assertEqual(200, response.status_code)
+        self.assertIn("Datos del colegio", body)
+        self.assertIn("Resumen y proyectos", body)
+        self.assertIn('name="institution_shield"', body)
+        self.assertNotIn("school-profile-dialog", body)
+        self.assertNotIn("school-profile-dialog", dashboard.get_data(as_text=True))
+
     def test_judge_registration_is_private_and_scoped_to_school(self):
         app = create_app()
         app.config["TESTING"] = True

@@ -329,18 +329,20 @@ def project_workspace(project_id: int):
 
 def profile():
     school = current_user.institution_ref
+    if request.method == "GET":
+        return render_template("school/profile.html", school=school)
     name = (request.form.get("name") or "").strip()
     responsible_name = (request.form.get("responsible_name") or "").strip()
     responsible_email = (request.form.get("responsible_email") or "").strip().lower()
     if not name or not responsible_name or not responsible_email:
         flash("Nombre, responsable y correo son obligatorios.", "error")
-        return redirect(url_for("school.dashboard"))
+        return redirect(url_for("school.profile"))
     previous_shield = school.shield_path
     try:
         new_shield = _save_school_shield(request.files.get("institution_shield"))
     except ValueError as error:
         flash(str(error), "error")
-        return redirect(url_for("school.dashboard"))
+        return redirect(url_for("school.profile"))
     school.name = name
     school.circuit = (request.form.get("circuit") or "").strip() or None
     school.regional_directorate = (request.form.get("regional_directorate") or "").strip() or None
@@ -356,7 +358,7 @@ def profile():
     log_event("school.profile.update", "institution", school.id, f"Perfil actualizado por coordinación: {school.code}")
     db.session.commit()
     flash("Información del colegio actualizada.", "success")
-    return redirect(url_for("school.dashboard"))
+    return redirect(url_for("school.profile"))
 
 
 def project_form(project_id: int | None = None):

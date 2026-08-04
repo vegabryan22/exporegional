@@ -1,0 +1,30 @@
+{% extends "school/layout.html" %}
+{% block school_content %}
+<section class="card school-profile-page">
+    <header class="school-profile-page-head">
+        <div><p class="maintenance-kicker">Coordinación del colegio</p><h3>Datos del colegio</h3><p>Actualizá la información que utiliza la coordinación regional para comunicarse con {{ school.name }}.</p></div>
+        <a class="outline-btn" href="{{ url_for('school.dashboard') }}">Volver al resumen</a>
+    </header>
+
+    <form method="post" action="{{ url_for('school.profile') }}" enctype="multipart/form-data" class="institution-form-grid school-profile-form">
+        <section class="school-profile-shield institution-field-wide">
+            {% if school.shield_path %}<img src="{{ url_for('static', filename=school.shield_path) }}" alt="Escudo de {{ school.name }}">{% else %}<span>{{ school.code }}</span>{% endif %}
+            <label>Escudo del colegio<input type="file" name="institution_shield" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif"><small>Seleccioná una imagen únicamente si querés subir o reemplazar el escudo actual.</small></label>
+        </section>
+
+        <div class="school-profile-section-title institution-field-wide"><strong>Identificación institucional</strong><span>El código regional es administrado exclusivamente por la coordinación regional.</span></div>
+        <label>Nombre del colegio<input type="text" name="name" value="{{ school.name }}" required></label>
+        <label>Código regional<input type="text" value="{{ school.code }}" disabled><small>No puede modificarse desde esta cuenta.</small></label>
+        <label>Circuito<input type="text" name="circuit" value="{{ school.circuit or '' }}"></label>
+        <label>Dirección regional<input type="text" name="regional_directorate" value="{{ school.regional_directorate or '' }}"></label>
+
+        <div class="school-profile-section-title institution-field-wide"><strong>Contacto de coordinación</strong><span>Estos datos se utilizan para seguimiento y comunicaciones oficiales.</span></div>
+        <label>Persona responsable<input type="text" name="responsible_name" value="{{ school.responsible_name }}" required></label>
+        <label>Correo responsable<input type="email" name="responsible_email" value="{{ school.responsible_email }}" required></label>
+        <label>Teléfono<input type="text" name="responsible_phone" value="{{ school.responsible_phone or '' }}"></label>
+        <label>Dirección física<input type="text" name="address" value="{{ school.address or '' }}"></label>
+
+        <footer class="school-profile-actions institution-field-wide"><a class="ghost-btn" href="{{ url_for('school.dashboard') }}">Cancelar</a><button type="submit">Guardar información</button></footer>
+    </form>
+</section>
+{% endblock %}

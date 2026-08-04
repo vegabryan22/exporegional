@@ -101,6 +101,7 @@ USER_DEPARTMENTS = [
 ]
 USER_ROLES = [
     (Judge.ROLE_JUDGE, "Juez"),
+    (Judge.ROLE_SCHOOL_COORDINATOR, "Coordinador de colegio"),
     (Judge.ROLE_ADMIN, "Administrador"),
     (Judge.ROLE_SUPERADMIN, "Superadministrador"),
 ]
@@ -4485,6 +4486,8 @@ def _handle_action(action: str):
         job_title = request.form.get("judge_job_title", "").strip()
         phone = request.form.get("judge_phone", "").strip()
         institution = request.form.get("judge_institution", "").strip()
+        coordinator_institution_id = request.form.get("judge_institution_id", type=int)
+        coordinator_school = Institution.query.get(coordinator_institution_id) if coordinator_institution_id else None
         identity = request.form.get("judge_identity", "").strip()
         previous_expo = _yes_no_value(request.form.get("judge_previous_expo", "")).strip()
         category_scope = _judge_category_scope_from_value(request.form.get("judge_category_scope", "ambas"))
@@ -4499,10 +4502,14 @@ def _handle_action(action: str):
             can_evaluate_english = False
             can_documentation = False
             can_exposition = False
+        if role == Judge.ROLE_SCHOOL_COORDINATOR and coordinator_school:
+            institution = coordinator_school.name
         if not full_name or not email:
             flash("Nombre y correo son obligatorios.", "error")
         elif _role_requires_department(role) and not department:
             flash("El departamento es obligatorio para usuarios administrativos.", "error")
+        elif role == Judge.ROLE_SCHOOL_COORDINATOR and not coordinator_school:
+            flash("Debes seleccionar el colegio de la coordinación.", "error")
         elif role == Judge.ROLE_SUPERADMIN and not current_user.is_superadmin:
             flash("Solo un superadministrador puede crear otro superadministrador.", "error")
         elif Judge.query.filter_by(email=email).first():
@@ -4525,6 +4532,7 @@ def _handle_action(action: str):
                 can_evaluate_english=can_evaluate_english,
                 category_scope=category_scope,
                 role=role,
+                institution_id=coordinator_school.id if role == Judge.ROLE_SCHOOL_COORDINATOR else None,
                 is_admin=role in Judge.ADMIN_ROLES,
                 is_active_user=True,
                 must_change_password=not bool(manual_password),
@@ -4557,6 +4565,8 @@ def _handle_action(action: str):
             job_title = request.form.get("judge_job_title", "").strip()
             phone = request.form.get("judge_phone", "").strip()
             institution = request.form.get("judge_institution", "").strip()
+            coordinator_institution_id = request.form.get("judge_institution_id", type=int)
+            coordinator_school = Institution.query.get(coordinator_institution_id) if coordinator_institution_id else None
             identity = request.form.get("judge_identity", "").strip()
             previous_expo = _yes_no_value(request.form.get("judge_previous_expo", "")).strip()
             category_scope = _judge_category_scope_from_value(request.form.get("judge_category_scope", "ambas"))
@@ -4571,11 +4581,15 @@ def _handle_action(action: str):
                 can_evaluate_english = False
                 can_documentation = False
                 can_exposition = False
+            if role == Judge.ROLE_SCHOOL_COORDINATOR and coordinator_school:
+                institution = coordinator_school.name
             duplicate = Judge.query.filter(Judge.email == email, Judge.id != judge.id).first()
             if not full_name or not email:
                 flash("Nombre y correo son obligatorios.", "error")
             elif _role_requires_department(role) and not department:
                 flash("El departamento es obligatorio para usuarios administrativos.", "error")
+            elif role == Judge.ROLE_SCHOOL_COORDINATOR and not coordinator_school:
+                flash("Debes seleccionar el colegio de la coordinación.", "error")
             elif duplicate:
                 flash("Ya existe otro usuario con ese correo.", "error")
             elif judge.id == current_user.id and not is_active_user:
@@ -4600,6 +4614,7 @@ def _handle_action(action: str):
                 judge.can_evaluate_english = can_evaluate_english
                 judge.category_scope = category_scope
                 judge.role = role
+                judge.institution_id = coordinator_school.id if role == Judge.ROLE_SCHOOL_COORDINATOR else None
                 judge.is_admin = role in Judge.ADMIN_ROLES
                 judge.is_active_user = is_active_user
                 log_event(
@@ -7966,8 +7981,9 @@ def pending_evaluations_report_excel():
 
 @admin_module_required("judges")
 def judges_page():
-    system_users = Judge.query.filter(Judge.role != Judge.ROLE_SCHOOL_COORDINATOR).order_by(Judge.full_name.asc()).all()
-    return _render("admin/judges.html", "judges", judges=system_users)
+    system_users = Judge.query.options(joinedload(Judge.institution_ref)).order_by(Judge.full_name.asc()).all()
+    institutions = Institution.query.order_by(Institution.name.asc()).all()
+    return _render("admin/judges.html", "judges", judges=system_users, institutions=institutions)
 
 
 @admin_module_required("permissions")
@@ -10027,6 +10043,38 @@ def institutions_page():
             log_event("admin.institution.coordinator.create", "judge", coordinator.id, f"Cuenta coordinadora para {institution.code}")
             db.session.commit()
             flash(f"Cuenta creada. Contraseña temporal: {temporary_password}", "success")
+            return redirect(url_for("admin.institutions_page"))
+
+        if action == "update_coordinator" and institution:
+            coordinator_id = request.form.get("coordinator_id", type=int)
+            coordinator = Judge.query.filter_by(
+                id=coordinator_id,
+                institution_id=institution.id,
+                role=Judge.ROLE_SCHOOL_COORDINATOR,
+            ).first()
+            full_name = (request.form.get("coordinator_name") or "").strip()
+            email = (request.form.get("coordinator_email") or "").strip().lower()
+            is_active_user = _str_to_bool(request.form.get("coordinator_is_active", "1"))
+            duplicate = Judge.query.filter(Judge.email == email, Judge.id != coordinator_id).first() if email else None
+            if not coordinator:
+                flash("La cuenta coordinadora no pertenece a este colegio.", "error")
+            elif not full_name or not email:
+                flash("Nombre y correo de la coordinación son obligatorios.", "error")
+            elif duplicate:
+                flash("Ya existe otra cuenta con ese correo.", "error")
+            else:
+                coordinator.full_name = full_name
+                coordinator.email = email
+                coordinator.institution = institution.name
+                coordinator.is_active_user = is_active_user
+                log_event(
+                    "admin.institution.coordinator.update",
+                    "judge",
+                    coordinator.id,
+                    f"Coordinación actualizada para {institution.code}: {full_name} <{email}> activa={is_active_user}",
+                )
+                db.session.commit()
+                flash("Datos de la coordinación actualizados.", "success")
             return redirect(url_for("admin.institutions_page"))
 
         if action == "toggle" and institution:

@@ -1,10 +1,11 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-{% set ns = namespace(active=0, inactive=0, admins=0, judges_count=0, temp=0) %}
+{% set ns = namespace(active=0, inactive=0, admins=0, judges_count=0, coordinators=0, temp=0) %}
 {% for user in judges %}
     {% if user.is_active_user %}{% set ns.active = ns.active + 1 %}{% else %}{% set ns.inactive = ns.inactive + 1 %}{% endif %}
     {% if user.has_admin_access %}{% set ns.admins = ns.admins + 1 %}{% endif %}
     {% if user.effective_role == 'judge' %}{% set ns.judges_count = ns.judges_count + 1 %}{% endif %}
+    {% if user.effective_role == 'school_coordinator' %}{% set ns.coordinators = ns.coordinators + 1 %}{% endif %}
     {% if user.must_change_password %}{% set ns.temp = ns.temp + 1 %}{% endif %}
 {% endfor %}
 
@@ -25,6 +26,7 @@
         <article><strong>{{ ns.active }}</strong><span>Activos</span></article>
         <article><strong>{{ ns.admins }}</strong><span>Administrativos</span></article>
         <article><strong>{{ ns.judges_count }}</strong><span>Jueces</span></article>
+        <article><strong>{{ ns.coordinators }}</strong><span>Coordinaciones</span></article>
         <article><strong>{{ ns.temp }}</strong><span>Clave temporal</span></article>
     </div>
 
@@ -45,7 +47,7 @@
         <div>
             <p class="maintenance-kicker">Cuentas</p>
             <h3>Listado de usuarios</h3>
-            <p class="table-subtext">Busca por nombre, correo, rol o departamento.</p>
+            <p class="table-subtext">Busca por nombre, correo, rol, departamento o colegio.</p>
         </div>
         <div class="page-head-actions users-search-wrap">
             <input type="search" id="usersSearchInput" placeholder="Buscar usuario...">
@@ -64,6 +66,7 @@
                 <tr>
                     <th>Usuario</th>
                     <th>Perfil</th>
+                    <th>Colegio</th>
                     <th>Estado</th>
                     <th>Último acceso</th>
                     <th>Acciones</th>
@@ -71,7 +74,7 @@
             </thead>
             <tbody>
             {% for judge in judges %}
-                <tr data-user-row data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ judge.department_label ~ ' ' ~ judge.role_label ~ ' ' ~ (judge.job_title or ''))|lower }}">
+                <tr data-user-row data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ judge.department_label ~ ' ' ~ judge.role_label ~ ' ' ~ (judge.job_title or '') ~ ' ' ~ (judge.institution_ref.name if judge.institution_ref else ''))|lower }}">
                     <td data-label="Usuario">
                         <div class="user-identity-cell">
                             <strong>{{ judge.full_name }}</strong>
@@ -82,12 +85,22 @@
                     <td data-label="Perfil">
                         <div class="user-profile-cell">
                             <span class="tag {{ 'ok' if judge.has_admin_access else 'neutral' }}">{{ judge.role_label }}</span>
-                            <span>{{ judge.department_label }}</span>
+                            <span>{{ 'Coordinación institucional' if judge.effective_role == 'school_coordinator' else judge.department_label }}</span>
                             {% if judge.effective_role == 'judge' %}
                                 <small>Disponibilidad: {{ judge.evaluation_scope_label }}</small>
                             {% endif %}
                             {% if judge.job_title %}<small>{{ judge.job_title }}</small>{% endif %}
                         </div>
+                    </td>
+                    <td data-label="Colegio">
+                        {% if judge.effective_role == 'school_coordinator' and judge.institution_ref %}
+                            <div class="user-school-cell">
+                                {% if judge.institution_ref.shield_path %}<img src="{{ url_for('static', filename=judge.institution_ref.shield_path) }}" alt="">{% endif %}
+                                <span><strong>{{ judge.institution_ref.name }}</strong><small>{{ judge.institution_ref.code }}</small></span>
+                            </div>
+                        {% else %}
+                            <span class="user-school-empty">No aplica</span>
+                        {% endif %}
                     </td>
                     <td data-label="Estado">
                         <div class="user-status-stack">
@@ -108,7 +121,7 @@
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="5">No hay usuarios registrados.</td></tr>
+                <tr><td colspan="6">No hay usuarios registrados.</td></tr>
             {% endfor %}
             </tbody>
         </table>
@@ -147,6 +160,15 @@
                 </label>
             </div>
             <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
+            <div data-coordinator-fields hidden>
+                <label>Colegio que coordina
+                    <select name="judge_institution_id">
+                        <option value="">Seleccione un colegio...</option>
+                        {% for school in institutions %}<option value="{{ school.id }}">{{ school.name }}</option>{% endfor %}
+                    </select>
+                </label>
+                <small>La cuenta quedará limitada a la información y proyectos de este colegio.</small>
+            </div>
             <div class="grid-3" data-judge-fields>
                 <label>C&eacute;dula o identificaci&oacute;n<input type="text" name="judge_identity" maxlength="40"></label>
                 <label>Instituci&oacute;n o empresa<input type="text" name="judge_institution"></label>
@@ -188,7 +210,7 @@
 <dialog id="edit-judge-{{ judge.id }}" class="maintenance-dialog">
     <div class="dialog-card">
         <div class="dialog-head">
-            <h4>Editar juez</h4>
+            <div><h4>Editar usuario</h4><p>{{ judge.role_label }}{% if judge.institution_ref %} · {{ judge.institution_ref.name }}{% endif %}</p></div>
             <button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button>
         </div>
         <form method="post" action="{{ action_url }}" class="compact-form">
@@ -244,6 +266,15 @@
                 </label>
             </div>
             <small data-department-help>El departamento solo aplica para usuarios administrativos.</small>
+            <div data-coordinator-fields {% if judge.effective_role != 'school_coordinator' %}hidden{% endif %}>
+                <label>Colegio que coordina
+                    <select name="judge_institution_id">
+                        <option value="">Seleccione un colegio...</option>
+                        {% for school in institutions %}<option value="{{ school.id }}" {% if judge.institution_id == school.id %}selected{% endif %}>{{ school.name }}</option>{% endfor %}
+                    </select>
+                </label>
+                <small>Los permisos de coordinación se aplican únicamente al colegio seleccionado.</small>
+            </div>
 
             <p class="judge-edit-section-label" data-judge-fields>Disponibilidad como evaluador</p>
             <div class="grid-2" data-judge-fields>
@@ -319,7 +350,9 @@
                 return;
             }
 
-            const departmentRequired = roleSelect.value !== "judge";
+            const departmentRequired = ["admin", "superadmin"].includes(roleSelect.value);
+            const isJudge = roleSelect.value === "judge";
+            const isCoordinator = roleSelect.value === "school_coordinator";
             if (!departmentRequired && departmentSelect.value) {
                 departmentSelect.dataset.previousValue = departmentSelect.value;
             }
@@ -336,13 +369,22 @@
             if (help) {
                 help.textContent = departmentRequired
                     ? "Selecciona el departamento del usuario administrativo."
-                    : "Los jueces no se asignan a un departamento.";
+                    : (isCoordinator
+                        ? "La coordinación se organiza por colegio, no por departamento."
+                        : "Los jueces no se asignan a un departamento.");
             }
 
             form.querySelectorAll("[data-judge-fields]").forEach((section) => {
-                section.hidden = departmentRequired;
+                section.hidden = !isJudge;
                 section.querySelectorAll("input, select, textarea").forEach((field) => {
-                    field.disabled = departmentRequired;
+                    field.disabled = !isJudge;
+                });
+            });
+            form.querySelectorAll("[data-coordinator-fields]").forEach((section) => {
+                section.hidden = !isCoordinator;
+                section.querySelectorAll("select").forEach((field) => {
+                    field.disabled = !isCoordinator;
+                    field.required = isCoordinator;
                 });
             });
         };

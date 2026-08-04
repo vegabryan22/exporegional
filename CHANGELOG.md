@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.40.8] - 2026-08-04
+
+- El mantenimiento de Usuarios incluye las cuentas coordinadoras y muestra el colegio asociado.
+- El administrador general puede editar nombre, correo, estado y colegio de cada coordinación.
+- El modal Acceso del colegio lista y permite mantener sus cuentas vinculadas en lugar de mostrar solo un contador.
+- Se renovaron la jerarquía visual, las tarjetas, formularios y acciones de las cuentas coordinadoras.
+
 ## [0.40.7] - 2026-08-03
 
 - El mantenimiento Git puede leer el puerto y el archivo PID de Gunicorn desde `GITOPS_BIND` y `GITOPS_PIDFILE`.

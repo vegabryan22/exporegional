@@ -39,7 +39,56 @@
 
         <dialog id="delete-institution-{{ school.id }}" class="maintenance-dialog institution-dialog institution-dialog-small"><div class="dialog-card"><div class="dialog-head"><div><h4>Eliminar colegio</h4><p>{{ school.name }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><div class="alert error">Esta acción elimina el colegio y sus credenciales API. Los proyectos regionales se conservan como registros históricos y las cuentas coordinadoras se desactivan.</div><form method="post" class="compact-form"><input type="hidden" name="action" value="delete"><input type="hidden" name="institution_id" value="{{ school.id }}"><label>Escribe <strong>{{ school.code }}</strong> para confirmar<input type="text" name="confirmation_code" autocomplete="off" required></label><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit" class="danger">Eliminar definitivamente</button></div></form></div></dialog>
 
-        <dialog id="access-institution-{{ school.id }}" class="maintenance-dialog institution-dialog institution-dialog-small"><div class="dialog-card"><div class="dialog-head"><div><h4>Acceso del colegio</h4><p>{{ school.name }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><p>La coordinación usa esta cuenta para administrar su perfil, escudo y proyectos manuales.</p><form method="post" class="compact-form"><input type="hidden" name="action" value="create_coordinator"><input type="hidden" name="institution_id" value="{{ school.id }}"><label>Nombre<input type="text" name="coordinator_name" value="{{ school.responsible_name }}" required></label><label>Correo<input type="email" name="coordinator_email" value="{{ school.responsible_email }}" required></label><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear acceso</button></div></form>{% if school.users %}<p class="empty-note">{{ school.users|length }} cuenta(s) vinculada(s). No crees otra si ya tienen acceso.</p>{% endif %}</div></dialog>
+        <dialog id="access-institution-{{ school.id }}" class="maintenance-dialog institution-dialog institution-access-dialog">
+            <div class="dialog-card">
+                <div class="dialog-head institution-access-head">
+                    <div><p class="maintenance-kicker">Coordinación del colegio</p><h4>Accesos de {{ school.name }}</h4><p>Administra las cuentas autorizadas para operar este colegio.</p></div>
+                    <button type="button" class="ghost-btn dialog-close" data-dialog-close aria-label="Cerrar">&times;</button>
+                </div>
+
+                {% set coordinators = school.users|selectattr('effective_role', 'equalto', 'school_coordinator')|list %}
+                {% if coordinators %}
+                <div class="coordinator-account-list">
+                    {% for coordinator in coordinators %}
+                    <form method="post" class="coordinator-account-card">
+                        <input type="hidden" name="action" value="update_coordinator">
+                        <input type="hidden" name="institution_id" value="{{ school.id }}">
+                        <input type="hidden" name="coordinator_id" value="{{ coordinator.id }}">
+                        <div class="coordinator-account-title">
+                            <span class="coordinator-avatar">{{ coordinator.full_name[:1]|upper }}</span>
+                            <span><strong>{{ coordinator.full_name }}</strong><small>{{ coordinator.role_label }} de {{ school.name }}</small></span>
+                            <span class="tag {{ 'ok' if coordinator.is_active_user else 'off' }}">{{ 'Activo' if coordinator.is_active_user else 'Inactivo' }}</span>
+                        </div>
+                        <div class="grid-2 coordinator-account-fields">
+                            <label>Nombre completo<input type="text" name="coordinator_name" value="{{ coordinator.full_name }}" required></label>
+                            <label>Correo de acceso<input type="email" name="coordinator_email" value="{{ coordinator.email }}" required></label>
+                        </div>
+                        <div class="coordinator-account-footer">
+                            <label class="coordinator-status-check"><input type="checkbox" name="coordinator_is_active" value="1" {% if coordinator.is_active_user %}checked{% endif %}> Cuenta habilitada</label>
+                            <button type="submit" class="secondary-btn">Guardar cuenta</button>
+                        </div>
+                    </form>
+                    {% endfor %}
+                </div>
+                {% else %}
+                    <div class="coordinator-empty-state"><strong>Este colegio aún no tiene coordinación</strong><span>Crea el primer acceso para que pueda administrar su información y proyectos.</span></div>
+                {% endif %}
+
+                <details class="coordinator-create-panel" {% if not coordinators %}open{% endif %}>
+                    <summary>Crear otra cuenta de coordinación</summary>
+                    <form method="post" class="compact-form">
+                        <input type="hidden" name="action" value="create_coordinator">
+                        <input type="hidden" name="institution_id" value="{{ school.id }}">
+                        <div class="grid-2">
+                            <label>Nombre completo<input type="text" name="coordinator_name" value="{{ school.responsible_name }}" required></label>
+                            <label>Correo de acceso<input type="email" name="coordinator_email" value="{{ school.responsible_email }}" required></label>
+                        </div>
+                        <div class="actions-row"><button type="submit">Crear acceso</button></div>
+                    </form>
+                </details>
+                <div class="institution-access-footer"><a class="outline-btn" href="{{ url_for('admin.judges_page') }}">Ver todos los usuarios</a><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div>
+            </div>
+        </dialog>
 
         {% if school.uses_institutional_platform %}<dialog id="api-institution-{{ school.id }}" class="maintenance-dialog institution-dialog institution-dialog-small"><div class="dialog-card"><div class="dialog-head"><div><h4>Conexión API</h4><p>{{ school.name }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><p>Credenciales técnicas para que la plataforma institucional envíe ganadores.</p><form method="post" class="compact-form"><input type="hidden" name="action" value="create_api_credential"><input type="hidden" name="institution_id" value="{{ school.id }}"><label>Nombre de credencial<input type="text" name="credential_name" value="Plataforma institucional" required></label><div class="actions-row"><button type="submit">Generar credencial</button></div></form><div class="institution-credentials-list">{% for credential in school.api_credentials %}<div class="institution-credential"><span><strong>{{ credential.name }}</strong><small>{{ credential.token_prefix }}… · {{ "Activa" if credential.is_active else "Revocada" }}</small></span>{% if credential.is_active %}<form method="post"><input type="hidden" name="action" value="revoke_api_credential"><input type="hidden" name="institution_id" value="{{ school.id }}"><input type="hidden" name="credential_id" value="{{ credential.id }}"><button type="submit" class="ghost-btn">Revocar</button></form>{% endif %}</div>{% else %}<p class="empty-note">Sin credenciales API.</p>{% endfor %}</div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div></div></dialog>{% endif %}
         {% else %}<div class="card institutions-empty"><h3>No hay colegios participantes</h3><p>Los colegios habilitados aparecerán en este directorio.</p></div>{% endfor %}

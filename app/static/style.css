@@ -5176,6 +5176,46 @@ dialog.member-edit-dialog {
     }
 }
 
+/* Cuentas de coordinación y asociación visible con colegios */
+.users-summary-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.users-table .user-school-cell { display: flex; align-items: center; gap: .65rem; min-width: 190px; }
+.users-table .user-school-cell img { width: 38px; height: 38px; flex: 0 0 38px; object-fit: contain; padding: 3px; border: 1px solid #d7e3e9; border-radius: 10px; background: #f5f9fb; }
+.users-table .user-school-cell > span { display: grid; gap: .08rem; }
+.users-table .user-school-cell strong { color: #183e54; font-size: .86rem; line-height: 1.25; }
+.users-table .user-school-cell small, .user-school-empty { color: #71828b; font-size: .76rem; }
+.maintenance-dialog [data-coordinator-fields] { margin-top: 1rem; padding: 1rem; border: 1px solid #cfe0e8; border-radius: 14px; background: #f4f9fb; }
+.maintenance-dialog [data-coordinator-fields] > label { margin: 0; }
+.maintenance-dialog [data-coordinator-fields] > small { display: block; margin-top: .45rem; color: #607783; }
+
+dialog.maintenance-dialog.institution-access-dialog { width: min(820px, calc(100vw - 2rem)) !important; }
+.institution-access-dialog .dialog-card { padding: 0; overflow: hidden; }
+.institution-access-head { margin: 0; padding: 1.4rem 1.5rem 1.2rem; border-bottom: 1px solid #d9e4e9; background: linear-gradient(135deg, #f7fbfd, #edf6fa); }
+.institution-access-head h4 { margin: .15rem 0 .2rem; font-size: 1.45rem; }
+.institution-access-head p { margin: 0; color: #617783; }
+.coordinator-account-list { display: grid; gap: 1rem; padding: 1.25rem 1.5rem; }
+.coordinator-account-card { padding: 1rem; border: 1px solid #d3e0e6; border-radius: 16px; background: #fff; box-shadow: 0 8px 22px rgba(22, 55, 72, .06); }
+.coordinator-account-title { display: flex; align-items: center; gap: .75rem; padding-bottom: .85rem; border-bottom: 1px solid #e3eaee; }
+.coordinator-account-title > span:nth-child(2) { display: grid; flex: 1; gap: .1rem; }
+.coordinator-account-title small { color: #657b87; }
+.coordinator-avatar { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 42px; border-radius: 12px; background: #dff0f7; color: #154f6d; font-weight: 900; font-size: 1.05rem; }
+.coordinator-account-fields { margin-top: .9rem; }
+.coordinator-account-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: .9rem; }
+.coordinator-status-check { display: inline-flex !important; align-items: center; gap: .55rem; margin: 0 !important; color: #315366; font-weight: 750; }
+.coordinator-status-check input { width: 18px !important; height: 18px; margin: 0; }
+.coordinator-empty-state { display: grid; gap: .3rem; margin: 1.25rem 1.5rem 0; padding: 1rem 1.1rem; border: 1px dashed #b8ccd6; border-radius: 14px; background: #f7fafb; color: #607783; }
+.coordinator-empty-state strong { color: #24495d; }
+.coordinator-create-panel { margin: 0 1.5rem 1.25rem; border: 1px solid #d5e2e8; border-radius: 14px; overflow: hidden; background: #f8fbfc; }
+.coordinator-create-panel summary { padding: .9rem 1rem; cursor: pointer; color: #194b65; font-weight: 850; }
+.coordinator-create-panel[open] summary { border-bottom: 1px solid #dce6eb; }
+.coordinator-create-panel .compact-form { padding: 1rem; }
+.institution-access-footer { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem 1.5rem; border-top: 1px solid #dce6eb; background: #f7fafb; }
+@media (max-width: 1050px) { .users-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 680px) {
+  .users-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .coordinator-account-fields { grid-template-columns: 1fr; }
+  .coordinator-account-footer, .institution-access-footer { align-items: stretch; flex-direction: column; }
+}
+
 dialog.members-overview-dialog {
     width: min(1060px, calc(100vw - 2rem));
     max-height: calc(100vh - 2rem);
@@ -15807,6 +15847,12 @@ dialog.maintenance-dialog.institution-dialog-small { width: min(540px, calc(100v
 .regional-winner-note strong { color: #765c08; }
 @media (max-width: 900px) { .regional-auto-rule { grid-template-columns: 1fr; } .regional-auto-rule > div { border-right: 0; border-bottom: 1px solid #d8e3e8; } .regional-project-body { grid-template-columns: repeat(2, 1fr); } .regional-project-data:nth-child(2) { border-right: 0; } }
 @media (max-width: 620px) { .regional-review-hero, .regional-project-head, .regional-project-action { align-items: stretch; flex-direction: column; } .regional-project-body { grid-template-columns: 1fr; } .regional-project-data { border-right: 0; border-bottom: 1px solid #e0e8ec; } }
+
+/* Ajustes finales del directorio de usuarios; se mantienen al final para ganar la cascada. */
+.users-summary-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.users-table-wrap .user-school-cell { display: flex; align-items: center; gap: .65rem; }
+@media (max-width: 1050px) { .users-summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 680px) { .users-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 680px) {
   .institutions-hero, .institution-card-header { align-items: stretch; flex-direction: column; }
   .institution-form-grid, .institution-facts { grid-template-columns: 1fr; }

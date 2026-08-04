@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.41.0] - 2026-08-04
+
+- La coordinación de cada colegio dispone de un resumen privado de sus proyectos, expedientes, jueces y avance de evaluaciones.
+- Los pendientes se detallan por proyecto reutilizando las mismas reglas que condicionan la aprobación regional.
+- El avance de evaluación se presenta solo como conteo agregado; no expone jueces, notas parciales, posiciones ni información de otros colegios.
+- El aislamiento se mantiene por `institution_id` y cuenta con una prueba de regresión específica.
+
 ## [0.40.10] - 2026-08-04
 
 - Se eliminaron los departamentos heredados Logística, Datos, Diseño y QA de la administración regional.

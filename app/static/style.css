@@ -15132,6 +15132,40 @@ body.school-portal-page .admin-menu a:hover {
     margin: 0;
 }
 
+.school-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.school-summary-card {
+    display: grid;
+    gap: .25rem;
+    min-width: 0;
+    padding: 1.05rem 1.15rem;
+    border-radius: 16px;
+}
+
+.school-summary-card span { color: #315a70; font-size: .78rem; font-weight: 850; text-transform: uppercase; letter-spacing: .04em; }
+.school-summary-card strong { color: #123e5a; font-size: 1.75rem; line-height: 1.1; }
+.school-summary-card small { color: var(--muted); }
+
+.school-attention {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.15rem;
+    border: 1px solid #efb04a;
+    border-radius: 16px;
+    background: #fff8e9;
+}
+
+.school-attention p { margin: 0 0 .2rem; color: #9a5700; }
+.school-attention-tags { display: flex; flex-wrap: wrap; gap: .55rem; }
+.school-attention-tags span,
+.school-attention-tags a { padding: .45rem .7rem; border: 1px solid #e5a636; border-radius: 999px; background: #fff; color: #804b00; font-size: .8rem; font-weight: 800; }
+
 .school-project-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr));
@@ -15219,6 +15253,23 @@ body.school-portal-page .admin-menu a:hover {
 .school-project-meta .is-ready { color: #287118; }
 .school-project-meta .is-pending { color: #9a5b00; }
 
+.school-project-progress {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem 1rem;
+}
+
+.school-project-progress > div { display: grid; grid-template-columns: 1fr auto; gap: .3rem .7rem; align-items: center; }
+.school-project-progress span { color: var(--muted); font-size: .8rem; font-weight: 700; }
+.school-project-progress strong { color: #173f55; font-size: .85rem; }
+.school-project-progress progress { grid-column: 1 / -1; width: 100%; height: 8px; accent-color: #287aa4; }
+.school-project-pending,
+.school-project-ready { display: grid; gap: .15rem; padding: .75rem .85rem; border-radius: 11px; font-size: .82rem; }
+.school-project-pending { border: 1px solid #efc06c; background: #fff9ec; color: #7d4b00; }
+.school-project-ready { border: 1px solid #b9daa8; background: #f1faec; color: #316d1d; }
+.school-project-pending span,
+.school-project-ready span { font-weight: 550; }
+
 .school-project-card-actions {
     display: flex;
     align-items: center;
@@ -15298,6 +15349,8 @@ body.school-portal-page .admin-menu a:hover {
     .school-project-meta > div:nth-child(2) { border-right: 0; }
     .school-project-meta > div:nth-child(-n+2) { border-bottom: 1px solid #dce6ec; }
     .school-student-editor-grid { grid-template-columns: 1fr; }
+    .school-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .school-attention { align-items: flex-start; flex-direction: column; }
 }
 
 @media (max-width: 560px) {
@@ -15309,6 +15362,8 @@ body.school-portal-page .admin-menu a:hover {
     .school-project-card-head { grid-template-columns: 42px minmax(0, 1fr); }
     .school-project-status { grid-column: 1 / -1; max-width: none; }
     .school-project-meta { grid-template-columns: 1fr; }
+    .school-summary-grid,
+    .school-project-progress { grid-template-columns: 1fr; }
     .school-project-meta > div { border-right: 0; border-bottom: 1px solid #dce6ec; }
     .school-project-card-actions > * { width: 100%; }
     .school-project-card-actions button,

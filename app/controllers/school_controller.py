@@ -16,6 +16,8 @@ from app.models.project_member import ProjectMember
 from app.models.project_status_history import ProjectStatusHistory
 from app.models.system_setting import SystemSetting
 from app.services.audit_service import log_event
+from app.services.evaluation_service import project_evaluation_count_summary, project_evaluation_target_summary
+from app.services.regional_readiness_service import approval_missing_requirements
 from app.services.regional_project_service import RegionalTransitionError, transition_project
 
 
@@ -115,7 +117,70 @@ def dashboard():
         .order_by(Project.created_at.desc())
         .all()
     )
-    return render_template("school/dashboard.html", projects=projects, school=current_user.institution_ref)
+    school = current_user.institution_ref
+    project_rows = []
+    completed_files = 0
+    completed_evaluations = 0
+    expected_evaluations = 0
+    attention_projects = 0
+    for project in projects:
+        missing = approval_missing_requirements(project)
+        evaluation_counts = project_evaluation_count_summary(project)
+        evaluation_targets = project_evaluation_target_summary(project)
+        members = list(project.members or [])
+        file_checks = [
+            bool((project.title or "").strip()),
+            bool((project.team_name or "").strip()),
+            bool(project.category_id),
+            bool((project.advisor_name or "").strip()),
+            bool(members),
+            bool(project.project_document_path),
+            bool(project.has_real_logo),
+            bool(project.logistics_registration_form_signed_ok),
+        ]
+        file_checks.extend(bool((member.photo_url or "").strip()) for member in members)
+        file_checks.extend(bool(member.consent_signed_ok) for member in members)
+        project_completed = evaluation_counts["completed_evaluations"] + evaluation_counts["completed_english_evaluations"]
+        project_expected = evaluation_targets["expected_evaluations"] + evaluation_targets["expected_english_evaluations"]
+        completed_evaluations += project_completed
+        expected_evaluations += project_expected
+        if not missing:
+            completed_files += 1
+        if missing or project.regional_status == Project.STATUS_RETURNED:
+            attention_projects += 1
+        project_rows.append({
+            "project": project,
+            "missing": missing,
+            "file_progress": round((sum(file_checks) / len(file_checks)) * 100),
+            "evaluation_completed": project_completed,
+            "evaluation_expected": project_expected,
+        })
+
+    minimum_judges = _minimum_school_judges()
+    active_judges = Judge.query.filter_by(
+        institution_id=school.id,
+        role=Judge.ROLE_JUDGE,
+        is_active_user=True,
+    ).count()
+    metrics = {
+        "projects": len(projects),
+        "files_complete": completed_files,
+        "files_percent": round((completed_files / len(projects)) * 100) if projects else 0,
+        "attention_projects": attention_projects,
+        "judges": active_judges,
+        "minimum_judges": minimum_judges,
+        "judges_pending": max(0, minimum_judges - active_judges),
+        "evaluations_completed": completed_evaluations,
+        "evaluations_expected": expected_evaluations,
+        "evaluations_percent": round((completed_evaluations / expected_evaluations) * 100) if expected_evaluations else 0,
+    }
+    return render_template(
+        "school/dashboard.html",
+        projects=projects,
+        project_rows=project_rows,
+        metrics=metrics,
+        school=school,
+    )
 
 
 def _minimum_school_judges() -> int:

@@ -2,13 +2,30 @@
 {% block school_content %}
 <section class="card admin-section school-dashboard-hero">
     <div class="section-heading-row">
-        <div><p class="maintenance-kicker">Etapa regional</p><h3>Mis proyectos</h3><p>Administrá los proyectos enviados por {{ school.name }}.</p></div>
+        <div><p class="maintenance-kicker">Coordinación del colegio</p><h3>Resumen de participación</h3><p>Seguimiento privado de {{ school.name }}. No se muestran datos de otros colegios ni calificaciones parciales.</p></div>
         <div class="actions-row school-dashboard-actions"><button type="button" class="outline-btn" data-school-profile-open>Datos del colegio</button><a class="action-btn" href="{{ url_for('school.project_form') }}">+ Nuevo proyecto</a></div>
     </div>
 </section>
 
+<section class="school-summary-grid" aria-label="Resumen del colegio">
+    <article class="card school-summary-card"><span>Proyectos</span><strong>{{ metrics.projects }}</strong><small>registrados en la etapa regional</small></article>
+    <article class="card school-summary-card"><span>Expedientes completos</span><strong>{{ metrics.files_complete }}/{{ metrics.projects }}</strong><small>{{ metrics.files_percent }}% listos para revisión</small></article>
+    <article class="card school-summary-card"><span>Jueces del colegio</span><strong>{{ metrics.judges }}/{{ metrics.minimum_judges }}</strong><small>{% if metrics.judges_pending %}Faltan {{ metrics.judges_pending }} por inscribir{% else %}Mínimo cumplido{% endif %}</small></article>
+    <article class="card school-summary-card"><span>Evaluaciones</span><strong>{{ metrics.evaluations_completed }}/{{ metrics.evaluations_expected }}</strong><small>{{ metrics.evaluations_percent }}% completadas</small></article>
+</section>
+
+{% if metrics.attention_projects or metrics.judges_pending %}
+<section class="school-attention" aria-label="Pendientes del colegio">
+    <div><p class="maintenance-kicker">Requiere atención</p><strong>Hay tareas pendientes para completar la participación del colegio.</strong></div>
+    <div class="school-attention-tags">
+        {% if metrics.attention_projects %}<span>{{ metrics.attention_projects }} proyecto{{ '' if metrics.attention_projects == 1 else 's' }} con pendientes</span>{% endif %}
+        {% if metrics.judges_pending %}<a href="{{ url_for('school.judges') }}">Inscribir {{ metrics.judges_pending }} juez{{ '' if metrics.judges_pending == 1 else 'ces' }}</a>{% endif %}
+    </div>
+</section>
+{% endif %}
+
 <section class="school-project-grid" aria-label="Proyectos del colegio">
-    {% for project in projects %}
+    {% for row in project_rows %}{% set project = row.project %}
     <article class="card school-project-card">
         <header class="school-project-card-head">
             <div class="school-project-mark">{{ project.title[:2]|upper }}</div>
@@ -21,6 +38,11 @@
             <div><span>Documento</span><strong class="{{ 'is-ready' if project.project_document_path else 'is-pending' }}">{{ "Adjunto" if project.project_document_path else "Pendiente" }}</strong></div>
             <div><span>Recursos visuales</span><strong class="{{ 'is-ready' if project.has_real_logo and project.logistics_photos_ok else 'is-pending' }}">{{ "Completos" if project.has_real_logo and project.logistics_photos_ok else "Por completar" }}</strong></div>
         </div>
+        <div class="school-project-progress">
+            <div><span>Expediente</span><strong>{{ row.file_progress }}%</strong><progress max="100" value="{{ row.file_progress }}">{{ row.file_progress }}%</progress></div>
+            <div><span>Evaluaciones completadas</span><strong>{{ row.evaluation_completed }}/{{ row.evaluation_expected }}</strong><progress max="{{ row.evaluation_expected or 1 }}" value="{{ row.evaluation_completed }}">{{ row.evaluation_completed }}</progress></div>
+        </div>
+        {% if row.missing %}<div class="school-project-pending"><strong>Falta completar</strong><span>{{ row.missing|join(' · ') }}</span></div>{% else %}<div class="school-project-ready"><strong>Expediente completo</strong><span>Listo para validación regional.</span></div>{% endif %}
         <footer class="school-project-card-actions">
             <a class="outline-btn" href="{{ url_for('school.project_workspace', project_id=project.id) }}">Gestionar proyecto</a>
             <a class="outline-btn" href="{{ url_for('public.project_documents_packet', project_id=project.id) }}">Descargar formularios</a>

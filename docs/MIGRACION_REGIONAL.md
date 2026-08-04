@@ -1,6 +1,6 @@
 # Migración de ExpoTécnica institucional a ExpoTécnica Regional
 
-> Desde la versión 0.40.10, la plataforma regional no utiliza departamentos administrativos heredados. Los accesos se definen por rol (`superadmin`, `admin`, `school_coordinator` y `judge`) y la coordinación se limita mediante `institution_id`.
+> Desde la versión 0.41.0, la plataforma regional no utiliza departamentos administrativos heredados. Los accesos se definen por rol (`superadmin`, `admin`, `school_coordinator` y `judge`) y la coordinación se limita mediante `institution_id`. El panel del colegio solo publica métricas agregadas de su propia participación; las calificaciones parciales y la identidad de los jueces asignados permanecen reservadas para la administración regional.
 
 ## Propósito
 

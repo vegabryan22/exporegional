@@ -327,7 +327,8 @@ class RegionalFoundationTests(unittest.TestCase):
             coordinator = Judge(full_name="Coordinador", email="scope-test@example.com", role=Judge.ROLE_SCHOOL_COORDINATOR, institution_id=own_school.id, password_hash="test-only", is_active_user=True)
             own_project = Project(title="Proyecto visible", team_name="Equipo A", representative_name="Estudiante", representative_email="a@example.com", institution_id=own_school.id, institution_name=own_school.name, category="steam", description="Visible", regional_status=Project.STATUS_DRAFT)
             other_project = Project(title="Proyecto oculto", team_name="Equipo B", representative_name="Estudiante", representative_email="b@example.com", institution_id=other_school.id, institution_name=other_school.name, category="steam", description="Oculto", regional_status=Project.STATUS_DRAFT)
-            db.session.add_all([coordinator, own_project, other_project])
+            foreign_judge = Judge(full_name="Juez confidencial ajeno", email="foreign-secret@example.com", role=Judge.ROLE_JUDGE, institution_id=other_school.id, password_hash="test-only", is_active_user=True)
+            db.session.add_all([coordinator, own_project, other_project, foreign_judge])
             db.session.flush()
 
             with app.test_client() as client:
@@ -344,6 +345,11 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         self.assertIn("Proyecto visible", body)
         self.assertNotIn("Proyecto oculto", body)
+        self.assertIn("Resumen de participación", body)
+        self.assertIn("Expedientes completos", body)
+        self.assertIn("Evaluaciones completadas", body)
+        self.assertNotIn("Juez confidencial ajeno", body)
+        self.assertNotIn("foreign-secret@example.com", body)
         workspace_body = workspace.get_data(as_text=True)
         self.assertEqual(200, workspace.status_code)
         self.assertIn("Proyecto y expediente", workspace_body)

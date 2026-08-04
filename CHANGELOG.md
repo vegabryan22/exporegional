@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.40.9] - 2026-08-04
+
+- Los respaldos MySQL usan TCP local para ser compatibles con servidores cuyo socket no está en la ruta estándar.
+
 ## [0.40.8] - 2026-08-04
 
 - El mantenimiento de Usuarios incluye las cuentas coordinadoras y muestra el colegio asociado.

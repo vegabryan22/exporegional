@@ -2603,8 +2603,10 @@ def _mysql_env(db_config: dict) -> dict:
 def _mysql_base_args(binary: str, db_config: dict) -> list[str]:
     args = [
         binary,
+        "--protocol",
+        "TCP",
         "--host",
-        db_config["host"],
+        "127.0.0.1" if db_config["host"] == "localhost" else db_config["host"],
         "--port",
         db_config["port"],
         "--user",

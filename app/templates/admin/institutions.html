@@ -90,7 +90,47 @@
             </div>
         </dialog>
 
-        {% if school.uses_institutional_platform %}<dialog id="api-institution-{{ school.id }}" class="maintenance-dialog institution-dialog institution-dialog-small"><div class="dialog-card"><div class="dialog-head"><div><h4>Conexión API</h4><p>{{ school.name }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div><p>Credenciales técnicas para que la plataforma institucional envíe ganadores.</p><form method="post" class="compact-form"><input type="hidden" name="action" value="create_api_credential"><input type="hidden" name="institution_id" value="{{ school.id }}"><label>Nombre de credencial<input type="text" name="credential_name" value="Plataforma institucional" required></label><div class="actions-row"><button type="submit">Generar credencial</button></div></form><div class="institution-credentials-list">{% for credential in school.api_credentials %}<div class="institution-credential"><span><strong>{{ credential.name }}</strong><small>{{ credential.token_prefix }}… · {{ "Activa" if credential.is_active else "Revocada" }}</small></span>{% if credential.is_active %}<form method="post"><input type="hidden" name="action" value="revoke_api_credential"><input type="hidden" name="institution_id" value="{{ school.id }}"><input type="hidden" name="credential_id" value="{{ credential.id }}"><button type="submit" class="ghost-btn">Revocar</button></form>{% endif %}</div>{% else %}<p class="empty-note">Sin credenciales API.</p>{% endfor %}</div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div></div></dialog>{% endif %}
+        {% if school.uses_institutional_platform %}
+        <dialog id="api-institution-{{ school.id }}" class="maintenance-dialog institution-dialog institution-dialog-small api-credential-dialog">
+            <div class="dialog-card">
+                <div class="dialog-head">
+                    <div><span class="dialog-eyebrow">Integración institucional</span><h4>Conexión API</h4><p>{{ school.name }}</p></div>
+                    <button type="button" class="ghost-btn dialog-close" data-dialog-close aria-label="Cerrar">&times;</button>
+                </div>
+                <p class="api-dialog-help">Generá una credencial exclusiva para que este colegio pueda enviar sus proyectos a la etapa regional.</p>
+                <form method="post" class="api-credential-create">
+                    <input type="hidden" name="action" value="create_api_credential">
+                    <input type="hidden" name="institution_id" value="{{ school.id }}">
+                    <label><span>Nombre de la conexión</span><input type="text" name="credential_name" value="Plataforma institucional" required></label>
+                    <button type="submit">Generar credencial</button>
+                </form>
+                <section class="api-credentials-section">
+                    <div class="api-credentials-heading"><div><span>Credenciales</span><strong>{{ school.api_credentials|selectattr('is_active')|list|length }} activa(s)</strong></div><small>El token completo solo se muestra al crearlo.</small></div>
+                    <div class="institution-credentials-list">
+                        {% for credential in school.api_credentials|sort(attribute='created_at', reverse=true) %}
+                        <article class="institution-credential {{ 'is-active' if credential.is_active else 'is-revoked' }}">
+                            <div class="credential-status-icon" aria-hidden="true">{{ '✓' if credential.is_active else '×' }}</div>
+                            <div class="credential-details">
+                                <div class="credential-title"><strong>{{ credential.name }}</strong><span class="credential-status">{{ "Activa" if credential.is_active else "Revocada" }}</span></div>
+                                <code>{{ credential.token_prefix }}…</code>
+                                <small>Creada {{ credential.created_at.strftime('%d/%m/%Y %H:%M') }}{% if credential.last_used_at %} · Último uso {{ credential.last_used_at.strftime('%d/%m/%Y %H:%M') }}{% elif credential.is_active %} · Sin uso todavía{% endif %}</small>
+                            </div>
+                            {% if credential.is_active %}
+                            <form method="post" class="credential-revoke-form">
+                                <input type="hidden" name="action" value="revoke_api_credential">
+                                <input type="hidden" name="institution_id" value="{{ school.id }}">
+                                <input type="hidden" name="credential_id" value="{{ credential.id }}">
+                                <button type="submit" class="ghost-btn">Revocar</button>
+                            </form>
+                            {% endif %}
+                        </article>
+                        {% else %}<p class="empty-note">Todavía no se han generado credenciales.</p>{% endfor %}
+                    </div>
+                </section>
+                <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div>
+            </div>
+        </dialog>
+        {% endif %}
         {% else %}<div class="card institutions-empty"><h3>No hay colegios participantes</h3><p>Los colegios habilitados aparecerán en este directorio.</p></div>{% endfor %}
     </section>
 </div>

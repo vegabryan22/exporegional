@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.41.3] - 2026-08-04
+
+- Se rediseñó el modal de conexión API con tarjetas de credenciales, estados visibles, fechas de creación y último uso, y acciones mejor alineadas.
+
 ## [0.41.2] - 2026-08-04
 
 - Se rediseñó el formulario de inscripción y edición de jueces del colegio.

@@ -1,7 +1,7 @@
 import re
 from functools import wraps
 
-from flask import abort, flash, redirect, render_template, request, send_file, url_for
+from flask import abort, flash, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 from sqlalchemy.orm import joinedload
 
@@ -30,14 +30,12 @@ def _identity_key(value):
 @certificate_access_required
 def dashboard():
     status = (request.args.get("estado") or "pendientes").strip().lower()
-    selected_id = request.args.get("proyecto", type=int)
     all_projects = (Project.query.options(joinedload(Project.members)).filter(Project.is_active.is_(True))
                     .order_by(Project.title.asc()).all())
     rows = [{"project": p, "verified": sum(1 for m in p.members if m.certificate_name_verified),
              "total": len(p.members), "complete": bool(p.members) and all(m.certificate_name_verified for m in p.members)} for p in all_projects]
     visible_rows = rows if status == "todos" else [row for row in rows if not row["complete"]]
-    selected_project = next((p for p in all_projects if p.id == selected_id), None)
-    return render_template("certificates/dashboard.html", project_rows=visible_rows, selected_project=selected_project,
+    return render_template("certificates/dashboard.html", project_rows=visible_rows,
                            status=status, total_projects=len(rows), completed_projects=sum(1 for row in rows if row["complete"]))
 
 
@@ -82,6 +80,11 @@ def update_project_members(project_id):
                   detail=f"Proyecto #{project.id}; nombre para certificado: '{previous}' => '{full_name}'; verificado={member.certificate_name_verified}")
         updated += 1
     db.session.commit()
+    complete = bool(project.members) and all(member.certificate_name_verified for member in project.members)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return jsonify({"ok": True, "updated": updated, "complete": complete,
+                        "verified": sum(1 for member in project.members if member.certificate_name_verified),
+                        "total": len(project.members)})
     flash(f"Se actualizaron {updated} integrante(s) del proyecto. Los cambios confirmados ya están listos para imprimir.", "success")
     if request.form.get("continue") == "next":
         next_project = (Project.query.join(ProjectMember).filter(Project.is_active.is_(True),

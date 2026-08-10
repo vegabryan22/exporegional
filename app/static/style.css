@@ -67,11 +67,17 @@ body.certificates-page .table-wrap {
 
 .certificate-project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .75rem; margin-top: 1rem; }
 .certificate-project-item { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 1rem; padding: .9rem 1rem; border: 1px solid #f0c5ca; border-left: 5px solid #c94a59; border-radius: 11px; background: #fff; color: var(--text); text-decoration: none; }
+.certificate-project-item { width: 100%; font: inherit; text-align: left; cursor: pointer; box-shadow: none; }
 .certificate-project-item.is-complete { border-color: #cce2af; border-left-color: #76ad2c; background: #f8fcee; }
 .certificate-project-item > div { display: grid; gap: .15rem; }
 .certificate-project-item strong { color: var(--primary); }
 .certificate-project-item span { font-size: .82rem; }
 .certificate-project-item b { color: var(--primary); font-size: 1.05rem; }
+.certificate-dialog { width: min(1180px, calc(100vw - 2rem)) !important; max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem); overflow: hidden; }
+.certificate-dialog .dialog-card { max-height: calc(100vh - 2rem); overflow-y: auto; }
+.certificate-dialog .dialog-head { position: sticky; top: -1rem; z-index: 3; background: #fff; padding-top: 1rem; }
+.certificate-dialog .dialog-actions { position: sticky; bottom: -1rem; z-index: 3; background: #fff; padding: .8rem 0 1rem; }
+.certificate-save-status { min-height: 1.2rem; color: var(--success-text); font-weight: 800; }
 
 @media (max-width: 900px) {
     .certificate-member-editor { grid-template-columns: 1fr; align-items: stretch; }

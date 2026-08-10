@@ -66,6 +66,7 @@ def create_app():
     from app.routes.judge_routes import judge_bp
     from app.routes.public_routes import public_bp
     from app.routes.school_routes import school_bp
+    from app.routes.certificate_routes import certificate_bp
 
     app.register_blueprint(public_bp)
     app.register_blueprint(api_bp)
@@ -73,6 +74,7 @@ def create_app():
     app.register_blueprint(judge_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(school_bp)
+    app.register_blueprint(certificate_bp)
 
     with app.app_context():
         from app import models  # noqa: F401
@@ -463,7 +465,7 @@ def ensure_schema_updates():
                 """
                 UPDATE judges
                 SET role = CASE
-                    WHEN role IN ('judge', 'admin', 'superadmin', 'school_coordinator') THEN role
+                    WHEN role IN ('judge', 'admin', 'superadmin', 'school_coordinator', 'certificate_operator') THEN role
                     WHEN is_admin = 1 THEN 'admin'
                     ELSE 'judge'
                 END
@@ -1093,6 +1095,12 @@ def ensure_schema_updates():
                     connection,
                     "ALTER TABLE project_members ADD COLUMN cedula_estudiante_ok TINYINT(1) NOT NULL DEFAULT 0",
                     "project_members.cedula_estudiante_ok",
+                )
+            if "certificate_name_verified" not in pm_cols:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE project_members ADD COLUMN certificate_name_verified TINYINT(1) NOT NULL DEFAULT 0",
+                    "project_members.certificate_name_verified",
                 )
             _reconcile_existing_logistics_statuses(connection)
 

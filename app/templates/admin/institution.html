@@ -61,6 +61,10 @@
                         <label>Curso lectivo
                             <input type="text" name="expotec_school_year" value="{{ institution_settings.expotec_school_year }}" placeholder="2026" required>
                         </label>
+                        <label>Fecha oficial de la ExpoTécnica regional
+                            <input type="date" name="expotec_event_date" value="{{ institution_settings.expotec_event_date }}" required>
+                            <small>Esta fecha se imprimirá en todos los certificados regionales.</small>
+                        </label>
                         <label class="field-span-2">Dependencia MEP / encabezado
                             <input type="text" name="expotec_program_office" value="{{ institution_settings.expotec_program_office }}" placeholder="Direccion de Educacion Tecnica y Capacidades Emprendedoras">
                         </label>

@@ -16,6 +16,8 @@ def _safe_next_url():
 def _role_home(user):
     if user.has_admin_access:
         return url_for("admin.overview")
+    if user.effective_role == Judge.ROLE_CERTIFICATE_OPERATOR:
+        return url_for("certificates.dashboard")
     if user.effective_role == Judge.ROLE_SCHOOL_COORDINATOR:
         return url_for("school.dashboard")
     return url_for("judge.dashboard")

@@ -22,6 +22,61 @@
 
 * { box-sizing: border-box; }
 
+/* Standalone certificate portal: keep normal document scrolling outside admin shell. */
+html:has(body.certificates-page),
+body.certificates-page {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: auto !important;
+}
+
+body.certificates-page .container {
+    display: block;
+    height: auto !important;
+    min-height: calc(100vh - var(--fixed-header-height, 96px));
+    overflow: visible !important;
+    padding-bottom: 3rem;
+}
+
+body.certificates-page .container > section {
+    margin-bottom: 1rem;
+}
+
+body.certificates-page .table-wrap {
+    max-height: none !important;
+    overflow-x: auto;
+    overflow-y: visible !important;
+}
+
+.certificate-member-editor {
+    display: grid;
+    grid-template-columns: minmax(220px, .8fr) minmax(320px, 1.5fr) auto auto;
+    align-items: end;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface-soft);
+}
+
+.certificate-current-value { display: grid; gap: .25rem; }
+.certificate-current-value span { color: var(--muted); font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.certificate-current-value strong { color: var(--primary); font-size: 1.08rem; }
+.certificate-current-value small { color: var(--muted); }
+
+.certificate-project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .75rem; margin-top: 1rem; }
+.certificate-project-item { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 1rem; padding: .9rem 1rem; border: 1px solid #f0c5ca; border-left: 5px solid #c94a59; border-radius: 11px; background: #fff; color: var(--text); text-decoration: none; }
+.certificate-project-item.is-complete { border-color: #cce2af; border-left-color: #76ad2c; background: #f8fcee; }
+.certificate-project-item > div { display: grid; gap: .15rem; }
+.certificate-project-item strong { color: var(--primary); }
+.certificate-project-item span { font-size: .82rem; }
+.certificate-project-item b { color: var(--primary); font-size: 1.05rem; }
+
+@media (max-width: 900px) {
+    .certificate-member-editor { grid-template-columns: 1fr; align-items: stretch; }
+}
+
 html,
 body {
     min-height: 100%;

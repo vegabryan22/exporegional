@@ -65,6 +65,8 @@
                                     <a href="{{ url_for('admin.overview') }}" data-no-iconify>Panel administrativo</a>
                                 {% elif current_user.effective_role == 'school_coordinator' %}
                                     <a href="{{ url_for('school.dashboard') }}" data-no-iconify>Panel del colegio</a>
+                                {% elif current_user.effective_role == 'certificate_operator' %}
+                                    <a href="{{ url_for('certificates.dashboard') }}" data-no-iconify>Certificados</a>
                                 {% else %}
                                     <a href="{{ url_for('judge.dashboard') }}" data-no-iconify>Panel de juez</a>
                                 {% endif %}

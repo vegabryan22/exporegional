@@ -97,6 +97,7 @@ USER_DEPARTMENTS = []
 USER_ROLES = [
     (Judge.ROLE_JUDGE, "Juez"),
     (Judge.ROLE_SCHOOL_COORDINATOR, "Coordinador de colegio"),
+    (Judge.ROLE_CERTIFICATE_OPERATOR, "Encargado de certificados"),
     (Judge.ROLE_ADMIN, "Administrador"),
     (Judge.ROLE_SUPERADMIN, "Superadministrador"),
 ]
@@ -1803,6 +1804,7 @@ def _build_participation_certificate_context(project_id: int | None = None):
     title = "Certificados de participacion" if project_id is None else f"Certificados del proyecto: {projects[0].title}" if projects else "Certificados"
     return {
         "generated_at": datetime.now(),
+        "event_date": _parse_date(SystemSetting.get_value("expotec_event_date", "")) or datetime.now().date(),
         "institution_name": _institution_name(),
         "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
         "director_name": SystemSetting.get_value("expotec_director_name", ""),
@@ -2363,7 +2365,7 @@ def _render_participation_certificates_pdf(context):
     pdf = canvas.Canvas(buffer, pagesize=page_size)
     width, height = page_size
     institution_name = context["institution_name"]
-    generated_at = context["generated_at"]
+    generated_at = context.get("event_date") or context["generated_at"]
     director_name = context.get("director_name") or "MSc. __________________"
     coordinator_name = context.get("technical_coordinator_name") or "MSc. __________________"
     script_font = _certificate_script_font()
@@ -6516,11 +6518,14 @@ def _handle_action(action: str):
         address = request.form.get("school_address", "").strip()
         phone = request.form.get("school_phone", "").strip()
         email = request.form.get("school_email", "").strip()
+        event_date = request.form.get("expotec_event_date", "").strip()
         logo_file = request.files.get("school_logo")
         expo_logo_file = request.files.get("expo_logo")
         minimum_judges = request.form.get("regional_minimum_judges_per_school", type=int)
         if not name or not email:
             flash("Nombre y correo regional son obligatorios.", "error")
+        elif not _parse_date(event_date):
+            flash("Debes indicar una fecha oficial válida para la ExpoTécnica regional.", "error")
         elif minimum_judges is None or minimum_judges < 1 or minimum_judges > 50:
             flash("El mínimo de jueces por colegio debe estar entre 1 y 50.", "error")
         else:
@@ -6533,6 +6538,7 @@ def _handle_action(action: str):
             SystemSetting.set_value("regional_minimum_judges_per_school", str(minimum_judges))
             for setting_key in [
                 "expotec_school_year",
+                "expotec_event_date",
                 "expotec_service_type",
                 "expotec_program_office",
                 "expotec_director_name",
@@ -7096,6 +7102,7 @@ def _base_context(active_page: str, **kwargs):
             "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
             "expotec_stage": SystemSetting.get_value("expotec_stage", "Regional"),
             "expotec_school_year": SystemSetting.get_value("expotec_school_year", "2026"),
+            "expotec_event_date": SystemSetting.get_value("expotec_event_date", ""),
             "expotec_service_type": SystemSetting.get_value("expotec_service_type", "Tecnico profesional"),
             "expotec_program_office": SystemSetting.get_value(
                 "expotec_program_office",

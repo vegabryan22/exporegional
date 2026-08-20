@@ -7800,6 +7800,7 @@ def pending_evaluations_report_excel():
         flash("Instala openpyxl en el servidor para exportar Excel.", "error")
         return redirect(url_for("admin.judge_pool_page"))
 
+    report_scope = (request.args.get("tipo") or "").strip().lower()
     assignments = (
         Assignment.query.options(
             joinedload(Assignment.judge),
@@ -8003,7 +8004,12 @@ def pending_evaluations_report_excel():
     ws_english = _build_pending_sheet("Falta ING", "Ingles")
     ws_all = _build_pending_sheet("Todos pendientes", None)
 
-    wb._sheets = [ws_doc, ws_expo, ws_english, ws_all, ws_judges, ws_projects, ws_summary]
+    if report_scope == "expo":
+        wb._sheets = [ws_expo, ws_judges, ws_projects, ws_all, ws_doc, ws_english, ws_summary]
+    elif report_scope == "ingles":
+        wb._sheets = [ws_english, ws_judges, ws_projects, ws_all, ws_doc, ws_expo, ws_summary]
+    else:
+        wb._sheets = [ws_doc, ws_expo, ws_english, ws_all, ws_judges, ws_projects, ws_summary]
     wb.active = 0
 
     for ws in [ws_doc, ws_expo, ws_english, ws_all, ws_judges, ws_projects, ws_summary]:
@@ -8023,7 +8029,11 @@ def pending_evaluations_report_excel():
         buffer,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name="reporte_evaluaciones_pendientes.xlsx",
+        download_name=(
+            "reporte_quien_falta_evaluar_exposicion.xlsx"
+            if report_scope == "expo"
+            else "reporte_evaluaciones_pendientes.xlsx"
+        ),
     )
 
 

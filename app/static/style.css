@@ -16065,3 +16065,13 @@ body.admin-page .gitops-page .gitops-control-reload { background: #c77b12 !impor
 body.admin-page .gitops-page .gitops-control-reload:hover { background: #a9630a !important; border-color: #a9630a !important; }
 body.admin-page .gitops-page .gitops-control-restart { background: #ad3345 !important; border-color: #ad3345 !important; }
 body.admin-page .gitops-page .gitops-control-restart:hover { background: #8f2638 !important; border-color: #8f2638 !important; }
+
+body.admin-page .ov2-header-actions .ov2-pending-expo-download {
+    background: #b85c12 !important;
+    border-color: #b85c12 !important;
+    color: #fff !important;
+}
+body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
+    background: #984808 !important;
+    border-color: #984808 !important;
+}

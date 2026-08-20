@@ -5,7 +5,7 @@
         <div>
             <p class="maintenance-kicker">Certificados</p>
             <h3>{{ title }}</h3>
-            <p>{% if certificate_kind == 'winner' %}Se incluyen los integrantes de los proyectos ubicados en primer lugar por categor&iacute;a.{% else %}Se incluyen unicamente integrantes de proyectos activos.{% endif %}</p>
+            <p>{% if certificate_kind == 'winner' %}Incluye primer y segundo lugar de cada categor&iacute;a y las menciones de honor por participaci&oacute;n destacada en ingl&eacute;s, en un mismo tiraje.{% else %}Se incluyen unicamente integrantes de proyectos activos.{% endif %}</p>
         </div>
         <div class="report-banner-actions">
             <a href="{{ url_for('admin.documents_page') }}" class="table-link-btn ghost">Volver</a>

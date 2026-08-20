@@ -1870,15 +1870,14 @@ def _build_winner_certificate_context():
     projects = []
     recipients = []
     seen_project_ids = set()
-    for category_row in overview.get("category_winners", []):
-        winner = category_row.get("winner")
-        category = category_row.get("category")
-        project = winner.get("project") if winner else None
-        if not project or project.id in seen_project_ids:
-            continue
-        seen_project_ids.add(project.id)
-        projects.append(project)
-        category_label = getattr(category, "name", None) or (project.category or "N/D").replace("_", " ").title()
+
+    def add_project_award(ranking_row, category_label: str, place: int):
+        project = ranking_row.get("project") if ranking_row else None
+        if not project:
+            return
+        if project.id not in seen_project_ids:
+            seen_project_ids.add(project.id)
+            projects.append(project)
         for member in sorted(project.members, key=lambda item: (item.student_number, (item.full_name or "").lower(), item.id)):
             recipients.append({
                 "project": project,
@@ -1886,7 +1885,35 @@ def _build_winner_certificate_context():
                 "category_label": category_label,
                 "grade_label": member.section_name or project.grade_level or "",
                 "focus_label": member.specialty or project.specialty or "",
+                "place": place,
+                "place_label": "primer lugar" if place == 1 else "segundo lugar",
+                "award_kind": "category",
             })
+
+    for category_row in overview.get("category_winners", []):
+        category = category_row.get("category")
+        category_label = getattr(category, "name", None) or "N/D"
+        add_project_award(category_row.get("winner"), category_label, 1)
+        add_project_award(category_row.get("runner_up"), category_label, 2)
+
+    for place, english_row in enumerate(overview.get("english_ranking", [])[:2], start=1):
+        member = english_row.get("member")
+        project = english_row.get("project")
+        if not member or not project:
+            continue
+        if project.id not in seen_project_ids:
+            seen_project_ids.add(project.id)
+            projects.append(project)
+        recipients.append({
+            "project": project,
+            "member": member,
+            "category_label": "Inglés",
+            "grade_label": member.section_name or project.grade_level or "",
+            "focus_label": member.specialty or project.specialty or "",
+            "place": None,
+            "place_label": "mención de honor",
+            "award_kind": "english",
+        })
     return {
         "generated_at": datetime.now(),
         "event_date": _parse_date(SystemSetting.get_value("expotec_event_date", "")) or datetime.now().date(),
@@ -1898,7 +1925,7 @@ def _build_winner_certificate_context():
         "recipients": recipients,
         "projects_count": len(projects),
         "certificates_count": len(recipients),
-        "title": "Certificados de primer lugar",
+        "title": "Certificados de premiación",
         "single_project": None,
         "certificate_kind": "winner",
     }
@@ -2487,15 +2514,28 @@ def _render_participation_certificates_pdf(context):
         _draw_certificate_recipient_name(pdf, member.full_name, width / 2, 312, width - 120, script_font)
 
         pdf.setFont("Helvetica", 16 if winner_certificate else 18)
-        recognition_text = "Por haber obtenido el primer lugar en la" if winner_certificate else "Por su participaci\u00f3n en la:"
+        if winner_certificate and recipient.get("award_kind") == "english":
+            recognition_text = "Por su destacada participación en inglés, se le otorga la"
+        elif winner_certificate:
+            recognition_text = f"Por haber obtenido el {recipient['place_label']} en la"
+        else:
+            recognition_text = "Por su participaci\u00f3n en la:"
+        if winner_certificate and recipient.get("award_kind") == "english":
+            pdf.setFont("Helvetica", 13.5)
         pdf.drawCentredString(width / 2, 247, _pdf_normalize_text(recognition_text))
 
         pdf.setFont(script_font, 21 if winner_certificate else 23)
-        event_text = "ExpoT\u00c9CNICA 2026 \u00b7 Etapa Regional" if winner_certificate else "Etapa regional de ExpoT\u00c9CNICA"
+        if winner_certificate and recipient.get("award_kind") == "english":
+            event_text = "Mención de Honor · ExpoT\u00c9CNICA 2026"
+        elif winner_certificate:
+            event_text = "ExpoT\u00c9CNICA 2026 \u00b7 Etapa Regional"
+        else:
+            event_text = "Etapa regional de ExpoT\u00c9CNICA"
         pdf.drawCentredString(width / 2, 194, _pdf_normalize_text(event_text))
         if winner_certificate:
             pdf.setFont("Helvetica-Bold", 10.5)
-            pdf.drawCentredString(width / 2, 165, _pdf_normalize_text(f"Categor\u00eda: {recipient['category_label']}"))
+            award_detail = "Etapa Institucional · Reconocimiento en inglés" if recipient.get("award_kind") == "english" else f"Categoría: {recipient['category_label']}"
+            pdf.drawCentredString(width / 2, 165, _pdf_normalize_text(award_detail))
 
         date_line = (
             f"Realizada el {generated_at.day} del mes de {_month_name_es(generated_at.month)} "
@@ -9931,7 +9971,7 @@ def winner_certificates_pdf():
         _render_participation_certificates_pdf(certificate_context),
         mimetype="application/pdf",
         as_attachment=False,
-        download_name="certificados_primer_lugar_expotecnica_2026_institucional.pdf",
+        download_name="certificados_premiacion_expotecnica_2026_institucional.pdf",
     )
 
 
@@ -9945,7 +9985,7 @@ def winner_certificates_download():
         _render_participation_certificates_pdf(certificate_context),
         mimetype="application/pdf",
         as_attachment=True,
-        download_name="certificados_primer_lugar_expotecnica_2026_institucional.pdf",
+        download_name="certificados_premiacion_expotecnica_2026_institucional.pdf",
     )
 
 

@@ -4,42 +4,42 @@
     <div class="maintenance-banner">
         <div>
             <p class="maintenance-kicker">Parámetros académicos</p>
-            <h3>Mantenimiento académico</h3>
-            <p>Administra niveles, secciones, especialidades, ejes temáticos y tipos de proyecto desde modales.</p>
+            <h3>Configuración académica</h3>
+            <p>Organiza la estructura con la que se registran y clasifican los proyectos de la ExpoTécnica.</p>
         </div>
         <span class="tag ok">{{ levels|length + sections|length + specialties|length + workshops|length + thematic_axes|length + project_types|length }} registros</span>
     </div>
 
     <div class="academic-hub">
-        <article class="academic-card">
-            <h4>Niveles</h4>
-            <p>{{ levels|length }} registros</p>
-            <button type="button" class="secondary-btn" data-dialog-open="manage-levels-dialog">Abrir</button>
+        <article class="academic-card academic-card-levels">
+            <div class="academic-card-head"><span class="academic-card-icon"><svg aria-hidden="true"><use href="#ico-chart"></use></svg></span><div><h4>Niveles</h4><span>{{ levels|length }} registrados</span></div></div>
+            <p>Define los años o grados académicos que participan.</p>
+            <button type="button" class="secondary-btn" data-dialog-open="manage-levels-dialog">Gestionar niveles</button>
         </article>
-        <article class="academic-card">
-            <h4>Secciones</h4>
-            <p>{{ sections|length }} registros</p>
-            <button type="button" class="secondary-btn" data-dialog-open="manage-sections-dialog">Abrir</button>
+        <article class="academic-card academic-card-sections">
+            <div class="academic-card-head"><span class="academic-card-icon"><svg aria-hidden="true"><use href="#ico-users"></use></svg></span><div><h4>Secciones</h4><span>{{ sections|length }} registradas</span></div></div>
+            <p>Organiza los grupos y vincula cada sección con su nivel.</p>
+            <button type="button" class="secondary-btn" data-dialog-open="manage-sections-dialog">Gestionar secciones</button>
         </article>
-        <article class="academic-card">
-            <h4>Especialidades</h4>
-            <p>{{ specialties|length }} registros</p>
-            <button type="button" class="secondary-btn" data-dialog-open="manage-specialties-dialog">Abrir</button>
+        <article class="academic-card academic-card-specialties">
+            <div class="academic-card-head"><span class="academic-card-icon"><svg aria-hidden="true"><use href="#ico-box"></use></svg></span><div><h4>Especialidades</h4><span>{{ specialties|length }} registradas</span></div></div>
+            <p>Administra las carreras técnicas de estudiantes y tutores.</p>
+            <button type="button" class="secondary-btn" data-dialog-open="manage-specialties-dialog">Gestionar especialidades</button>
         </article>
-        <article class="academic-card">
-            <h4>Talleres</h4>
-            <p>{{ workshops|length }} registros</p>
-            <button type="button" class="secondary-btn" data-dialog-open="manage-workshops-dialog">Abrir</button>
+        <article class="academic-card academic-card-workshops">
+            <div class="academic-card-head"><span class="academic-card-icon"><svg aria-hidden="true"><use href="#ico-settings"></use></svg></span><div><h4>Talleres</h4><span>{{ workshops|length }} registrados</span></div></div>
+            <p>Configura los espacios formativos vinculados a proyectos.</p>
+            <button type="button" class="secondary-btn" data-dialog-open="manage-workshops-dialog">Gestionar talleres</button>
         </article>
-        <article class="academic-card">
-            <h4>Ejes temáticos</h4>
-            <p>{{ thematic_axes|length }} registros</p>
-            <button type="button" class="secondary-btn" data-dialog-open="manage-thematic-axes-dialog">Abrir</button>
+        <article class="academic-card academic-card-axes">
+            <div class="academic-card-head"><span class="academic-card-icon"><svg aria-hidden="true"><use href="#ico-filter"></use></svg></span><div><h4>Ejes temáticos</h4><span>{{ thematic_axes|length }} registrados</span></div></div>
+            <p>Clasifica cada proyecto según el área temática que aborda.</p>
+            <button type="button" class="secondary-btn" data-dialog-open="manage-thematic-axes-dialog">Gestionar ejes</button>
         </article>
-        <article class="academic-card">
-            <h4>Tipos de proyecto</h4>
-            <p>{{ project_types|length }} registros</p>
-            <button type="button" class="secondary-btn" data-dialog-open="manage-project-types-dialog">Abrir</button>
+        <article class="academic-card academic-card-types">
+            <div class="academic-card-head"><span class="academic-card-icon"><svg aria-hidden="true"><use href="#ico-doc"></use></svg></span><div><h4>Tipos de proyecto</h4><span>{{ project_types|length }} registrados</span></div></div>
+            <p>Define las modalidades usadas al registrar los proyectos.</p>
+            <button type="button" class="secondary-btn" data-dialog-open="manage-project-types-dialog">Gestionar tipos</button>
         </article>
     </div>
 </section>

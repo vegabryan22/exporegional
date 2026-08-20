@@ -54,9 +54,14 @@ SELECT COUNT(*) AS projects FROM projects;
 SELECT COUNT(*) AS judges FROM judges;
 ```
 
-Valores esperados para este respaldo:
-- `projects = 68`
-- `judges = 26`
+Los valores dependen de la fecha del respaldo. No use cantidades históricas como criterio de éxito. Compare los conteos antes y después de importar y verifique además campañas, integrantes, asignaciones y evaluaciones.
+
+```sql
+SELECT COUNT(*) AS campaigns FROM campaigns;
+SELECT COUNT(*) AS members FROM project_members;
+SELECT COUNT(*) AS assignments FROM assignments;
+SELECT COUNT(*) AS evaluations FROM evaluations;
+```
 
 ## 6) Verificar uploads versionados
 
@@ -84,3 +89,5 @@ python run.py
 ## Nota
 
 Si `mysql` no está en PATH, abre MySQL Command Line Client o MySQL Workbench y ejecuta los scripts SQL desde ahí.
+
+Antes de usar esta guía en producción, configure `SECRET_KEY`, `DATABASE_URL`, SMTP y permisos de `app/static/uploads`. Ejecute también las pruebas y el verificador de codificación indicados en el README.

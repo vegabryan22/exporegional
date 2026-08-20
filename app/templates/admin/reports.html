@@ -4,33 +4,49 @@
     <div class="maintenance-banner reports-banner">
         <div>
             <p class="maintenance-kicker">Centro de reportes</p>
-            <h3>Reportes de ExpoTécnica</h3>
-            <p>Una sola vista para descargar archivos de seguimiento, evaluación, logística y documentación.</p>
+            <h3>¿Qué información necesitas?</h3>
+            <p>Busca por tarea o recorre las tres etapas de trabajo. Las variantes similares están reunidas en una sola opción.</p>
         </div>
         <span class="tag ok">{{ reports_count }} reportes disponibles</span>
     </div>
 
     {% if report_groups %}
-        <div class="reports-directory">
+        <div class="reports-finder">
+            <label for="reports-search">Buscar un reporte</label>
+            <input id="reports-search" type="search" placeholder="Ejemplo: jueces, proyectos, actas o fotografías" data-reports-search>
+            <span data-reports-result-count>{{ reports_count }} opciones disponibles</span>
+        </div>
+        <div class="reports-directory" data-reports-directory>
             {% for group in report_groups %}
-                <section class="reports-group" aria-labelledby="reports-group-{{ loop.index }}">
+                <section class="reports-group" aria-labelledby="reports-group-{{ loop.index }}" data-report-group>
                     <header>
                         <h4 id="reports-group-{{ loop.index }}">{{ group.name }}</h4>
                         <span>{{ group["items"]|length }}</span>
                     </header>
                     <div class="reports-grid">
                         {% for report in group["items"] %}
-                            <article class="reports-card">
+                            <article class="reports-card" data-report-card data-report-search="{{ (report.title ~ ' ' ~ report.description ~ ' ' ~ report.contents ~ ' ' ~ group.name)|lower }}">
                                 <div class="reports-card-head">
                                     <span class="reports-format {{ report.format|lower }}">{{ report.format }}</span>
                                     <h5>{{ report.title }}</h5>
                                 </div>
                                 <p>{{ report.description }}</p>
                                 <small>{{ report.contents }}</small>
-                                <a class="outline-btn reports-download" href="{{ report.url }}" {% if report.target %}target="{{ report.target }}"{% endif %}>
-                                    <svg aria-hidden="true"><use href="#ico-download"></use></svg>
-                                    Descargar
-                                </a>
+                                {% if report.variants %}
+                                    <label class="reports-variant-label">Tipo de lista
+                                        <select data-report-variant>
+                                            {% for variant in report.variants %}<option value="{{ variant.url }}">{{ variant.label }}</option>{% endfor %}
+                                        </select>
+                                    </label>
+                                    <button type="button" class="outline-btn reports-download" data-report-variant-download>
+                                        <svg aria-hidden="true"><use href="#ico-download"></use></svg>Descargar selección
+                                    </button>
+                                {% else %}
+                                    <a class="outline-btn reports-download" href="{{ report.url }}" {% if report.target %}target="{{ report.target }}"{% endif %}>
+                                        <svg aria-hidden="true"><use href="#ico-download"></use></svg>
+                                        {{ 'Abrir' if report.format == 'Vista' else 'Descargar' }}
+                                    </a>
+                                {% endif %}
                             </article>
                         {% endfor %}
                     </div>
@@ -41,4 +57,31 @@
         <p class="muted-empty">No hay reportes disponibles para tu perfil.</p>
     {% endif %}
 </section>
+<script>
+(() => {
+    const search = document.querySelector('[data-reports-search]');
+    const cards = [...document.querySelectorAll('[data-report-card]')];
+    const groups = [...document.querySelectorAll('[data-report-group]')];
+    const count = document.querySelector('[data-reports-result-count]');
+    const normalize = value => (value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const applySearch = () => {
+        const query = normalize(search?.value);
+        let visible = 0;
+        cards.forEach(card => {
+            const matches = !query || normalize(card.dataset.reportSearch).includes(query);
+            card.hidden = !matches;
+            if (matches) visible += 1;
+        });
+        groups.forEach(group => { group.hidden = !group.querySelector('[data-report-card]:not([hidden])'); });
+        if (count) count.textContent = `${visible} ${visible === 1 ? 'opción disponible' : 'opciones disponibles'}`;
+    };
+    search?.addEventListener('input', applySearch);
+    document.querySelectorAll('[data-report-variant-download]').forEach(button => {
+        button.addEventListener('click', () => {
+            const select = button.closest('[data-report-card]')?.querySelector('[data-report-variant]');
+            if (select?.value) window.location.href = select.value;
+        });
+    });
+})();
+</script>
 {% endblock %}

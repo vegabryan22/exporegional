@@ -202,6 +202,7 @@
             var text = normalizeText(label);
             if (!text) return null;
             if (text.indexOf("editar") === 0) return "edit";
+            if (text.indexOf("gestionar") === 0 || text.indexOf("abrir") === 0) return "settings";
             if (text.indexOf("eliminar") === 0) return "delete";
             if (text.indexOf("logistica") === 0) return "box";
             if (text.indexOf("integrantes") === 0) return "users";
@@ -222,6 +223,41 @@
             if (text.indexOf("evaluar") === 0) return "chart";
             if (text.indexOf("panel") === 0) return "settings";
             return null;
+        }
+
+        function resolveActionTone(label, element) {
+            var text = normalizeText(label);
+            if (element.classList.contains('danger-btn') || /^(eliminar|borrar|desactivar|rechazar|descartar)/.test(text)) return 'danger';
+            if (/^(enviar|reenviar|notificar|recordar|avisar)/.test(text)) return 'send';
+            if (/^(nuevo|nueva|crear|agregar|guardar|confirmar|aprobar|activar)/.test(text) || text.indexOf('juez rapido') === 0) return 'success';
+            if (/^(descargar|exportar|imprimir|generar reporte|abrir centro de reportes)/.test(text)) return 'info';
+            if (/^(asignar automaticamente|planificar|equilibrar)/.test(text) || text.indexOf('masiva') >= 0 || text.indexOf('carga por juez') >= 0) return 'automation';
+            if (/^(limpiar|cancelar|cerrar|volver)/.test(text)) return 'neutral';
+            return 'primary';
+        }
+
+        function applyActionTones() {
+            if (!document.body.classList.contains('admin-page')) return;
+            document.querySelectorAll([
+                '.admin-main button',
+                '.admin-main a.action-btn',
+                '.admin-main a.secondary-btn',
+                '.admin-main a.outline-btn',
+                '.admin-main a.ghost-btn',
+                '.admin-main a.project-action-btn',
+                '.admin-main a.project-action',
+                '.admin-main a.table-link-btn',
+                '.admin-main a.reports-download',
+                '.admin-main a.ov2-shortcut',
+                '.admin-main a.assignment-tool-btn',
+                '.admin-main a.projects-report-download',
+                '.admin-main a.projects-reminder-link'
+            ].join(', ')).forEach(function (el) {
+                if (el.closest('nav') || el.classList.contains('btn-link') || el.classList.contains('project-link')) return;
+                var label = (el.textContent || el.getAttribute('aria-label') || el.getAttribute('title') || '').trim();
+                if (!label) return;
+                el.classList.add('admin-action-tone-' + resolveActionTone(label, el));
+            });
         }
 
         function svgIcon(iconName) {
@@ -278,7 +314,21 @@
         }
 
         function applyStandaloneIcons() {
-            var buttons = document.querySelectorAll('button, a');
+            var buttons = document.querySelectorAll([
+                'button',
+                'a.action-btn',
+                'a.secondary-btn',
+                'a.outline-btn',
+                'a.ghost-btn',
+                'a.project-action-btn',
+                'a.project-action',
+                'a.table-link-btn',
+                'a.reports-download',
+                'a.ov2-shortcut',
+                'a.assignment-tool-btn',
+                'a.projects-report-download',
+                'a.projects-reminder-link'
+            ].join(', '));
             buttons.forEach(function (el) {
                 if (el.hasAttribute('data-no-iconify')) return;
                 if (el.hasAttribute('data-dialog-close')) return;
@@ -296,10 +346,116 @@
             });
         }
 
+        function featureActionDescription(label) {
+            var text = normalizeText(label);
+            if (/^(nuevo|nueva|crear|agregar)/.test(text)) return 'Agregar un registro';
+            if (text.indexOf('whatsapp') >= 0) return 'Recordatorios directos';
+            if (text.indexOf('asignar') >= 0) return 'Organizar cobertura';
+            if (text.indexOf('reporte') >= 0 || text.indexOf('acta') >= 0) return 'Consultar y descargar';
+            if (text.indexOf('cuenta') >= 0 || text.indexOf('usuario') >= 0) return 'Usuarios y accesos';
+            if (text.indexOf('invitacion') >= 0) return 'Confirmar asistencia';
+            if (text.indexOf('reenviar') >= 0 || text.indexOf('pendiente') >= 0) return 'Solo sin respuesta';
+            if (text.indexOf('reasignar') >= 0) return 'Resolver ausencias';
+            if (text.indexOf('recordatorio') >= 0) return 'Avisos pendientes';
+            if (text.indexOf('guardar') >= 0) return 'Aplicar cambios';
+            if (text.indexOf('descargar') >= 0) return 'Generar archivo';
+            return 'Abrir herramienta';
+        }
+
+        function enhanceFeatureActions() {
+            var selectors = [
+                '.page-head-actions:not(.users-search-wrap) > button',
+                '.page-head-actions:not(.users-search-wrap) > a',
+                '.page-head-actions:not(.users-search-wrap) > form > button',
+                '.projects-header-actions > button',
+                '.projects-header-actions > a',
+                '.maintenance-actions > button',
+                '.maintenance-actions > a'
+            ];
+            document.querySelectorAll(selectors.join(',')).forEach(function (el) {
+                if (el.classList.contains('admin-feature-action')) return;
+                var label = (el.textContent || '').replace(/\s+/g, ' ').trim();
+                if (!label) return;
+                var svg = el.querySelector('svg');
+                var icon = resolveIcon(label) || 'settings';
+                var iconMarkup = svg ? svg.outerHTML : svgIcon(icon);
+                el.classList.add('admin-feature-action');
+                el.innerHTML = iconMarkup + '<span class="admin-feature-copy"><strong>' + label + '</strong><small>' + featureActionDescription(label) + '</small></span>';
+            });
+        }
+
         annotateResponsiveTables();
         applyTableIcons();
         applyFormIcons();
         applyStandaloneIcons();
+        applyActionTones();
+        enhanceFeatureActions();
+
+        document.addEventListener('change', function (event) {
+            var fileInput = event.target.closest('[data-file-picker]');
+            if (!fileInput) return;
+            var picker = fileInput.closest('.logistics-file-picker');
+            var fileName = picker ? picker.querySelector('[data-file-name]') : null;
+            if (fileName) {
+                fileName.textContent = fileInput.files && fileInput.files.length
+                    ? fileInput.files[0].name
+                    : 'Sin archivo seleccionado';
+            }
+        });
+
+        document.addEventListener('submit', async function (event) {
+            var form = event.target.closest('[data-project-status-form]');
+            if (!form) return;
+            event.preventDefault();
+            if (!window.confirm(form.dataset.confirmMessage || '¿Desea cambiar el estado del proyecto?')) return;
+
+            var button = form.querySelector('.project-status-switch');
+            if (button) button.disabled = true;
+            try {
+                var payload = new FormData(form);
+                payload.set('batch_mode', '1');
+                var projectId = form.dataset.projectId;
+                var statusEndpoint = window.location.origin + '/admin/proyectos/' + encodeURIComponent(projectId) + '/estado';
+                var response = await fetch(statusEndpoint, {
+                    method: 'POST',
+                    body: payload,
+                    credentials: 'same-origin',
+                    redirect: 'follow',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+                var contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    throw new Error(response.redirected ? 'La sesión expiró. Recargue la página e ingrese nuevamente.' : 'El servidor no pudo procesar el cambio de estado.');
+                }
+                var result = await response.json();
+                if (!response.ok || !result.ok) throw new Error(result.error || 'No fue posible cambiar el estado.');
+
+                var card = document.querySelector('[data-project-card="' + result.project_id + '"]');
+                var active = Boolean(result.is_active);
+                if (card) {
+                    card.dataset.projectActive = active ? 'activo' : 'inactivo';
+                    var badge = card.querySelector('[data-project-active-badge]');
+                    if (badge) {
+                        badge.textContent = active ? 'Activo' : 'Inactivo';
+                        badge.classList.toggle('ok', active);
+                        badge.classList.toggle('off', !active);
+                    }
+                }
+                if (button) {
+                    button.classList.toggle('is-active', active);
+                    button.setAttribute('aria-checked', active ? 'true' : 'false');
+                    var label = button.querySelector('[data-project-status-label]');
+                    if (label) label.textContent = active ? 'Activo' : 'Inactivo';
+                }
+                form.dataset.confirmMessage = '¿Seguro que desea ' + (active ? 'desactivar' : 'activar') + ' este proyecto?';
+                var activeFilter = document.querySelector('input[name="projects-filter-active"]:checked');
+                if (activeFilter) activeFilter.dispatchEvent(new Event('change', {bubbles: true}));
+            } catch (error) {
+                window.alert(error.message || 'No fue posible cambiar el estado.');
+            } finally {
+                if (button) button.disabled = false;
+            }
+        });
 
         document.addEventListener('click', function (e) {
             document.querySelectorAll('.nav-dropdown[open]').forEach(function (dd) {

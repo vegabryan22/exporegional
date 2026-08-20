@@ -64,7 +64,10 @@ class RequirementsSeparationTest(unittest.TestCase):
                 db.session.rollback()
 
         self.assertEqual(200, response.status_code)
-        self.assertIn("Reportes de ExpoTécnica", response.get_data(as_text=True))
+        page = response.get_data(as_text=True)
+        self.assertIn("¿Qué información necesitas?", page)
+        self.assertIn("Buscar un reporte", page)
+        self.assertIn("Pendientes y revisiones de proyectos", page)
 
     def test_gmail_requires_account_and_app_password(self):
         values = {

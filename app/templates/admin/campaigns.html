@@ -1,19 +1,27 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section maintenance-page">
-    <div class="page-head">
+{% set campaign_stats = namespace(active=0, inactive=0) %}
+{% for campaign in campaigns %}{% if campaign.is_active %}{% set campaign_stats.active = campaign_stats.active + 1 %}{% else %}{% set campaign_stats.inactive = campaign_stats.inactive + 1 %}{% endif %}{% endfor %}
+<section class="card admin-section maintenance-page campaigns-page">
+    <div class="page-head campaigns-hero">
         <div>
             <p class="maintenance-kicker">Calendario</p>
             <h3>Campañas de inscripción</h3>
             <p class="table-subtext">Controla periodos activos para habilitar el formulario de inscripción.</p>
         </div>
         <div class="page-head-actions">
-            <span class="tag ok">{{ campaigns|length }} campañas</span>
-            <button type="button" class="secondary-btn" data-dialog-open="create-campaign-dialog">Nueva campaña</button>
+            <button type="button" class="secondary-btn admin-feature-action campaign-create-action" data-dialog-open="create-campaign-dialog" data-no-iconify><svg aria-hidden="true"><use href="#ico-plus"></use></svg><span class="admin-feature-copy"><strong>Nueva campaña</strong><small>Programar inscripciones</small></span></button>
         </div>
     </div>
 
-    <div class="table-wrap">
+    <div class="campaigns-summary-grid" aria-label="Resumen de campañas">
+        <article><span class="campaign-summary-icon total"><svg aria-hidden="true"><use href="#ico-chart"></use></svg></span><div><strong>{{ campaigns|length }}</strong><small>Campañas registradas</small></div></article>
+        <article><span class="campaign-summary-icon active"><svg aria-hidden="true"><use href="#ico-check"></use></svg></span><div><strong>{{ campaign_stats.active }}</strong><small>Inscripción habilitada</small></div></article>
+        <article><span class="campaign-summary-icon inactive"><svg aria-hidden="true"><use href="#ico-close"></use></svg></span><div><strong>{{ campaign_stats.inactive }}</strong><small>Campañas inactivas</small></div></article>
+    </div>
+
+    <div class="campaigns-list-head"><div><span>Periodos configurados</span><strong>Calendario de inscripción</strong></div><small>Active únicamente la campaña que debe recibir registros.</small></div>
+    <div class="table-wrap campaigns-table-wrap">
         <table>
             <thead>
                 <tr>
@@ -29,7 +37,7 @@
             {% for campaign in campaigns %}
                 <tr>
                     <td class="table-cell-center">{{ campaign.id }}</td>
-                    <td class="table-cell-center">{{ campaign.name }}</td>
+                    <td><strong class="campaign-name">{{ campaign.name }}</strong></td>
                     <td class="table-cell-center"><span class="campaign-badge">{{ campaign.start_date.strftime('%Y-%m-%d') }}</span></td>
                     <td class="table-cell-center"><span class="campaign-badge">{{ campaign.end_date.strftime('%Y-%m-%d') }}</span></td>
                     <td class="table-cell-center"><span class="tag {{ 'ok' if campaign.is_active else 'off' }}">{{ 'Activa' if campaign.is_active else 'Inactiva' }}</span></td>
@@ -117,4 +125,3 @@
 </dialog>
 {% endfor %}
 {% endblock %}
-

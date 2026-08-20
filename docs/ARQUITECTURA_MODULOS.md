@@ -1,5 +1,7 @@
 # Arquitectura de Modulos de ExpoTecnica
 
+> Actualizado el 19 de agosto de 2026. Para una vista operativa resumida consulte `docs/REFERENCIA_FUNCIONAL.md`; para la evolución histórica consulte `docs/HISTORIAL_DESARROLLO.md`.
+
 ## 1. Objetivo
 
 Este documento describe la arquitectura funcional real del sistema ExpoTecnica de forma entendible para QA.
@@ -17,7 +19,7 @@ No está pensado como documento de desarrollo profundo. Está pensado para que e
 
 ExpoTecnica es una aplicación web monolítica construida con Flask y SQLAlchemy.
 
-El sistema se divide en 4 grandes áreas:
+El sistema se divide en 5 grandes áreas:
 
 1. Área pública
    - Home
@@ -32,6 +34,10 @@ El sistema se divide en 4 grandes áreas:
    - Registro de evaluaciones
 4. Área administrativa
    - Configuración, operación, catálogos, evaluaciones, mantenimiento y auditoría
+5. Integraciones y operación externa
+   - Correo y recordatorios
+   - Plataforma regional
+   - Reportes, documentos oficiales y archivos
 
 ## 3. Capas del sistema
 
@@ -75,6 +81,14 @@ Modelos más importantes:
 - `Workshop`
 - `SystemSetting`
 - `SystemAuditLog`
+- `Tutor`
+- `Venue`
+- `ThematicAxis`
+- `ProjectType`
+- `ProjectMemberChange`
+- `ProjectMemberEditRequest`
+- `ProjectDocumentRevision`
+- `RegionalSubmission`
 
 ### 3.4 Servicios
 
@@ -84,6 +98,12 @@ Encapsulan lógica transversal.
 - `app/services/parameter_service.py`
 - `app/services/mail_service.py`
 - `app/services/audit_service.py`
+- `app/services/assignment_service.py`
+- `app/services/exposition_capacity_service.py`
+- `app/services/institutional_matrix_service.py`
+- `app/services/regional_integration_service.py`
+- `app/services/identity_lookup_service.py`
+- `app/services/specialty_service.py`
 
 ### 3.5 Vistas
 

@@ -1865,6 +1865,45 @@ def _build_participation_certificate_context(project_id: int | None = None):
     }
 
 
+def _build_winner_certificate_context():
+    overview = build_admin_evaluation_overview()
+    projects = []
+    recipients = []
+    seen_project_ids = set()
+    for category_row in overview.get("category_winners", []):
+        winner = category_row.get("winner")
+        category = category_row.get("category")
+        project = winner.get("project") if winner else None
+        if not project or project.id in seen_project_ids:
+            continue
+        seen_project_ids.add(project.id)
+        projects.append(project)
+        category_label = getattr(category, "name", None) or (project.category or "N/D").replace("_", " ").title()
+        for member in sorted(project.members, key=lambda item: (item.student_number, (item.full_name or "").lower(), item.id)):
+            recipients.append({
+                "project": project,
+                "member": member,
+                "category_label": category_label,
+                "grade_label": member.section_name or project.grade_level or "",
+                "focus_label": member.specialty or project.specialty or "",
+            })
+    return {
+        "generated_at": datetime.now(),
+        "event_date": _parse_date(SystemSetting.get_value("expotec_event_date", "")) or datetime.now().date(),
+        "institution_name": _institution_name(),
+        "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
+        "director_name": SystemSetting.get_value("expotec_director_name", ""),
+        "technical_coordinator_name": SystemSetting.get_value("expotec_technical_coordinator_name", ""),
+        "projects": projects,
+        "recipients": recipients,
+        "projects_count": len(projects),
+        "certificates_count": len(recipients),
+        "title": "Certificados de primer lugar",
+        "single_project": None,
+        "certificate_kind": "winner",
+    }
+
+
 def _draw_certificate_watermark(pdf, width, height, relative_logo_path: str):
     logo_path = (relative_logo_path or "").strip()
     if not logo_path:
@@ -2417,6 +2456,7 @@ def _render_participation_certificates_pdf(context):
     coordinator_name = context.get("technical_coordinator_name") or "MSc. __________________"
     script_font = _certificate_script_font()
     template_path = os.path.join(current_app.static_folder, "certificates", "regional_bg.jpg")
+    winner_certificate = context.get("certificate_kind") == "winner"
 
     for index, recipient in enumerate(context["recipients"]):
         if index:
@@ -2446,11 +2486,16 @@ def _render_participation_certificates_pdf(context):
 
         _draw_certificate_recipient_name(pdf, member.full_name, width / 2, 312, width - 120, script_font)
 
-        pdf.setFont("Helvetica", 18)
-        pdf.drawCentredString(width / 2, 247, _pdf_normalize_text("Por su participaci\u00f3n en la:"))
+        pdf.setFont("Helvetica", 16 if winner_certificate else 18)
+        recognition_text = "Por haber obtenido el primer lugar en la" if winner_certificate else "Por su participaci\u00f3n en la:"
+        pdf.drawCentredString(width / 2, 247, _pdf_normalize_text(recognition_text))
 
-        pdf.setFont(script_font, 23)
-        pdf.drawCentredString(width / 2, 194, _pdf_normalize_text("Etapa regional de ExpoT\u00c9CNICA"))
+        pdf.setFont(script_font, 21 if winner_certificate else 23)
+        event_text = "ExpoT\u00c9CNICA 2026 \u00b7 Etapa Regional" if winner_certificate else "Etapa regional de ExpoT\u00c9CNICA"
+        pdf.drawCentredString(width / 2, 194, _pdf_normalize_text(event_text))
+        if winner_certificate:
+            pdf.setFont("Helvetica-Bold", 10.5)
+            pdf.drawCentredString(width / 2, 165, _pdf_normalize_text(f"Categor\u00eda: {recipient['category_label']}"))
 
         date_line = (
             f"Realizada el {generated_at.day} del mes de {_month_name_es(generated_at.month)} "
@@ -9865,6 +9910,42 @@ def participation_certificates_download():
         mimetype="application/pdf",
         as_attachment=True,
         download_name="certificados_participacion_proyectos_activos.pdf",
+    )
+
+
+@admin_module_required("documents")
+def winner_certificates_preview():
+    certificate_context = _build_winner_certificate_context()
+    context = _base_context("documents")
+    context.update(certificate_context)
+    return render_template("admin/certificates_participation.html", **context)
+
+
+@admin_module_required("documents")
+def winner_certificates_pdf():
+    certificate_context = _build_winner_certificate_context()
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.winner_certificates_preview"))
+    return send_file(
+        _render_participation_certificates_pdf(certificate_context),
+        mimetype="application/pdf",
+        as_attachment=False,
+        download_name="certificados_primer_lugar_expotecnica_2026_institucional.pdf",
+    )
+
+
+@admin_module_required("documents")
+def winner_certificates_download():
+    certificate_context = _build_winner_certificate_context()
+    if not REPORTLAB_AVAILABLE:
+        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+        return redirect(url_for("admin.winner_certificates_preview"))
+    return send_file(
+        _render_participation_certificates_pdf(certificate_context),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="certificados_primer_lugar_expotecnica_2026_institucional.pdf",
     )
 
 

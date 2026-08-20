@@ -5,11 +5,14 @@
         <div>
             <p class="maintenance-kicker">Certificados</p>
             <h3>{{ title }}</h3>
-            <p>Se incluyen unicamente integrantes de proyectos activos.</p>
+            <p>{% if certificate_kind == 'winner' %}Se incluyen los integrantes de los proyectos ubicados en primer lugar por categor&iacute;a.{% else %}Se incluyen unicamente integrantes de proyectos activos.{% endif %}</p>
         </div>
         <div class="report-banner-actions">
             <a href="{{ url_for('admin.documents_page') }}" class="table-link-btn ghost">Volver</a>
-            {% if single_project %}
+            {% if certificate_kind == 'winner' %}
+                <a href="{{ url_for('admin.winner_certificates_pdf') }}" class="table-link-btn">Ver PDF</a>
+                <a href="{{ url_for('admin.winner_certificates_download') }}" class="table-link-btn secondary">Descargar PDF</a>
+            {% elif single_project %}
                 <a href="{{ url_for('admin.project_certificates_pdf', project_id=single_project.id) }}" class="table-link-btn">Ver PDF</a>
                 <a href="{{ url_for('admin.project_certificates_download', project_id=single_project.id) }}" class="table-link-btn secondary">Descargar PDF</a>
             {% else %}

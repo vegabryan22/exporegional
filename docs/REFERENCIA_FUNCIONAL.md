@@ -115,6 +115,7 @@ API independiente con autenticación Bearer, identificadores estables, reintento
 
 ## Operación y soporte
 
+- **Actas y certificados** genera un paquete PDF de primer lugar para los integrantes de los proyectos ganadores de STEAM y Emprendimiento, usando el mismo diseño, fecha y firmas del certificado de participación.
 - El panel **Avance y resultados** presenta primer y segundo lugar de inglés como una clasificación independiente por estudiante.
 - Desde **Avance y resultados**, el botón **Quién falta Expo** descarga el control de exposiciones pendientes con juez, proyecto, contacto, participación, estado de la asignación y observaciones para seguimiento.
 - El módulo **Actualización y salud del sistema** organiza el despliegue en tres pasos: buscar actualizaciones, aplicarlas y ejecutar el diagnóstico.

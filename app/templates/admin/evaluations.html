@@ -6,6 +6,7 @@
 {% set completed_proj_pct = ((sc.completed_projects / sc.projects * 100) | int) if sc.projects > 0 else 0 %}
 {% set english_pct = ((sc.completed_english_evaluations / sc.expected_english_evaluations * 100) | int) if sc.expected_english_evaluations > 0 else 0 %}
 {% set english_winner = english_ranking[0] if english_ranking else none %}
+{% set english_runner_up = english_ranking[1] if english_ranking|length > 1 else none %}
 
 <div class="ov2-shell">
 
@@ -188,6 +189,18 @@
             </div>
             <span class="ev2-score">{{ "%.2f"|format(english_winner.english_score) }}</span>
           </div>
+          {% if english_runner_up %}
+          <div class="ev2-winner-runner">
+            <span class="ev2-rank-badge ev2-rank-2">2&deg;</span>
+            <div class="ev2-winner-detail">
+              <small title="{{ english_runner_up.member.full_name if english_runner_up.member else 'N/D' }}">
+                {{ english_runner_up.member.full_name if english_runner_up.member else 'N/D' }}
+              </small>
+              <span title="{{ english_runner_up.project.title }}">{{ english_runner_up.project.title }}</span>
+            </div>
+            <span class="ev2-score-sm">{{ "%.2f"|format(english_runner_up.english_score) }}</span>
+          </div>
+          {% endif %}
           {% else %}
           <p class="ov2-empty">Sin evaluaciones de ingl&eacute;s completas.</p>
           {% endif %}

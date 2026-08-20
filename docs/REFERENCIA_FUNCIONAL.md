@@ -115,6 +115,7 @@ API independiente con autenticación Bearer, identificadores estables, reintento
 
 ## Operación y soporte
 
+- El panel **Avance y resultados** presenta primer y segundo lugar de inglés como una clasificación independiente por estudiante.
 - Desde **Avance y resultados**, el botón **Quién falta Expo** descarga el control de exposiciones pendientes con juez, proyecto, contacto, participación, estado de la asignación y observaciones para seguimiento.
 - El módulo **Actualización y salud del sistema** organiza el despliegue en tres pasos: buscar actualizaciones, aplicarlas y ejecutar el diagnóstico.
 - El estado se considera operativo solo cuando están disponibles el proceso WSGI, la aplicación ExpoTécnica y la base de datos; también se muestran versión y tiempo de respuesta.

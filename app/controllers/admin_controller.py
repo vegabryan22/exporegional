@@ -8,10 +8,17 @@ import base64
 import hmac
 import hashlib
 import shutil
+import sys
+import time
+import xml.etree.ElementTree as ET
 from html import escape
 from io import BytesIO
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlencode
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+from zipfile import ZipFile
 
 from functools import wraps
 
@@ -807,12 +814,17 @@ def _gitops_service_config() -> dict:
     )
     if "chdir +" in pidfile:
         pidfile = str(repo_path / "logs" / "expotecnica.pid")
+    health_path = (SystemSetting.get_value("gitops_health_path", "/health") or "/health").strip()
+    if health_path in {"/registro-jueces", "/jueces/registro", "/registro/jueces"}:
+        health_path = "/health"
+    if not health_path.startswith("/"):
+        health_path = f"/{health_path}"
     return {
         "repo_path": str(repo_path),
         "config_path": str(repo_path / "gunicorn_conf.py"),
         "bind": bind,
         "pidfile": pidfile,
-        "health_path": SystemSetting.get_value("gitops_health_path", "/registro-jueces") or "/registro-jueces",
+        "health_path": health_path,
     }
 
 
@@ -851,15 +863,34 @@ def _gitops_service_status() -> dict:
     health_url = f"http://{host}:{port}{config['health_path']}" if port else ""
     http_code = "N/D"
     health_ok = False
+    application_ok = False
+    database_ok = False
+    reported_version = "N/D"
+    response_ms = None
+    health_error = ""
     if health_url and running:
-        curl = subprocess.run(
-            ["curl", "-sS", "-o", os.devnull, "-w", "%{http_code}", "--max-time", "8", health_url],
-            capture_output=True,
-            text=True,
-            timeout=12,
-        )
-        http_code = (curl.stdout or curl.stderr or "").strip() or "N/D"
-        health_ok = http_code.startswith("2") or http_code.startswith("3")
+        started_at = time.perf_counter()
+        try:
+            request = Request(health_url, headers={"Accept": "application/json", "User-Agent": "ExpoTecnica-GitOps/1.0"})
+            with urlopen(request, timeout=8) as response:
+                http_code = str(response.status)
+                payload = json.loads(response.read(16384).decode("utf-8"))
+            application_ok = payload.get("application") == "expotecnica" and payload.get("status") == "ok"
+            database_ok = payload.get("database") == "ok"
+            reported_version = str(payload.get("version") or "N/D")
+            health_ok = http_code == "200" and application_ok and database_ok
+        except HTTPError as ex:
+            http_code = str(ex.code)
+            health_error = f"El endpoint respondió HTTP {ex.code}."
+        except (URLError, TimeoutError, json.JSONDecodeError, UnicodeDecodeError, OSError) as ex:
+            health_error = str(getattr(ex, "reason", ex))
+        finally:
+            response_ms = round((time.perf_counter() - started_at) * 1000)
+    elif not running:
+        health_error = "No se detectó el proceso configurado."
+
+    status_label = "Operativo" if running and health_ok else ("Degradado" if running else "Detenido")
+    status_tone = "ok" if running and health_ok else ("warn" if running else "danger")
 
     return {
         **config,
@@ -869,7 +900,14 @@ def _gitops_service_status() -> dict:
         "health_url": health_url,
         "http_code": http_code,
         "health_ok": health_ok,
-        "status_label": "Activo" if running and health_ok else ("Proceso activo con alerta" if running else "Detenido"),
+        "application_ok": application_ok,
+        "database_ok": database_ok,
+        "reported_version": reported_version,
+        "response_ms": response_ms,
+        "health_error": health_error,
+        "checked_at": datetime.now().strftime("%H:%M:%S"),
+        "status_label": status_label,
+        "status_tone": status_tone,
     }
 
 
@@ -883,8 +921,17 @@ def _gitops_reload_service() -> dict:
     except OSError as ex:
         return {"ok": False, "code": -2, "out": "", "err": str(ex)}
     recheck = _gitops_service_status()
-    out = f"HUP enviado a PID {pid}. Estado: {recheck['status_label']} HTTP {recheck['http_code']}"
-    return {"ok": recheck["running"], "code": 0 if recheck["running"] else -3, "out": out, "err": ""}
+    out = (
+        f"HUP enviado a PID {pid}. Estado: {recheck['status_label']} HTTP {recheck['http_code']}. "
+        f"Base de datos: {'disponible' if recheck['database_ok'] else 'sin respuesta'}."
+    )
+    service_ok = recheck["running"] and recheck["health_ok"]
+    return {
+        "ok": service_ok,
+        "code": 0 if service_ok else -3,
+        "out": out,
+        "err": "" if service_ok else (recheck.get("health_error") or "El servicio recargó, pero no superó el diagnóstico."),
+    }
 
 
 def _gitops_restart_service() -> dict:
@@ -6845,9 +6892,13 @@ def _handle_action(action: str):
                 f"PID: {status.get('pid') or 'N/D'}\n"
                 f"Bind: {status['bind']}\n"
                 f"Health URL: {status['health_url']}\n"
-                f"HTTP: {status['http_code']}"
+                f"HTTP: {status['http_code']}\n"
+                f"Aplicación: {'correcta' if status['application_ok'] else 'sin validar'}\n"
+                f"Base de datos: {'disponible' if status['database_ok'] else 'sin respuesta'}\n"
+                f"Versión reportada: {status['reported_version']}\n"
+                f"Tiempo de respuesta: {status['response_ms'] if status['response_ms'] is not None else 'N/D'} ms"
             ),
-            "err": "",
+            "err": status.get("health_error", ""),
         }
         _save_gitops_result("service_check", result)
         log_event("admin.git.service.check", "system", detail=result["out"])

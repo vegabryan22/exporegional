@@ -3,9 +3,9 @@ import re
 import uuid
 import json
 from io import BytesIO
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
-from flask import abort, current_app, flash, redirect, render_template, request, send_file, session, url_for
+from flask import abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user
 from sqlalchemy import func, text
 from sqlalchemy.orm import joinedload
@@ -41,6 +41,24 @@ try:
     REPORTLAB_AVAILABLE = True
 except Exception:
     REPORTLAB_AVAILABLE = False
+
+
+def system_health():
+    """Minimal infrastructure health check for deployment monitoring."""
+    database_ok = True
+    try:
+        db.session.execute(text("SELECT 1"))
+    except Exception:
+        database_ok = False
+        db.session.rollback()
+    payload = {
+        "status": "ok" if database_ok else "degraded",
+        "application": "expotecnica",
+        "version": current_app.config.get("ASSET_VERSION", "dev"),
+        "database": "ok" if database_ok else "error",
+        "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
+    }
+    return jsonify(payload), 200 if database_ok else 503
 
 ALLOWED_DOC_EXTENSIONS = {"pdf"}
 REGISTRATION_DRAFT_SESSION_KEY = "project_registration_draft"

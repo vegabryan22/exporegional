@@ -3,16 +3,36 @@
 <section class="card admin-section maintenance-page gitops-page gitops-console">
     <div class="gitops-hero">
         <div>
-            <p class="maintenance-kicker">Despliegue controlado</p>
-            <h3>Mantenimiento Git</h3>
-            <p class="table-subtext">Descarga, aplica y valida nuevas versiones desde el repositorio remoto.</p>
+            <p class="maintenance-kicker">Centro de mantenimiento</p>
+            <h3>Actualización y salud del sistema</h3>
+            <p class="table-subtext">Actualiza ExpoTécnica con un flujo guiado y confirma que toda la plataforma funciona.</p>
         </div>
-        <div class="gitops-health-card {{ 'ok' if gitops_service.health_ok else 'warn' }}">
-            <span>Servicio</span>
+        <div class="gitops-health-card {{ gitops_service.status_tone }}">
+            <div class="gitops-health-heading"><i></i><span>Estado general</span></div>
             <strong>{{ gitops_service.status_label }}</strong>
-            <small>HTTP {{ gitops_service.http_code }} &middot; {{ gitops_service.health_path }}</small>
+            <small>Verificado a las {{ gitops_service.checked_at }}</small>
         </div>
     </div>
+
+    <div class="gitops-diagnostics-grid" aria-label="Diagnóstico del servicio">
+        <article class="gitops-diagnostic {{ 'ok' if gitops_service.running else 'danger' }}">
+            <span class="gitops-diagnostic-icon"><svg aria-hidden="true"><use href="#ico-settings"></use></svg></span>
+            <div><small>Proceso</small><strong>{{ 'En ejecución' if gitops_service.running else 'Detenido' }}</strong><p>PID {{ gitops_service.pid or 'no disponible' }}</p></div>
+        </article>
+        <article class="gitops-diagnostic {{ 'ok' if gitops_service.application_ok else 'warn' }}">
+            <span class="gitops-diagnostic-icon"><svg aria-hidden="true"><use href="#ico-check"></use></svg></span>
+            <div><small>Aplicación</small><strong>{{ 'Respuesta válida' if gitops_service.application_ok else 'Sin validar' }}</strong><p>HTTP {{ gitops_service.http_code }} &middot; {{ gitops_service.health_path }}</p></div>
+        </article>
+        <article class="gitops-diagnostic {{ 'ok' if gitops_service.database_ok else 'warn' }}">
+            <span class="gitops-diagnostic-icon"><svg aria-hidden="true"><use href="#ico-box"></use></svg></span>
+            <div><small>Base de datos</small><strong>{{ 'Disponible' if gitops_service.database_ok else 'Sin respuesta' }}</strong><p>Consulta interna SELECT 1</p></div>
+        </article>
+        <article class="gitops-diagnostic {{ 'ok' if gitops_service.health_ok else 'warn' }}">
+            <span class="gitops-diagnostic-icon"><svg aria-hidden="true"><use href="#ico-chart"></use></svg></span>
+            <div><small>Versión y respuesta</small><strong>{{ gitops_service.reported_version }}</strong><p>{{ gitops_service.response_ms if gitops_service.response_ms is not none else 'N/D' }} ms</p></div>
+        </article>
+    </div>
+    {% if gitops_service.health_error %}<p class="gitops-health-error">{{ gitops_service.health_error }}</p>{% endif %}
 
     <div class="gitops-status-strip">
         <article>
@@ -37,89 +57,86 @@
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="gitops_fetch">
             <button type="submit" class="gitops-action-card fetch">
-                <span>1</span>
-                <strong>Descargar</strong>
-                <small>Trae novedades del remoto sin aplicarlas.</small>
+                <span><svg aria-hidden="true"><use href="#ico-download"></use></svg></span>
+                <strong>1. Buscar actualizaciones</strong>
+                <small>Consulta y descarga novedades sin modificar el sistema.</small>
             </button>
         </form>
         <form method="post" action="{{ action_url }}">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="gitops_pull_apply">
             <button type="submit" class="gitops-action-card deploy">
-                <span>2</span>
-                <strong>Aplicar versión</strong>
-                <small>Pull seguro y recarga del servicio.</small>
+                <span><svg aria-hidden="true"><use href="#ico-upload"></use></svg></span>
+                <strong>2. Aplicar actualización</strong>
+                <small>Instala la versión descargada y recarga el servicio.</small>
             </button>
         </form>
         <form method="post" action="{{ action_url }}">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="gitops_service_check">
             <button type="submit" class="gitops-action-card check">
-                <span>3</span>
-                <strong>Validar servicio</strong>
-                <small>Comprueba proceso y respuesta HTTP.</small>
+                <span><svg aria-hidden="true"><use href="#ico-check"></use></svg></span>
+                <strong>3. Ejecutar diagnóstico</strong>
+                <small>Comprueba proceso, aplicación, base de datos y versión.</small>
             </button>
         </form>
     </div>
 
     <div class="gitops-main-grid">
-        <section class="gitops-panel gitops-panel-highlight">
+        <section class="gitops-panel gitops-readiness-panel">
             <div class="gitops-panel-head">
                 <div>
-                    <p class="maintenance-kicker">Versión previa</p>
-                    <h4>Revertir despliegue</h4>
-                    <p>Regresa el código a un commit anterior. Se bloquea si hay cambios locales para evitar pérdida accidental.</p>
+                    <p class="maintenance-kicker">Preparación</p>
+                    <h4>Antes de actualizar</h4>
+                    <p>El sistema revisa el repositorio para proteger cambios que todavía no se han guardado.</p>
                 </div>
             </div>
-            <form method="post" action="{{ action_url }}" class="gitops-revert-form" onsubmit="return confirm('Esta acción ejecuta git reset --hard al commit seleccionado. Continuar?')">
-                <input type="hidden" name="next" value="{{ next_url }}">
-                <input type="hidden" name="action" value="gitops_revert_commit">
-                <label>Commit destino
-                    <select name="gitops_target_commit" required>
-                        <option value="">Seleccione una versión...</option>
-                        {% for commit in gitops_status.revisions %}
-                            <option value="{{ commit.hash }}">{{ commit.hash }} &middot; {{ commit.subject }}{% if commit.relative %} &middot; {{ commit.relative }}{% endif %}</option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <label>Confirmación
-                    <input type="text" name="gitops_revert_confirm" placeholder="Escribe REVERTIR" autocomplete="off" required>
-                </label>
-                <label class="toggle-row compact-toggle">
-                    <input type="checkbox" name="gitops_revert_reload" value="1" checked>
-                    Recargar servicio al finalizar
-                </label>
-                <button type="submit" class="gitops-btn gitops-btn-danger">Revertir a versión seleccionada</button>
-            </form>
+            <div class="gitops-readiness">
+                <div class="{{ 'ready' if gitops_status.behind == 0 else 'attention' }}"><svg aria-hidden="true"><use href="#ico-download"></use></svg><span><strong>Repositorio remoto</strong><small>{{ 'Sin versiones pendientes' if gitops_status.behind == 0 else gitops_status.behind ~ ' versión(es) por aplicar' }}</small></span></div>
+                <div class="{{ 'attention' if gitops_status.dirty_count else 'ready' }}"><svg aria-hidden="true"><use href="#ico-doc"></use></svg><span><strong>Cambios locales</strong><small>{{ gitops_status.dirty_count ~ ' archivo(s) requieren revisión' if gitops_status.dirty_count else 'El directorio está limpio' }}</small></span></div>
+            </div>
         </section>
 
         <section class="gitops-panel">
             <div class="gitops-panel-head">
                 <div>
-                    <p class="maintenance-kicker">Servicio</p>
-                    <h4>Control rápido</h4>
-                    <p>{{ gitops_service.bind }} &middot; PID {{ gitops_service.pid or 'N/D' }}</p>
+                    <p class="maintenance-kicker">Servicio de la aplicación</p>
+                    <h4>Controles operativos</h4>
+                    <p>{{ gitops_service.bind }} &middot; Diagnóstico exclusivo {{ gitops_service.health_path }}</p>
                 </div>
             </div>
             <div class="gitops-compact-actions">
                 <form method="post" action="{{ action_url }}">
                     <input type="hidden" name="next" value="{{ next_url }}">
                     <input type="hidden" name="action" value="gitops_refresh">
-                    <button type="submit" class="gitops-btn gitops-btn-neutral">Actualizar estado</button>
+                    <button type="submit" class="gitops-btn gitops-control-refresh"><svg aria-hidden="true"><use href="#ico-chart"></use></svg> Actualizar indicadores</button>
                 </form>
                 <form method="post" action="{{ action_url }}">
                     <input type="hidden" name="next" value="{{ next_url }}">
                     <input type="hidden" name="action" value="gitops_service_reload">
-                    <button type="submit" class="gitops-btn gitops-btn-info">Recargar servicio</button>
+                    <button type="submit" class="gitops-btn gitops-control-reload"><svg aria-hidden="true"><use href="#ico-restore"></use></svg> Recargar aplicación</button>
                 </form>
                 <form method="post" action="{{ action_url }}" onsubmit="return confirm('Reiniciar el servicio Python de ExpoTécnica?')">
                     <input type="hidden" name="next" value="{{ next_url }}">
                     <input type="hidden" name="action" value="gitops_service_restart">
-                    <button type="submit" class="gitops-btn gitops-btn-danger">Reiniciar completo</button>
+                    <button type="submit" class="gitops-btn gitops-control-restart"><svg aria-hidden="true"><use href="#ico-settings"></use></svg> Reiniciar proceso</button>
                 </form>
             </div>
         </section>
     </div>
+
+    <details class="gitops-details-card gitops-recovery-card">
+        <summary><span><strong>Recuperación de emergencia</strong><small>Volver a una versión anterior</small></span></summary>
+        <p>Esta opción descarta la versión actual. Se bloquea si existen cambios locales para evitar pérdidas accidentales.</p>
+        <form method="post" action="{{ action_url }}" class="gitops-revert-form" onsubmit="return confirm('¿Confirma que desea regresar el sistema a la versión seleccionada?')">
+            <input type="hidden" name="next" value="{{ next_url }}">
+            <input type="hidden" name="action" value="gitops_revert_commit">
+            <label>Versión de destino<select name="gitops_target_commit" required><option value="">Seleccione una versión...</option>{% for commit in gitops_status.revisions %}<option value="{{ commit.hash }}">{{ commit.hash }} &middot; {{ commit.subject }}{% if commit.relative %} &middot; {{ commit.relative }}{% endif %}</option>{% endfor %}</select></label>
+            <label>Confirmación<input type="text" name="gitops_revert_confirm" placeholder="Escribe REVERTIR" autocomplete="off" required></label>
+            <label class="toggle-row compact-toggle"><input type="checkbox" name="gitops_revert_reload" value="1" checked> Recargar al finalizar</label>
+            <button type="submit" class="gitops-btn gitops-btn-danger"><svg aria-hidden="true"><use href="#ico-restore"></use></svg> Volver a la versión seleccionada</button>
+        </form>
+    </details>
 
     <details class="gitops-details-card">
         <summary>Configuración del repositorio</summary>

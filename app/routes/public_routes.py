@@ -10,6 +10,9 @@ def index():
     return project_controller.home_intro()
 
 
+public_bp.add_url_rule("/health", endpoint="system_health", view_func=project_controller.system_health, methods=["GET"])
+
+
 @public_bp.route("/proyectos")
 def projects():
     return project_controller.list_projects()

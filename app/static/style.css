@@ -16019,3 +16019,49 @@ dialog.maintenance-dialog.institution-dialog-small { width: min(540px, calc(100v
   .institution-facts > div { border-right: 0; border-bottom: 1px solid var(--border-color, #d8e0e5); }
   .institution-toggle-form { margin-left: 0; width: 100%; }
 }
+/* GitOps: operational dashboard */
+.gitops-health-card.warn { border-color: #f2cf78; background: #fff9e9; }
+.gitops-health-card.danger { border-color: #f1b7c0; background: #fff1f3; }
+.gitops-health-heading { display: flex; align-items: center; gap: .45rem; }
+.gitops-health-heading i { width: .7rem; height: .7rem; border-radius: 50%; background: #c43b50; box-shadow: 0 0 0 5px rgba(196,59,80,.12); }
+.gitops-health-card.ok .gitops-health-heading i { background: #24935d; box-shadow: 0 0 0 5px rgba(36,147,93,.13); }
+.gitops-health-card.warn .gitops-health-heading i { background: #d58d0d; box-shadow: 0 0 0 5px rgba(213,141,13,.13); }
+.gitops-diagnostics-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: .65rem; }
+.gitops-diagnostic { display: flex; gap: .7rem; align-items: center; min-width: 0; padding: .8rem; border: 1px solid #d7e4f0; border-left: 4px solid #d58d0d; border-radius: 14px; background: #fff; }
+.gitops-diagnostic.ok { border-left-color: #24935d; }
+.gitops-diagnostic.danger { border-left-color: #c43b50; }
+.gitops-diagnostic-icon { display: grid; place-items: center; flex: 0 0 2.5rem; height: 2.5rem; border-radius: 12px; color: #0c6994; background: #e9f6fc; }
+.gitops-diagnostic-icon svg,.gitops-action-card span svg { width: 1.15rem; height: 1.15rem; fill: currentColor; }
+.gitops-diagnostic div { display: grid; min-width: 0; gap: .1rem; }
+.gitops-diagnostic small { color: #667b92; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.gitops-diagnostic strong { color: var(--primary); overflow-wrap: anywhere; }
+.gitops-diagnostic p { margin: 0; color: #58708a; font-size: .82rem; }
+.gitops-health-error { margin: -.35rem 0 0; padding: .6rem .8rem; border-radius: 10px; color: #94283a; background: #fff1f3; font-size: .86rem; }
+.gitops-readiness-panel { border-left: 5px solid #168f6d; }
+.gitops-readiness { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .65rem; margin-top: .8rem; }
+.gitops-readiness>div { display: flex; gap: .6rem; align-items: center; padding: .7rem; border-radius: 12px; background: #f2faf6; color: #24724e; }
+.gitops-readiness>div.attention { color: #9a6100; background: #fff8e5; }
+.gitops-readiness svg { flex: 0 0 auto; width: 1.15rem; height: 1.15rem; fill: currentColor; }
+.gitops-readiness span { display: grid; gap: .08rem; }
+.gitops-readiness small { color: #58708a; }
+.gitops-btn svg { width: 1rem; height: 1rem; fill: currentColor; }
+.gitops-recovery-card { border-left: 5px solid #c24858; background: #fffafb; }
+.gitops-recovery-card>summary span { display: inline-grid; gap: .05rem; }
+.gitops-recovery-card>summary small { color: #7b6c72; font-weight: 500; }
+.gitops-recovery-card>p { color: #715b63; }
+@media (max-width: 980px) { .gitops-diagnostics-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 620px) { .gitops-diagnostics-grid,.gitops-readiness { grid-template-columns: 1fr; } }
+
+/* Semantic colors in GitOps override the generic admin button color. */
+body.admin-page .gitops-page .gitops-action-card.fetch { background: linear-gradient(135deg,#286fb1,#164f83) !important; border-color: #164f83 !important; }
+body.admin-page .gitops-page .gitops-action-card.fetch:hover { background: linear-gradient(135deg,#1f619f,#103f6b) !important; border-color: #103f6b !important; }
+body.admin-page .gitops-page .gitops-action-card.deploy { background: linear-gradient(135deg,#31905a,#176d43) !important; border-color: #176d43 !important; }
+body.admin-page .gitops-page .gitops-action-card.deploy:hover { background: linear-gradient(135deg,#287d4c,#105b36) !important; border-color: #105b36 !important; }
+body.admin-page .gitops-page .gitops-action-card.check { background: linear-gradient(135deg,#148493,#086672) !important; border-color: #086672 !important; }
+body.admin-page .gitops-page .gitops-action-card.check:hover { background: linear-gradient(135deg,#0f717e,#075762) !important; border-color: #075762 !important; }
+body.admin-page .gitops-page .gitops-control-refresh { background: #286fb1 !important; border-color: #286fb1 !important; }
+body.admin-page .gitops-page .gitops-control-refresh:hover { background: #1d5e99 !important; border-color: #1d5e99 !important; }
+body.admin-page .gitops-page .gitops-control-reload { background: #c77b12 !important; border-color: #c77b12 !important; }
+body.admin-page .gitops-page .gitops-control-reload:hover { background: #a9630a !important; border-color: #a9630a !important; }
+body.admin-page .gitops-page .gitops-control-restart { background: #ad3345 !important; border-color: #ad3345 !important; }
+body.admin-page .gitops-page .gitops-control-restart:hover { background: #8f2638 !important; border-color: #8f2638 !important; }

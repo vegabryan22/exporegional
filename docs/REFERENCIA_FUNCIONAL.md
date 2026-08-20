@@ -115,6 +115,10 @@ API independiente con autenticación Bearer, identificadores estables, reintento
 
 ## Operación y soporte
 
+- El módulo **Actualización y salud del sistema** organiza el despliegue en tres pasos: buscar actualizaciones, aplicarlas y ejecutar el diagnóstico.
+- El estado se considera operativo solo cuando están disponibles el proceso WSGI, la aplicación ExpoTécnica y la base de datos; también se muestran versión y tiempo de respuesta.
+- El endpoint público `GET /health` devuelve JSON mínimo para monitoreo y no depende de formularios funcionales como el registro de jueces.
+- La recarga y el reinicio están diferenciados visualmente. La reversión a una versión anterior se mantiene en una sección de recuperación de emergencia con confirmación explícita.
 - Use el centro de reportes como punto principal de descarga.
 - Revise la bitácora antes de corregir datos directamente en MySQL.
 - Genere respaldo antes de restauraciones, limpiezas o parches manuales.

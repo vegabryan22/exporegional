@@ -4464,6 +4464,17 @@ dialog.maintenance-dialog::backdrop {
     display: none;
 }
 
+.judge-central-tools { margin: 1rem 0; }
+.judge-registration-card { display: grid; grid-template-columns: minmax(230px, .8fr) minmax(300px, 1fr); gap: 1rem; align-items: center; border: 1px solid #cfe0f4; border-left: 5px solid #159447; border-radius: 16px; background: linear-gradient(135deg, #f7fbff, #f1fbf5); padding: 1rem 1.1rem; }
+.judge-registration-card h4, .judge-registration-card p { margin: .15rem 0; }
+.judge-public-status-row, .judge-account-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; }
+.judge-public-switch { display: inline-flex; align-items: center; gap: .35rem; }
+.judge-pool-account-actions { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 1rem; border-top: 1px solid #d7e5f5; padding-top: .8rem; }
+.judge-account-summary { display: grid; gap: .1rem; color: #587493; }
+.judge-account-summary > span { color: #7894b2; font-size: .68rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.judge-account-summary strong { color: var(--primary); }
+.judge-account-buttons form { margin: 0; }
+
 .judge-pool-identity,
 .judge-pool-profile,
 .judge-pool-load {
@@ -6220,6 +6231,9 @@ dialog.members-overview-dialog {
     .judge-pool-card {
         grid-template-columns: 1fr;
     }
+
+    .judge-registration-card { grid-template-columns: 1fr; }
+    .judge-pool-account-actions { align-items: flex-start; flex-direction: column; }
 
     .project-documents-grid {
         grid-template-columns: 1fr;

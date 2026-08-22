@@ -32,7 +32,7 @@ Esta referencia describe el sistema vigente a agosto de 2026. Sirve para adminis
 
 - Proyectos.
 - Tutores.
-- Gestión de jueces.
+- Gestión de jueces: concentra registro manual y público, cuenta de acceso, perfil profesional, disponibilidad, asistencia, invitaciones y carga de asignaciones.
 - Participación estudiantil y correcciones.
 
 ### Operación del evento
@@ -51,7 +51,7 @@ Esta referencia describe el sistema vigente a agosto de 2026. Sirve para adminis
 
 ### Administración y sistema avanzado
 
-- Usuarios, permisos, institución, correo, dependencias, base de datos, GitOps, mantenimiento y bitácora.
+- Usuarios del sistema (solo cuentas internas, no jueces), permisos, institución, correo, dependencias, base de datos, GitOps, mantenimiento y bitácora.
 
 ## Reglas de negocio relevantes
 

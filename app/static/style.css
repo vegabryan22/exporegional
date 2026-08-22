@@ -4476,6 +4476,13 @@ dialog.maintenance-dialog::backdrop {
 .judge-account-buttons form { display: flex; margin: 0; }
 .judge-account-buttons .action-btn { white-space: nowrap; }
 .judge-account-buttons .btn-svg { display: block; width: 1rem; height: 1rem; max-width: 1rem; max-height: 1rem; flex: 0 0 1rem; }
+.judge-pool-card .judge-account-buttons .action-btn,
+.judge-pool-card .judge-account-buttons .action-btn span { color: #fff !important; font-size: .84rem; letter-spacing: normal; text-transform: none; }
+.judge-pool-card .judge-account-buttons .action-btn svg { fill: currentColor; }
+.admin-main .admin-action-tone-secondary:not(.btn-icon-only) { background: #145f91 !important; border-color: #145f91 !important; color: #fff !important; }
+.admin-main .admin-action-tone-secondary:not(.btn-icon-only):hover { background: #0d4c77 !important; border-color: #0d4c77 !important; }
+.admin-main .admin-action-tone-warning:not(.btn-icon-only) { background: #c46512 !important; border-color: #c46512 !important; color: #fff !important; }
+.admin-main .admin-action-tone-warning:not(.btn-icon-only):hover { background: #9f4e09 !important; border-color: #9f4e09 !important; }
 
 .judge-pool-identity,
 .judge-pool-profile,

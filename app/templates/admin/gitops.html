@@ -291,6 +291,7 @@
         document.body.classList.add('gitops-is-reloading');
         const formData = new FormData(form);
         const action = formData.get('action');
+        const actionEndpoint = new URL(form.getAttribute('action') || window.location.href, window.location.href);
         const healthBefore = await currentHealth();
         formData.set('batch_mode', '1');
         title.textContent = action === 'gitops_pull_apply' ? 'Aplicando actualización' : 'Recargando ExpoTécnica';
@@ -298,7 +299,7 @@
         detail.textContent = 'No cierres esta ventana ni actualices manualmente.';
         try {
             try {
-                const response = await fetch(form.action, {
+                const response = await fetch(actionEndpoint.href, {
                     method: 'POST',
                     headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
                     body: formData

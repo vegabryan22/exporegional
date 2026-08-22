@@ -62,7 +62,7 @@
                 <small>Consulta y descarga novedades sin modificar el sistema.</small>
             </button>
         </form>
-        <form method="post" action="{{ action_url }}">
+        <form method="post" action="{{ action_url }}" data-gitops-reload-form>
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="gitops_pull_apply">
             <button type="submit" class="gitops-action-card deploy">
@@ -111,12 +111,12 @@
                     <input type="hidden" name="action" value="gitops_refresh">
                     <button type="submit" class="gitops-btn gitops-control-refresh"><svg aria-hidden="true"><use href="#ico-chart"></use></svg> Actualizar indicadores</button>
                 </form>
-                <form method="post" action="{{ action_url }}">
+                <form method="post" action="{{ action_url }}" data-gitops-reload-form>
                     <input type="hidden" name="next" value="{{ next_url }}">
                     <input type="hidden" name="action" value="gitops_service_reload">
                     <button type="submit" class="gitops-btn gitops-control-reload"><svg aria-hidden="true"><use href="#ico-restore"></use></svg> Recargar aplicación</button>
                 </form>
-                <form method="post" action="{{ action_url }}" onsubmit="return confirm('Reiniciar el servicio Python de ExpoTécnica?')">
+                <form method="post" action="{{ action_url }}" data-gitops-reload-form data-gitops-confirm="Reiniciar el servicio Python de ExpoTécnica?">
                     <input type="hidden" name="next" value="{{ next_url }}">
                     <input type="hidden" name="action" value="gitops_service_restart">
                     <button type="submit" class="gitops-btn gitops-control-restart"><svg aria-hidden="true"><use href="#ico-settings"></use></svg> Reiniciar proceso</button>
@@ -236,4 +236,70 @@
         </div>
     </details>
 </section>
+
+<div class="gitops-reload-overlay" data-gitops-reload-overlay hidden>
+    <div class="gitops-reload-wait">
+        <span class="gitops-reload-spinner" aria-hidden="true"></span>
+        <p class="maintenance-kicker">Actualizaci&oacute;n controlada</p>
+        <h3 data-gitops-reload-title>Recargando ExpoT&eacute;cnica</h3>
+        <p data-gitops-reload-message>La p&aacute;gina volver&aacute; autom&aacute;ticamente cuando la aplicaci&oacute;n est&eacute; lista.</p>
+        <small>No cierres esta ventana ni actualices manualmente.</small>
+    </div>
+</div>
+
+<script>
+(() => {
+    const forms = document.querySelectorAll('[data-gitops-reload-form]');
+    const overlay = document.querySelector('[data-gitops-reload-overlay]');
+    if (!forms.length || !overlay) return;
+    const title = overlay.querySelector('[data-gitops-reload-title]');
+    const message = overlay.querySelector('[data-gitops-reload-message]');
+    const delay = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
+    const waitUntilHealthy = async () => {
+        await delay(2200);
+        let consecutive = 0;
+        for (let attempt = 0; attempt < 90; attempt += 1) {
+            try {
+                const response = await fetch('/health', {cache: 'no-store'});
+                const payload = response.ok ? await response.json() : null;
+                consecutive = payload?.status === 'ok' && payload?.database === 'ok' ? consecutive + 1 : 0;
+                if (consecutive >= 2) return true;
+            } catch (_error) {
+                consecutive = 0;
+            }
+            await delay(1000);
+        }
+        return false;
+    };
+
+    forms.forEach((form) => form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const confirmation = form.dataset.gitopsConfirm;
+        if (confirmation && !window.confirm(confirmation)) return;
+        overlay.hidden = false;
+        document.body.classList.add('gitops-is-reloading');
+        const action = new FormData(form).get('action');
+        title.textContent = action === 'gitops_pull_apply' ? 'Aplicando actualización' : 'Recargando ExpoTécnica';
+        try {
+            try {
+                await fetch(form.action, {method: 'POST', body: new FormData(form), redirect: 'manual'});
+            } catch (_disconnectDuringRestart) {
+                // Un reinicio completo puede cortar la propia solicitud. Eso es
+                // esperado: el diagnóstico siguiente determina el resultado.
+            }
+            if (await waitUntilHealthy()) {
+                message.textContent = 'Servicio disponible. Abriendo el panel actualizado…';
+                window.location.assign('{{ url_for("admin.gitops_page") }}');
+                return;
+            }
+            throw new Error('Tiempo de espera agotado');
+        } catch (_error) {
+            title.textContent = 'La aplicación tarda más de lo esperado';
+            message.textContent = 'Intenta abrir nuevamente el panel en unos segundos. La actualización no se repetirá.';
+            overlay.querySelector('small').textContent = 'Puedes recargar manualmente cuando el servicio vuelva a estar disponible.';
+        }
+    }));
+})();
+</script>
 {% endblock %}

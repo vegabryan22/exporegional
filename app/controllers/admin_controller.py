@@ -920,12 +920,26 @@ def _gitops_reload_service() -> dict:
         os.kill(pid, 1)
     except OSError as ex:
         return {"ok": False, "code": -2, "out": "", "err": str(ex)}
-    recheck = _gitops_service_status()
+    # Gunicorn sustituye los workers gradualmente. Una comprobación inmediata
+    # puede responder desde el worker anterior y redirigir el navegador justo
+    # durante el relevo. Exigimos dos diagnósticos saludables consecutivos.
+    time.sleep(1)
+    recheck = {}
+    healthy_checks = 0
+    for _ in range(30):
+        recheck = _gitops_service_status()
+        if recheck.get("running") and recheck.get("health_ok"):
+            healthy_checks += 1
+            if healthy_checks >= 2:
+                break
+        else:
+            healthy_checks = 0
+        time.sleep(0.5)
     out = (
         f"HUP enviado a PID {pid}. Estado: {recheck['status_label']} HTTP {recheck['http_code']}. "
         f"Base de datos: {'disponible' if recheck['database_ok'] else 'sin respuesta'}."
     )
-    service_ok = recheck["running"] and recheck["health_ok"]
+    service_ok = bool(recheck.get("running") and recheck.get("health_ok") and healthy_checks >= 2)
     return {
         "ok": service_ok,
         "code": 0 if service_ok else -3,

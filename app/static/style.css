@@ -16098,3 +16098,12 @@ body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
     background: #984808 !important;
     border-color: #984808 !important;
 }
+
+.gitops-reload-overlay { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 1rem; background: rgba(7, 35, 62, .78); backdrop-filter: blur(5px); }
+.gitops-reload-overlay[hidden] { display: none; }
+.gitops-reload-wait { width: min(520px, 100%); padding: 2rem; border: 1px solid #b9d7e9; border-radius: 22px; background: #fff; box-shadow: 0 24px 70px rgba(3, 24, 43, .35); text-align: center; }
+.gitops-reload-wait h3, .gitops-reload-wait p { margin: .35rem 0; }
+.gitops-reload-wait small { color: #627b91; }
+.gitops-reload-spinner { display: block; width: 52px; height: 52px; margin: 0 auto 1rem; border: 6px solid #dcecf5; border-top-color: #16828b; border-radius: 50%; animation: gitops-reload-spin .8s linear infinite; }
+.gitops-is-reloading { overflow: hidden; }
+@keyframes gitops-reload-spin { to { transform: rotate(360deg); } }

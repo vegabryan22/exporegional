@@ -4473,7 +4473,9 @@ dialog.maintenance-dialog::backdrop {
 .judge-account-summary { display: grid; gap: .1rem; color: #587493; }
 .judge-account-summary > span { color: #7894b2; font-size: .68rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .judge-account-summary strong { color: var(--primary); }
-.judge-account-buttons form { margin: 0; }
+.judge-account-buttons form { display: flex; margin: 0; }
+.judge-account-buttons .action-btn { white-space: nowrap; }
+.judge-account-buttons .btn-svg { display: block; width: 1rem; height: 1rem; max-width: 1rem; max-height: 1rem; flex: 0 0 1rem; }
 
 .judge-pool-identity,
 .judge-pool-profile,

@@ -22,7 +22,7 @@ from zipfile import ZipFile
 
 from functools import wraps
 
-from flask import abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
+from flask import abort, current_app, flash, get_flashed_messages, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required, login_user
 from sqlalchemy import or_, text
 from sqlalchemy.engine import make_url
@@ -7609,7 +7609,14 @@ def perform_action():
             return jsonify({"ok": False, "error": "No tiene permisos para ejecutar esta acción."}), 403
         flash("No tienes permisos para ejecutar esta accion.", "error")
     if batch_mode:
-        return jsonify({"ok": True, "action": action})
+        messages = [
+            {"category": category, "message": message}
+            for category, message in get_flashed_messages(with_categories=True)
+        ]
+        action_ok = not any(item["category"] == "error" for item in messages)
+        if isinstance(action_result, dict):
+            return jsonify({"ok": action_ok, "action": action, "messages": messages, **action_result}), (200 if action_ok else 400)
+        return jsonify({"ok": action_ok, "action": action, "messages": messages}), (200 if action_ok else 400)
     return _redirect_next()
 
 

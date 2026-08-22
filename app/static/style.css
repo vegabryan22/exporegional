@@ -16107,3 +16107,6 @@ body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
 .gitops-reload-spinner { display: block; width: 52px; height: 52px; margin: 0 auto 1rem; border: 6px solid #dcecf5; border-top-color: #16828b; border-radius: 50%; animation: gitops-reload-spin .8s linear infinite; }
 .gitops-is-reloading { overflow: hidden; }
 @keyframes gitops-reload-spin { to { transform: rotate(360deg); } }
+
+.account-async-notice { position: fixed; top: 1rem; right: 1rem; z-index: 11000; max-width: min(430px, calc(100vw - 2rem)); padding: .85rem 1rem; border: 1px solid #92c9a4; border-left: 5px solid #2f7d4a; border-radius: 12px; background: #eff9f2; color: #245f39; box-shadow: 0 12px 35px rgba(11, 48, 31, .18); font-weight: 800; }
+.account-async-notice.error { border-color: #e3a8b1; border-left-color: #ad3345; background: #fff1f3; color: #8f2638; }

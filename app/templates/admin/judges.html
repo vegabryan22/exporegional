@@ -1,5 +1,6 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
+<div data-account-async-root data-refresh-url="{{ url_for('admin.judges_page') }}"></div>
 {% set ns = namespace(active=0, inactive=0, admins=0, judges_count=0, coordinators=0, temp=0) %}
 {% for user in judges %}
     {% if user.is_active_user %}{% set ns.active = ns.active + 1 %}{% else %}{% set ns.inactive = ns.inactive + 1 %}{% endif %}
@@ -21,7 +22,7 @@
         </div>
     </div>
 
-    <div class="users-summary-grid">
+    <div class="users-summary-grid" data-async-region="users-summary">
         <article><strong>{{ judges|length }}</strong><span>Total usuarios</span></article>
         <article><strong>{{ ns.active }}</strong><span>Activos</span></article>
         <article><strong>{{ ns.admins }}</strong><span>Administrativos</span></article>
@@ -66,7 +67,7 @@
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody data-async-region="users-list">
             {% for judge in judges %}
                 <tr data-user-row data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ judge.role_label ~ ' ' ~ (judge.job_title or '') ~ ' ' ~ (judge.institution_ref.name if judge.institution_ref else ''))|lower }}">
                     <td data-label="Usuario">
@@ -122,6 +123,7 @@
     </div>
 </section>
 
+<div data-async-region="users-dialogs">
 <dialog id="create-judge-dialog" class="maintenance-dialog">
     <div class="dialog-card">
         <div class="dialog-head"><h4>Nuevo usuario</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
@@ -315,6 +317,7 @@
     </div>
 </dialog>
 {% endfor %}
+</div>
 
 <script>
     (() => {
@@ -352,11 +355,10 @@
         });
 
         const searchInput = document.getElementById("usersSearchInput");
-        const rows = Array.from(document.querySelectorAll("[data-user-row]"));
-        if (searchInput && rows.length) {
+        if (searchInput) {
             searchInput.addEventListener("input", () => {
                 const query = searchInput.value.trim().toLowerCase();
-                rows.forEach((row) => {
+                document.querySelectorAll("[data-user-row]").forEach((row) => {
                     row.hidden = query && !row.dataset.search.includes(query);
                 });
             });

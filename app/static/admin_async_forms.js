@@ -3,6 +3,8 @@
     window.__adminAsyncFormsReady = true;
 
     const adminMain = () => document.querySelector(".admin-main");
+    const refreshUrl = () => document.querySelector("[data-account-async-root]")?.dataset.refreshUrl
+        || `${window.location.pathname}${window.location.search}`;
     const excludedPath = /\/(descargar|excel|pdf|exportar|suplantar)(\/|$)/i;
 
     const showNotice = (message, tone = "success") => {
@@ -112,7 +114,7 @@
                 const payload = await response.json();
                 serverMessage = payload.messages?.map((item) => item.message).filter(Boolean).join(" ") || "";
                 if (!response.ok || !payload.ok) throw new Error(serverMessage || payload.error || "No se pudo completar la acción.");
-                response = await fetch(`${window.location.pathname}${window.location.search}`, {
+                response = await fetch(refreshUrl(), {
                     headers: {"Accept": "text/html", "X-Requested-With": "XMLHttpRequest"},
                     cache: "no-store"
                 });

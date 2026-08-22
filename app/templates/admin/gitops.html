@@ -244,6 +244,7 @@
         <h3 data-gitops-reload-title>Recargando ExpoT&eacute;cnica</h3>
         <p data-gitops-reload-message>La p&aacute;gina volver&aacute; autom&aacute;ticamente cuando la aplicaci&oacute;n est&eacute; lista.</p>
         <small>No cierres esta ventana ni actualices manualmente.</small>
+        <button type="button" class="gitops-btn gitops-btn-neutral" data-gitops-reload-close hidden>Volver al panel</button>
     </div>
 </div>
 
@@ -254,6 +255,8 @@
     if (!forms.length || !overlay) return;
     const title = overlay.querySelector('[data-gitops-reload-title]');
     const message = overlay.querySelector('[data-gitops-reload-message]');
+    const detail = overlay.querySelector('small');
+    const closeButton = overlay.querySelector('[data-gitops-reload-close]');
     const delay = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
     const waitUntilHealthy = async () => {
@@ -278,15 +281,29 @@
         const confirmation = form.dataset.gitopsConfirm;
         if (confirmation && !window.confirm(confirmation)) return;
         overlay.hidden = false;
+        closeButton.hidden = true;
         document.body.classList.add('gitops-is-reloading');
-        const action = new FormData(form).get('action');
+        const formData = new FormData(form);
+        const action = formData.get('action');
+        formData.set('batch_mode', '1');
         title.textContent = action === 'gitops_pull_apply' ? 'Aplicando actualización' : 'Recargando ExpoTécnica';
+        message.textContent = 'Esperando la confirmación real del servidor.';
+        detail.textContent = 'No cierres esta ventana ni actualices manualmente.';
         try {
             try {
-                await fetch(form.action, {method: 'POST', body: new FormData(form), redirect: 'manual'});
-            } catch (_disconnectDuringRestart) {
-                // Un reinicio completo puede cortar la propia solicitud. Eso es
-                // esperado: el diagnóstico siguiente determina el resultado.
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+                    body: formData
+                });
+                const contentType = response.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) throw new Error('El servidor no devolvió el resultado de la actualización.');
+                const payload = await response.json();
+                const serverMessage = payload.messages?.map((item) => item.message).filter(Boolean).join(' ');
+                if (!response.ok || !payload.ok) throw new Error(serverMessage || payload.error || 'La actualización fue rechazada.');
+                message.textContent = serverMessage || 'Actualización aplicada. Verificando el servicio.';
+            } catch (requestError) {
+                if (action !== 'gitops_service_restart') throw requestError;
             }
             if (await waitUntilHealthy()) {
                 message.textContent = 'Servicio disponible. Abriendo el panel actualizado…';
@@ -294,12 +311,19 @@
                 return;
             }
             throw new Error('Tiempo de espera agotado');
-        } catch (_error) {
-            title.textContent = 'La aplicación tarda más de lo esperado';
-            message.textContent = 'Intenta abrir nuevamente el panel en unos segundos. La actualización no se repetirá.';
-            overlay.querySelector('small').textContent = 'Puedes recargar manualmente cuando el servicio vuelva a estar disponible.';
+        } catch (error) {
+            title.textContent = 'No se aplicó la actualización';
+            message.textContent = error.message || 'El servidor rechazó la operación.';
+            detail.textContent = 'No se volverá a ejecutar automáticamente. Revisa cambios locales y el resultado técnico.';
+            closeButton.hidden = false;
         }
     }));
+
+    closeButton.addEventListener('click', () => {
+        overlay.hidden = true;
+        document.body.classList.remove('gitops-is-reloading');
+        window.location.assign('{{ url_for("admin.gitops_page") }}');
+    });
 })();
 </script>
 {% endblock %}

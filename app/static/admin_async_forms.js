@@ -78,6 +78,28 @@
         window.scrollTo(scrollPosition.x, scrollPosition.y);
     };
 
+    const fetchAdminView = async (formData) => {
+        const candidates = [formData.get("next"), refreshUrl(), `${window.location.pathname}${window.location.search}`]
+            .filter(Boolean)
+            .map((value) => new URL(value, window.location.origin).href.split("#")[0])
+            .filter((value, index, values) => values.indexOf(value) === index);
+        let lastStatus = "sin respuesta";
+        for (const candidate of candidates) {
+            const response = await fetch(candidate, {
+                headers: {"Accept": "text/html"},
+                cache: "no-store"
+            });
+            lastStatus = `HTTP ${response.status}`;
+            if (!response.ok) continue;
+            const contentType = response.headers.get("content-type") || "";
+            if (!contentType.includes("text/html")) continue;
+            const html = await response.text();
+            if (new DOMParser().parseFromString(html, "text/html").querySelector(".admin-main")) return html;
+            lastStatus = "respuesta sin panel administrativo";
+        }
+        throw new Error(`No se pudo actualizar la vista (${lastStatus}).`);
+    };
+
     const shouldHandle = (form, event) => {
         if (event.defaultPrevented || !adminMain()?.contains(form)) return false;
         if ((form.method || "get").toLowerCase() !== "post") return false;
@@ -114,10 +136,8 @@
                 const payload = await response.json();
                 serverMessage = payload.messages?.map((item) => item.message).filter(Boolean).join(" ") || "";
                 if (!response.ok || !payload.ok) throw new Error(serverMessage || payload.error || "No se pudo completar la acción.");
-                response = await fetch(refreshUrl(), {
-                    headers: {"Accept": "text/html", "X-Requested-With": "XMLHttpRequest"},
-                    cache: "no-store"
-                });
+                const html = await fetchAdminView(formData);
+                response = new Response(html, {status: 200, headers: {"Content-Type": "text/html"}});
             }
             if (!response.ok) throw new Error(`No se pudo actualizar la vista (HTTP ${response.status}).`);
             const contentType = response.headers.get("content-type") || "";

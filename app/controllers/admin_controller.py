@@ -1025,6 +1025,38 @@ def _save_gitops_result(action: str, result: dict):
     SystemSetting.set_value("gitops_last_ran_at", stamp)
 
 
+def _gitops_stash_tracked_changes(label: str) -> dict:
+    """Temporarily protect tracked production changes without touching untracked data."""
+    before = _run_git_command(["git", "rev-parse", "--verify", "refs/stash"], timeout=20)
+    before_hash = before.get("out", "").strip() if before.get("ok") else ""
+    result = _run_git_command(["git", "stash", "push", "-m", label], timeout=120)
+    if not result.get("ok"):
+        return {"ok": False, "created": False, "hash": "", "err": result.get("err") or result.get("out")}
+    after = _run_git_command(["git", "rev-parse", "--verify", "refs/stash"], timeout=20)
+    after_hash = after.get("out", "").strip() if after.get("ok") else ""
+    created = bool(after_hash and after_hash != before_hash)
+    return {"ok": True, "created": created, "hash": after_hash if created else "", "out": result.get("out", ""), "err": ""}
+
+
+def _gitops_restore_stash(stash_hash: str) -> dict:
+    if not stash_hash:
+        return {"ok": True, "out": "No había cambios rastreados que restaurar.", "err": ""}
+    apply_result = _run_git_command(["git", "stash", "apply", "--index", stash_hash], timeout=180)
+    if not apply_result.get("ok"):
+        return {
+            "ok": False,
+            "out": apply_result.get("out", ""),
+            "err": (apply_result.get("err") or "No se pudo restaurar el resguardo; permanece guardado en git stash."),
+        }
+    stash_list = _run_git_command(["git", "stash", "list", "--format=%H"], timeout=30)
+    hashes = [line.strip() for line in stash_list.get("out", "").splitlines() if line.strip()]
+    if stash_hash in hashes:
+        drop_result = _run_git_command(["git", "stash", "drop", f"stash@{{{hashes.index(stash_hash)}}}"], timeout=30)
+        if not drop_result.get("ok"):
+            return {"ok": True, "out": apply_result.get("out", ""), "err": "El cambio se restauró, pero el resguardo temporal no se pudo eliminar."}
+    return {"ok": True, "out": apply_result.get("out", "") or "Cambios locales restaurados.", "err": ""}
+
+
 def _project_logistics_missing_items(project):
     missing = []
     if not project.project_document_path:
@@ -6893,21 +6925,36 @@ def _handle_action(action: str):
     elif action == "gitops_pull_apply":
         branch_result = _run_git_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], timeout=20)
         branch = branch_result["out"] if branch_result["ok"] and branch_result["out"] else "main"
+        dirty_before = _git_status_snapshot().get("dirty_count", 0)
+        stash_result = _gitops_stash_tracked_changes(
+            f"expotecnica-auto-deploy-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        ) if dirty_before else {"ok": True, "created": False, "hash": "", "out": "Repositorio limpio.", "err": ""}
+        if not stash_result["ok"]:
+            result = {"ok": False, "code": -10, "out": "", "err": f"No se pudieron resguardar los cambios locales: {stash_result['err']}"}
+            _save_gitops_result("pull_apply_stash_fail", result)
+            flash(result["err"], "error")
+            db.session.commit()
+            return
         fetch_result = _run_git_remote_command(["git", "fetch", "--all", "--prune"], timeout=180)
         if fetch_result["ok"]:
             pull_result = _run_git_remote_command(["git", "pull", "--ff-only", "origin", branch], timeout=300)
         else:
             pull_result = fetch_result
 
-        if pull_result["ok"]:
-            reload_result = _gitops_reload_service()
+        restore_result = _gitops_restore_stash(stash_result.get("hash", ""))
+
+        if pull_result["ok"] and restore_result["ok"]:
+            dependency_result = _gitops_sync_dependencies()
+            reload_result = _gitops_reload_service() if dependency_result["ok"] else dependency_result
             combined = {
-                "ok": reload_result["ok"],
+                "ok": dependency_result["ok"] and reload_result["ok"],
                 "code": reload_result["code"],
                 "out": "\n\n".join(
                     [
                         f"Fetch:\n{fetch_result.get('out') or '(sin salida)'}",
                         f"Pull:\n{pull_result.get('out') or '(sin salida)'}",
+                        f"Cambios locales:\n{restore_result.get('out') or 'Resguardados y restaurados.'}",
+                        f"Dependencias:\n{dependency_result.get('out') or dependency_result.get('err') or '(sin salida)'}",
                         f"Servicio:\n{reload_result.get('out') or reload_result.get('err') or '(sin salida)'}",
                     ]
                 ),
@@ -6921,9 +6968,20 @@ def _handle_action(action: str):
                 log_event("admin.git.apply.reload_fail", "system", detail=reload_result.get("err") or "Fallo recargando servicio")
                 flash(f"Pull aplicado, pero fallo la recarga: {reload_result.get('err') or 'sin detalle'}", "error")
         else:
-            _save_gitops_result("pull_apply_reload", pull_result)
-            log_event("admin.git.apply.fail", "system", detail=pull_result.get("err") or "Error en pull")
-            flash(f"No se pudieron aplicar cambios: {pull_result.get('err') or 'sin detalle'}", "error")
+            failure_detail = (
+                pull_result.get("err") or pull_result.get("out") or "Error en pull"
+                if not pull_result["ok"]
+                else restore_result.get("err") or "No se pudieron restaurar los cambios locales."
+            )
+            failed_result = {
+                "ok": False,
+                "code": pull_result.get("code", -11) if not pull_result["ok"] else -11,
+                "out": "\n\n".join(filter(None, [pull_result.get("out", ""), restore_result.get("out", "")])),
+                "err": failure_detail,
+            }
+            _save_gitops_result("pull_apply_reload", failed_result)
+            log_event("admin.git.apply.fail", "system", detail=failure_detail)
+            flash(f"No se pudieron aplicar cambios: {failure_detail}", "error")
         db.session.commit()
 
     elif action == "gitops_revert_commit":
@@ -6937,27 +6995,27 @@ def _handle_action(action: str):
             flash("Indica un commit válido para revertir.", "error")
             return
         status_result = _run_git_command(["git", "status", "--porcelain"], timeout=20)
-        if status_result["ok"] and (status_result.get("out") or "").strip():
-            result = {
-                "ok": False,
-                "code": -10,
-                "out": "",
-                "err": "Hay cambios locales. Limpia o respalda esos cambios antes de revertir.",
-            }
-            _save_gitops_result("revert_blocked_dirty", result)
-            log_event("admin.git.revert.blocked", "system", detail=result["err"])
-            db.session.commit()
+        has_local_changes = bool(status_result["ok"] and (status_result.get("out") or "").strip())
+        stash_result = _gitops_stash_tracked_changes(
+            f"expotecnica-auto-revert-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        ) if has_local_changes else {"ok": True, "created": False, "hash": "", "out": "Repositorio limpio.", "err": ""}
+        if not stash_result["ok"]:
+            result = {"ok": False, "code": -10, "out": "", "err": f"No se pudieron resguardar los cambios locales: {stash_result['err']}"}
+            _save_gitops_result("revert_stash_fail", result)
             flash(result["err"], "error")
+            db.session.commit()
             return
         validate_result = _run_git_command(["git", "cat-file", "-e", f"{target_commit}^{{commit}}"], timeout=20)
         if not validate_result["ok"]:
+            _gitops_restore_stash(stash_result.get("hash", ""))
             _save_gitops_result("revert_invalid_commit", validate_result)
             log_event("admin.git.revert.invalid", "system", detail=validate_result.get("err") or target_commit)
             db.session.commit()
             flash("El commit indicado no existe en este repositorio.", "error")
             return
         reset_result = _run_git_command(["git", "reset", "--hard", target_commit], timeout=120)
-        if reset_result["ok"] and reload_after:
+        restore_result = _gitops_restore_stash(stash_result.get("hash", ""))
+        if reset_result["ok"] and restore_result["ok"] and reload_after:
             reload_result = _gitops_reload_service()
             result = {
                 "ok": reload_result["ok"],
@@ -6965,13 +7023,21 @@ def _handle_action(action: str):
                 "out": "\n\n".join(
                     [
                         f"Reset:\n{reset_result.get('out') or '(sin salida)'}",
+                        f"Cambios locales:\n{restore_result.get('out') or 'Resguardados y restaurados.'}",
                         f"Servicio:\n{reload_result.get('out') or reload_result.get('err') or '(sin salida)'}",
                     ]
                 ),
                 "err": reload_result.get("err", ""),
             }
-        else:
+        elif reset_result["ok"] and restore_result["ok"]:
             result = reset_result
+        else:
+            result = {
+                "ok": False,
+                "code": reset_result.get("code", -11) if not reset_result["ok"] else -11,
+                "out": "\n\n".join(filter(None, [reset_result.get("out", ""), restore_result.get("out", "")])),
+                "err": reset_result.get("err") or restore_result.get("err") or "No se pudo completar la reversión.",
+            }
         _save_gitops_result("revert_commit", result)
         if result["ok"]:
             log_event("admin.git.revert", "system", detail=f"Repositorio regresado al commit {target_commit}")

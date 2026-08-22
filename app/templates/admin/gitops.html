@@ -259,21 +259,27 @@
     const closeButton = overlay.querySelector('[data-gitops-reload-close]');
     const delay = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
-    const waitUntilHealthy = async () => {
+    const currentHealth = async () => {
+        try {
+            const response = await fetch('/health', {cache: 'no-store'});
+            return response.ok ? await response.json() : null;
+        } catch (_error) {
+            return null;
+        }
+    };
+
+    const waitUntilHealthy = async (previousVersion = null) => {
         await delay(2200);
         let consecutive = 0;
         for (let attempt = 0; attempt < 90; attempt += 1) {
-            try {
-                const response = await fetch('/health', {cache: 'no-store'});
-                const payload = response.ok ? await response.json() : null;
-                consecutive = payload?.status === 'ok' && payload?.database === 'ok' ? consecutive + 1 : 0;
-                if (consecutive >= 2) return true;
-            } catch (_error) {
-                consecutive = 0;
-            }
+            const payload = await currentHealth();
+            const healthy = payload?.status === 'ok' && payload?.database === 'ok';
+            const versionChanged = !previousVersion || payload?.version !== previousVersion;
+            consecutive = healthy && versionChanged ? consecutive + 1 : 0;
+            if (consecutive >= 2) return payload;
             await delay(1000);
         }
-        return false;
+        return null;
     };
 
     forms.forEach((form) => form.addEventListener('submit', async (event) => {
@@ -285,6 +291,7 @@
         document.body.classList.add('gitops-is-reloading');
         const formData = new FormData(form);
         const action = formData.get('action');
+        const healthBefore = await currentHealth();
         formData.set('batch_mode', '1');
         title.textContent = action === 'gitops_pull_apply' ? 'Aplicando actualización' : 'Recargando ExpoTécnica';
         message.textContent = 'Esperando la confirmación real del servidor.';
@@ -303,9 +310,11 @@
                 if (!response.ok || !payload.ok) throw new Error(serverMessage || payload.error || 'La actualización fue rechazada.');
                 message.textContent = serverMessage || 'Actualización aplicada. Verificando el servicio.';
             } catch (requestError) {
-                if (action !== 'gitops_service_restart') throw requestError;
+                if (!['gitops_pull_apply', 'gitops_service_restart'].includes(action)) throw requestError;
+                message.textContent = 'La recarga interrumpió la respuesta. Verificando el resultado real…';
             }
-            if (await waitUntilHealthy()) {
+            const expectedPreviousVersion = action === 'gitops_pull_apply' ? healthBefore?.version : null;
+            if (await waitUntilHealthy(expectedPreviousVersion)) {
                 message.textContent = 'Servicio disponible. Abriendo el panel actualizado…';
                 window.location.assign('{{ url_for("admin.gitops_page") }}');
                 return;

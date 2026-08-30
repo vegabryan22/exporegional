@@ -2580,7 +2580,7 @@ def _render_participation_certificates_pdf(context):
         pdf.drawCentredString(width / 2, 194, _pdf_normalize_text(event_text))
         if winner_certificate:
             pdf.setFont("Helvetica-Bold", 10.5)
-            award_detail = "Etapa Institucional · Reconocimiento en inglés" if recipient.get("award_kind") == "english" else f"Categoría: {recipient['category_label']}"
+            award_detail = "Etapa Regional · Reconocimiento en inglés" if recipient.get("award_kind") == "english" else f"Categoría: {recipient['category_label']}"
             pdf.drawCentredString(width / 2, 165, _pdf_normalize_text(award_detail))
 
         date_line = (
@@ -10058,7 +10058,7 @@ def winner_certificates_pdf():
         _render_participation_certificates_pdf(certificate_context),
         mimetype="application/pdf",
         as_attachment=False,
-        download_name="certificados_premiacion_expotecnica_2026_institucional.pdf",
+        download_name="certificados_premiacion_expotecnica_2026_regional.pdf",
     )
 
 
@@ -10072,7 +10072,7 @@ def winner_certificates_download():
         _render_participation_certificates_pdf(certificate_context),
         mimetype="application/pdf",
         as_attachment=True,
-        download_name="certificados_premiacion_expotecnica_2026_institucional.pdf",
+        download_name="certificados_premiacion_expotecnica_2026_regional.pdf",
     )
 
 

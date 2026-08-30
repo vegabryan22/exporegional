@@ -105,7 +105,7 @@
         if ((form.method || "get").toLowerCase() !== "post") return false;
         if (form.matches("[data-admin-async-off], [data-gitops-reload-form], [data-whatsapp-mark-form]")) return false;
         if (form.target && form.target !== "_self") return false;
-        const actionUrl = new URL(form.action || window.location.href, window.location.href);
+        const actionUrl = new URL(form.getAttribute("action") || window.location.href, window.location.href);
         if (actionUrl.origin !== window.location.origin || excludedPath.test(actionUrl.pathname)) return false;
         return true;
     };
@@ -118,7 +118,7 @@
         const previousContent = button?.innerHTML;
         const state = captureViewState();
         const scrollPosition = {x: window.scrollX, y: window.scrollY};
-        const actionUrl = new URL(form.action || window.location.href, window.location.href);
+        const actionUrl = new URL(form.getAttribute("action") || window.location.href, window.location.href);
         const formData = new FormData(form);
         const usesAdminActionApi = actionUrl.pathname.endsWith("/admin/action");
         if (usesAdminActionApi) formData.set("batch_mode", "1");

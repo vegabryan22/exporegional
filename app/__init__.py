@@ -417,6 +417,8 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE judges ADD COLUMN identity VARCHAR(40) NULL"))
         if "institution" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN institution VARCHAR(160) NULL"))
+        if "institution_id" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN institution_id INT NULL"))
         if "previous_expo" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN previous_expo VARCHAR(10) NULL"))
         if "phone" not in judge_columns:

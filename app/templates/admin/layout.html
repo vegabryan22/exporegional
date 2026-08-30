@@ -14,13 +14,27 @@
         </div>
         <nav class="admin-menu" id="admin-menu" data-admin-menu>
             {% for group in admin_menu_groups %}
-                <p class="admin-menu-group">{{ group["label"] }}</p>
-                {% for item in group["items"] %}
-                    <a href="{{ url_for(item.endpoint) }}" class="{% if active_page == item.key %}active{% endif %}">
-                        <svg class="admin-menu-icon" aria-hidden="true" focusable="false"><use href="#ico-{{ item.icon }}"></use></svg>
-                        <span>{{ item.label }}</span>
-                    </a>
-                {% endfor %}
+                {% if group.advanced %}
+                    <details class="admin-menu-advanced" {% if group.contains_active %}open{% endif %}>
+                        <summary>{{ group["label"] }}</summary>
+                        <div class="admin-menu-advanced-items">
+                            {% for item in group["items"] %}
+                                <a href="{{ url_for(item.endpoint) }}" class="{% if active_page == item.key %}active{% endif %}">
+                                    <svg class="admin-menu-icon" aria-hidden="true" focusable="false"><use href="#ico-{{ item.icon }}"></use></svg>
+                                    <span>{{ item.label }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% else %}
+                    <p class="admin-menu-group">{{ group["label"] }}</p>
+                    {% for item in group["items"] %}
+                        <a href="{{ url_for(item.endpoint) }}" class="{% if active_page == item.key %}active{% endif %}">
+                            <svg class="admin-menu-icon" aria-hidden="true" focusable="false"><use href="#ico-{{ item.icon }}"></use></svg>
+                            <span>{{ item.label }}</span>
+                        </a>
+                    {% endfor %}
+                {% endif %}
             {% endfor %}
         </nav>
     </aside>

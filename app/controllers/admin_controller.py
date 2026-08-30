@@ -165,37 +165,40 @@ ADMIN_MENU_ICONS = {
 
 # Override mojibake labels with clean UTF-8 text.
 ADMIN_MENU_ITEMS = [
-    ("overview", "admin.overview", "Resumen"),
+    ("overview", "admin.overview", "Panel de control"),
     ("institutions", "admin.institutions_page", "Colegios participantes"),
-    ("regional_review", "admin.regional_review_page", "Revisión regional"),
-    ("assignments", "admin.assignments_page", "Asignaciones"),
-    ("judge_pool", "admin.judge_pool_page", "Jueces"),
-    ("judges", "admin.judges_page", "Usuarios"),
-    ("campaigns", "admin.campaigns_page", "Campañas"),
+    ("regional_review", "admin.regional_review_page", "Revisión y aprobación regional"),
+    ("assignments", "admin.assignments_page", "Asignación de jueces"),
+    ("judge_pool", "admin.judge_pool_page", "Gestión de jueces"),
+    ("judges", "admin.judges_page", "Usuarios y accesos"),
+    ("permissions", "admin.permissions_page", "Permisos por equipo"),
+    ("campaigns", "admin.campaigns_page", "Inscripción y calendario"),
     ("categories", "admin.categories_page", "Categorías"),
-    ("academic", "admin.academic_page", "Académico"),
-    ("rubrics", "admin.rubrics_page", "Rúbricas"),
+    ("academic", "admin.academic_page", "Configuración académica"),
+    ("rubrics", "admin.rubrics_page", "Rúbricas de evaluación"),
     ("projects", "admin.projects_page", "Proyectos"),
-    ("requirements", "admin.requirements_page", "Requerimientos"),
-    ("evaluations", "admin.evaluations_page", "Evaluaciones"),
+    ("requirements", "admin.requirements_page", "Recursos solicitados"),
+    ("evaluations", "admin.evaluations_page", "Avance y resultados"),
     ("documents", "admin.documents_page", "Actas y certificados"),
-    ("reports", "admin.reports_page", "Reportes"),
-    ("smtp", "admin.smtp_page", "SMTP"),
-    ("institution", "admin.institution_page", "Institución"),
-    ("maintenance", "admin.maintenance_page", "Mantenimiento"),
+    ("reports", "admin.reports_page", "Centro de reportes"),
+    ("smtp", "admin.smtp_page", "Correo del sistema"),
+    ("institution", "admin.institution_page", "Datos de la sede regional"),
+    ("maintenance", "admin.maintenance_page", "Estado público del sitio"),
     ("database", "admin.database_page", "Base de datos"),
-    ("gitops", "admin.gitops_page", "Mantenimiento Git"),
-    ("dependencies", "admin.dependencies_page", "Dependencias"),
+    ("gitops", "admin.gitops_page", "Actualización del sistema"),
+    ("dependencies", "admin.dependencies_page", "Componentes instalados"),
     ("logs", "admin.logs_page", "Bitácora"),
-    ("students_stats", "admin.students_stats_page", "Estadísticas de estudiantes"),
+    ("students_stats", "admin.students_stats_page", "Participación estudiantil"),
 ]
 
 ADMIN_MENU_GROUPS = [
-    ("General", ["overview"]),
-    ("Documentos", ["reports", "documents"]),
-    ("Operación", ["institutions", "regional_review", "assignments", "judge_pool", "projects", "requirements", "evaluations", "students_stats"]),
-    ("Catálogos", ["campaigns", "categories", "academic", "rubrics"]),
-    ("Sistema", ["judges", "smtp", "institution", "maintenance", "database", "gitops", "dependencies", "logs"]),
+    ("Inicio", ["overview"]),
+    ("Preparación de la Expo Regional", ["institutions", "campaigns", "academic", "categories", "rubrics"]),
+    ("Participantes", ["regional_review", "projects", "judge_pool", "students_stats"]),
+    ("Operación del evento", ["assignments", "requirements"]),
+    ("Resultados y cierre", ["evaluations", "documents", "reports"]),
+    ("Administración", ["judges", "permissions", "institution", "smtp"]),
+    ("Sistema avanzado", ["maintenance", "database", "gitops", "dependencies", "logs"]),
 ]
 
 ADMIN_DEPARTMENT_MODULE_ACCESS = {
@@ -724,6 +727,16 @@ def _git_remote_auth_args() -> list[str]:
 def _run_git_remote_command(base_args: list[str], timeout: int = 120) -> dict:
     args = ["git"] + _git_remote_auth_args() + base_args[1:]
     return _run_git_command(args, timeout=timeout)
+
+
+def _gitops_sync_dependencies() -> dict:
+    requirements_path = _git_repo_path() / "requirements.txt"
+    if not requirements_path.exists():
+        return {"ok": True, "code": 0, "out": "No existe requirements.txt; no hay dependencias que sincronizar.", "err": ""}
+    return _run_git_command(
+        [sys.executable, "-m", "pip", "install", "-r", str(requirements_path)],
+        timeout=600,
+    )
 
 
 def _git_status_snapshot() -> dict:
@@ -7167,7 +7180,14 @@ def _base_context(active_page: str, **kwargs):
                 }
             )
         if entries:
-            admin_menu_groups.append({"label": group_label, "items": entries})
+            admin_menu_groups.append(
+                {
+                    "label": group_label,
+                    "items": entries,
+                    "advanced": group_label == "Sistema avanzado",
+                    "contains_active": any(item["key"] == active_page for item in entries),
+                }
+            )
 
     if restore_safe_mode or database_light_mode:
         permission_access_map = {}

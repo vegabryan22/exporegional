@@ -16123,3 +16123,26 @@ body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
 .identity-lookup-status.is-loading { color: #8a5a00; }
 .identity-lookup-status.is-success { color: #176b3a; font-weight: 700; }
 .identity-lookup-status.is-error { color: #a13232; }
+
+body.admin-page .admin-menu-advanced {
+    margin-top: .35rem;
+    border-top: 1px solid #d5e2ee;
+    padding-top: .28rem;
+}
+
+body.admin-page .admin-menu-advanced summary {
+    padding: .4rem .55rem;
+    color: #52708c;
+    cursor: pointer;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    list-style-position: inside;
+    text-transform: uppercase;
+}
+
+body.admin-page .admin-menu-advanced-items {
+    display: grid;
+    gap: .16rem;
+    padding-left: .35rem;
+}

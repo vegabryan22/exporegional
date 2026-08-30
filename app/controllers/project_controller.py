@@ -31,6 +31,7 @@ from app.services.audit_service import log_event
 from app.services.assignment_service import reassign_absent_judge_assignments
 from app.services.mail_service import send_email, smtp_is_configured
 from app.services.parameter_service import get_active_evaluation_types
+from app.services.identity_lookup_service import IdentityLookupError, lookup_identity_name
 
 try:
     from reportlab.lib import colors
@@ -59,6 +60,15 @@ def system_health():
         "timestamp": datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
     }
     return jsonify(payload), 200 if database_ok else 503
+
+
+def lookup_registration_identity():
+    payload = request.get_json(silent=True) or {}
+    try:
+        result = lookup_identity_name(payload.get("identity"))
+    except IdentityLookupError as error:
+        return jsonify({"ok": False, "message": str(error)}), 422
+    return jsonify({"ok": True, **result})
 
 ALLOWED_DOC_EXTENSIONS = {"pdf"}
 REGISTRATION_DRAFT_SESSION_KEY = "project_registration_draft"

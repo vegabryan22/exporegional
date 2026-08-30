@@ -392,6 +392,8 @@
     var requirementItemsList = document.getElementById('requirement-items-list');
     var addRequirementItem = document.getElementById('add-requirement-item');
     var identityInputs = Array.prototype.slice.call(document.querySelectorAll('[data-identity-input]'));
+    var identityLookupUrl = {{ url_for('school.lookup_registration_identity')|tojson }};
+    var identityLookupTimers = new WeakMap();
     var phoneInputs = Array.prototype.slice.call(document.querySelectorAll('[data-phone-input]'));
     var mentorModeInputs = Array.prototype.slice.call(document.querySelectorAll('input[name="mentor_has"]'));
     var mentorFields = document.querySelector('[data-mentor-fields]');
@@ -403,6 +405,85 @@
 
     function normalizeIdentity(value) {
         return (value || '').toUpperCase().replace(/[\s-]+/g, '');
+    }
+
+    function identityNameInput(input) {
+        var name = input.name === 'mentor_identity'
+            ? 'mentor_name'
+            : input.name.replace(/_identity$/, '_full_name');
+        return document.querySelector('[name="' + name + '"]');
+    }
+
+    function identityStatus(input) {
+        var status = input.parentElement.querySelector('[data-identity-lookup-status]');
+        if (!status) {
+            status = document.createElement('small');
+            status.setAttribute('data-identity-lookup-status', '');
+            status.className = 'identity-lookup-status';
+            status.setAttribute('aria-live', 'polite');
+            input.insertAdjacentElement('afterend', status);
+        }
+        return status;
+    }
+
+    function setIdentityStatus(input, state, message) {
+        var status = identityStatus(input);
+        status.className = 'identity-lookup-status is-' + state;
+        status.textContent = message;
+    }
+
+    function lookupIdentity(input) {
+        var identity = normalizeIdentity(input.value);
+        var nameInput = identityNameInput(input);
+        if (!nameInput || !/^\d{8,12}$/.test(identity)) {
+            setIdentityStatus(input, 'idle', identity ? 'La consulta automática aplica a cédulas numéricas.' : '');
+            return;
+        }
+        if (input.dataset.lookupIdentity === identity && input.dataset.lookupOk === '1') {
+            return;
+        }
+        input.dataset.lookupIdentity = identity;
+        input.dataset.lookupOk = '0';
+        setIdentityStatus(input, 'loading', 'Consultando cédula…');
+        fetch(identityLookupUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+            body: JSON.stringify({identity: identity})
+        }).then(function (response) {
+            return response.json().then(function (payload) {
+                if (!response.ok || !payload.ok) {
+                    throw new Error(payload.message || 'No se pudo verificar la cédula.');
+                }
+                return payload;
+            });
+        }).then(function (payload) {
+            if (normalizeIdentity(input.value) !== identity) {
+                return;
+            }
+            input.value = payload.identity;
+            nameInput.value = payload.name;
+            nameInput.dispatchEvent(new Event('input', {bubbles: true}));
+            input.dataset.lookupOk = '1';
+            setIdentityStatus(input, 'success', 'Cédula verificada: ' + payload.name + '.');
+        }).catch(function (error) {
+            if (normalizeIdentity(input.value) === identity) {
+                setIdentityStatus(input, 'error', error.message + ' Puedes continuar y completar el nombre manualmente.');
+            }
+        });
+    }
+
+    function scheduleIdentityLookup(input) {
+        var previousTimer = identityLookupTimers.get(input);
+        if (previousTimer) {
+            window.clearTimeout(previousTimer);
+        }
+        var identity = normalizeIdentity(input.value);
+        if (/^\d{9,12}$/.test(identity)) {
+            identityLookupTimers.set(input, window.setTimeout(function () { lookupIdentity(input); }, 450));
+        } else {
+            setIdentityStatus(input, 'idle', '');
+        }
     }
 
     function validateIdentityInputs() {
@@ -519,7 +600,9 @@
         input.addEventListener('input', function () {
             input.value = normalizeIdentity(input.value).slice(0, 12);
             validateIdentityInputs();
+            scheduleIdentityLookup(input);
         });
+        input.addEventListener('blur', function () { lookupIdentity(input); });
     });
     phoneInputs.forEach(function (input) {
         input.addEventListener('input', function () {

@@ -16127,6 +16127,8 @@ body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
 .identity-lookup-status.is-loading { color: #8a5a00; }
 .identity-lookup-status.is-success { color: #176b3a; font-weight: 700; }
 .identity-lookup-status.is-error { color: #a13232; }
+.identity-name-pending { background: #eef2f4 !important; color: #6d7d85 !important; cursor: not-allowed; }
+.identity-name-verified { border-color: #82bf94 !important; background: #f1faf3 !important; color: #174f2c !important; }
 
 body.admin-page .admin-menu-advanced {
     margin-top: .35rem;

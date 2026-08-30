@@ -141,7 +141,10 @@
             <p class="project-section-kicker">Integrante obligatorio</p>
             <h3>Datos del estudiante N.1</h3>
             <div class="form-grid inline-grid-4">
-                <label>Nombre completo *<input type="text" name="student_1_full_name" value="{{ form_data.get('student_1_full_name', '') }}" required></label>
+                <label>Cédula / documento de identidad *
+                    <input type="text" name="student_1_identity" value="{{ form_data.get('student_1_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input required autofocus>
+                </label>
+                <label>Nombre completo *<input type="text" name="student_1_full_name" value="{{ form_data.get('student_1_full_name', '') }}" data-identity-name required></label>
                 <label>Sección *
                     <select name="student_1_section_id" required>
                         <option value="">Seleccione...</option>
@@ -159,9 +162,6 @@
                             <option value="{{ specialty.id }}" {% if form_data.get('student_1_specialty_id') == specialty.id|string or (not form_data.get('student_1_specialty_id') and form_data.get('specialty_id') == specialty.id|string) %}selected{% endif %}>{{ specialty.name }}</option>
                         {% endfor %}
                     </select>
-                </label>
-                <label>Cédula / documento de identidad *
-                    <input type="text" name="student_1_identity" value="{{ form_data.get('student_1_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input required>
                 </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_1_birth_date" value="{{ form_data.get('student_1_birth_date', '') }}" required></label>
             </div>
@@ -206,7 +206,10 @@
             <p class="project-section-kicker">Integrante opcional</p>
             <h3>Datos del estudiante N.2</h3>
             <div class="form-grid inline-grid-4">
-                <label>Nombre completo *<input type="text" name="student_2_full_name" value="{{ form_data.get('student_2_full_name', '') }}"></label>
+                <label>Cédula / documento de identidad *
+                    <input type="text" name="student_2_identity" value="{{ form_data.get('student_2_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones, espacios ni repetidos." data-identity-input>
+                </label>
+                <label>Nombre completo *<input type="text" name="student_2_full_name" value="{{ form_data.get('student_2_full_name', '') }}" data-identity-name></label>
                 <label>Sección *
                     <select name="student_2_section_id">
                         <option value="">Seleccione...</option>
@@ -224,9 +227,6 @@
                             <option value="{{ specialty.id }}" {% if form_data.get('student_2_specialty_id') == specialty.id|string or (not form_data.get('student_2_specialty_id') and form_data.get('specialty_id') == specialty.id|string) %}selected{% endif %}>{{ specialty.name }}</option>
                         {% endfor %}
                     </select>
-                </label>
-                <label>Cédula / documento de identidad *
-                    <input type="text" name="student_2_identity" value="{{ form_data.get('student_2_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones, espacios ni repetidos." data-identity-input>
                 </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_2_birth_date" value="{{ form_data.get('student_2_birth_date', '') }}"></label>
             </div>
@@ -271,7 +271,10 @@
             <p class="project-section-kicker">Integrante opcional</p>
             <h3>Datos del estudiante N.3</h3>
             <div class="form-grid inline-grid-4">
-                <label>Nombre completo *<input type="text" name="student_3_full_name" value="{{ form_data.get('student_3_full_name', '') }}"></label>
+                <label>Cédula / documento de identidad *
+                    <input type="text" name="student_3_identity" value="{{ form_data.get('student_3_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones, espacios ni repetidos." data-identity-input>
+                </label>
+                <label>Nombre completo *<input type="text" name="student_3_full_name" value="{{ form_data.get('student_3_full_name', '') }}" data-identity-name></label>
                 <label>Sección *
                     <select name="student_3_section_id">
                         <option value="">Seleccione...</option>
@@ -289,9 +292,6 @@
                             <option value="{{ specialty.id }}" {% if form_data.get('student_3_specialty_id') == specialty.id|string or (not form_data.get('student_3_specialty_id') and form_data.get('specialty_id') == specialty.id|string) %}selected{% endif %}>{{ specialty.name }}</option>
                         {% endfor %}
                     </select>
-                </label>
-                <label>Cédula / documento de identidad *
-                    <input type="text" name="student_3_identity" value="{{ form_data.get('student_3_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones, espacios ni repetidos." data-identity-input>
                 </label>
                 <label>Fecha de nacimiento *<input type="date" name="student_3_birth_date" value="{{ form_data.get('student_3_birth_date', '') }}"></label>
             </div>
@@ -345,10 +345,10 @@
                     </div>
                 </div>
                 <div class="form-grid inline-grid-2 mentor-fields" data-mentor-fields>
-                    <label>Nombre completo de la persona mentora<input type="text" name="mentor_name" value="{{ form_data.get('mentor_name', '') }}"></label>
                     <label>Cédula / documento de la persona mentora
                         <input type="text" name="mentor_identity" value="{{ form_data.get('mentor_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input>
                     </label>
+                    <label>Nombre completo de la persona mentora<input type="text" name="mentor_name" value="{{ form_data.get('mentor_name', '') }}" data-identity-name></label>
                     <label>Fecha de nacimiento de la persona mentora<input type="date" name="mentor_birth_date" value="{{ form_data.get('mentor_birth_date', '') }}"></label>
                     <div class="register-fieldset">
                         <span>Sexo de la persona mentora</span>
@@ -414,6 +414,17 @@
         return document.querySelector('[name="' + name + '"]');
     }
 
+    function setIdentityNameMode(input, mode) {
+        var nameInput = identityNameInput(input);
+        if (!nameInput) {
+            return;
+        }
+        nameInput.readOnly = mode !== 'manual';
+        nameInput.classList.toggle('identity-name-verified', mode === 'verified');
+        nameInput.classList.toggle('identity-name-pending', mode === 'pending');
+        nameInput.setAttribute('aria-describedby', input.name + '-lookup-status');
+    }
+
     function identityStatus(input) {
         var status = input.parentElement.querySelector('[data-identity-lookup-status]');
         if (!status) {
@@ -421,6 +432,7 @@
             status.setAttribute('data-identity-lookup-status', '');
             status.className = 'identity-lookup-status';
             status.setAttribute('aria-live', 'polite');
+            status.id = input.name + '-lookup-status';
             input.insertAdjacentElement('afterend', status);
         }
         return status;
@@ -436,7 +448,8 @@
         var identity = normalizeIdentity(input.value);
         var nameInput = identityNameInput(input);
         if (!nameInput || !/^\d{8,12}$/.test(identity)) {
-            setIdentityStatus(input, 'idle', identity ? 'La consulta automática aplica a cédulas numéricas.' : '');
+            setIdentityNameMode(input, identity ? 'manual' : 'pending');
+            setIdentityStatus(input, 'idle', identity ? 'La consulta automática aplica a cédulas numéricas.' : 'Digite primero la cédula para completar el nombre automáticamente.');
             return;
         }
         if (input.dataset.lookupIdentity === identity && input.dataset.lookupOk === '1') {
@@ -444,6 +457,7 @@
         }
         input.dataset.lookupIdentity = identity;
         input.dataset.lookupOk = '0';
+        setIdentityNameMode(input, 'pending');
         setIdentityStatus(input, 'loading', 'Consultando cédula…');
         fetch(identityLookupUrl, {
             method: 'POST',
@@ -465,9 +479,12 @@
             nameInput.value = payload.name;
             nameInput.dispatchEvent(new Event('input', {bubbles: true}));
             input.dataset.lookupOk = '1';
+            nameInput.dataset.automaticIdentity = identity;
+            setIdentityNameMode(input, 'verified');
             setIdentityStatus(input, 'success', 'Cédula verificada: ' + payload.name + '.');
         }).catch(function (error) {
             if (normalizeIdentity(input.value) === identity) {
+                setIdentityNameMode(input, 'manual');
                 setIdentityStatus(input, 'error', error.message + ' Puedes continuar y completar el nombre manualmente.');
             }
         });
@@ -479,10 +496,12 @@
             window.clearTimeout(previousTimer);
         }
         var identity = normalizeIdentity(input.value);
-        if (/^\d{9,12}$/.test(identity)) {
+        if (/^\d{8,12}$/.test(identity)) {
+            setIdentityNameMode(input, 'pending');
             identityLookupTimers.set(input, window.setTimeout(function () { lookupIdentity(input); }, 450));
         } else {
-            setIdentityStatus(input, 'idle', '');
+            setIdentityNameMode(input, identity ? 'manual' : 'pending');
+            setIdentityStatus(input, 'idle', identity ? 'Complete la cédula para realizar la consulta.' : 'Digite primero la cédula para completar el nombre automáticamente.');
         }
     }
 
@@ -597,8 +616,19 @@
         input.addEventListener('change', toggleMentorFields);
     });
     identityInputs.forEach(function (input) {
+        setIdentityNameMode(input, 'pending');
+        if (input.value) {
+            scheduleIdentityLookup(input);
+        } else {
+            setIdentityStatus(input, 'idle', 'Digite primero la cédula para completar el nombre automáticamente.');
+        }
         input.addEventListener('input', function () {
             input.value = normalizeIdentity(input.value).slice(0, 12);
+            var nameInput = identityNameInput(input);
+            if (nameInput && nameInput.dataset.automaticIdentity && nameInput.dataset.automaticIdentity !== input.value) {
+                nameInput.value = '';
+                delete nameInput.dataset.automaticIdentity;
+            }
             validateIdentityInputs();
             scheduleIdentityLookup(input);
         });

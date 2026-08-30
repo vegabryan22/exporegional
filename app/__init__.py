@@ -683,6 +683,32 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN representative_phone VARCHAR(40) NULL"))
         if "institution_name" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN institution_name VARCHAR(180) NULL"))
+        if "institution_id" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN institution_id INT NULL"))
+        if "category_id" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN category_id INT NULL"))
+        if "origin" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN origin VARCHAR(30) NOT NULL DEFAULT 'regional_manual'"))
+        if "regional_status" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN regional_status VARCHAR(40) NOT NULL DEFAULT 'draft'"))
+        if "external_project_id" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN external_project_id VARCHAR(120) NULL"))
+        if "external_source" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN external_source VARCHAR(160) NULL"))
+        if "source_updated_at" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN source_updated_at DATETIME NULL"))
+        if "received_at" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN received_at DATETIME NULL"))
+        if "submitted_at" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN submitted_at DATETIME NULL"))
+        if "approved_at" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN approved_at DATETIME NULL"))
+        if "approved_by_id" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN approved_by_id INT NULL"))
+        if "regional_notes" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN regional_notes TEXT NULL"))
+        if "payload_version" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN payload_version VARCHAR(20) NULL"))
         if "grade_level" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN grade_level VARCHAR(60) NULL"))
         if "specialty" not in project_columns:

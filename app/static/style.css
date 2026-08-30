@@ -15974,6 +15974,10 @@ dialog.maintenance-dialog.institution-dialog-small { width: min(540px, calc(100v
 .institution-dialog .dialog-head p { margin: .3rem 0 0; color: #647681; font-size: .9rem; }
 .institution-dialog .dialog-close { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; min-width: 2.25rem; padding: 0; border-radius: 50%; font-size: 1.35rem; }
 .institution-dialog .actions-row { justify-content: flex-end; grid-column: 1 / -1; margin-top: .25rem; padding-top: 1rem; border-top: 1px solid #e2e9ed; }
+.institution-delete-warning { display: grid; gap: .25rem; margin: 0; padding: .8rem .9rem; border: 1px solid #efb7be; border-left: 4px solid #b83245; border-radius: 10px; background: #fff2f3; color: #752433; font-size: .86rem; line-height: 1.4; }
+.institution-delete-warning strong { color: #8f2637; font-size: .9rem; }
+.institution-delete-warning span { color: #752433; font-size: inherit; font-weight: 600; }
+.institution-dialog-small .compact-form { gap: .85rem; }
 .institution-platform-option { display: flex; align-items: center; gap: .85rem; padding: .85rem 1rem; border: 1px solid #cbdbe5; border-radius: 12px; background: #f5f9fb; cursor: pointer; }
 .institution-platform-option:has(input:checked) { border-color: #397493; background: #edf7fb; box-shadow: inset 0 0 0 1px #397493; }
 .institution-platform-option input { width: 1.15rem; height: 1.15rem; flex: 0 0 auto; accent-color: #245c78; }

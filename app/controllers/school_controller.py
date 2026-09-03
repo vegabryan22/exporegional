@@ -170,14 +170,12 @@ def dashboard():
     metrics = {
         "projects": len(projects),
         "files_complete": completed_files,
-        "files_percent": round((completed_files / len(projects)) * 100) if projects else 0,
         "attention_projects": attention_projects,
         "judges": active_judges,
         "minimum_judges": minimum_judges,
         "judges_pending": max(0, minimum_judges - active_judges),
         "evaluations_completed": completed_evaluations,
         "evaluations_expected": expected_evaluations,
-        "evaluations_percent": round((completed_evaluations / expected_evaluations) * 100) if expected_evaluations else 0,
     }
     return render_template(
         "school/dashboard.html",

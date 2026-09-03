@@ -10325,6 +10325,9 @@ def institutions_page():
                 existing_user.is_active_user = True
                 existing_user.department = None
                 existing_user.shift = coordinator_shift
+                if coordinator_shift == "diurno":
+                    institution.responsible_name = coordinator_name
+                    institution.responsible_email = coordinator_email
                 log_event("admin.institution.coordinator.convert", "judge", existing_user.id, f"Cuenta convertida de {previous_role} a coordinación de {institution.code}")
                 db.session.commit()
                 flash("La cuenta existente fue vinculada correctamente como coordinación del colegio.", "success")
@@ -10344,6 +10347,9 @@ def institutions_page():
             )
             coordinator.set_password(temporary_password)
             db.session.add(coordinator)
+            if coordinator_shift == "diurno":
+                institution.responsible_name = coordinator_name
+                institution.responsible_email = coordinator_email
             db.session.flush()
             log_event("admin.institution.coordinator.create", "judge", coordinator.id, f"Cuenta coordinadora para {institution.code}")
             db.session.commit()
@@ -10375,6 +10381,9 @@ def institutions_page():
                 coordinator.email = email
                 coordinator.institution = institution.name
                 coordinator.shift = coordinator_shift
+                if coordinator_shift == "diurno":
+                    institution.responsible_name = full_name
+                    institution.responsible_email = email
                 coordinator.is_active_user = is_active_user
                 log_event(
                     "admin.institution.coordinator.update",

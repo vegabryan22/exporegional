@@ -15482,7 +15482,7 @@ dialog.maintenance-dialog.school-judge-dialog { width: min(760px, calc(100vw - 2
 
 .school-summary-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem;
 }
 

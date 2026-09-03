@@ -15580,6 +15580,20 @@ dialog.maintenance-dialog.school-judge-dialog { width: min(760px, calc(100vw - 2
 .school-submission-summary.is-complete { border: 2px solid #75b932; background: linear-gradient(145deg, #f5fcec, #e7f7d4); }
 .school-submission-summary.is-complete strong { color: #347214; }
 
+.school-review-summary { display: grid; grid-template-columns: minmax(240px, 1.5fr) repeat(3, minmax(170px, 1fr)); align-items: stretch; gap: .75rem; padding: .85rem; border: 1px solid #d5e2e9; border-radius: 16px; background: #fff; box-shadow: 0 8px 22px rgba(20, 58, 77, .07); }
+.school-review-summary-title { display: grid; align-content: center; gap: .2rem; padding: .35rem .5rem; }
+.school-review-summary-title span { color: #173f55; font-weight: 850; }
+.school-review-summary-title small { color: var(--muted); }
+.school-review-state { display: flex; align-items: center; gap: .65rem; min-height: 58px; padding: .7rem .8rem; border-radius: 12px; font-size: .83rem; font-weight: 700; }
+.school-review-state strong { display: inline-block; margin-right: .15rem; font-size: 1.25rem; }
+.school-review-state svg,
+.school-review-symbol { width: 28px; height: 28px; flex: 0 0 28px; }
+.school-review-state svg { padding: 5px; border-radius: 50%; fill: currentColor; background: rgba(255,255,255,.65); }
+.school-review-symbol { display: grid; place-items: center; border-radius: 50%; background: rgba(255,255,255,.65); font-size: 1rem; font-weight: 900; }
+.school-review-state.approved { color: #286b14; background: #edf9e5; border: 1px solid #aad68d; }
+.school-review-state.returned { color: #962c37; background: #fff0f1; border: 1px solid #e9a8af; }
+.school-review-state.pending { color: #875500; background: #fff7e4; border: 1px solid #edc671; }
+
 .school-attention {
     display: flex;
     align-items: center;
@@ -16498,6 +16512,16 @@ body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
 .identity-lookup-status.is-loading { color: #8a5a00; }
 .identity-lookup-status.is-success { color: #176b3a; font-weight: 700; }
 .identity-lookup-status.is-error { color: #a13232; }
+
+@media (max-width: 1100px) {
+    .school-review-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .school-review-summary-title { grid-column: 1 / -1; }
+}
+
+@media (max-width: 560px) {
+    .school-review-summary { grid-template-columns: 1fr; }
+    .school-review-summary-title { grid-column: auto; }
+}
 .identity-name-pending { background: #eef2f4 !important; color: #6d7d85 !important; cursor: not-allowed; }
 .identity-name-verified { border-color: #82bf94 !important; background: #f1faf3 !important; color: #174f2c !important; }
 

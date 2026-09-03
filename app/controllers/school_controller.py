@@ -167,6 +167,15 @@ def dashboard():
         "submitted_projects": len(projects) - pending_submission,
         "pending_submission": pending_submission,
         "all_projects_submitted": bool(projects) and pending_submission == 0,
+        "approved_projects": sum(
+            project.regional_status in {Project.STATUS_APPROVED, Project.STATUS_EVALUATED, Project.STATUS_REGIONAL_WINNER}
+            for project in projects
+        ),
+        "returned_projects": sum(project.regional_status == Project.STATUS_RETURNED for project in projects),
+        "pending_review_projects": sum(
+            project.regional_status in {Project.STATUS_SUBMITTED, Project.STATUS_RECEIVED, Project.STATUS_UNDER_REVIEW}
+            for project in projects
+        ),
         "judges": active_judges,
         "minimum_judges": minimum_judges,
         "judges_pending": max(0, minimum_judges - active_judges),

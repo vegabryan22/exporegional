@@ -710,6 +710,50 @@ nav a:hover,
     align-content: start;
 }
 
+.auth-shell {
+    align-items: start;
+}
+
+.auth-brand-panel {
+    grid-template-columns: auto minmax(220px, 1fr);
+    column-gap: 1.25rem;
+    row-gap: 1rem;
+}
+
+.auth-brand-logos {
+    grid-column: 1;
+    align-self: center;
+}
+
+.auth-brand-copy {
+    grid-column: 2;
+    align-self: center;
+}
+
+.auth-brand-panel .auth-video-guides,
+.auth-brand-panel .auth-brand-points {
+    grid-column: 1 / -1;
+}
+
+.auth-login-card {
+    min-height: 0;
+    align-content: start;
+    padding: 1.5rem;
+}
+
+@media (max-width: 760px) {
+    .auth-brand-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-brand-logos,
+    .auth-brand-copy,
+    .auth-brand-panel .auth-video-guides,
+    .auth-brand-panel .auth-brand-points {
+        grid-column: 1;
+    }
+}
+
 .password-page {
     width: min(680px, 100%);
     min-height: calc(100vh - 220px);

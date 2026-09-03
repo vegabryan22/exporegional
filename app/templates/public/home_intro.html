@@ -6,7 +6,10 @@
 <style>.regional-public-home .container{width:calc(100% - 2rem)!important;max-width:none!important}@media(max-width:600px){.regional-public-home .container{width:calc(100% - 1rem)!important}}</style>
 <section class="regional-hero">
     <div class="regional-hero-copy">
-        <p class="regional-eyebrow">CORVEC · Unidos por la excelencia</p>
+        <div class="regional-hero-brand">
+            {% if featured_expo_logo %}<img src="{{ url_for('static', filename=featured_expo_logo) }}" alt="Logo de ExpoTécnica Regional">{% endif %}
+            <p class="regional-eyebrow">CORVEC · Unidos por la excelencia</p>
+        </div>
         <h2>ExpoTécnica<br><span>Regional</span></h2>
         <p class="regional-hero-lead">El punto de encuentro de los proyectos, el talento y la innovación de nuestros centros educativos.</p>
         <div class="regional-hero-actions">
@@ -19,10 +22,6 @@
         <div class="regional-shields-viewport">
             <div class="regional-shields-track">
                 {% for duplicate in [false, true] %}<div class="regional-shields-group" {% if duplicate %}aria-hidden="true"{% endif %}>
-                    {% if featured_expo_logo %}<div class="regional-shield-slide regional-expo-logo-slide" title="ExpoTécnica Regional">
-                        <img src="{{ url_for('static', filename=featured_expo_logo) }}" alt="{% if not duplicate %}Logo de ExpoTécnica Regional{% endif %}">
-                        <small>ExpoTécnica Regional</small>
-                    </div>{% endif %}
                     {% for row in school_rows %}<div class="regional-shield-slide" title="{{ row.school.name }}">
                         {% if row.school.shield_path %}<img src="{{ url_for('static', filename=row.school.shield_path) }}" alt="{% if not duplicate %}Escudo de {{ row.school.name }}{% endif %}">{% else %}<span>{{ row.school.code[:3] }}</span>{% endif %}
                         <small>{{ row.school.name }}</small>

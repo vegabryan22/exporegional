@@ -98,6 +98,7 @@ class Project(db.Model):
     requirements_other_ok = db.Column(db.Boolean, nullable=False, default=False)
     requirements_resources_ok = db.Column(db.Boolean, nullable=False, default=False)
     project_document_path = db.Column(db.String(300), nullable=True)
+    project_logbook_path = db.Column(db.String(300), nullable=True)
     project_logo_path = db.Column(db.String(300), nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True, index=True)
     logistics_status = db.Column(db.String(40), nullable=False, default="pendiente_revision", index=True)
@@ -190,10 +191,15 @@ class Project(db.Model):
         return len(self.english_members)
 
     @property
+    def requires_project_logbook(self) -> bool:
+        return (self.category or "").strip().lower() == "steam"
+
+    @property
     def logistics_requirements_complete(self) -> bool:
         return all(
             [
                 bool(self.project_document_path),
+                not self.requires_project_logbook or bool(self.project_logbook_path),
                 self.logistics_document_ok,
                 self.has_real_logo,
                 self.logistics_logo_ok,

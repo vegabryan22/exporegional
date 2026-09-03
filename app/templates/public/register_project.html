@@ -96,9 +96,6 @@
                 <label id="req-otros-wrapper">Otros:
                     <input type="text" name="requirements_other" value="{{ form_data.get('requirements_other', '') }}">
                 </label>
-                <label>Documentación del proyecto *
-                    <input type="file" name="project_document" accept="application/pdf,.pdf" {% if not temp_document_path %}required{% endif %}>
-                </label>
             </div>
             <div class="requirement-items-editor">
                 <div class="requirement-items-heading">
@@ -128,12 +125,6 @@
                     {% endfor %}
                 </div>
             </div>
-            {% if temp_document_path %}
-                <p class="upload-retained-note">
-                    Documento conservado temporalmente: <strong>{{ temp_document_name }}</strong>.
-                    Puedes dejar este campo vac&iacute;o si solo vas a corregir los datos.
-                </p>
-            {% endif %}
         </section>
 
         <section class="judge-register-band judge-register-card-accent project-register-card-accent student stage-block stage-2" id="student-1">

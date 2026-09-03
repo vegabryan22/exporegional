@@ -17,6 +17,7 @@ from app.models.project_member import ProjectMember
 from app.models.project_import_event import ProjectImportEvent
 from app.models.project_status_history import ProjectStatusHistory
 from app.services.regional_project_service import RegionalTransitionError, transition_project
+from app.services.regional_readiness_service import approval_missing_requirements
 
 
 class RegionalFoundationTests(unittest.TestCase):
@@ -162,6 +163,14 @@ class RegionalFoundationTests(unittest.TestCase):
             transition_project(project, Project.STATUS_APPROVED, admin)
 
         self.assertEqual(Project.STATUS_UNDER_REVIEW, project.regional_status)
+
+    def test_steam_project_requires_written_document_and_logbook(self):
+        project = Project(title="Proyecto STEAM", team_name="Equipo", category="steam", category_id=1, advisor_name="Tutor", project_document_path="uploads/project.pdf", project_logo_path="uploads/logo.png", logistics_registration_form_signed_ok=True)
+        project.members.append(ProjectMember(full_name="Estudiante", student_number=1, photo_url="uploads/student.png", consent_signed_ok=True))
+
+        self.assertIn("bitácora del proyecto STEAM", approval_missing_requirements(project))
+        project.project_logbook_path = "uploads/logbook.pdf"
+        self.assertNotIn("bitácora del proyecto STEAM", approval_missing_requirements(project))
 
     def test_evaluated_and_winner_states_are_not_manual_transitions(self):
         admin = Judge(id=1, role=Judge.ROLE_SUPERADMIN, is_admin=True)

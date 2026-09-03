@@ -844,6 +844,8 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN workshop_id INT NULL"))
         if "project_document_path" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN project_document_path VARCHAR(300) NULL"))
+        if "project_logbook_path" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN project_logbook_path VARCHAR(300) NULL"))
         if "campaign_id" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN campaign_id INT NULL"))
         if "tutor_id" not in project_columns:

@@ -245,6 +245,7 @@ ACTION_MODULE_MAP = {
     "update_project_logistics": "projects",
     "update_project_requirements": "requirements",
     "replace_project_document": "projects",
+    "replace_project_logbook": "projects",
     "approve_document_revision": "projects",
     "reject_document_revision": "projects",
     "send_pending_revision_notifications": "projects",
@@ -5380,6 +5381,33 @@ def _handle_action(action: str):
                 )
                 db.session.commit()
                 flash("Documento del proyecto reemplazado. Queda pendiente de revision logistica.", "success")
+            except ValueError as error:
+                flash(str(error), "error")
+
+    elif action == "replace_project_logbook":
+        project_id = request.form.get("project_id", type=int)
+        project = Project.query.get(project_id) if project_id else None
+        logbook_file = request.files.get("project_logbook")
+        if not project:
+            flash("Proyecto no encontrado.", "error")
+        elif (project.category or "").strip().lower() != "steam":
+            flash("La bitácora aplica únicamente a proyectos STEAM.", "error")
+        elif not logbook_file or not logbook_file.filename:
+            flash("Debes seleccionar la bitácora en formato PDF.", "error")
+        else:
+            try:
+                old_path = project.project_logbook_path
+                project.project_logbook_path = _save_project_document(logbook_file)
+                if old_path:
+                    try:
+                        old_file = (Path(current_app.static_folder) / old_path).resolve()
+                        if old_file.exists():
+                            old_file.unlink()
+                    except OSError:
+                        pass
+                log_event("admin.project.logbook.replace", "project", project.id, f"Bitácora STEAM actualizada para proyecto #{project.id}")
+                db.session.commit()
+                flash("Bitácora del proyecto STEAM guardada.", "success")
             except ValueError as error:
                 flash(str(error), "error")
 

@@ -24,6 +24,7 @@
                 Documento del proyecto
             </a>
         {% endif %}
+        {% if project.category == 'steam' and project.project_logbook_path %}<a class="outline-btn" href="{{ url_for('static', filename=project.project_logbook_path) }}" target="_blank" rel="noopener">Ver bitácora STEAM</a>{% endif %}
     </div>
 
     {% if submission_gate and submission_gate.locked %}

@@ -1420,12 +1420,8 @@ def register_project():
             flash("Debes aceptar la declaracion para finalizar la inscripcion.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
-        try:
-            project.project_document_path = _promote_temp_project_document(temp_document_path)
-            project.logistics_document_ok = True
-        except ValueError as error:
-            flash(str(error), "error")
-            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
+        project.project_document_path = None
+        project.logistics_document_ok = False
 
         db.session.add(project)
         db.session.flush()

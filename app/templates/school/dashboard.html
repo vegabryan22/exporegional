@@ -37,7 +37,7 @@
         <div class="school-project-meta">
             <div><span>Origen</span><strong>{{ project.origin_label }}</strong></div>
             <div><span>Integrantes</span><strong>{{ project.members|length }} estudiante{{ '' if project.members|length == 1 else 's' }}</strong></div>
-            <div><span>Documento</span><strong class="{{ 'is-ready' if project.project_document_path else 'is-pending' }}">{{ "Adjunto" if project.project_document_path else "Pendiente" }}</strong></div>
+            <div><span>Documentación</span>{% set required_docs = 2 if project.category == 'steam' else 1 %}{% set uploaded_docs = (1 if project.project_document_path else 0) + (1 if project.category == 'steam' and project.project_logbook_path else 0) %}<strong class="{{ 'is-ready' if uploaded_docs == required_docs else 'is-pending' }}">{{ uploaded_docs }} de {{ required_docs }} documentos</strong></div>
             <div><span>Recursos visuales</span><strong class="{{ 'is-ready' if project.has_real_logo and project.logistics_photos_ok else 'is-pending' }}">{{ "Completos" if project.has_real_logo and project.logistics_photos_ok else "Por completar" }}</strong></div>
         </div>
         <div class="school-project-progress">

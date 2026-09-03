@@ -140,6 +140,7 @@ def dashboard():
             bool((project.advisor_name or "").strip()),
             bool(members),
             bool(project.project_document_path),
+            not project.requires_project_logbook or bool(project.project_logbook_path),
             bool(project.has_real_logo),
             bool(project.logistics_registration_form_signed_ok),
         ]
@@ -298,7 +299,7 @@ def project_workspace(project_id: int):
     if request.method == "POST":
         action = (request.form.get("action") or "").strip()
         allowed_actions = {
-            "update_project", "update_project_logistics", "replace_project_document",
+            "update_project", "update_project_logistics", "replace_project_document", "replace_project_logbook",
             "upload_project_logo", "upload_member_photo", "delete_member_photo",
             "create_project_member", "update_project_member", "delete_project_member", "delete_project",
         }
@@ -495,8 +496,9 @@ def submit_project(project_id: int):
     if not project:
         flash("Proyecto no encontrado.", "error")
         return redirect(url_for("school.dashboard"))
-    if not project.members or not project.project_document_path or not project.has_real_logo or any(not member.photo_url for member in project.members):
-        flash("Antes de enviar debes completar estudiantes, documento PDF, logo del proyecto y fotografía de cada integrante.", "error")
+    needs_logbook = (project.category or "").strip().lower() == "steam" and not project.project_logbook_path
+    if not project.members or not project.project_document_path or needs_logbook or not project.has_real_logo or any(not member.photo_url for member in project.members):
+        flash("Antes de enviar debes completar estudiantes, documento escrito, bitácora para STEAM, logo y fotografía de cada integrante.", "error")
         return redirect(url_for("school.project_edit", project_id=project.id))
     try:
         transition_project(project, Project.STATUS_SUBMITTED, current_user, request.form.get("notes", ""))

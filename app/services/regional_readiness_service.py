@@ -17,7 +17,9 @@ def approval_missing_requirements(project: Project) -> list[str]:
     if not members:
         missing.append("al menos una persona estudiante")
     if not project.project_document_path:
-        missing.append("documento PDF")
+        missing.append("documento escrito del proyecto")
+    if (project.category or "").strip().lower() == "steam" and not project.project_logbook_path:
+        missing.append("bitácora del proyecto STEAM")
     if not project.has_real_logo:
         missing.append("logo del proyecto")
 

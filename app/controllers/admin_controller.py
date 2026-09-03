@@ -2674,11 +2674,14 @@ def _save_project_logo(photo_file):
 
     relative_dir = os.path.join("uploads", "projects", "logos")
     absolute_dir = os.path.join(current_app.static_folder, relative_dir)
-    os.makedirs(absolute_dir, exist_ok=True)
-
     unique_name = f"{uuid.uuid4().hex}.{extension}"
     absolute_path = os.path.join(absolute_dir, unique_name)
-    photo_file.save(absolute_path)
+    try:
+        os.makedirs(absolute_dir, exist_ok=True)
+        photo_file.save(absolute_path)
+    except OSError as error:
+        current_app.logger.exception("No se pudo guardar el logo del proyecto")
+        raise ValueError("No se pudo guardar el logo. Intenta nuevamente o contacta a soporte.") from error
     return f"{relative_dir}/{unique_name}".replace("\\", "/")
 
 

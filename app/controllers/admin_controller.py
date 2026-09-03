@@ -739,6 +739,13 @@ def _gitops_sync_dependencies() -> dict:
     )
 
 
+def _gitops_upgrade_database() -> dict:
+    return _run_git_command(
+        [sys.executable, "-m", "flask", "--app", "run.py", "db", "upgrade"],
+        timeout=300,
+    )
+
+
 def _git_status_snapshot() -> dict:
     branch = _run_git_command(["git", "rev-parse", "--abbrev-ref", "HEAD"], timeout=20)
     head = _run_git_command(["git", "rev-parse", "--short", "HEAD"], timeout=20)
@@ -6958,9 +6965,10 @@ def _handle_action(action: str):
 
         if pull_result["ok"] and restore_result["ok"]:
             dependency_result = _gitops_sync_dependencies()
-            reload_result = _gitops_reload_service() if dependency_result["ok"] else dependency_result
+            migration_result = _gitops_upgrade_database() if dependency_result["ok"] else dependency_result
+            reload_result = _gitops_reload_service() if migration_result["ok"] else migration_result
             combined = {
-                "ok": dependency_result["ok"] and reload_result["ok"],
+                "ok": dependency_result["ok"] and migration_result["ok"] and reload_result["ok"],
                 "code": reload_result["code"],
                 "out": "\n\n".join(
                     [
@@ -6968,6 +6976,7 @@ def _handle_action(action: str):
                         f"Pull:\n{pull_result.get('out') or '(sin salida)'}",
                         f"Cambios locales:\n{restore_result.get('out') or 'Resguardados y restaurados.'}",
                         f"Dependencias:\n{dependency_result.get('out') or dependency_result.get('err') or '(sin salida)'}",
+                        f"Migraciones:\n{migration_result.get('out') or migration_result.get('err') or '(sin salida)'}",
                         f"Servicio:\n{reload_result.get('out') or reload_result.get('err') or '(sin salida)'}",
                     ]
                 ),

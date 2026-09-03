@@ -81,6 +81,10 @@ def create_app():
 
         if app.config["AUTO_INIT_DB"]:
             _initialize_database()
+        else:
+            # Campos críticos requeridos por el código en ejecución. Esta verificación
+            # permite que un despliegue GitOps arranque antes de ejecutar Alembic.
+            ensure_jornada_schema()
 
     register_cli(app)
     register_template_filters(app)
@@ -151,6 +155,20 @@ def _initialize_database(max_attempts: int = 5, retry_delay_seconds: float = 1.5
             if not _is_retryable_schema_error(error) or attempt == max_attempts:
                 raise
             time.sleep(retry_delay_seconds)
+
+
+def ensure_jornada_schema():
+    """Garantiza las columnas mínimas de jornada sin ejecutar la conciliación completa."""
+    inspector = inspect(db.engine)
+    with db.engine.begin() as connection:
+        judge_columns = {column["name"] for column in inspector.get_columns("judges")}
+        if "shift" not in judge_columns:
+            _run_optional_schema_statement(connection, "ALTER TABLE judges ADD COLUMN shift VARCHAR(20) NULL", "columna judges.shift")
+            _run_optional_schema_statement(connection, "CREATE INDEX ix_judges_shift ON judges (shift)", "indice judges.shift")
+        project_columns = {column["name"] for column in inspector.get_columns("projects")}
+        if "shift" not in project_columns:
+            _run_optional_schema_statement(connection, "ALTER TABLE projects ADD COLUMN shift VARCHAR(20) NULL", "columna projects.shift")
+            _run_optional_schema_statement(connection, "CREATE INDEX ix_projects_shift ON projects (shift)", "indice projects.shift")
 
 
 def _reconcile_tutor_catalog():

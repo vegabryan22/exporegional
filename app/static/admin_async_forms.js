@@ -120,6 +120,9 @@
         const scrollPosition = {x: window.scrollX, y: window.scrollY};
         const actionUrl = new URL(form.getAttribute("action") || window.location.href, window.location.href);
         const formData = new FormData(form);
+        // FormData(form) no incluye el botón que originó el submit. Es esencial en
+        // formularios con varias decisiones (aprobar, devolver, etc.).
+        if (button?.name) formData.set(button.name, button.value || "");
         const usesAdminActionApi = actionUrl.pathname.endsWith("/admin/action");
         if (usesAdminActionApi) formData.set("batch_mode", "1");
         if (button) { button.disabled = true; button.textContent = "Procesando…"; }

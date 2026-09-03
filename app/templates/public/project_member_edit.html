@@ -47,7 +47,6 @@
                 <li><strong>Género:</strong> {{ member.gender or '—' }}</li>
                 <li><strong>Sección:</strong> {{ member.section_name or '—' }}</li>
                 <li><strong>Especialidad:</strong> {{ member.specialty or '—' }}</li>
-                <li><strong>Beca comedor:</strong> {{ 'Sí' if member.has_dining_scholarship else 'No' }}</li>
                 <li><strong>Expone en inglés:</strong> {{ 'Sí' if member.participates_in_english else 'No' }}</li>
                 <li><strong>Teléfono:</strong> {{ member.phone or '—' }}</li>
                 <li><strong>Correo:</strong> {{ member.email or '—' }}</li>
@@ -113,11 +112,6 @@
             </div>
 
             <div class="member-edit-checks">
-                <label class="member-edit-check-label">
-                    <input type="hidden" name="has_dining_scholarship" value="0">
-                    <input type="checkbox" name="has_dining_scholarship" value="1" {{ 'checked' if member.has_dining_scholarship }}>
-                    Tiene beca de comedor
-                </label>
                 <label class="member-edit-check-label">
                     <input type="hidden" name="participates_in_english" value="0">
                     <input type="checkbox" name="participates_in_english" value="1" {{ 'checked' if member.participates_in_english }}>

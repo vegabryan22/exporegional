@@ -26,11 +26,6 @@
             <strong class="ss-kpi-value">{{ s.female }}</strong>
             <span class="ss-kpi-sub">{{ ((s.female / s.total * 100)|round|int) if s.total else 0 }}%</span>
         </article>
-        <article class="ss-kpi-card ss-kpi-accent">
-            <span class="ss-kpi-label">Becados (comedor)</span>
-            <strong class="ss-kpi-value">{{ s.scholarship }}</strong>
-            <span class="ss-kpi-sub">{{ s.scholarship_pct }}% del total</span>
-        </article>
         <article class="ss-kpi-card ss-kpi-green">
             <span class="ss-kpi-label">Exponen en inglés</span>
             <strong class="ss-kpi-value">{{ s.english }}</strong>

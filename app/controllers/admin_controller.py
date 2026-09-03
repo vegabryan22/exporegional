@@ -5516,7 +5516,6 @@ def _handle_action(action: str):
                 member.gender = new_vals.get("gender") or None
                 member.specialty = new_vals.get("specialty") or None
                 member.section_name = new_vals.get("section_name") or None
-                member.has_dining_scholarship = bool(new_vals.get("has_dining_scholarship"))
                 member.participates_in_english = bool(new_vals.get("participates_in_english"))
                 member.phone = new_vals.get("phone") or None
                 member.email = new_vals.get("email") or None
@@ -5861,7 +5860,6 @@ def _handle_action(action: str):
             gender = request.form.get("member_gender", "").strip().lower()
             phone = request.form.get("member_phone", "").strip()
             email = request.form.get("member_email", "").strip().lower()
-            has_dining_scholarship = _str_to_bool(request.form.get("member_has_dining_scholarship"))
             participates_in_english = _str_to_bool(request.form.get("member_participates_in_english"))
             photo_file = request.files.get("member_photo")
             section_name, specialty, academic_error = _resolve_member_academic_fields(request.form)
@@ -5896,7 +5894,6 @@ def _handle_action(action: str):
                         gender=gender,
                         specialty=specialty,
                         section_name=section_name,
-                        has_dining_scholarship=has_dining_scholarship,
                         participates_in_english=participates_in_english,
                         phone=phone,
                         email=email,
@@ -5971,7 +5968,6 @@ def _handle_action(action: str):
                     member.gender = gender
                     member.specialty = specialty
                     member.section_name = section_name
-                    member.has_dining_scholarship = _str_to_bool(request.form.get("member_has_dining_scholarship"))
                     if "member_participates_in_english" in request.form:
                         member.participates_in_english = _str_to_bool(request.form.get("member_participates_in_english"))
                     member.phone = request.form.get("member_phone", "").strip()
@@ -8575,7 +8571,6 @@ def _project_report_rows(projects: list, category_map: dict) -> tuple[list[dict]
                     "phone": member.phone or "",
                     "email": member.email or "",
                     "gender": (member.gender or "").capitalize(),
-                    "scholarship": "Sí" if member.has_dining_scholarship else "No",
                     "english": "Sí" if member.participates_in_english else "No",
                     "consent": "Sí" if member.consent_signed_ok else "No",
                     "identity_documents": "Sí" if member.cedula_copies_ok else "No",
@@ -8632,12 +8627,12 @@ def projects_report_excel():
     ]
     member_headers = [
         "ID proyecto", "Proyecto", "Equipo", "Categoría", "N.º integrante", "Nombre completo", "Identificación",
-        "Sección", "Especialidad", "Teléfono", "Correo", "Género", "Beca comedor", "Participa en inglés",
+        "Sección", "Especialidad", "Teléfono", "Correo", "Género", "Participa en inglés",
         "Consentimiento", "Copias de identificación", "Fotografía",
     ]
     member_keys = [
         "project_id", "project", "team", "category", "student_number", "name", "identity", "section",
-        "specialty", "phone", "email", "gender", "scholarship", "english", "consent",
+        "specialty", "phone", "email", "gender", "english", "consent",
         "identity_documents", "photo",
     ]
 
@@ -10590,7 +10585,6 @@ def _build_students_stats(context: dict) -> dict:
     male   = gender_counts.get("masculino", 0)
     female = gender_counts.get("femenino", 0)
     other  = total - male - female
-    scholarship = sum(1 for m in members if m.has_dining_scholarship)
     english     = sum(1 for m in members if m.participates_in_english)
 
     # by category
@@ -10655,8 +10649,6 @@ def _build_students_stats(context: dict) -> dict:
         "male": male,
         "female": female,
         "other_gender": other,
-        "scholarship": scholarship,
-        "scholarship_pct": round(scholarship / total * 100) if total else 0,
         "english": english,
         "english_pct": round(english / total * 100) if total else 0,
         "total_projects": len(active_projects),

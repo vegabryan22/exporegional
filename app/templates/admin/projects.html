@@ -194,7 +194,6 @@
                                 'gender': 'Género',
                                 'specialty': 'Especialidad',
                                 'section_name': 'Sección',
-                                'has_dining_scholarship': 'Beca comedor',
                                 'participates_in_english': 'Expone en inglés',
                                 'phone': 'Teléfono',
                                 'email': 'Correo',
@@ -663,12 +662,6 @@
                         <option value="femenino">Femenino</option>
                     </select>
                 </label>
-                <label>Beca comedor
-                    <select name="member_has_dining_scholarship">
-                        <option value="0">No</option>
-                        <option value="1">Si</option>
-                    </select>
-                </label>
             </div>
             <div class="grid-3">
                 <label>Sección
@@ -727,12 +720,6 @@
                         <option value="">Seleccione...</option>
                         <option value="masculino" {% if member.gender == 'masculino' %}selected{% endif %}>Masculino</option>
                         <option value="femenino" {% if member.gender == 'femenino' %}selected{% endif %}>Femenino</option>
-                    </select>
-                </label>
-                <label>Beca comedor
-                    <select name="member_has_dining_scholarship">
-                        <option value="0" {% if not member.has_dining_scholarship %}selected{% endif %}>No</option>
-                        <option value="1" {% if member.has_dining_scholarship %}selected{% endif %}>Si</option>
                     </select>
                 </label>
             </div>

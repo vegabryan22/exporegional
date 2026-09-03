@@ -30,7 +30,7 @@
             <span class="judge-step">1</span>
             <p class="project-section-kicker">ExpoTEC-1</p>
             <h3>Datos del proyecto</h3>
-            <div class="form-grid inline-grid-3">
+            <div class="form-grid inline-grid-2">
                 <label>Fecha *
                     <input type="date" name="registration_date" value="{{ form_data.get('registration_date', '') }}" required autofocus>
                 </label>
@@ -173,16 +173,9 @@
                         <label><input type="radio" name="student_1_gender" value="femenino" {% if form_data.get('student_1_gender') == 'femenino' %}checked{% endif %} required><span>Femenino</span></label>
                     </div>
                 </div>
-                <div class="register-fieldset">
-                    <span>Beca de comedor *</span>
-                    <div class="radio-card-group">
-                        <label><input type="radio" name="student_1_scholarship" value="si" {% if form_data.get('student_1_scholarship') == 'si' %}checked{% endif %} required><span>Sí</span></label>
-                        <label><input type="radio" name="student_1_scholarship" value="no" {% if form_data.get('student_1_scholarship') == 'no' %}checked{% endif %} required><span>No</span></label>
-                    </div>
-                </div>
                 <label>Teléfono *<input type="tel" name="student_1_phone" value="{{ form_data.get('student_1_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input required></label>
             </div>
-            <div class="form-grid inline-grid-3">
+            <div class="form-grid inline-grid-2">
                 <label>Correo electrónico *<input type="email" name="student_1_email" value="{{ form_data.get('student_1_email', '') }}" required></label>
                 <div class="register-fieldset">
                     <span>Exposición en inglés</span>
@@ -238,16 +231,9 @@
                         <label><input type="radio" name="student_2_gender" value="femenino" {% if form_data.get('student_2_gender') == 'femenino' %}checked{% endif %}><span>Femenino</span></label>
                     </div>
                 </div>
-                <div class="register-fieldset">
-                    <span>Beca de comedor *</span>
-                    <div class="radio-card-group">
-                        <label><input type="radio" name="student_2_scholarship" value="si" {% if form_data.get('student_2_scholarship') == 'si' %}checked{% endif %}><span>Sí</span></label>
-                        <label><input type="radio" name="student_2_scholarship" value="no" {% if form_data.get('student_2_scholarship') == 'no' %}checked{% endif %}><span>No</span></label>
-                    </div>
-                </div>
                 <label>Teléfono *<input type="tel" name="student_2_phone" value="{{ form_data.get('student_2_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input></label>
             </div>
-            <div class="form-grid inline-grid-3">
+            <div class="form-grid inline-grid-2">
                 <label>Correo electrónico *<input type="email" name="student_2_email" value="{{ form_data.get('student_2_email', '') }}"></label>
                 <div class="register-fieldset">
                     <span>Exposición en inglés</span>
@@ -301,13 +287,6 @@
                     <div class="radio-card-group">
                         <label><input type="radio" name="student_3_gender" value="masculino" {% if form_data.get('student_3_gender') == 'masculino' %}checked{% endif %}><span>Masculino</span></label>
                         <label><input type="radio" name="student_3_gender" value="femenino" {% if form_data.get('student_3_gender') == 'femenino' %}checked{% endif %}><span>Femenino</span></label>
-                    </div>
-                </div>
-                <div class="register-fieldset">
-                    <span>Beca de comedor *</span>
-                    <div class="radio-card-group">
-                        <label><input type="radio" name="student_3_scholarship" value="si" {% if form_data.get('student_3_scholarship') == 'si' %}checked{% endif %}><span>Sí</span></label>
-                        <label><input type="radio" name="student_3_scholarship" value="no" {% if form_data.get('student_3_scholarship') == 'no' %}checked{% endif %}><span>No</span></label>
                     </div>
                 </div>
                 <label>Teléfono *<input type="tel" name="student_3_phone" value="{{ form_data.get('student_3_phone', '') }}" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" data-phone-input></label>

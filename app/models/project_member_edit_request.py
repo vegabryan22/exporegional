@@ -36,7 +36,6 @@ class ProjectMemberEditRequest(db.Model):
         ("gender",                   "Género"),
         ("specialty",                "Especialidad"),
         ("section_name",             "Sección"),
-        ("has_dining_scholarship",   "Beca de comedor"),
         ("participates_in_english",  "Expone en inglés"),
         ("phone",                    "Teléfono"),
         ("email",                    "Correo electrónico"),

@@ -3,7 +3,10 @@
 <section class="card admin-section school-dashboard-hero">
     <div class="section-heading-row">
         <div><p class="maintenance-kicker">Coordinación del colegio · Jornada {{ current_user.shift_label }}</p><h3>Resumen de participación</h3><p>Seguimiento privado de {{ school.name }} para la jornada {{ current_user.shift_label|lower }}. No se muestran proyectos de la otra jornada, datos de otros colegios ni calificaciones parciales.</p></div>
-        <div class="actions-row school-dashboard-actions"><a class="outline-btn" href="{{ url_for('school.profile') }}">Datos del colegio</a><a class="action-btn" href="{{ url_for('school.project_form') }}">+ Nuevo proyecto</a></div>
+        <div class="actions-row school-dashboard-actions">
+            <a class="outline-btn school-dashboard-data-action" href="{{ url_for('school.profile') }}"><svg aria-hidden="true"><use href="#ico-settings"></use></svg><span>Datos del colegio</span></a>
+            <a class="action-btn school-dashboard-new-action" href="{{ url_for('school.project_form') }}"><svg aria-hidden="true"><use href="#ico-plus"></use></svg><span>Nuevo proyecto</span></a>
+        </div>
     </div>
 </section>
 

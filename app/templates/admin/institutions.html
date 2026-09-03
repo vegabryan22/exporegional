@@ -29,7 +29,10 @@
                 <button type="button" class="outline-btn" data-dialog-open="edit-institution-{{ school.id }}">Editar colegio</button>
                 <button type="button" class="outline-btn" data-dialog-open="access-institution-{{ school.id }}">Acceso del colegio</button>
                 {% if school.uses_institutional_platform %}<button type="button" class="secondary-btn" data-dialog-open="api-institution-{{ school.id }}">Conexión API</button>{% endif %}
-                {% if current_user.has_admin_access and school.users|selectattr('is_active_user')|selectattr('effective_role', 'equalto', 'school_coordinator')|list %}<form method="post" action="{{ url_for('admin.impersonate_institution', institution_id=school.id) }}"><button type="submit" class="secondary-btn">Ingresar como colegio</button></form>{% endif %}
+                {% set active_coordinators = school.users|selectattr('is_active_user')|selectattr('effective_role', 'equalto', 'school_coordinator')|list %}
+                {% if current_user.has_admin_access and active_coordinators %}<div class="institution-impersonation-actions" aria-label="Ingresar como coordinación de {{ school.name }}">
+                    {% for coordinator in active_coordinators|sort(attribute='shift') %}<form method="post" action="{{ url_for('admin.impersonate_institution', institution_id=school.id) }}"><input type="hidden" name="coordinator_id" value="{{ coordinator.id }}"><button type="submit" class="secondary-btn institution-shift-access shift-{{ coordinator.shift }}"><svg aria-hidden="true"><use href="#ico-login"></use></svg><span>Entrar {{ coordinator.shift_label }}</span></button></form>{% endfor %}
+                </div>{% endif %}
                 <form method="post" class="institution-toggle-form"><input type="hidden" name="action" value="toggle"><input type="hidden" name="institution_id" value="{{ school.id }}"><button type="submit" class="ghost-btn">{{ "Suspender participación" if school.is_active else "Habilitar participación" }}</button></form>
                 <button type="button" class="ghost-btn danger" data-dialog-open="delete-institution-{{ school.id }}">Eliminar colegio</button>
             </div>

@@ -10451,11 +10451,13 @@ def impersonate_institution(institution_id: int):
     if not institution or not institution.is_active:
         flash("El colegio no existe o su participación está suspendida.", "error")
         return redirect(url_for("admin.institutions_page"))
-    coordinator = (
-        Judge.query.filter_by(institution_id=institution.id, role=Judge.ROLE_SCHOOL_COORDINATOR, is_active_user=True)
-        .order_by(Judge.id.asc())
-        .first()
+    coordinator_id = request.form.get("coordinator_id", type=int)
+    coordinators_query = Judge.query.filter_by(
+        institution_id=institution.id,
+        role=Judge.ROLE_SCHOOL_COORDINATOR,
+        is_active_user=True,
     )
+    coordinator = coordinators_query.filter_by(id=coordinator_id).first() if coordinator_id else coordinators_query.order_by(Judge.id.asc()).first()
     if not coordinator:
         flash("Este colegio todavía no tiene una cuenta coordinadora para suplantar.", "error")
         return redirect(url_for("admin.institutions_page"))
@@ -10465,10 +10467,10 @@ def impersonate_institution(institution_id: int):
     db.session.commit()
     session["impersonator_admin_id"] = admin_id
     session["impersonated_user_id"] = coordinator.id
-    session["impersonated_institution_name"] = institution.name
+    session["impersonated_institution_name"] = f"{institution.name} · Jornada {coordinator.shift_label}"
     session["impersonation_started_at"] = datetime.utcnow().isoformat()
     login_user(coordinator, fresh=True)
-    flash(f"Ingresaste temporalmente como coordinación de {institution.name}.", "success")
+    flash(f"Ingresaste temporalmente como coordinación de {institution.name}, jornada {coordinator.shift_label.lower()}.", "success")
     return redirect(url_for("school.dashboard"))
 
 

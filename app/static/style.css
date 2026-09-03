@@ -15479,6 +15479,13 @@ body.school-portal-page .admin-menu a.school-menu-new.active {
     box-shadow: 0 8px 18px rgba(82, 132, 28, 0.15);
 }
 
+.institution-impersonation-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.institution-impersonation-actions form { margin: 0; }
+.institution-shift-access { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; }
+.institution-shift-access svg { width: 19px; height: 19px; fill: currentColor; }
+.institution-shift-access.shift-diurno { color: #234a0e; border-color: #8fc449; background: linear-gradient(135deg, #a9dc52, #83bd31); }
+.institution-shift-access.shift-nocturno { color: #fff; border-color: #315a82; background: linear-gradient(135deg, #315d86, #193d5f); }
+
 .school-dashboard-hero {
     padding: 1.25rem 1.4rem;
     border-radius: 18px;

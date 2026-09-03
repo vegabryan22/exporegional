@@ -13,6 +13,7 @@
                 {{ score_value }} = {{ score_labels.get(score_value, score_value) }}{% if not loop.last %}, {% endif %}
             {% endfor %}
         </p>
+        <div class="judge-evaluation-documents">
         {% if project.project_document_path %}
             <a
                 href="{{ url_for('judge.project_document', project_id=project.id) }}"
@@ -21,10 +22,27 @@
                 class="table-link-btn judge-document-link"
                 data-no-iconify
             >
-                Documento del proyecto
+                Proyecto escrito
             </a>
+        {% else %}
+            <span class="judge-action-link missing">Proyecto escrito no cargado</span>
         {% endif %}
-        {% if project.category == 'steam' and project.project_logbook_path %}<a class="outline-btn" href="{{ url_for('static', filename=project.project_logbook_path) }}" target="_blank" rel="noopener">Ver bitácora STEAM</a>{% endif %}
+        {% if project.requires_project_logbook %}
+            {% if project.project_logbook_path %}
+                <a
+                    href="{{ url_for('judge.project_logbook', project_id=project.id) }}"
+                    target="_blank"
+                    rel="noopener"
+                    class="table-link-btn judge-document-link"
+                    data-no-iconify
+                >
+                    Bitácora del proyecto
+                </a>
+            {% else %}
+                <span class="judge-action-link missing">Bitácora no cargada</span>
+            {% endif %}
+        {% endif %}
+        </div>
     </div>
 
     {% if submission_gate and submission_gate.locked %}

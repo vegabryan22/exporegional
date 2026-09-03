@@ -6685,6 +6685,22 @@ dialog.members-overview-dialog {
     font-weight: 600;
 }
 
+.judge-evaluation-documents {
+    display: flex;
+    flex: 1 0 100%;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    padding-top: 0.35rem;
+}
+
+.judge-evaluation-documents .judge-document-link,
+.judge-evaluation-documents .judge-action-link {
+    min-height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .evaluation-form {
     gap: 1rem;
 }

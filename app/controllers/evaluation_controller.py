@@ -177,6 +177,25 @@ def project_document(project_id: int):
 
 
 @login_required
+def project_logbook(project_id: int):
+    project = Project.query.get_or_404(project_id)
+    assignment = Assignment.query.filter_by(
+        judge_id=current_user.id,
+        project_id=project_id,
+        status=Assignment.STATUS_CONFIRMED,
+    ).first()
+    if not assignment:
+        abort(403, "No tienes permiso para ver esta bitácora.")
+    if not project.requires_project_logbook or not project.project_logbook_path:
+        abort(404, "Este proyecto STEAM no tiene bitácora adjunta.")
+
+    logbook_path = project.project_logbook_path.strip().lstrip("/\\").replace("\\", "/")
+    if not logbook_path:
+        abort(404, "Este proyecto STEAM no tiene bitácora adjunta.")
+    return send_from_directory(current_app.static_folder, logbook_path, as_attachment=False)
+
+
+@login_required
 def evaluate(project_id: int):
     eval_type = request.args.get("type", "").strip()
     project_member_id = request.args.get("member_id", default=0, type=int) or None

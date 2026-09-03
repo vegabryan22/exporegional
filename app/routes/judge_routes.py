@@ -12,6 +12,11 @@ judge_bp.add_url_rule(
     methods=["GET"],
 )
 judge_bp.add_url_rule(
+    "/proyecto/<int:project_id>/bitacora",
+    view_func=evaluation_controller.project_logbook,
+    methods=["GET"],
+)
+judge_bp.add_url_rule(
     "/proyecto/<int:project_id>/evaluar",
     view_func=evaluation_controller.evaluate,
     methods=["GET", "POST"],

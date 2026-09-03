@@ -3369,6 +3369,64 @@ def _send_change_decision_email(*, to_email: str, requester_name: str, project_t
     send_email(to_email, subject, plain, html_body=html)
 
 
+def _send_regional_review_decision_email(project: Project, target_status: str, notes: str = "") -> tuple[int, int]:
+    """Notifica la resolución únicamente a coordinadores del colegio y jornada del proyecto."""
+    if not smtp_is_configured() or not project.institution_id:
+        return 0, 0
+
+    coordinators_query = Judge.query.filter_by(
+        institution_id=project.institution_id,
+        role=Judge.ROLE_SCHOOL_COORDINATOR,
+        is_active_user=True,
+    )
+    project_shift = (project.shift or "").strip().lower()
+    if project_shift in {"diurno", "nocturno"}:
+        coordinators_query = coordinators_query.filter(Judge.shift == project_shift)
+    coordinators = coordinators_query.order_by(Judge.full_name.asc()).all()
+
+    approved = target_status == Project.STATUS_APPROVED
+    decision = "aprobado para evaluación" if approved else "devuelto para corrección"
+    subject = f"Proyecto {decision}: {project.title} - ExpoTécnica Regional"
+    panel_url = url_for("school.dashboard", _external=True)
+    institution = db.session.get(Institution, project.institution_id)
+    school_name = project.institution_name or (institution.name if institution else "su colegio")
+    notes_text = (notes or "").strip()
+    sent = 0
+    failed = 0
+
+    for coordinator in coordinators:
+        plain = (
+            f"Hola {coordinator.full_name},\n\n"
+            f"El proyecto «{project.title}» de {school_name}, jornada {project.shift_label}, fue {decision}.\n"
+            + (f"Observaciones de la coordinación regional: {notes_text}\n" if notes_text else "")
+            + ("El proyecto ya puede continuar a la etapa de evaluación.\n" if approved else "Ingresá al panel, realizá las correcciones indicadas y volvé a enviarlo.\n")
+            + f"\nPanel del colegio: {panel_url}\n"
+        )
+        notes_html = (
+            f'<div style="margin:18px 0;padding:14px;border-radius:10px;background:#fff4df;color:#704200;">'
+            f'<strong>Observaciones:</strong><br>{escape(notes_text)}</div>'
+            if notes_text else ""
+        )
+        color = "#2f7a18" if approved else "#a04e00"
+        next_step = "El proyecto ya puede continuar a la etapa de evaluación." if approved else "Ingresá al panel, realizá las correcciones indicadas y volvé a enviarlo."
+        html = f"""<!doctype html><html><body style="margin:0;background:#edf3f6;font-family:Arial,sans-serif;color:#173f55;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:28px 12px;">
+<table role="presentation" width="620" cellspacing="0" cellpadding="0" style="max-width:620px;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #dce6ec;">
+<tr><td style="padding:22px 26px;background:#173f55;color:#fff;"><strong style="font-size:20px;">ExpoTécnica Regional</strong></td></tr>
+<tr><td style="padding:26px;"><p>Hola <strong>{escape(coordinator.full_name)}</strong>,</p>
+<p>El proyecto <strong>&laquo;{escape(project.title)}&raquo;</strong> de {escape(school_name)}, jornada {escape(project.shift_label)}, fue <strong style="color:{color};">{decision}</strong>.</p>
+{notes_html}<p>{next_step}</p>
+<p><a href="{escape(panel_url)}" style="display:inline-block;padding:12px 20px;border-radius:9px;background:#7fbd2b;color:#173709;text-decoration:none;font-weight:bold;">Ir al panel del colegio</a></p>
+</td></tr></table></td></tr></table></body></html>"""
+        ok, error = send_email(coordinator.email, subject, plain, html_body=html)
+        if ok:
+            sent += 1
+        else:
+            failed += 1
+            current_app.logger.error("No se pudo notificar resolución regional a %s: %s", coordinator.email, error)
+    return sent, failed
+
+
 def _send_judge_credentials_email(judge: Judge, plain_password: str):
     if not smtp_is_configured():
         return False
@@ -10532,7 +10590,18 @@ def regional_review_page():
                 project.logistics_document_ok = True
             log_event("admin.project.regional_transition", "project", project.id, f"Estado regional: {target_status}")
             db.session.commit()
-            flash("Estado regional actualizado.", "success")
+            sent, failed = (0, 0)
+            should_notify = target_status in {Project.STATUS_APPROVED, Project.STATUS_RETURNED}
+            if should_notify:
+                sent, failed = _send_regional_review_decision_email(project, target_status, notes)
+            if sent:
+                flash(f"Estado regional actualizado y correo enviado a {sent} coordinación(es) del colegio.", "success")
+            else:
+                flash("Estado regional actualizado.", "success")
+            if failed:
+                flash(f"No se pudo enviar el correo a {failed} coordinación(es).", "warning")
+            elif should_notify and not sent:
+                flash("No se encontró una coordinación activa de esa jornada para notificar o el correo no está configurado.", "warning")
         except RegionalTransitionError as error:
             db.session.rollback()
             flash(str(error), "error")

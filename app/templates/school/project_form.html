@@ -17,7 +17,7 @@
             {% endfor %}
         </div></fieldset>
         <fieldset><legend>Archivos y seguimiento</legend><div class="school-project-editor-grid">
-            <label>Documento PDF<input type="file" name="project_document" accept="application/pdf" {% if not project or not project.project_document_path %}required{% endif %}><small>{{ 'Seleccioná un archivo solo para reemplazar el actual.' if project and project.project_document_path else 'Documento obligatorio.' }}</small></label>
+            <label>Documento PDF <small>(opcional en esta etapa)</small><input type="file" name="project_document" accept="application/pdf"><small>{{ 'Seleccioná un archivo solo para reemplazar el actual.' if project and project.project_document_path else 'Podés agregarlo posteriormente desde la gestión del proyecto.' }}</small></label>
             <label>Logo del proyecto<input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp"><small>{{ 'Seleccioná una imagen solo para reemplazar la actual.' if project and project.has_real_logo else 'PNG, JPG o WEBP.' }}</small></label>
             <label class="editor-span-2">Notas del colegio<textarea name="school_notes" rows="3">{{ project.regional_notes if project else '' }}</textarea></label>
         </div></fieldset>

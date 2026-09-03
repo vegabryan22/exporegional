@@ -1375,9 +1375,6 @@ def register_project():
             flash("Cada insumo debe indicar nombre, cantidad y unidad.", "error")
             return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
 
-        if not temp_document_path:
-            flash("Debes adjuntar la documentacion del proyecto.", "error")
-            return render_template("public/register_project.html", **_draft_context(form_data, temp_document_path))
         students_error = _validate_students(students, required_students)
         if students_error:
             flash(students_error, "error")

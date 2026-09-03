@@ -32,7 +32,7 @@
             <h3>Datos del proyecto</h3>
             <div class="form-grid inline-grid-3">
                 <label>Fecha *
-                    <input type="date" name="registration_date" value="{{ form_data.get('registration_date', '') }}" required>
+                    <input type="date" name="registration_date" value="{{ form_data.get('registration_date', '') }}" required autofocus>
                 </label>
                 <label>Fecha inicio del proyecto *
                     <input type="date" name="project_start_date" value="{{ form_data.get('project_start_date', '') }}" required>
@@ -142,7 +142,7 @@
             <h3>Datos del estudiante N.1</h3>
             <div class="form-grid inline-grid-4">
                 <label>Cédula / documento de identidad *
-                    <input type="text" name="student_1_identity" value="{{ form_data.get('student_1_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input required autofocus>
+                    <input type="text" name="student_1_identity" value="{{ form_data.get('student_1_identity', '') }}" maxlength="12" pattern="[A-Za-z0-9\\s-]{1,16}" title="Máximo 12 caracteres. Sin guiones ni espacios." data-identity-input required>
                 </label>
                 <label>Nombre completo *<input type="text" name="student_1_full_name" value="{{ form_data.get('student_1_full_name', '') }}" data-identity-name required></label>
                 <label>Sección *

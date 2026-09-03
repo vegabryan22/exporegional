@@ -933,6 +933,9 @@ def _clear_registration_draft():
 def _draft_context(form_data=None, temp_document_path=""):
     draft = session.get(REGISTRATION_DRAFT_SESSION_KEY, {})
     resolved_form_data = form_data if form_data is not None else draft.get("form_data", {})
+    if form_data is None and "registration_date" not in resolved_form_data:
+        resolved_form_data = dict(resolved_form_data)
+        resolved_form_data["registration_date"] = date.today().isoformat()
     resolved_temp_path = temp_document_path if temp_document_path else draft.get("temp_document_path", "")
     temp_document_name = ""
     if resolved_temp_path:

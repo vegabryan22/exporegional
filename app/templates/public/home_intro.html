@@ -9,14 +9,22 @@
         <h2>ExpoTécnica<br><span>Regional</span></h2>
         <p class="regional-hero-lead">El punto de encuentro de los proyectos, el talento y la innovación de nuestros centros educativos.</p>
         <div class="regional-hero-actions">
-            <a class="regional-primary-action" href="{{ url_for('public.projects') }}">Explorar proyectos</a>
-            <a class="regional-secondary-action" href="#colegios-participantes">Ver colegios</a>
+            <a class="regional-enrollment-action" href="{{ url_for('auth.login') }}"><span>Inscripción regional</span><strong>Inscriba los proyectos de su colegio aquí</strong></a>
+            <a class="regional-secondary-action" href="{{ url_for('public.projects') }}">Explorar proyectos</a>
         </div>
     </div>
-    <div class="regional-hero-visual" aria-label="Identidad de ExpoTécnica Regional">
-        <div class="regional-orbit orbit-one"></div><div class="regional-orbit orbit-two"></div>
-        {% if institution.expo_logo_path %}<img src="{{ url_for('static', filename=institution.expo_logo_path) }}" alt="Logo de ExpoTécnica Regional">
-        {% else %}<div class="regional-hero-monogram"><strong>EXPO</strong><span>REGIONAL</span></div>{% endif %}
+    <div class="regional-hero-schools" aria-label="Colegios participantes">
+        <div class="regional-hero-schools-heading"><span>Colegios participantes</span><strong>{{ school_rows|length }} centros educativos</strong></div>
+        <div class="regional-shields-viewport">
+            <div class="regional-shields-track">
+                {% for duplicate in [false, true] %}<div class="regional-shields-group" {% if duplicate %}aria-hidden="true"{% endif %}>
+                    {% for row in school_rows %}<div class="regional-shield-slide" title="{{ row.school.name }}">
+                        {% if row.school.shield_path %}<img src="{{ url_for('static', filename=row.school.shield_path) }}" alt="{% if not duplicate %}Escudo de {{ row.school.name }}{% endif %}">{% else %}<span>{{ row.school.code[:3] }}</span>{% endif %}
+                        <small>{{ row.school.name }}</small>
+                    </div>{% endfor %}
+                </div>{% endfor %}
+            </div>
+        </div>
     </div>
 </section>
 

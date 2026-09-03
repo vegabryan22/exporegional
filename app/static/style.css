@@ -15559,7 +15559,7 @@ dialog.maintenance-dialog.school-judge-dialog { width: min(760px, calc(100vw - 2
 
 .school-summary-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
 }
 
@@ -15574,6 +15574,11 @@ dialog.maintenance-dialog.school-judge-dialog { width: min(760px, calc(100vw - 2
 .school-summary-card span { color: #315a70; font-size: .78rem; font-weight: 850; text-transform: uppercase; letter-spacing: .04em; }
 .school-summary-card strong { color: #123e5a; font-size: 1.75rem; line-height: 1.1; }
 .school-summary-card small { color: var(--muted); }
+
+.school-submission-summary.is-pending { border: 2px solid #f0ae35; background: linear-gradient(145deg, #fffaf0, #fff0cc); }
+.school-submission-summary.is-pending strong { color: #9a5600; }
+.school-submission-summary.is-complete { border: 2px solid #75b932; background: linear-gradient(145deg, #f5fcec, #e7f7d4); }
+.school-submission-summary.is-complete strong { color: #347214; }
 
 .school-attention {
     display: flex;
@@ -15707,6 +15712,21 @@ dialog.maintenance-dialog.school-judge-dialog { width: min(760px, calc(100vw - 2
 .school-project-card-actions form { margin: 0; }
 .school-project-card-actions .outline-btn,
 .school-project-card-actions button { min-height: 42px; }
+
+.school-project-card-actions .school-submit-form { margin-left: auto; }
+.school-submit-project {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    min-height: 50px !important;
+    padding: .75rem 1.15rem;
+    border: 2px solid #da7600;
+    color: #fff;
+    background: linear-gradient(135deg, #f59b19, #dc6500);
+    box-shadow: 0 9px 20px rgba(205, 94, 0, .28);
+}
+.school-submit-project:hover { background: linear-gradient(135deg, #ffad2e, #e66e00); transform: translateY(-1px); }
+.school-submit-project svg { width: 21px; height: 21px; fill: currentColor; }
 
 .project-maintenance-file {
     min-width: 0;

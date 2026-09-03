@@ -128,6 +128,7 @@ def dashboard():
     completed_evaluations = 0
     expected_evaluations = 0
     attention_projects = 0
+    pending_submission = 0
     for project in projects:
         missing = approval_missing_requirements(project)
         evaluation_counts = project_evaluation_count_summary(project)
@@ -154,6 +155,8 @@ def dashboard():
             completed_files += 1
         if missing or project.regional_status == Project.STATUS_RETURNED:
             attention_projects += 1
+        if project.regional_status in {Project.STATUS_DRAFT, Project.STATUS_RETURNED}:
+            pending_submission += 1
         project_rows.append({
             "project": project,
             "missing": missing,
@@ -172,6 +175,9 @@ def dashboard():
         "projects": len(projects),
         "files_complete": completed_files,
         "attention_projects": attention_projects,
+        "submitted_projects": len(projects) - pending_submission,
+        "pending_submission": pending_submission,
+        "all_projects_submitted": bool(projects) and pending_submission == 0,
         "judges": active_judges,
         "minimum_judges": minimum_judges,
         "judges_pending": max(0, minimum_judges - active_judges),

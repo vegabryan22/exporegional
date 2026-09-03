@@ -16,7 +16,6 @@ from app.models.project_member import ProjectMember
 from app.models.project_status_history import ProjectStatusHistory
 from app.models.system_setting import SystemSetting
 from app.services.audit_service import log_event
-from app.services.evaluation_service import project_evaluation_count_summary, project_evaluation_target_summary
 from app.services.regional_readiness_service import approval_missing_requirements
 from app.services.regional_project_service import RegionalTransitionError, transition_project
 
@@ -125,14 +124,10 @@ def dashboard():
     school = current_user.institution_ref
     project_rows = []
     completed_files = 0
-    completed_evaluations = 0
-    expected_evaluations = 0
     attention_projects = 0
     pending_submission = 0
     for project in projects:
         missing = approval_missing_requirements(project)
-        evaluation_counts = project_evaluation_count_summary(project)
-        evaluation_targets = project_evaluation_target_summary(project)
         members = list(project.members or [])
         file_checks = [
             bool((project.title or "").strip()),
@@ -147,10 +142,6 @@ def dashboard():
         ]
         file_checks.extend(bool((member.photo_url or "").strip()) for member in members)
         file_checks.extend(bool(member.consent_signed_ok) for member in members)
-        project_completed = evaluation_counts["completed_evaluations"] + evaluation_counts["completed_english_evaluations"]
-        project_expected = evaluation_targets["expected_evaluations"] + evaluation_targets["expected_english_evaluations"]
-        completed_evaluations += project_completed
-        expected_evaluations += project_expected
         if not missing:
             completed_files += 1
         if missing or project.regional_status == Project.STATUS_RETURNED:
@@ -161,8 +152,6 @@ def dashboard():
             "project": project,
             "missing": missing,
             "file_progress": round((sum(file_checks) / len(file_checks)) * 100),
-            "evaluation_completed": project_completed,
-            "evaluation_expected": project_expected,
         })
 
     minimum_judges = _minimum_school_judges()
@@ -181,8 +170,6 @@ def dashboard():
         "judges": active_judges,
         "minimum_judges": minimum_judges,
         "judges_pending": max(0, minimum_judges - active_judges),
-        "evaluations_completed": completed_evaluations,
-        "evaluations_expected": expected_evaluations,
     }
     return render_template(
         "school/dashboard.html",

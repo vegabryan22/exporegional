@@ -15685,7 +15685,7 @@ dialog.maintenance-dialog.school-judge-dialog { width: min(760px, calc(100vw - 2
 
 .school-project-progress {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: .75rem 1rem;
 }
 

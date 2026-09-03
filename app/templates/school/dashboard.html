@@ -47,7 +47,6 @@
         </div>
         <div class="school-project-progress">
             <div><span>Datos y documentos completos</span><strong>{{ row.file_progress }}%</strong><progress max="100" value="{{ row.file_progress }}">{{ row.file_progress }}%</progress></div>
-            <div><span>Evaluaciones completadas</span><strong>{{ row.evaluation_completed }}/{{ row.evaluation_expected }}</strong><progress max="{{ row.evaluation_expected or 1 }}" value="{{ row.evaluation_completed }}">{{ row.evaluation_completed }}</progress></div>
         </div>
         {% if row.missing %}<div class="school-project-pending"><strong>Falta completar</strong><span>{{ row.missing|join(' · ') }}</span></div>{% else %}<div class="school-project-ready"><strong>Datos y documentos completos</strong><span>Listo para validación regional.</span></div>{% endif %}
         <footer class="school-project-card-actions">

@@ -6747,6 +6747,8 @@ def _handle_action(action: str):
                 "expotec_director_email",
                 "expotec_technical_coordinator_name",
                 "expotec_technical_coordinator_email",
+                "school_tutorial_video_url",
+                "judge_tutorial_video_url",
             ]:
                 SystemSetting.set_value(setting_key, request.form.get(setting_key, "").strip())
             if logo_file and logo_file.filename:
@@ -7244,6 +7246,8 @@ def _base_context(active_page: str, **kwargs):
             "expotec_technical_coordinator_name": "",
             "expotec_technical_coordinator_email": "",
             "regional_minimum_judges_per_school": 2,
+            "school_tutorial_video_url": "",
+            "judge_tutorial_video_url": "",
         }
         maintenance_settings = {
             "maintenance_enabled": False,
@@ -7362,6 +7366,8 @@ def _base_context(active_page: str, **kwargs):
             "expotec_technical_coordinator_name": SystemSetting.get_value("expotec_technical_coordinator_name", ""),
             "expotec_technical_coordinator_email": SystemSetting.get_value("expotec_technical_coordinator_email", ""),
             "regional_minimum_judges_per_school": max(1, min(50, int(SystemSetting.get_value("regional_minimum_judges_per_school", "2") or 2))),
+            "school_tutorial_video_url": SystemSetting.get_value("school_tutorial_video_url", ""),
+            "judge_tutorial_video_url": SystemSetting.get_value("judge_tutorial_video_url", ""),
         }
         maintenance_settings = {
             "maintenance_enabled": SystemSetting.get_value("maintenance_enabled", "0") == "1",

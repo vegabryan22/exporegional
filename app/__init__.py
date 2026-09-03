@@ -3,6 +3,7 @@ import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
 
 from flask import Flask, render_template, request
@@ -23,6 +24,24 @@ DEFAULT_DEPARTMENT_PERMISSIONS = {
 PERMISSIONS_SETTING_KEY = "permissions_department_modules"
 LOCAL_TIMEZONE = ZoneInfo("America/Costa_Rica")
 NATURAL_TITLE_LOWER_WORDS = {"a", "al", "de", "del", "e", "el", "la", "las", "los", "o", "para", "por", "y"}
+
+
+def youtube_embed_url(value):
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw if "://" in raw else f"https://{raw}")
+    host = parsed.netloc.lower().split(":")[0]
+    video_id = ""
+    if host in {"youtu.be", "www.youtu.be"}:
+        video_id = parsed.path.strip("/").split("/")[0]
+    elif host in {"youtube.com", "www.youtube.com", "m.youtube.com", "youtube-nocookie.com", "www.youtube-nocookie.com"}:
+        parts = [part for part in parsed.path.split("/") if part]
+        if parsed.path == "/watch":
+            video_id = parse_qs(parsed.query).get("v", [""])[0]
+        elif len(parts) >= 2 and parts[0] in {"embed", "shorts", "live"}:
+            video_id = parts[1]
+    return f"https://www.youtube-nocookie.com/embed/{video_id}" if re.fullmatch(r"[A-Za-z0-9_-]{6,20}", video_id) else ""
 
 
 def natural_title(value: str | None) -> str:
@@ -318,6 +337,8 @@ def register_context_processors(app):
                 "email": SystemSetting.get_value("school_email", "coordinacion@expotecnicaregional.local"),
                 "logo_path": SystemSetting.get_value("school_logo_path", ""),
                 "expo_logo_path": SystemSetting.get_value("expo_logo_path", ""),
+                "school_tutorial_video_url": youtube_embed_url(SystemSetting.get_value("school_tutorial_video_url", "")),
+                "judge_tutorial_video_url": youtube_embed_url(SystemSetting.get_value("judge_tutorial_video_url", "")),
             },
             "campaign_is_open": active_campaign is not None,
             "asset_version": app.config.get("ASSET_VERSION", "dev"),

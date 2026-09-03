@@ -111,6 +111,26 @@
                         </label>
                     </div>
                 </section>
+
+                <section class="institution-panel">
+                    <div class="institution-panel-head">
+                        <span class="institution-step">05</span>
+                        <div>
+                            <h4>Videos de ayuda para el ingreso</h4>
+                            <p>Pega enlaces normales de YouTube; aparecerán como guías en la pantalla de inicio de sesión.</p>
+                        </div>
+                    </div>
+                    <div class="institution-fields-grid">
+                        <label class="field-span-2">Video para coordinadores de colegio
+                            <input type="url" name="school_tutorial_video_url" value="{{ institution_settings.school_tutorial_video_url }}" placeholder="https://www.youtube.com/watch?v=...">
+                            <small>Explica cómo ingresar e inscribir los proyectos del colegio.</small>
+                        </label>
+                        <label class="field-span-2">Video para jueces
+                            <input type="url" name="judge_tutorial_video_url" value="{{ institution_settings.judge_tutorial_video_url }}" placeholder="https://www.youtube.com/watch?v=...">
+                            <small>Explica cómo ingresar, revisar asignaciones y evaluar proyectos.</small>
+                        </label>
+                    </div>
+                </section>
             </div>
 
             <aside class="institution-side">

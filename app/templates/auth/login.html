@@ -53,6 +53,27 @@
         </form>
     </article>
 </section>
+
+<section class="auth-video-guides" aria-labelledby="auth-video-guides-title">
+    <div class="auth-video-guides-head">
+        <p class="auth-kicker">Guías rápidas</p>
+        <h2 id="auth-video-guides-title">¿Necesita ayuda para ingresar?</h2>
+    </div>
+    <div class="auth-video-guides-grid">
+        <article class="auth-video-card card">
+            <div><span class="auth-video-audience">Coordinadores de colegio</span><h3>Ingreso e inscripción de proyectos</h3></div>
+            <div class="auth-video-frame">
+                {% if institution.school_tutorial_video_url %}<iframe src="{{ institution.school_tutorial_video_url }}" title="Cómo ingresar e inscribir proyectos" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>{% else %}<div class="auth-video-placeholder"><strong>Video para coordinadores</strong><span>La guía estará disponible próximamente.</span></div>{% endif %}
+            </div>
+        </article>
+        <article class="auth-video-card card">
+            <div><span class="auth-video-audience">Jueces</span><h3>Ingreso y evaluación de proyectos</h3></div>
+            <div class="auth-video-frame">
+                {% if institution.judge_tutorial_video_url %}<iframe src="{{ institution.judge_tutorial_video_url }}" title="Cómo ingresar y evaluar proyectos" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>{% else %}<div class="auth-video-placeholder"><strong>Video para jueces</strong><span>La guía estará disponible próximamente.</span></div>{% endif %}
+            </div>
+        </article>
+    </div>
+</section>
 {% endblock %}
 
 

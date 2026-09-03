@@ -1086,8 +1086,8 @@ def _project_logistics_missing_items(project):
     missing = []
     if not project.project_document_path:
         missing.append("documento digital adjunto")
-    if not project.logistics_document_ok:
-        missing.append("proyecto escrito completo")
+    if project.requires_project_logbook and not project.project_logbook_path:
+        missing.append("bitácora del proyecto STEAM")
     if not project.has_real_logo or not project.logistics_logo_ok:
         missing.append("logo validado")
     missing_member_photos = len([member for member in project.members if not member.photo_url])
@@ -1104,9 +1104,8 @@ def _project_logistics_missing_items(project):
 def _project_logistics_progress(project) -> tuple[int, int]:
     """Return completed and total operational logistics checks for one project."""
     members = list(project.members or [])
-    checks = (
+    checks = [
         bool(project.project_document_path),
-        bool(project.logistics_document_ok),
         bool(project.has_real_logo),
         bool(project.has_real_logo and project.logistics_logo_ok),
         bool(members) and all(bool((member.photo_url or "").strip()) for member in members),
@@ -1114,7 +1113,9 @@ def _project_logistics_progress(project) -> tuple[int, int]:
         bool(members)
         and bool(project.logistics_student_consents_signed_ok)
         and all(bool(member.consent_signed_ok) for member in members),
-    )
+    ]
+    if project.requires_project_logbook:
+        checks.insert(1, bool(project.project_logbook_path))
     return sum(checks), len(checks)
 
 
@@ -1170,8 +1171,6 @@ def _build_logistics_pending_report_rows(
         if report_type in {"all", "document", "logistics"}:
             if not project.project_document_path:
                 add_row(project, "Documento digital no adjuntado")
-            elif not project.logistics_document_ok:
-                add_row(project, "Proyecto escrito pendiente de validación")
 
         if report_type in {"all", "logistics"}:
             if not project.logistics_photos_ok and all(member.photo_url for member in project.members):
@@ -1222,8 +1221,10 @@ def _project_logistics_group_missing(project):
     missing = []
     if not project.has_real_logo or not project.logistics_logo_ok:
         missing.append("Logo del proyecto")
-    if not project.logistics_document_ok:
+    if not project.project_document_path:
         missing.append("Documento escrito")
+    if project.requires_project_logbook and not project.project_logbook_path:
+        missing.append("Bitácora del proyecto STEAM")
     if not project.logistics_registration_form_signed_ok:
         missing.append("Formulario físico de inscripción firmado")
     missing_consents = [m.full_name for m in project.members if not m.consent_signed_ok]
@@ -5371,7 +5372,7 @@ def _handle_action(action: str):
                 new_path = _save_project_document(document_file)
                 _delete_project_document_file(project)
                 project.project_document_path = new_path
-                project.logistics_document_ok = False
+                project.logistics_document_ok = True
                 project.logistics_status = "pendiente_revision"
                 log_event(
                     "admin.project.document.replace",
@@ -5383,7 +5384,7 @@ def _handle_action(action: str):
                     ),
                 )
                 db.session.commit()
-                flash("Documento del proyecto reemplazado. Queda pendiente de revision logistica.", "success")
+                flash("Documento del proyecto guardado correctamente.", "success")
             except ValueError as error:
                 flash(str(error), "error")
 

@@ -163,8 +163,8 @@ class RequirementsSeparationTest(unittest.TestCase):
         completed, total = _project_logistics_progress(project)
         tutors = _build_advisor_stats([project])
 
-        self.assertEqual((2, 7), (completed, total))
-        self.assertEqual(29, tutors[0]["completion_percent"])
+        self.assertEqual((1, 7), (completed, total))
+        self.assertEqual(14, tutors[0]["completion_percent"])
 
     def test_registration_uses_tutor_name_only(self):
         template = Path("app/templates/public/register_project.html").read_text(encoding="utf-8")

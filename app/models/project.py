@@ -200,7 +200,6 @@ class Project(db.Model):
             [
                 bool(self.project_document_path),
                 not self.requires_project_logbook or bool(self.project_logbook_path),
-                self.logistics_document_ok,
                 self.has_real_logo,
                 self.logistics_logo_ok,
                 self.logistics_photos_ok,

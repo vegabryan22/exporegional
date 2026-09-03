@@ -462,7 +462,7 @@ def project_form(project_id: int | None = None):
             if project.project_document_path:
                 obsolete_paths.append(project.project_document_path)
             project.project_document_path = document_path
-            project.logistics_document_ok = False
+            project.logistics_document_ok = True
         if logo_path:
             if project.has_real_logo:
                 obsolete_paths.append(project.project_logo_path)

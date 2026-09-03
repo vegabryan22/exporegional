@@ -718,13 +718,31 @@ nav a:hover,
 
 .auth-video-guides {
     grid-column: 1;
-    align-self: start;
+    align-self: stretch;
     padding: 1.25rem;
+    grid-template-rows: auto 1fr;
 }
 
 .auth-login-card {
     grid-column: 2;
     align-self: stretch;
+}
+
+.auth-video-guides-grid {
+    align-items: stretch;
+}
+
+.auth-video-card {
+    grid-template-rows: auto 1fr;
+}
+
+.auth-video-frame {
+    align-self: end;
+}
+
+.auth-login-card .auth-form,
+.auth-login-card .auth-submit-btn {
+    width: 100%;
 }
 
 @media (max-width: 760px) {

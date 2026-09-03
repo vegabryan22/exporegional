@@ -737,7 +737,12 @@ nav a:hover,
 }
 
 .auth-video-frame {
-    align-self: end;
+    align-self: stretch;
+}
+
+.auth-video-guides .auth-video-frame {
+    aspect-ratio: auto;
+    min-height: 275px;
 }
 
 .auth-login-card .auth-form,
@@ -754,6 +759,11 @@ nav a:hover,
     .auth-video-guides,
     .auth-login-card {
         grid-column: 1;
+    }
+
+    .auth-video-guides .auth-video-frame {
+        min-height: 0;
+        aspect-ratio: 16 / 9;
     }
 }
 

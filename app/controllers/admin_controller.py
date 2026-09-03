@@ -690,7 +690,7 @@ def _git_repo_path() -> Path:
     return Path(current_app.root_path).resolve().parent
 
 
-def _run_git_command(args: list[str], timeout: int = 120) -> dict:
+def _run_git_command(args: list[str], timeout: int = 120, env: dict | None = None) -> dict:
     repo_path = _git_repo_path()
     if not (repo_path / ".git").exists():
         return {"ok": False, "code": -1, "out": "", "err": f"No es un repositorio git: {repo_path}"}
@@ -702,6 +702,7 @@ def _run_git_command(args: list[str], timeout: int = 120) -> dict:
             text=True,
             timeout=timeout,
             shell=False,
+            env=env,
         )
         return {"ok": proc.returncode == 0, "code": proc.returncode, "out": (proc.stdout or "").strip(), "err": (proc.stderr or "").strip()}
     except subprocess.TimeoutExpired:
@@ -740,9 +741,12 @@ def _gitops_sync_dependencies() -> dict:
 
 
 def _gitops_upgrade_database() -> dict:
+    command_env = os.environ.copy()
+    command_env["AUTO_INIT_DB"] = "1"
     return _run_git_command(
-        [sys.executable, "-m", "flask", "--app", "run.py", "db", "upgrade"],
+        [sys.executable, "-m", "flask", "--app", "run.py", "routes"],
         timeout=300,
+        env=command_env,
     )
 
 

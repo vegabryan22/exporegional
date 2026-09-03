@@ -839,7 +839,7 @@ def _gitops_service_config() -> dict:
     if "chdir +" in pidfile:
         pidfile = str(repo_path / "logs" / "expotecnica.pid")
     health_path = (SystemSetting.get_value("gitops_health_path", "/health") or "/health").strip()
-    if health_path in {"/registro-jueces", "/jueces/registro", "/registro/jueces"}:
+    if health_path in {"/", "/registro-jueces", "/jueces/registro", "/registro/jueces"}:
         health_path = "/health"
     if not health_path.startswith("/"):
         health_path = f"/{health_path}"

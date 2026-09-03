@@ -3,7 +3,7 @@
 {% block content %}
 <div class="admin-shell">
     <aside class="admin-sidebar">
-        <div class="admin-sidebar-top"><div><h2>{{ school.name }}</h2><p>Coordinación de colegio</p></div></div>
+        <div class="admin-sidebar-top"><div><h2>{{ school.name }}</h2><p>Coordinación de colegio · Jornada {{ current_user.shift_label }}</p></div></div>
         <nav class="admin-menu">
             <a href="{{ url_for('school.dashboard') }}">Resumen y proyectos</a>
             <a href="{{ url_for('school.project_form') }}">Nuevo proyecto</a>

@@ -105,6 +105,11 @@ def upsert_regional_project():
         return _json_error("project_locked", "El proyecto ya avanzó en el flujo regional y no admite reemplazo.", 409)
 
     tutor = payload.get("tutor") if isinstance(payload.get("tutor"), dict) else {}
+    project_shift = str(payload.get("shift") or payload.get("jornada") or "diurno").strip().lower()
+    if project_shift not in {"diurno", "nocturno"}:
+        _record_event("rejected", 422, external_id, detail="Jornada inválida.")
+        db.session.commit()
+        return _json_error("invalid_shift", "La jornada debe ser diurno o nocturno.", 422, "shift")
     if created:
         project = Project(
             institution_id=g.api_institution.id,
@@ -112,6 +117,7 @@ def upsert_regional_project():
             origin=Project.ORIGIN_INSTITUTIONAL_API,
             regional_status=Project.STATUS_RECEIVED,
             institution_name=g.api_institution.name,
+            shift=project_shift,
             title=required["title"],
             team_name=required["team_name"],
             representative_name=str(students[0].get("name") or "").strip(),
@@ -140,6 +146,7 @@ def upsert_regional_project():
     project.payload_version = str(payload.get("payload_version") or "1.0").strip()[:20]
     project.source_updated_at = datetime.utcnow()
     project.regional_status = Project.STATUS_RECEIVED
+    project.shift = project_shift
 
     for index, student in enumerate(students, start=1):
         project.members.append(

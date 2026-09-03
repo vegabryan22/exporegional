@@ -10292,6 +10292,9 @@ def institutions_page():
         if action == "create_coordinator" and institution:
             coordinator_name = (request.form.get("coordinator_name") or institution.responsible_name or "").strip()
             coordinator_email = (request.form.get("coordinator_email") or institution.responsible_email or "").strip().lower()
+            coordinator_shift = (request.form.get("coordinator_shift") or "diurno").strip().lower()
+            if coordinator_shift not in {"diurno", "nocturno"}:
+                coordinator_shift = "diurno"
             if not coordinator_name or not coordinator_email:
                 flash("Nombre y correo de la coordinación son obligatorios.", "error")
                 return redirect(url_for("admin.institutions_page"))
@@ -10308,6 +10311,7 @@ def institutions_page():
                 existing_user.is_admin = False
                 existing_user.is_active_user = True
                 existing_user.department = None
+                existing_user.shift = coordinator_shift
                 log_event("admin.institution.coordinator.convert", "judge", existing_user.id, f"Cuenta convertida de {previous_role} a coordinación de {institution.code}")
                 db.session.commit()
                 flash("La cuenta existente fue vinculada correctamente como coordinación del colegio.", "success")
@@ -10323,6 +10327,7 @@ def institutions_page():
                 is_active_user=True,
                 is_admin=False,
                 must_change_password=True,
+                shift=coordinator_shift,
             )
             coordinator.set_password(temporary_password)
             db.session.add(coordinator)
@@ -10341,6 +10346,9 @@ def institutions_page():
             ).first()
             full_name = (request.form.get("coordinator_name") or "").strip()
             email = (request.form.get("coordinator_email") or "").strip().lower()
+            coordinator_shift = (request.form.get("coordinator_shift") or (coordinator.shift if coordinator else "") or "diurno").strip().lower()
+            if coordinator_shift not in {"diurno", "nocturno"}:
+                coordinator_shift = "diurno"
             is_active_user = _str_to_bool(request.form.get("coordinator_is_active", "1"))
             duplicate = Judge.query.filter(Judge.email == email, Judge.id != coordinator_id).first() if email else None
             if not coordinator:
@@ -10353,6 +10361,7 @@ def institutions_page():
                 coordinator.full_name = full_name
                 coordinator.email = email
                 coordinator.institution = institution.name
+                coordinator.shift = coordinator_shift
                 coordinator.is_active_user = is_active_user
                 log_event(
                     "admin.institution.coordinator.update",

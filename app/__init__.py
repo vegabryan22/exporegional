@@ -419,6 +419,9 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE judges ADD COLUMN institution VARCHAR(160) NULL"))
         if "institution_id" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN institution_id INT NULL"))
+        if "shift" not in judge_columns:
+            connection.execute(text("ALTER TABLE judges ADD COLUMN shift VARCHAR(20) NULL"))
+            _run_optional_schema_statement(connection, "CREATE INDEX ix_judges_shift ON judges (shift)", "indice judges.shift")
         if "previous_expo" not in judge_columns:
             connection.execute(text("ALTER TABLE judges ADD COLUMN previous_expo VARCHAR(10) NULL"))
         if "phone" not in judge_columns:
@@ -687,6 +690,9 @@ def ensure_schema_updates():
             connection.execute(text("ALTER TABLE projects ADD COLUMN institution_name VARCHAR(180) NULL"))
         if "institution_id" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN institution_id INT NULL"))
+        if "shift" not in project_columns:
+            connection.execute(text("ALTER TABLE projects ADD COLUMN shift VARCHAR(20) NULL"))
+            _run_optional_schema_statement(connection, "CREATE INDEX ix_projects_shift ON projects (shift)", "indice projects.shift")
         if "category_id" not in project_columns:
             connection.execute(text("ALTER TABLE projects ADD COLUMN category_id INT NULL"))
         if "origin" not in project_columns:

@@ -7,7 +7,7 @@
             <p class="maintenance-kicker">{% if school_registration %}Inscripción manual regional{% else %}ExpoTEC-1{% endif %}</p>
             <h2>{% if school_registration %}Registrar proyecto{% else %}Inscripción del proyecto{% endif %}</h2>
             <p>Completa los datos oficiales del proyecto, integrantes, tutor, mentor y documentación requerida para la etapa regional.</p>
-            {% if school_registration %}<p><strong>Colegio:</strong> {{ school.name }}</p>{% endif %}
+            {% if school_registration %}<p><strong>Colegio:</strong> {{ school.name }} · <strong>Jornada:</strong> {{ current_user.shift_label }}</p>{% endif %}
         </div>
         <div class="judge-hero-logo-card project-hero-logo-card">
             {% if institution.expo_logo_path %}

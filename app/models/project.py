@@ -43,6 +43,7 @@ class Project(db.Model):
     representative_phone = db.Column(db.String(40), nullable=True)
     institution_name = db.Column(db.String(180), nullable=True)
     institution_id = db.Column(db.Integer, db.ForeignKey("institutions.id", ondelete="RESTRICT"), nullable=True, index=True)
+    shift = db.Column(db.String(20), nullable=True, index=True)
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id", ondelete="SET NULL"), nullable=True, index=True)
     origin = db.Column(db.String(30), nullable=False, default=ORIGIN_REGIONAL_MANUAL, index=True)
     regional_status = db.Column(db.String(40), nullable=False, default=STATUS_DRAFT, index=True)
@@ -150,6 +151,10 @@ class Project(db.Model):
             self.ORIGIN_INSTITUTIONAL_API: "Importación institucional",
             self.ORIGIN_REGIONAL_MANUAL: "Inscripción manual regional",
         }.get(self.origin, self.origin)
+
+    @property
+    def shift_label(self) -> str:
+        return {"diurno": "Diurno", "nocturno": "Nocturno"}.get((self.shift or "").strip().lower(), "Sin jornada")
 
     @property
     def regional_status_label(self) -> str:

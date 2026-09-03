@@ -41,6 +41,8 @@ def _owned_project(project_id: int) -> Project:
     project = db.session.get(Project, project_id)
     if not project or project.institution_id != current_user.institution_id:
         return None
+    if current_user.shift in {"diurno", "nocturno"} and project.shift != current_user.shift:
+        return None
     return project
 
 
@@ -112,8 +114,11 @@ def _return_project_to_regional_review(project: Project, reason: str):
 
 
 def dashboard():
+    projects_query = Project.query.filter_by(institution_id=current_user.institution_id)
+    if current_user.shift in {"diurno", "nocturno"}:
+        projects_query = projects_query.filter(Project.shift == current_user.shift)
     projects = (
-        Project.query.filter_by(institution_id=current_user.institution_id)
+        projects_query
         .order_by(Project.created_at.desc())
         .all()
     )
@@ -398,6 +403,7 @@ def project_form(project_id: int | None = None):
             project = Project(
                 institution_id=current_user.institution_id,
                 institution_name=current_user.institution_ref.name,
+                shift=current_user.shift,
                 origin=Project.ORIGIN_REGIONAL_MANUAL,
                 regional_status=Project.STATUS_DRAFT,
                 title=title,

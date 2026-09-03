@@ -26,6 +26,7 @@ class Judge(UserMixin, db.Model):
     identity = db.Column(db.String(40), nullable=True)
     institution = db.Column(db.String(160), nullable=True)
     institution_id = db.Column(db.Integer, db.ForeignKey("institutions.id", ondelete="SET NULL"), nullable=True, index=True)
+    shift = db.Column(db.String(20), nullable=True, index=True)
     previous_expo = db.Column(db.String(10), nullable=True)
     phone = db.Column(db.String(40), nullable=True)
     can_evaluate_documentation = db.Column(db.Boolean, default=True, nullable=False)
@@ -120,6 +121,10 @@ class Judge(UserMixin, db.Model):
             self.ROLE_CERTIFICATE_OPERATOR: "Encargado de certificados",
         }
         return labels.get(self.effective_role, "Juez")
+
+    @property
+    def shift_label(self) -> str:
+        return {"diurno": "Diurno", "nocturno": "Nocturno"}.get((self.shift or "").strip().lower(), "Sin jornada")
 
     @property
     def department_label(self) -> str:

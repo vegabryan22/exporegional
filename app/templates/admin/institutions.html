@@ -56,12 +56,13 @@
                         <input type="hidden" name="coordinator_id" value="{{ coordinator.id }}">
                         <div class="coordinator-account-title">
                             <span class="coordinator-avatar">{{ coordinator.full_name[:1]|upper }}</span>
-                            <span><strong>{{ coordinator.full_name }}</strong><small>{{ coordinator.role_label }} de {{ school.name }}</small></span>
+                            <span><strong>{{ coordinator.full_name }}</strong><small>{{ coordinator.role_label }} · Jornada {{ coordinator.shift_label }}</small></span>
                             <span class="tag {{ 'ok' if coordinator.is_active_user else 'off' }}">{{ 'Activo' if coordinator.is_active_user else 'Inactivo' }}</span>
                         </div>
                         <div class="grid-2 coordinator-account-fields">
                             <label>Nombre completo<input type="text" name="coordinator_name" value="{{ coordinator.full_name }}" required></label>
                             <label>Correo de acceso<input type="email" name="coordinator_email" value="{{ coordinator.email }}" required></label>
+                            <label>Jornada<select name="coordinator_shift" required><option value="diurno" {% if coordinator.shift != 'nocturno' %}selected{% endif %}>Diurno</option><option value="nocturno" {% if coordinator.shift == 'nocturno' %}selected{% endif %}>Nocturno</option></select></label>
                         </div>
                         <div class="coordinator-account-footer">
                             <label class="coordinator-status-check"><input type="checkbox" name="coordinator_is_active" value="1" {% if coordinator.is_active_user %}checked{% endif %}> Cuenta habilitada</label>
@@ -82,6 +83,7 @@
                         <div class="grid-2">
                             <label>Nombre completo<input type="text" name="coordinator_name" value="{{ school.responsible_name }}" required></label>
                             <label>Correo de acceso<input type="email" name="coordinator_email" value="{{ school.responsible_email }}" required></label>
+                            <label>Jornada<select name="coordinator_shift" required><option value="diurno">Diurno</option><option value="nocturno">Nocturno</option></select></label>
                         </div>
                         <div class="actions-row"><button type="submit">Crear acceso</button></div>
                     </form>

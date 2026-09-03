@@ -1285,6 +1285,7 @@ def register_project():
             representative_phone=_normalize_phone(_draft_form_value(form_data, "student_1_phone")),
             institution_name=current_user.institution_ref.name if school_registration else "ExpoTécnica Regional",
             institution_id=current_user.institution_id if school_registration else None,
+            shift=current_user.shift if school_registration else None,
             category_id=next((item.id for item in valid_categories_records if item.code == category), None),
             origin=Project.ORIGIN_REGIONAL_MANUAL,
             regional_status=Project.STATUS_DRAFT,

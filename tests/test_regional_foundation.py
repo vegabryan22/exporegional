@@ -346,7 +346,7 @@ class RegionalFoundationTests(unittest.TestCase):
         self.assertIn("Proyecto visible", body)
         self.assertNotIn("Proyecto oculto", body)
         self.assertIn("Resumen de participación", body)
-        self.assertIn("Proyectos listos para revisión", body)
+        self.assertIn("Documentación completa", body)
         self.assertIn("Evaluaciones completadas", body)
         self.assertNotIn("% completadas", body)
         self.assertNotIn("Juez confidencial ajeno", body)

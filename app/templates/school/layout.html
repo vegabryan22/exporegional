@@ -12,10 +12,18 @@
             </div>
         </div>
         <nav class="admin-menu">
-            <a href="{{ url_for('school.dashboard') }}">Resumen y proyectos</a>
-            <a href="{{ url_for('school.project_form') }}">Nuevo proyecto</a>
-            <a href="{{ url_for('school.judges') }}">Jueces del colegio</a>
-            <a href="{{ url_for('school.profile') }}">Mi colegio</a>
+            <a href="{{ url_for('school.dashboard') }}" class="{% if request.endpoint in ['school.dashboard', 'school.project_workspace'] %}active{% endif %}" {% if request.endpoint in ['school.dashboard', 'school.project_workspace'] %}aria-current="page"{% endif %}>
+                <span class="school-menu-icon"><svg aria-hidden="true"><use href="#ico-chart"></use></svg></span><span>Resumen y proyectos</span>
+            </a>
+            <a href="{{ url_for('school.project_form') }}" class="school-menu-new {% if request.endpoint == 'school.project_form' %}active{% endif %}" {% if request.endpoint == 'school.project_form' %}aria-current="page"{% endif %}>
+                <span class="school-menu-icon"><svg aria-hidden="true"><use href="#ico-plus"></use></svg></span><span>Nuevo proyecto</span>
+            </a>
+            <a href="{{ url_for('school.judges') }}" class="{% if request.endpoint == 'school.judges' %}active{% endif %}" {% if request.endpoint == 'school.judges' %}aria-current="page"{% endif %}>
+                <span class="school-menu-icon"><svg aria-hidden="true"><use href="#ico-users"></use></svg></span><span>Jueces del colegio</span>
+            </a>
+            <a href="{{ url_for('school.profile') }}" class="{% if request.endpoint == 'school.profile' %}active{% endif %}" {% if request.endpoint == 'school.profile' %}aria-current="page"{% endif %}>
+                <span class="school-menu-icon"><svg aria-hidden="true"><use href="#ico-settings"></use></svg></span><span>Mi colegio</span>
+            </a>
         </nav>
     </aside>
     <div class="admin-main">{% block school_content %}{% block admin_content %}{% endblock %}{% endblock %}</div>

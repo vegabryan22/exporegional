@@ -15416,13 +15416,67 @@ body.school-portal-page .admin-menu {
 }
 
 body.school-portal-page .admin-menu a {
-    padding: 0.72rem 0.8rem;
-    border-radius: 10px;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    align-items: center;
+    gap: 0.7rem;
+    min-height: 56px;
+    padding: 0.45rem 0.65rem;
+    border: 1px solid transparent;
+    border-radius: 13px;
 }
 
 body.school-portal-page .admin-menu a:hover {
     background: #e6f1f7;
     border-color: #c5dce8;
+}
+
+body.school-portal-page .admin-menu a.active {
+    color: #0f5274;
+    border-color: #b8d9e9;
+    background: #e1f1f8;
+    box-shadow: 0 7px 16px rgba(21, 91, 125, 0.1);
+}
+
+.school-menu-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    color: #176b91;
+    background: #e3f2f8;
+}
+
+.school-menu-icon svg {
+    width: 21px;
+    height: 21px;
+    fill: currentColor;
+}
+
+body.school-portal-page .admin-menu a:hover .school-menu-icon,
+body.school-portal-page .admin-menu a.active .school-menu-icon {
+    color: #fff;
+    background: #1d789f;
+}
+
+body.school-portal-page .admin-menu a.school-menu-new {
+    margin: 0.25rem 0 0.45rem;
+    color: #24480e;
+    border-color: #b8dc82;
+    background: linear-gradient(135deg, #eaf7d6, #dff1c2);
+}
+
+body.school-portal-page .admin-menu a.school-menu-new .school-menu-icon {
+    color: #fff;
+    background: #70a928;
+}
+
+body.school-portal-page .admin-menu a.school-menu-new:hover,
+body.school-portal-page .admin-menu a.school-menu-new.active {
+    border-color: #86b941;
+    background: linear-gradient(135deg, #dff2bf, #cde99e);
+    box-shadow: 0 8px 18px rgba(82, 132, 28, 0.15);
 }
 
 .school-dashboard-hero {

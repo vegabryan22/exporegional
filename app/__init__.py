@@ -188,6 +188,12 @@ def ensure_jornada_schema():
         if "shift" not in project_columns:
             _run_optional_schema_statement(connection, "ALTER TABLE projects ADD COLUMN shift VARCHAR(20) NULL", "columna projects.shift")
             _run_optional_schema_statement(connection, "CREATE INDEX ix_projects_shift ON projects (shift)", "indice projects.shift")
+        if "project_logbook_path" not in project_columns:
+            _run_optional_schema_statement(
+                connection,
+                "ALTER TABLE projects ADD COLUMN project_logbook_path VARCHAR(300) NULL",
+                "columna projects.project_logbook_path",
+            )
 
 
 def _reconcile_tutor_catalog():

@@ -7,10 +7,9 @@
 <section class="regional-hero">
     <div class="regional-hero-copy">
         <div class="regional-hero-brand">
-            {% if featured_expo_logo %}<img src="{{ url_for('static', filename=featured_expo_logo) }}" alt="Logo de ExpoTécnica Regional">{% endif %}
-            <p class="regional-eyebrow">CORVEC · Unidos por la excelencia</p>
+            {% if featured_expo_logo %}<img src="{{ url_for('static', filename=featured_expo_logo) }}" alt="Logo de ExpoTécnica">{% else %}<strong>ExpoTécnica</strong>{% endif %}
         </div>
-        <h2>ExpoTécnica<br><span>Regional</span></h2>
+        <h2><span>Regional</span></h2>
         <p class="regional-hero-lead">El punto de encuentro de los proyectos, el talento y la innovación de nuestros centros educativos.</p>
         <div class="regional-hero-actions">
             <a class="regional-enrollment-action" href="{{ url_for('auth.login') }}"><span>Inscripción regional</span><strong>Inscriba los proyectos de su colegio aquí</strong></a>

@@ -16567,6 +16567,119 @@ body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
 @media (max-width: 680px) {
     .judge-pool-card { grid-template-columns: 1fr; }
 }
+
+/* Panel del juez: perfil claro, compacto y con controles consistentes. */
+.judge-dashboard-hero.compact {
+    border-color: #bcd9eb;
+    background: linear-gradient(125deg, #ffffff 0%, #f2faff 68%, #e5f6fb 100%);
+    box-shadow: 0 12px 28px rgba(13, 63, 107, .08);
+}
+.judge-summary-strip article { position: relative; overflow: hidden; }
+.judge-summary-strip article::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 4px;
+    background: #1685ad;
+}
+.judge-summary-strip article:nth-child(2)::after { background: #ed9d19; }
+.judge-summary-strip article:nth-child(3)::after { background: #63af2c; }
+.judge-summary-strip article:nth-child(4)::after { background: #546f91; }
+.judge-availability-card { padding: 0; overflow: hidden; }
+.judge-availability-card summary { min-height: 74px; padding: .8rem 1rem; }
+.judge-availability-card[open] summary { background: #f7fbfe; border-bottom: 1px solid #d9e7f5; }
+.judge-availability-heading,
+.judge-availability-summary { display: flex; align-items: center; gap: .55rem; }
+.judge-availability-icon {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    border-radius: 11px;
+    background: #e5f5df;
+    color: #397d1d;
+    font-size: 1.1rem;
+    font-weight: 1000;
+}
+.judge-profile-chip {
+    border: 1px solid #bcd9eb;
+    border-radius: 999px;
+    padding: .28rem .55rem;
+    background: #edf7fc;
+    color: #245978;
+    font-size: .7rem;
+    font-weight: 900;
+    line-height: 1;
+}
+.judge-profile-chip.positive { border-color: #b9ddc0; background: #effbea; color: #286b35; }
+.judge-profile-chip.muted { border-color: #e3d1d5; background: #fff4f5; color: #8c3b49; }
+.judge-edit-profile {
+    margin-left: .15rem;
+    border: 1px solid #b9ccdc;
+    border-radius: 999px;
+    padding: .34rem .65rem;
+    color: var(--primary);
+    font-size: .76rem;
+    font-weight: 900;
+}
+.judge-availability-card[open] .judge-edit-profile span { display: inline-block; transform: rotate(180deg); }
+.judge-availability-form { margin: 0; padding: 1rem; border: 0; background: #fff; }
+.judge-availability-form label { font-size: .83rem; }
+.judge-availability-form input,
+.judge-availability-form select { min-height: 46px; border-radius: 10px; background: #fbfdff; }
+.judge-availability-check {
+    display: flex !important;
+    align-items: center;
+    align-self: end;
+    gap: .65rem !important;
+    min-height: 46px;
+    padding: .45rem .65rem;
+    border: 1px solid #cadbea;
+    border-radius: 10px;
+    background: #f7fbfe;
+    cursor: pointer;
+}
+.judge-availability-check input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.judge-toggle {
+    position: relative;
+    width: 42px;
+    height: 24px;
+    flex: 0 0 42px;
+    border-radius: 999px;
+    background: #aebdca;
+    transition: background .18s ease;
+}
+.judge-toggle::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .25);
+    transition: transform .18s ease;
+}
+.judge-availability-check input:checked + .judge-toggle { background: #62ad28; }
+.judge-availability-check input:checked + .judge-toggle::after { transform: translateX(18px); }
+.judge-availability-check input:focus-visible + .judge-toggle { outline: 3px solid rgba(22, 133, 173, .25); }
+.judge-availability-check > span:last-child { display: grid; gap: .05rem; }
+.judge-availability-check strong { color: var(--primary); font-size: .8rem; }
+.judge-availability-check small { color: #6b7e92; font-size: .68rem; font-weight: 600; }
+.judge-save-profile { min-width: 180px; background: #5da927 !important; border-color: #4d9220 !important; }
+
+@media (max-width: 900px) {
+    .judge-availability-card summary { align-items: flex-start; flex-direction: column; }
+    .judge-availability-summary { flex-wrap: wrap; padding-left: 46px; }
+}
+
+@media (max-width: 560px) {
+    .judge-availability-summary { padding-left: 0; }
+    .judge-profile-chip { display: none; }
+    .judge-availability-form { grid-template-columns: 1fr; }
+}
 .identity-name-pending { background: #eef2f4 !important; color: #6d7d85 !important; cursor: not-allowed; }
 .identity-name-verified { border-color: #82bf94 !important; background: #f1faf3 !important; color: #174f2c !important; }
 

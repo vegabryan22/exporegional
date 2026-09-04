@@ -19,7 +19,7 @@
         <div class="judge-hero-copy">
             <p class="maintenance-kicker">Panel de evaluaci&oacute;n</p>
             <h2>{{ current_user.full_name or 'Juez' }}</h2>
-            <p>Documentos y evaluaciones asignadas.</p>
+            <p>Consulta tus proyectos y completa las evaluaciones asignadas.</p>
         </div>
         <div class="judge-summary-strip" aria-label="Resumen de evaluaciones">
             <article><strong>{{ metrics.projects }}</strong><span>Proyectos</span></article>
@@ -42,11 +42,19 @@
 
     <details class="judge-availability-card">
         <summary>
-            <span>
-                <strong>Mi disponibilidad</strong>
-                <small>{{ current_user.category_scope_label }} &middot; {{ current_user.english_scope_label }} &middot; {{ current_user.evaluation_scope_label }}</small>
+            <span class="judge-availability-heading">
+                <span class="judge-availability-icon" aria-hidden="true">&#10003;</span>
+                <span>
+                    <strong>Perfil y disponibilidad</strong>
+                    <small>Informaci&oacute;n utilizada para asignarte proyectos</small>
+                </span>
             </span>
-            <span class="tag neutral">Editar</span>
+            <span class="judge-availability-summary">
+                <span class="judge-profile-chip">{{ current_user.category_scope_label }}</span>
+                <span class="judge-profile-chip">{{ current_user.evaluation_scope_label }}</span>
+                <span class="judge-profile-chip {{ 'positive' if current_user.can_evaluate_english else 'muted' }}">{{ current_user.english_scope_label }}</span>
+                <span class="judge-edit-profile">Editar <span aria-hidden="true">&#9662;</span></span>
+            </span>
         </summary>
         <form method="post" action="{{ url_for('judge.profile') }}" class="judge-availability-form">
             <label>Profesi&oacute;n o &aacute;rea t&eacute;cnica
@@ -72,12 +80,13 @@
                     <option value="exposicion" {% if current_user.can_evaluate_exposition and not current_user.can_evaluate_documentation %}selected{% endif %}>Solo exposici&oacute;n oral</option>
                 </select>
             </label>
-            <label class="checkbox-card judge-availability-check">
+            <label class="judge-availability-check">
                 <input type="checkbox" name="judge_can_evaluate_english" value="1" {% if current_user.can_evaluate_english %}checked{% endif %}>
-                Puede evaluar exposici&oacute;n en ingl&eacute;s
+                <span class="judge-toggle" aria-hidden="true"></span>
+                <span><strong>Evaluaci&oacute;n en ingl&eacute;s</strong><small>Puedo evaluar exposiciones en ingl&eacute;s</small></span>
             </label>
             <div class="actions-row">
-                <button type="submit" class="secondary-btn">Guardar disponibilidad</button>
+                <button type="submit" class="secondary-btn judge-save-profile">Guardar cambios</button>
             </div>
         </form>
     </details>

@@ -385,39 +385,39 @@
             <section class="expedient-section expedient-digital">
                 <div class="expedient-section-head"><span class="expedient-step">1</span><div><h5>Archivos digitales</h5><p>Podés seleccionar todos los archivos y guardarlos juntos.</p></div></div>
                 <div class="expedient-upload-grid">
-                    <label class="expedient-file-card {{ 'has-file' if project.project_document_path else '' }}">
+                    <div class="expedient-file-card {{ 'has-file' if project.project_document_path else '' }}">
                         <span><strong>Documento escrito</strong><small>{{ 'PDF cargado · seleccioná otro solo para reemplazarlo' if project.project_document_path else 'Pendiente de adjuntar · formato PDF' }}</small></span>
                         {% if project.project_document_path %}<a href="{{ url_for('static', filename=project.project_document_path) }}" target="_blank" rel="noopener">Ver archivo actual</a>{% endif %}
-                        <input type="file" name="project_document" accept="application/pdf,.pdf">
-                    </label>
-                    {% if project.category == 'steam' %}<label class="expedient-file-card {{ 'has-file' if project.project_logbook_path else '' }}">
+                        <div class="expedient-file-control"><button type="button" data-file-select>Seleccionar PDF</button><span data-file-name>Ningún archivo seleccionado</span><input type="file" name="project_document" accept="application/pdf,.pdf"></div>
+                    </div>
+                    {% if project.category == 'steam' %}<div class="expedient-file-card {{ 'has-file' if project.project_logbook_path else '' }}">
                         <span><strong>Bitácora STEAM</strong><small>{{ 'PDF cargado · seleccioná otro solo para reemplazarlo' if project.project_logbook_path else 'Pendiente de adjuntar · formato PDF' }}</small></span>
                         {% if project.project_logbook_path %}<a href="{{ url_for('static', filename=project.project_logbook_path) }}" target="_blank" rel="noopener">Ver archivo actual</a>{% endif %}
-                        <input type="file" name="project_logbook" accept="application/pdf,.pdf">
-                    </label>{% endif %}
-                    <label class="expedient-file-card expedient-logo-card {{ 'has-file' if project.has_real_logo else '' }}">
+                        <div class="expedient-file-control"><button type="button" data-file-select>Seleccionar PDF</button><span data-file-name>Ningún archivo seleccionado</span><input type="file" name="project_logbook" accept="application/pdf,.pdf"></div>
+                    </div>{% endif %}
+                    <div class="expedient-file-card expedient-logo-card {{ 'has-file' if project.has_real_logo else '' }}">
                         <span class="expedient-logo-preview" data-logo-preview>
                             {% if project.has_real_logo and (project.project_logo_path.startswith('http://') or project.project_logo_path.startswith('https://')) %}<img src="{{ project.project_logo_path }}" alt="Logo actual de {{ project.title }}">
                             {% elif project.has_real_logo %}<img src="{{ url_for('static', filename=project.project_logo_path) }}" alt="Logo actual de {{ project.title }}">
                             {% else %}<img src="{{ project_logo_placeholder }}" alt="Logo pendiente de {{ project.title }}">{% endif %}
                         </span>
                         <span class="expedient-logo-copy"><strong>Logo del proyecto</strong><small data-logo-caption>{{ 'Logo cargado · elegí otro solo para reemplazarlo' if project.has_real_logo else 'Logo pendiente · PNG, JPG o WEBP' }}</small></span>
-                        <input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp" data-logo-input>
-                    </label>
+                        <div class="expedient-file-control"><button type="button" data-file-select>Seleccionar imagen</button><span data-file-name>Ningún archivo seleccionado</span><input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp" data-logo-input></div>
+                    </div>
                 </div>
             </section>
             <section class="expedient-section expedient-photos">
                 <div class="expedient-section-head"><span class="expedient-step">2</span><div><h5>Fotografías de estudiantes</h5><p>Cargá o reemplazá las fotografías de todos los integrantes desde aquí.</p></div></div>
                 <div class="expedient-student-grid">
                     {% for member in project.members | sort(attribute='student_number') %}
-                    <label class="expedient-student-photo {{ 'has-file' if member.photo_url else '' }}">
+                    <div class="expedient-student-photo {{ 'has-file' if member.photo_url else '' }}">
                         <span class="expedient-student-preview">
                             {% if member.photo_url %}<img src="{{ url_for('static', filename=member.photo_url) }}" alt="Foto de {{ member.full_name }}">
                             {% else %}{% set member_placeholder = female_member_placeholder if member.gender == 'femenino' else male_member_placeholder %}<img src="{{ member_placeholder }}" alt="Sin foto de {{ member.full_name }}">{% endif %}
                         </span>
                         <span class="expedient-student-copy"><strong>{{ member.full_name }}</strong><small>{{ 'Fotografía cargada · elegí otra solo para reemplazarla' if member.photo_url else 'Fotografía pendiente' }}</small></span>
-                        <input type="file" name="member_photo_{{ member.id }}" accept="image/png,image/jpeg,image/webp">
-                    </label>
+                        <div class="expedient-file-control"><button type="button" data-file-select>Seleccionar foto</button><span data-file-name>Ningún archivo seleccionado</span><input type="file" name="member_photo_{{ member.id }}" accept="image/png,image/jpeg,image/webp"></div>
+                    </div>
                     {% else %}<div class="expedient-no-students"><strong>No hay integrantes registrados</strong><span>Agregá los estudiantes desde la opción Integrantes para poder cargar sus fotografías.</span></div>{% endfor %}
                 </div>
             </section>
@@ -843,6 +843,18 @@
 
 <script>
     (function () {
+        document.querySelectorAll('.expedient-file-control').forEach(function (control) {
+            var input = control.querySelector('input[type="file"]');
+            var button = control.querySelector('[data-file-select]');
+            var fileName = control.querySelector('[data-file-name]');
+            if (!input || !button || !fileName) return;
+            button.addEventListener('click', function () { input.click(); });
+            input.addEventListener('change', function () {
+                fileName.textContent = input.files && input.files.length ? input.files[0].name : 'Ningún archivo seleccionado';
+                fileName.title = fileName.textContent;
+            });
+        });
+
         document.querySelectorAll('[data-logo-input]').forEach(function (input) {
             input.addEventListener('change', function () {
                 var file = input.files && input.files[0];

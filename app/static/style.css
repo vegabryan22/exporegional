@@ -16907,7 +16907,7 @@ body.school-portal-page .legacy-project-logo-form { display: none; }
     font-size: .78rem;
     font-weight: 900;
 }
-.expedient-upload-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+.expedient-upload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: .65rem; }
 .expedient-file-card {
     display: grid !important;
     align-content: start;
@@ -16924,6 +16924,10 @@ body.school-portal-page .legacy-project-logo-form { display: none; }
 .expedient-file-card small { color: #657c8f; font-size: .7rem; font-weight: 600; line-height: 1.3; }
 .expedient-file-card a { width: fit-content; color: #176b91; font-size: .73rem; font-weight: 850; }
 .expedient-file-card input[type="file"] { width: 100%; min-height: 40px; padding: .3rem; border-radius: 8px; background: #fff; font-size: .72rem; }
+.expedient-file-control { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: .5rem; min-width: 0; min-height: 42px; padding: .3rem; border: 1px solid #c7d9e4; border-radius: 9px; background: #fff; }
+.expedient-file-control button { min-height: 34px; padding: .38rem .65rem; border: 0; border-radius: 7px; background: #1b789f; color: #fff; font-size: .7rem; font-weight: 850; white-space: nowrap; }
+.expedient-file-control [data-file-name] { min-width: 0; color: #526b7e; font-size: .7rem; font-weight: 650; line-height: 1.2; overflow-wrap: anywhere; }
+.expedient-file-control input[type="file"] { position: absolute !important; width: 1px !important; height: 1px !important; min-height: 0 !important; padding: 0 !important; opacity: 0; pointer-events: none; }
 .expedient-logo-card {
     grid-template-columns: 58px minmax(0, 1fr);
     align-items: center;
@@ -16949,9 +16953,9 @@ body.school-portal-page .legacy-project-logo-form { display: none; }
 .expedient-logo-copy { display: grid; gap: .1rem; min-width: 0; }
 .expedient-logo-copy strong { color: #173f55; font-size: .8rem; }
 .expedient-logo-copy small { color: #687e90; font-size: .67rem; font-weight: 600; line-height: 1.25; }
-.expedient-logo-card input[type="file"] { grid-column: 2; min-width: 0; }
+.expedient-logo-card > .expedient-file-control { grid-column: 2; min-width: 0; }
 .expedient-photos { padding: .9rem; }
-.expedient-student-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+.expedient-student-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: .65rem; }
 .expedient-student-photo {
     display: grid !important;
     grid-template-columns: 58px minmax(0, 1fr);
@@ -16969,7 +16973,7 @@ body.school-portal-page .legacy-project-logo-form { display: none; }
 .expedient-student-copy { display: grid; gap: .1rem; min-width: 0; }
 .expedient-student-copy strong { overflow: hidden; color: #173f55; font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
 .expedient-student-copy small { color: #687e90; font-size: .67rem; font-weight: 600; line-height: 1.25; }
-.expedient-student-photo input[type="file"] { grid-column: 2; width: 100%; min-width: 0; padding: .25rem; border-radius: 8px; background: #fff; font-size: .68rem; }
+.expedient-student-photo > .expedient-file-control { grid-column: 2; width: 100%; }
 .expedient-no-students { grid-column: 1 / -1; display: grid; gap: .15rem; padding: .75rem; border: 1px dashed #b9cad5; border-radius: 11px; color: #657c8f; }
 .expedient-no-students strong { color: #173f55; }
 .school-expedient-form .logistics-review-card { margin: 0; }

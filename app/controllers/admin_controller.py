@@ -3442,31 +3442,73 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
     expo_logo = SystemSetting.get_value("expo_logo_path", "")
     school_logo_url = url_for("static", filename=school_logo, _external=True) if school_logo else ""
     expo_logo_url = url_for("static", filename=expo_logo, _external=True) if expo_logo else ""
-    subject = "Credenciales de acceso - ExpoTécnica"
-    body = (
-        f"Hola {judge.full_name},\n\n"
-        "Gracias por confirmar tu participación como juez de ExpoTécnica.\n"
-        f"Disponibilidad registrada: {judge.evaluation_scope_label}.\n"
-        "La organización usará esta información para asignarte evaluaciones según la necesidad de cada proyecto.\n\n"
-        "Se ha creado/actualizado tu acceso al portal de juez.\n"
-        f"Portal: {login_url}\n"
-        f"Usuario: {judge.email}\n"
-        f"Contraseña temporal: {plain_password}\n\n"
-        "Por seguridad, cambia esta contraseña al ingresar.\n"
-    )
-    html_body = _build_judge_credentials_email_html(
-        judge=judge,
-        plain_password=plain_password,
-        login_url=login_url,
-        school_name=school_name,
-        school_logo_url=school_logo_url,
-        expo_logo_url=expo_logo_url,
-    )
+    is_coordinator = judge.effective_role == Judge.ROLE_SCHOOL_COORDINATOR
+    if is_coordinator:
+        institution = judge.institution_ref
+        institution_name = institution.name if institution else (judge.institution or "Centro educativo")
+        institution_shield_url = (
+            url_for("static", filename=institution.shield_path, _external=True)
+            if institution and institution.shield_path else ""
+        )
+        subject = f"Acceso de coordinación - {institution_name}"
+        body = (
+            f"Hola {judge.full_name},\n\n"
+            f"Se habilitó tu acceso como coordinación de {institution_name}, jornada {judge.shift_label}.\n"
+            "Desde el panel podrás registrar proyectos, completar expedientes, gestionar integrantes y enviar proyectos para aprobación regional.\n\n"
+            f"Portal: {login_url}\nUsuario: {judge.email}\nContraseña temporal: {plain_password}\n\n"
+            "Por seguridad, cambia esta contraseña al ingresar.\n"
+        )
+        html_body = _build_coordinator_credentials_email_html(
+            coordinator=judge, plain_password=plain_password, login_url=login_url,
+            school_name=school_name, school_logo_url=school_logo_url,
+            expo_logo_url=expo_logo_url, institution_name=institution_name,
+            institution_shield_url=institution_shield_url,
+        )
+    else:
+        subject = "Credenciales de acceso como juez - ExpoTécnica"
+        body = (
+            f"Hola {judge.full_name},\n\nGracias por confirmar tu participación como juez de ExpoTécnica.\n"
+            f"Disponibilidad registrada: {judge.evaluation_scope_label}.\n"
+            "La organización usará esta información para asignarte evaluaciones según la necesidad de cada proyecto.\n\n"
+            f"Portal: {login_url}\nUsuario: {judge.email}\nContraseña temporal: {plain_password}\n\n"
+            "Por seguridad, cambia esta contraseña al ingresar.\n"
+        )
+        html_body = _build_judge_credentials_email_html(
+            judge=judge, plain_password=plain_password, login_url=login_url,
+            school_name=school_name, school_logo_url=school_logo_url, expo_logo_url=expo_logo_url,
+        )
     ok, error = send_email(judge.email, subject, body, html_body=html_body)
     if not ok:
         flash(f"No se pudo enviar correo de credenciales: {error}", "error")
         return False
     return True
+
+
+def _build_coordinator_credentials_email_html(*, coordinator: Judge, plain_password: str, login_url: str,
+                                                school_name: str, institution_name: str,
+                                                school_logo_url: str = "", expo_logo_url: str = "",
+                                                institution_shield_url: str = "") -> str:
+    brand_logos = "".join(
+        f'<img src="{escape(url)}" alt="{escape(label)}" style="height:62px;max-width:{width}px;object-fit:contain;margin-right:12px;">'
+        for url, label, width in ((school_logo_url, school_name, 82), (expo_logo_url, "ExpoTécnica", 145)) if url
+    ) or '<strong style="font-size:22px;color:#fff;">ExpoTécnica Regional</strong>'
+    shield = (
+        f'<img src="{escape(institution_shield_url)}" alt="Escudo de {escape(institution_name)}" '
+        'style="width:92px;height:92px;object-fit:contain;border-radius:16px;background:#fff;border:1px solid #cfe0e8;padding:8px;">'
+        if institution_shield_url else
+        f'<div style="width:92px;height:92px;line-height:92px;text-align:center;border-radius:16px;background:#e5f3f8;color:#176b91;font-size:22px;font-weight:900;">CE</div>'
+    )
+    return f"""<!doctype html><html lang="es"><body style="margin:0;background:#eef5f8;font-family:Arial,Helvetica,sans-serif;color:#173f55;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:28px 12px;"><tr><td align="center">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#fff;border:1px solid #cfe0e8;border-radius:22px;overflow:hidden;box-shadow:0 18px 38px rgba(18,63,85,.12);">
+<tr><td style="padding:20px 26px;background:#173f55;"><table role="presentation" width="100%"><tr><td>{brand_logos}</td><td align="right" style="color:#fff;"><div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">ExpoTécnica 2026</div><div style="font-size:18px;font-weight:800;margin-top:4px;">Acceso de coordinación</div></td></tr></table></td></tr>
+<tr><td style="padding:28px 30px 18px;"><p style="margin:0 0 7px;color:#1f8fb5;font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;">Coordinación del centro educativo</p><h1 style="margin:0 0 8px;color:#123f6b;font-size:29px;">Bienvenido/a, {escape(coordinator.full_name)}</h1>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:20px 0;background:#f5fafc;border:1px solid #cfe0e8;border-radius:16px;"><tr><td width="120" style="padding:18px;">{shield}</td><td style="padding:18px 18px 18px 0;"><div style="color:#60798b;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Centro educativo asignado</div><div style="margin-top:5px;color:#173f55;font-size:21px;font-weight:900;">{escape(institution_name)}</div><div style="display:inline-block;margin-top:10px;padding:6px 11px;border-radius:999px;background:#dff1f8;color:#176b91;font-size:13px;font-weight:800;">Jornada {escape(coordinator.shift_label)}</div></td></tr></table>
+<p style="font-size:15px;line-height:1.55;color:#4f6680;">Desde tu panel podrás <strong>registrar proyectos, completar expedientes, gestionar integrantes y enviar proyectos para aprobación regional</strong>.</p>
+<table role="presentation" width="100%" style="margin:20px 0;background:#f7fbff;border:1px solid #cfe0f1;border-radius:15px;"><tr><td style="padding:18px 20px;"><p style="margin:0 0 10px;color:#607998;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;">Datos de acceso</p><p style="margin:0 0 9px;"><strong>Usuario:</strong> {escape(coordinator.email)}</p><p style="margin:0 0 7px;"><strong>Contraseña temporal:</strong></p><div style="display:inline-block;padding:11px 15px;border:1px solid #b7d7c4;border-radius:10px;background:#effaf3;color:#135d37;font:800 19px Consolas,monospace;">{escape(plain_password)}</div><p style="margin:12px 0 0;color:#5b7189;font-size:13px;">El sistema solicitará cambiar esta contraseña al iniciar sesión.</p></td></tr></table>
+<p style="text-align:center;margin:24px 0;"><a href="{escape(login_url)}" style="display:inline-block;padding:14px 27px;border-radius:999px;background:#82c52c;color:#173709;text-decoration:none;font-size:16px;font-weight:900;">Ingresar al panel del colegio</a></p></td></tr>
+<tr><td style="padding:15px 30px;background:#eaf4f7;border-top:1px solid #cfe0e8;color:#587080;font-size:13px;">Este acceso corresponde únicamente a {escape(institution_name)}, jornada {escape(coordinator.shift_label)}.</td></tr>
+</table></td></tr></table></body></html>"""
 
 
 def _build_judge_credentials_email_html(

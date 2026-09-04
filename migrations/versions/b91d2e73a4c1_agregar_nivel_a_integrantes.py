@@ -15,16 +15,27 @@ depends_on = None
 
 
 def upgrade():
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    columns = {column["name"] for column in inspector.get_columns("project_members")}
+    if "level_id" not in columns:
+        with op.batch_alter_table("project_members") as batch_op:
+            batch_op.add_column(sa.Column("level_id", sa.Integer(), nullable=True))
+
+    inspector = sa.inspect(bind)
+    indexes = {index["name"] for index in inspector.get_indexes("project_members")}
+    foreign_keys = {fk.get("name") for fk in inspector.get_foreign_keys("project_members")}
     with op.batch_alter_table("project_members") as batch_op:
-        batch_op.add_column(sa.Column("level_id", sa.Integer(), nullable=True))
-        batch_op.create_index("ix_project_members_level_id", ["level_id"], unique=False)
-        batch_op.create_foreign_key(
-            "fk_project_members_level_id_levels",
-            "levels",
-            ["level_id"],
-            ["id"],
-            ondelete="RESTRICT",
-        )
+        if "ix_project_members_level_id" not in indexes:
+            batch_op.create_index("ix_project_members_level_id", ["level_id"], unique=False)
+        if "fk_project_members_level_id_levels" not in foreign_keys:
+            batch_op.create_foreign_key(
+                "fk_project_members_level_id_levels",
+                "levels",
+                ["level_id"],
+                ["id"],
+                ondelete="RESTRICT",
+            )
 
     # Conserva correctamente el nivel de registros heredados como 11-1, 12-2, etc.
     op.execute(

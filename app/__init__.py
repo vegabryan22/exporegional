@@ -114,6 +114,10 @@ def create_app():
                 # Otro worker pudo completar el catálogo durante el arranque.
                 db.session.rollback()
 
+        ensure_project_member_level_schema()
+        # MySQL invalida transacciones abiertas cuando cambia la definición de tabla.
+        # Fuerza una sesión nueva antes de ejecutar consultas ORM en este mismo arranque.
+        db.session.remove()
         # Versiones anteriores actualizaban el nombre visible del integrante,
         # pero dejaban specialty_id apuntando a la especialidad anterior.
         reconcile_member_specialty_references(db)
@@ -207,6 +211,32 @@ def ensure_jornada_schema():
                 "ALTER TABLE projects ADD COLUMN project_logbook_path VARCHAR(300) NULL",
                 "columna projects.project_logbook_path",
             )
+
+
+def ensure_project_member_level_schema():
+    """Permite arrancar antes de que GitOps ejecute la migración de level_id."""
+    inspector = inspect(db.engine)
+    if "project_members" not in inspector.get_table_names():
+        return
+    member_columns = {column["name"] for column in inspector.get_columns("project_members")}
+    with db.engine.begin() as connection:
+        if "level_id" not in member_columns:
+            _run_optional_schema_statement(
+                connection,
+                "ALTER TABLE project_members ADD COLUMN level_id INT NULL",
+                "columna project_members.level_id",
+            )
+        # La migración formal agregará índice y FK. Este backfill es seguro e idempotente.
+        connection.execute(
+            text(
+                """
+                UPDATE project_members pm
+                JOIN levels l ON l.code = SUBSTRING_INDEX(pm.section_name, '-', 1)
+                SET pm.level_id = l.id
+                WHERE pm.level_id IS NULL AND pm.section_name IS NOT NULL
+                """
+            )
+        )
 
 
 def _reconcile_tutor_catalog():

@@ -17007,6 +17007,8 @@ body.school-portal-page .legacy-project-logo-form { display: none; }
     .expedient-save-bar button { justify-content: center; width: 100%; }
 }
 .identity-name-pending { background: #eef2f4 !important; color: #6d7d85 !important; cursor: not-allowed; }
+.specialty-usage { display: inline-block; color: #7a4c14; font-size: .76rem; font-weight: 750; white-space: nowrap; }
+.specialty-usage.is-unused { color: #3b7a2a; }
 .identity-name-verified { border-color: #82bf94 !important; background: #f1faf3 !important; color: #174f2c !important; }
 
 body.admin-page .admin-menu-advanced {

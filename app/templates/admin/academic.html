@@ -120,11 +120,12 @@
         </div>
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Nombre</th><th>Orden</th><th>Estado</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Nombre</th><th>Uso actual</th><th>Orden</th><th>Estado</th><th>Acciones</th></tr></thead>
                 <tbody>
                 {% for specialty in specialties %}
                     <tr>
                         <td>{{ specialty.name }}</td>
+                        {% set usage = specialty_usage.get(specialty.id, {}) %}<td><span class="specialty-usage {{ 'is-unused' if not usage.get('projects') and not usage.get('members') else '' }}">{{ usage.get('projects', 0) }} proyectos · {{ usage.get('members', 0) }} estudiantes</span></td>
                         <td>{{ specialty.sort_order }}</td>
                         <td><span class="tag {{ 'ok' if specialty.is_active else 'off' }}">{{ 'Activo' if specialty.is_active else 'Inactivo' }}</span></td>
                         <td class="actions-cell">
@@ -135,7 +136,7 @@
                         </td>
                     </tr>
                 {% else %}
-                    <tr><td colspan="4">Sin especialidades.</td></tr>
+                    <tr><td colspan="5">Sin especialidades.</td></tr>
                 {% endfor %}
                 </tbody>
             </table>

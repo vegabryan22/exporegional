@@ -6429,10 +6429,17 @@ def _handle_action(action: str):
     elif action == "delete_specialty":
         specialty_id = request.form.get("specialty_id", type=int)
         specialty = Specialty.query.get(specialty_id) if specialty_id else None
+        project_count = Project.query.filter_by(specialty_id=specialty_id).count() if specialty_id else 0
+        member_count = ProjectMember.query.filter_by(specialty_id=specialty_id).count() if specialty_id else 0
         if not specialty:
             flash("Especialidad no encontrada.", "error")
-        elif Project.query.filter_by(specialty_id=specialty.id).count() > 0:
-            flash("No puedes eliminar una especialidad con proyectos asociados.", "error")
+        elif project_count or member_count:
+            usages = []
+            if project_count:
+                usages.append(f"{project_count} proyecto{'s' if project_count != 1 else ''}")
+            if member_count:
+                usages.append(f"{member_count} estudiante{'s' if member_count != 1 else ''}")
+            flash("No se puede eliminar porque todavía está asignada a " + " y ".join(usages) + ". Cambiá esas asignaciones primero.", "error")
         else:
             log_event(
                 "admin.specialty.delete",
@@ -8412,7 +8419,14 @@ def categories_page():
 
 @admin_module_required("academic")
 def academic_page():
-    return _render("admin/academic.html", "academic")
+    specialty_usage = {
+        specialty.id: {
+            "projects": Project.query.filter_by(specialty_id=specialty.id).count(),
+            "members": ProjectMember.query.filter_by(specialty_id=specialty.id).count(),
+        }
+        for specialty in Specialty.query.all()
+    }
+    return _render("admin/academic.html", "academic", specialty_usage=specialty_usage)
 
 
 @admin_module_required("rubrics")

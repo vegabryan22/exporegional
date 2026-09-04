@@ -12,7 +12,11 @@ from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 
 from config import Config
 from app.extensions import db, login_manager, migrate
-from app.services.parameter_service import bootstrap_defaults, ensure_specialty_catalog
+from app.services.parameter_service import (
+    bootstrap_defaults,
+    ensure_specialty_catalog,
+    reconcile_member_specialty_references,
+)
 
 
 DEFAULT_DEPARTMENT_PERMISSIONS = {
@@ -109,6 +113,10 @@ def create_app():
             except IntegrityError:
                 # Otro worker pudo completar el catálogo durante el arranque.
                 db.session.rollback()
+
+        # Versiones anteriores actualizaban el nombre visible del integrante,
+        # pero dejaban specialty_id apuntando a la especialidad anterior.
+        reconcile_member_specialty_references(db)
 
     register_cli(app)
     register_template_filters(app)

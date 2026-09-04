@@ -6,6 +6,7 @@ import unicodedata
 from app.models.category import Category
 from app.models.evaluation_type import EvaluationType
 from app.models.level import Level
+from app.models.project_member import ProjectMember
 from app.models.project_type import ProjectType
 from app.models.rubric_criterion import RubricCriterion
 from app.models.section import Section
@@ -85,6 +86,20 @@ def ensure_specialty_catalog(database, *, commit=True):
     if created and commit:
         database.session.commit()
     return created
+
+
+def reconcile_member_specialty_references(database, *, commit=True):
+    """Repair legacy member rows whose visible specialty and FK disagree."""
+    specialties = {_specialty_key(row.name): row for row in Specialty.query.all()}
+    updated = False
+    for member in ProjectMember.query.filter(ProjectMember.specialty.isnot(None)).all():
+        specialty = specialties.get(_specialty_key(member.specialty))
+        if specialty and member.specialty_id != specialty.id:
+            member.specialty_id = specialty.id
+            updated = True
+    if updated and commit:
+        database.session.commit()
+    return updated
 
 DEFAULT_WORKSHOPS = [
     {"name": "Taller 1", "sort_order": 1},

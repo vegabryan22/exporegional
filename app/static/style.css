@@ -16924,6 +16924,25 @@ body.school-portal-page .legacy-project-logo-form { display: none; }
 .expedient-file-card small { color: #657c8f; font-size: .7rem; font-weight: 600; line-height: 1.3; }
 .expedient-file-card a { width: fit-content; color: #176b91; font-size: .73rem; font-weight: 850; }
 .expedient-file-card input[type="file"] { width: 100%; min-height: 40px; padding: .3rem; border-radius: 8px; background: #fff; font-size: .72rem; }
+.expedient-logo-preview {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    min-height: 82px;
+    padding: .5rem;
+    border: 1px solid #d3e1e8;
+    border-radius: 10px;
+    background: #fff;
+}
+.expedient-logo-preview img {
+    width: 70px;
+    height: 70px;
+    flex: 0 0 70px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #f5f8fa;
+}
+.expedient-logo-preview em { color: #60788b; font-size: .7rem; font-style: normal; font-weight: 800; line-height: 1.25; }
 .expedient-photos { padding: .9rem; }
 .expedient-student-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
 .expedient-student-photo {

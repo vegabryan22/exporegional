@@ -397,7 +397,13 @@
                     </label>{% endif %}
                     <label class="expedient-file-card {{ 'has-file' if project.has_real_logo else '' }}">
                         <span><strong>Logo del proyecto</strong><small>{{ 'Imagen cargada · seleccioná otra solo para reemplazarla' if project.has_real_logo else 'Pendiente de adjuntar · PNG, JPG o WEBP' }}</small></span>
-                        <input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp">
+                        <span class="expedient-logo-preview" data-logo-preview>
+                            {% if project.has_real_logo and (project.project_logo_path.startswith('http://') or project.project_logo_path.startswith('https://')) %}<img src="{{ project.project_logo_path }}" alt="Logo actual de {{ project.title }}">
+                            {% elif project.has_real_logo %}<img src="{{ url_for('static', filename=project.project_logo_path) }}" alt="Logo actual de {{ project.title }}">
+                            {% else %}<img src="{{ project_logo_placeholder }}" alt="Logo pendiente de {{ project.title }}">{% endif %}
+                            <em>{{ 'Logo actual' if project.has_real_logo else 'Sin logo cargado' }}</em>
+                        </span>
+                        <input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp" data-logo-input>
                     </label>
                 </div>
             </section>
@@ -838,6 +844,18 @@
 
 <script>
     (function () {
+        document.querySelectorAll('[data-logo-input]').forEach(function (input) {
+            input.addEventListener('change', function () {
+                var file = input.files && input.files[0];
+                var preview = input.closest('.expedient-file-card').querySelector('[data-logo-preview]');
+                var image = preview && preview.querySelector('img');
+                var caption = preview && preview.querySelector('em');
+                if (!file || !image) return;
+                image.src = URL.createObjectURL(file);
+                if (caption) caption.textContent = 'Vista previa del nuevo logo';
+            });
+        });
+
         function syncAcademicFields(form) {
             var sectionSelect = form.querySelector('select[name="member_section_id"]');
             var specialtyWrap = form.querySelector('.member-specialty-wrap');

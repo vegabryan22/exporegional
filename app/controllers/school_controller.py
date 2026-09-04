@@ -298,6 +298,8 @@ def project_workspace(project_id: int):
         flash("Proyecto no encontrado.", "error")
         return redirect(url_for("school.dashboard"))
 
+    embedded = request.args.get("embedded") == "1"
+
     if request.method == "POST":
         action = (request.form.get("action") or "").strip()
         allowed_actions = {
@@ -314,11 +316,11 @@ def project_workspace(project_id: int):
             log_event("school.project.action_blocked", "project", project.id, f"Acción fuera de alcance: {action or 'vacía'}")
             db.session.commit()
             flash("La acción solicitada no pertenece a este proyecto o no está permitida.", "error")
-            return redirect(url_for("school.project_workspace", project_id=project.id))
+            return redirect(url_for("school.project_workspace", project_id=project.id, embedded=1 if embedded else None))
         admin_controller._handle_action(action)
         if action == "delete_project" and db.session.get(Project, project_id) is None:
             return redirect(url_for("school.dashboard"))
-        return redirect(url_for("school.project_workspace", project_id=project.id))
+        return redirect(url_for("school.project_workspace", project_id=project.id, embedded=1 if embedded else None))
 
     context = admin_controller._base_context("projects")
     context["projects"] = [project]
@@ -326,9 +328,10 @@ def project_workspace(project_id: int):
     context["project_logistics_summary"] = admin_controller._build_project_logistics_summary([project])
     context["pending_document_revisions"] = []
     context["pending_member_edit_requests"] = []
-    context["action_url"] = url_for("school.project_workspace", project_id=project.id)
-    context["next_url"] = request.path
+    context["action_url"] = url_for("school.project_workspace", project_id=project.id, embedded=1 if embedded else None)
+    context["next_url"] = url_for("school.project_workspace", project_id=project.id, embedded=1 if embedded else None)
     context["school_mode"] = True
+    context["embedded"] = embedded
     context["school"] = current_user.institution_ref
     return render_template("admin/projects.html", **context)
 

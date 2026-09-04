@@ -16787,6 +16787,75 @@ body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
     .school-summary-grid { grid-template-columns: 1fr; }
     .school-attention-tags { margin-left: 0; }
 }
+
+/* Gestión integral del proyecto sin abandonar el resumen del colegio. */
+.school-manage-project {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .48rem;
+    min-height: 42px;
+    border-color: #176c90;
+    background: linear-gradient(135deg, #2185aa, #155c7d);
+    color: #fff;
+}
+.school-manage-project svg { width: 19px; height: 19px; fill: currentColor; }
+.school-project-manager {
+    width: min(1480px, calc(100vw - 2rem));
+    height: min(900px, calc(100vh - 2rem));
+    max-width: none;
+    max-height: none;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 20px;
+    background: #eef4f7;
+    box-shadow: 0 30px 90px rgba(7, 31, 46, .4);
+}
+.school-project-manager::backdrop { background: rgba(10, 30, 43, .7); backdrop-filter: blur(4px); }
+.school-project-manager-shell { display: grid; grid-template-rows: auto 1fr; height: 100%; }
+.school-project-manager-shell > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-height: 66px;
+    padding: .7rem 1rem;
+    background: linear-gradient(115deg, #173f55, #1c6c8b);
+    color: #fff;
+}
+.school-project-manager-shell > header div { display: grid; gap: .08rem; }
+.school-project-manager-shell > header span { font-size: .67rem; font-weight: 900; letter-spacing: .09em; opacity: .8; text-transform: uppercase; }
+.school-project-manager-shell > header strong { font-size: 1.08rem; }
+.school-project-manager-shell > header button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+    font-size: 1.55rem;
+}
+.school-project-manager iframe { width: 100%; height: 100%; border: 0; background: #eef4f7; }
+
+body.school-project-embedded { background: #eef4f7; }
+body.school-project-embedded > .header,
+body.school-project-embedded > .impersonation-banner,
+body.school-project-embedded .admin-sidebar { display: none !important; }
+body.school-project-embedded > .container { width: 100%; max-width: none; margin: 0; padding: .75rem; }
+body.school-project-embedded .admin-shell { display: block; }
+body.school-project-embedded .admin-main { width: 100%; }
+body.school-project-embedded .maintenance-page { margin: 0; border: 0; box-shadow: none; background: transparent; }
+body.school-project-embedded .embedded-project-banner { display: none; }
+body.school-project-embedded .project-maintenance-list { padding: 0; }
+
+@media (max-width: 700px) {
+    .school-project-manager { width: 100vw; height: 100vh; border-radius: 0; }
+    .school-project-card-actions .school-manage-project { width: 100%; }
+}
 .identity-name-pending { background: #eef2f4 !important; color: #6d7d85 !important; cursor: not-allowed; }
 .identity-name-verified { border-color: #82bf94 !important; background: #f1faf3 !important; color: #174f2c !important; }
 

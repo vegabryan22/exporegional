@@ -60,10 +60,10 @@
         </div>
         {% if row.missing %}<div class="school-project-pending"><strong>Falta completar</strong><span>{{ row.missing|join(' · ') }}</span></div>{% else %}<div class="school-project-ready"><strong>Datos y documentos completos</strong><span>Listo para validación regional.</span></div>{% endif %}
         <footer class="school-project-card-actions">
-            <a class="outline-btn" href="{{ url_for('school.project_workspace', project_id=project.id) }}">Gestionar proyecto</a>
+            <button type="button" class="school-manage-project" data-project-manager-open="project-manager-{{ project.id }}"><svg aria-hidden="true"><use href="#ico-settings"></use></svg><span>Gestionar proyecto</span></button>
             <a class="outline-btn" href="{{ url_for('public.project_documents_packet', project_id=project.id) }}">Descargar formularios</a>
             {% if project.regional_status not in ['evaluated', 'regional_winner'] %}
-                <a class="outline-btn" href="{{ url_for('school.project_edit', project_id=project.id) }}">Editar información</a>
+                <button type="button" class="outline-btn" data-project-manager-open="project-manager-{{ project.id }}" data-project-manager-view="edit-project-{{ project.id }}">Editar información</button>
             {% endif %}
             {% if project.regional_status in ['draft', 'returned_for_correction'] %}
                 <form method="post" action="{{ url_for('school.project_submit', project_id=project.id) }}" class="school-submit-form"><button type="submit" class="school-submit-project"><svg aria-hidden="true"><use href="#ico-send"></use></svg><span>Enviar para aprobación regional</span></button></form>
@@ -72,5 +72,34 @@
     </article>
     {% else %}<div class="card school-project-empty"><strong>Aún no hay proyectos</strong><p>Registrá el primer proyecto para iniciar su inscripción regional.</p><a class="button" href="{{ url_for('school.project_form') }}">Crear proyecto</a></div>{% endfor %}
 </section>
+
+{% for row in project_rows %}{% set project = row.project %}
+<dialog id="project-manager-{{ project.id }}" class="school-project-manager">
+    <div class="school-project-manager-shell">
+        <header><div><span>Gestión del proyecto</span><strong>{{ project.title }}</strong></div><button type="button" data-project-manager-close aria-label="Cerrar">&times;</button></header>
+        <iframe title="Gestionar {{ project.title }}" data-src="{{ url_for('school.project_workspace', project_id=project.id, embedded=1) }}"></iframe>
+    </div>
+</dialog>
+{% endfor %}
+
+<script>
+(() => {
+    document.addEventListener('click', (event) => {
+        const opener = event.target.closest('[data-project-manager-open]');
+        if (opener) {
+            const dialog = document.getElementById(opener.dataset.projectManagerOpen);
+            const frame = dialog && dialog.querySelector('iframe[data-src]');
+            if (frame) frame.src = frame.dataset.src + (opener.dataset.projectManagerView ? '#' + opener.dataset.projectManagerView : '');
+            if (dialog && !dialog.open) dialog.showModal();
+            return;
+        }
+        const closer = event.target.closest('[data-project-manager-close]');
+        if (closer) { closer.closest('dialog').close(); window.location.reload(); }
+    });
+    document.querySelectorAll('.school-project-manager').forEach((dialog) => {
+        dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+    });
+})();
+</script>
 
 {% endblock %}

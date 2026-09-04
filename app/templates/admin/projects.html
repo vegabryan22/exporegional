@@ -1,10 +1,11 @@
 {% extends "school/layout.html" if school_mode else "admin/layout.html" %}
+{% block body_class %}{{ 'school-portal-page school-project-embedded' if embedded else super() }}{% endblock %}
 {% block admin_content %}
 {% set female_member_placeholder = url_for('static', filename='placeholders/sfm.svg') %}
 {% set male_member_placeholder = url_for('static', filename='placeholders/sfh.svg') %}
 {% set project_logo_placeholder = url_for('static', filename='placeholders/project-logo-generic.svg') %}
 <section class="card admin-section maintenance-page">
-    <div class="maintenance-banner">
+    <div class="maintenance-banner{% if embedded %} embedded-project-banner{% endif %}">
         <div>
             <p class="maintenance-kicker">{{ "Coordinación del colegio" if school_mode else "Control regional" }}</p>
             <h3>{{ "Proyecto y expediente" if school_mode else "Mantenimiento de proyectos" }}</h3>
@@ -15,7 +16,7 @@
             {% if not school_mode %}<a class="outline-btn projects-reminder-link" href="{{ url_for('admin.logistics_reminder_page') }}">
                 <svg aria-hidden="true"><use href="#ico-send"></use></svg>
                 Centro de recordatorios
-            </a>{% else %}<a class="outline-btn" href="{{ url_for('school.dashboard') }}">Volver a mis proyectos</a>{% endif %}
+            </a>{% elif not embedded %}<a class="outline-btn" href="{{ url_for('school.dashboard') }}">Volver a mis proyectos</a>{% endif %}
         </div>
     </div>
 

@@ -4,7 +4,7 @@ from app.controllers import project_controller, school_controller
 
 
 school_bp = Blueprint("school", __name__, url_prefix="/colegio")
-school_bp.add_url_rule("/panel", view_func=school_controller.school_coordinator_required(school_controller.dashboard), methods=["GET"])
+school_bp.add_url_rule("/panel", view_func=school_controller.school_coordinator_required(school_controller.dashboard), methods=["GET", "POST"])
 school_bp.add_url_rule("/perfil", view_func=school_controller.school_coordinator_required(school_controller.profile), methods=["GET", "POST"])
 school_bp.add_url_rule("/jueces", endpoint="judges", view_func=school_controller.school_coordinator_required(school_controller.judges), methods=["GET", "POST"])
 school_bp.add_url_rule(

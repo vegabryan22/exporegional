@@ -4,19 +4,19 @@
 {% set female_member_placeholder = url_for('static', filename='placeholders/sfm.svg') %}
 {% set male_member_placeholder = url_for('static', filename='placeholders/sfh.svg') %}
 {% set project_logo_placeholder = url_for('static', filename='placeholders/project-logo-generic.svg') %}
-<section class="card admin-section maintenance-page">
+<section class="card admin-section maintenance-page{% if school_dashboard_mode %} school-dashboard-projects{% endif %}">
     <div class="maintenance-banner{% if embedded %} embedded-project-banner{% endif %}">
         <div>
             <p class="maintenance-kicker">{{ "Coordinación del colegio" if school_mode else "Control regional" }}</p>
-            <h3>{{ "Proyecto y expediente" if school_mode else "Mantenimiento de proyectos" }}</h3>
-            <p>{{ "Gestioná información, expediente, formularios, fotografías e integrantes desde la ficha existente del proyecto." if school_mode else "Gestiona actividad, jueces, documentación, formularios, fotografías e integrantes. Los recursos técnicos se controlan en Requerimientos." }}</p>
+            <h3>{{ "Mis proyectos" if school_dashboard_mode else ("Proyecto y expediente" if school_mode else "Mantenimiento de proyectos") }}</h3>
+            <p>{{ "Toda la gestión de cada proyecto está disponible en una sola tarjeta." if school_dashboard_mode else ("Gestioná información, expediente, formularios, fotografías e integrantes desde la ficha existente del proyecto." if school_mode else "Gestiona actividad, jueces, documentación, formularios, fotografías e integrantes. Los recursos técnicos se controlan en Requerimientos.") }}</p>
         </div>
         <div class="projects-header-actions">
             <span class="tag ok">{{ projects|length }} proyectos</span>
             {% if not school_mode %}<a class="outline-btn projects-reminder-link" href="{{ url_for('admin.logistics_reminder_page') }}">
                 <svg aria-hidden="true"><use href="#ico-send"></use></svg>
                 Centro de recordatorios
-            </a>{% elif not embedded %}<a class="outline-btn" href="{{ url_for('school.dashboard') }}">Volver a mis proyectos</a>{% endif %}
+            </a>{% elif not embedded and not school_dashboard_mode %}<a class="outline-btn" href="{{ url_for('school.dashboard') }}">Volver a mis proyectos</a>{% elif school_dashboard_mode %}<a class="action-btn school-dashboard-new-action" href="{{ url_for('school.project_form') }}"><svg aria-hidden="true"><use href="#ico-plus"></use></svg><span>Nuevo proyecto</span></a>{% endif %}
         </div>
     </div>
 
@@ -250,7 +250,7 @@
             {% set member_count = project.members|length %}
             {% set logistics_ok = project.logistics_status == 'completo' and project.logistics_requirements_complete %}
             {% set document_pending = project_logistics_summary.missing_by_project.get(project.id, []) %}
-            <article
+            <article id="project-{{ project.id }}"
                 id="project-row-{{ project.id }}"
                 class="project-row project-maintenance-card"
                 data-project-title="{{ project.title|lower }}"
@@ -298,6 +298,11 @@
                         <button type="button" class="project-action-btn action-edit" data-dialog-open="edit-project-{{ project.id }}" data-no-iconify>Editar</button>
                         <button type="button" class="project-action-btn action-logistics logistics-open-btn" data-dialog-open="logistics-project-{{ project.id }}" data-no-iconify>Expediente</button>
                         <button type="button" class="project-action-btn action-members" data-dialog-open="members-project-{{ project.id }}" data-no-iconify>Integrantes</button>
+                        {% if school_dashboard_mode and project.regional_status in ['draft', 'returned_for_correction'] %}
+                        <form method="post" action="{{ url_for('school.project_submit', project_id=project.id) }}" class="inline-form project-submit-inline">
+                            <button type="submit" class="school-submit-project"><svg aria-hidden="true"><use href="#ico-send"></use></svg><span>Enviar para aprobación</span></button>
+                        </form>
+                        {% endif %}
                     </div>
                     <div class="project-action-group project-action-group-docs">
                         <span class="project-action-label">Documentos</span>

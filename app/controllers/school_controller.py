@@ -113,6 +113,29 @@ def _return_project_to_regional_review(project: Project, reason: str):
 
 
 def dashboard():
+    from app.controllers import admin_controller
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "").strip()
+        allowed_actions = {
+            "update_project", "update_project_logistics", "replace_project_document", "replace_project_logbook",
+            "upload_project_logo", "upload_member_photo", "delete_member_photo",
+            "create_project_member", "update_project_member", "delete_project_member", "delete_project",
+        }
+        project_id = request.form.get("project_id", type=int)
+        member_id = request.form.get("member_id", type=int)
+        if member_id:
+            member = db.session.get(ProjectMember, member_id)
+            project_id = member.project_id if member else None
+        project = _owned_project(project_id) if project_id else None
+        if action not in allowed_actions or not project:
+            log_event("school.project.action_blocked", "project", project_id, f"Acción fuera de alcance: {action or 'vacía'}")
+            db.session.commit()
+            flash("La acción solicitada no pertenece a un proyecto de esta coordinación.", "error")
+            return redirect(url_for("school.dashboard"))
+        admin_controller._handle_action(action)
+        return redirect(url_for("school.dashboard", _anchor=f"project-{project_id}"))
+
     projects_query = Project.query.filter_by(institution_id=current_user.institution_id)
     if current_user.shift in {"diurno", "nocturno"}:
         projects_query = projects_query.filter(Project.shift == current_user.shift)
@@ -180,13 +203,19 @@ def dashboard():
         "minimum_judges": minimum_judges,
         "judges_pending": max(0, minimum_judges - active_judges),
     }
-    return render_template(
-        "school/dashboard.html",
-        projects=projects,
-        project_rows=project_rows,
-        metrics=metrics,
-        school=school,
-    )
+    context = admin_controller._base_context("projects")
+    context["projects"] = projects
+    context["advisor_stats"] = admin_controller._build_advisor_stats(projects)
+    context["project_logistics_summary"] = admin_controller._build_project_logistics_summary(projects)
+    context["pending_document_revisions"] = []
+    context["pending_member_edit_requests"] = []
+    context["action_url"] = url_for("school.dashboard")
+    context["next_url"] = url_for("school.dashboard")
+    context["school_mode"] = True
+    context["school_dashboard_mode"] = True
+    context["school"] = school
+    context["school_metrics"] = metrics
+    return render_template("admin/projects.html", **context)
 
 
 def _minimum_school_judges() -> int:

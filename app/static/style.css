@@ -16856,6 +16856,34 @@ body.school-project-embedded .project-maintenance-list { padding: 0; }
     .school-project-manager { width: 100vw; height: 100vh; border-radius: 0; }
     .school-project-card-actions .school-manage-project { width: 100%; }
 }
+
+/* La ficha administrativa es ahora la vista principal de cada colegio. */
+.school-dashboard-projects { padding: 1rem; border-radius: 18px; }
+.school-dashboard-projects .maintenance-banner { padding: .85rem 1rem; }
+.school-dashboard-projects .maintenance-banner h3 { margin: .08rem 0; font-size: 1.45rem; }
+.school-dashboard-projects .maintenance-banner p:last-child { margin: 0; font-size: .86rem; }
+.school-dashboard-projects .project-maintenance-list { padding: .8rem 0 0; gap: .8rem; }
+.school-dashboard-projects .project-maintenance-card { scroll-margin-top: 1rem; }
+.school-dashboard-projects .project-maintenance-actions {
+    grid-template-columns: minmax(400px, 1.25fr) minmax(300px, 1fr) minmax(150px, auto);
+}
+.school-dashboard-projects .project-submit-inline { flex: 1 0 100%; }
+.school-dashboard-projects .project-submit-inline .school-submit-project {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
+}
+
+@media (max-width: 1100px) {
+    .school-dashboard-projects .project-maintenance-actions { grid-template-columns: 1fr 1fr; }
+    .school-dashboard-projects .project-action-group-danger { grid-column: 1 / -1; }
+}
+
+@media (max-width: 720px) {
+    .school-dashboard-projects { padding: .55rem; border-radius: 13px; }
+    .school-dashboard-projects .project-maintenance-actions { grid-template-columns: 1fr; }
+    .school-dashboard-projects .project-action-group-danger { grid-column: auto; }
+}
 .identity-name-pending { background: #eef2f4 !important; color: #6d7d85 !important; cursor: not-allowed; }
 .identity-name-verified { border-color: #82bf94 !important; background: #f1faf3 !important; color: #174f2c !important; }
 

@@ -92,10 +92,18 @@ def reconcile_member_specialty_references(database, *, commit=True):
     """Repair legacy member rows whose visible specialty and FK disagree."""
     specialties = {_specialty_key(row.name): row for row in Specialty.query.all()}
     updated = False
-    for member in ProjectMember.query.filter(ProjectMember.specialty.isnot(None)).all():
-        specialty = specialties.get(_specialty_key(member.specialty))
-        if specialty and member.specialty_id != specialty.id:
-            member.specialty_id = specialty.id
+    member_rows = database.session.query(
+        ProjectMember.id,
+        ProjectMember.specialty_id,
+        ProjectMember.specialty,
+    ).filter(ProjectMember.specialty.isnot(None)).all()
+    for member_id, current_specialty_id, specialty_name in member_rows:
+        specialty = specialties.get(_specialty_key(specialty_name))
+        if specialty and current_specialty_id != specialty.id:
+            database.session.query(ProjectMember).filter(ProjectMember.id == member_id).update(
+                {ProjectMember.specialty_id: specialty.id},
+                synchronize_session=False,
+            )
             updated = True
     if updated and commit:
         database.session.commit()

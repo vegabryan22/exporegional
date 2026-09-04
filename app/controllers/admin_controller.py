@@ -69,7 +69,7 @@ from app.services.evaluation_service import (
     project_evaluation_count_summary,
     project_evaluation_target_summary,
 )
-from app.services.mail_service import send_email, smtp_is_configured
+from app.services.mail_service import send_email, send_email_batch, smtp_is_configured
 from app.services.regional_project_service import RegionalTransitionError, transition_project
 from app.services.regional_readiness_service import approval_missing_requirements
 from app.services.regional_outcome_service import sync_regional_outcomes
@@ -3432,10 +3432,7 @@ def _send_regional_review_decision_email(project: Project, target_status: str, n
     return sent, failed
 
 
-def _send_judge_credentials_email(judge: Judge, plain_password: str):
-    if not smtp_is_configured():
-        return False
-
+def _credentials_email_payload(judge: Judge, plain_password: str) -> dict:
     login_url = url_for("auth.login", _external=True)
     school_name = SystemSetting.get_value("school_name", "ExpoTécnica Regional")
     school_logo = SystemSetting.get_value("school_logo_path", "")
@@ -3477,9 +3474,19 @@ def _send_judge_credentials_email(judge: Judge, plain_password: str):
             judge=judge, plain_password=plain_password, login_url=login_url,
             school_name=school_name, school_logo_url=school_logo_url, expo_logo_url=expo_logo_url,
         )
-    ok, error = send_email(judge.email, subject, body, html_body=html_body)
+    return {"to_email": judge.email, "subject": subject, "body": body, "html_body": html_body}
+
+
+def _send_judge_credentials_email(judge: Judge, plain_password: str, *, flash_errors: bool = True):
+    if not smtp_is_configured():
+        if flash_errors:
+            flash("No se pudo enviar correo de credenciales: SMTP no configurado.", "error")
+        return False
+    payload = _credentials_email_payload(judge, plain_password)
+    ok, error = send_email(**payload)
     if not ok:
-        flash(f"No se pudo enviar correo de credenciales: {error}", "error")
+        if flash_errors:
+            flash(f"No se pudo enviar correo de credenciales: {error}", "error")
         return False
     return True
 
@@ -10375,6 +10382,59 @@ def institutions_page():
         institution_id = request.form.get("institution_id", type=int)
         institution = Institution.query.get(institution_id) if institution_id else None
 
+        if action == "bulk_reset_coordinator_passwords":
+            scope = (request.form.get("coordinator_password_scope") or "pending").strip().lower()
+            coordinators_query = Judge.query.filter_by(
+                role=Judge.ROLE_SCHOOL_COORDINATOR,
+                is_active_user=True,
+            ).filter(Judge.institution_id.isnot(None), Judge.email.isnot(None))
+            if scope != "all":
+                coordinators_query = coordinators_query.filter(
+                    or_(Judge.must_change_password.is_(True), Judge.last_login_at.is_(None))
+                )
+            coordinators = coordinators_query.order_by(Judge.full_name.asc()).all()
+            if not coordinators:
+                flash("No hay coordinaciones activas que cumplan el alcance seleccionado.", "error")
+                return redirect(url_for("admin.institutions_page"))
+            if not smtp_is_configured():
+                flash("No se enviaron claves: primero debes configurar y probar el correo SMTP.", "error")
+                return redirect(url_for("admin.institutions_page"))
+
+            credentials = []
+            for coordinator in coordinators:
+                temporary_password = secrets.token_urlsafe(10)
+                coordinator.set_password(temporary_password)
+                coordinator.must_change_password = True
+                credentials.append((coordinator, temporary_password))
+            log_event(
+                "admin.coordinator.password.bulk_reset",
+                "judge",
+                detail=f"Claves temporales regeneradas para {len(credentials)} coordinaciones; alcance={scope}",
+            )
+            db.session.commit()
+
+            messages = [
+                _credentials_email_payload(coordinator, temporary_password)
+                for coordinator, temporary_password in credentials
+            ]
+            results = send_email_batch(messages)
+            sent = sum(1 for ok, _ in results if ok)
+            failed = [
+                coordinator.email
+                for (coordinator, _), (ok, _) in zip(credentials, results)
+                if not ok
+            ]
+            if sent:
+                flash(f"Credenciales enviadas correctamente a {sent} coordinación{'es' if sent != 1 else ''}.", "success")
+            if failed:
+                current_app.logger.error("Falló el correo masivo de coordinación para: %s", ", ".join(failed))
+                flash(
+                    f"No se pudo enviar a {len(failed)} coordinación{'es' if len(failed) != 1 else ''}. "
+                    "Las cuentas quedaron con clave temporal nueva; vuelve a ejecutar el envío para esas cuentas.",
+                    "error",
+                )
+            return redirect(url_for("admin.institutions_page"))
+
         if action == "update" and institution:
             code = (request.form.get("code") or "").strip().upper()
             name = (request.form.get("name") or "").strip()
@@ -10518,7 +10578,12 @@ def institutions_page():
             db.session.flush()
             log_event("admin.institution.coordinator.create", "judge", coordinator.id, f"Cuenta coordinadora para {institution.code}")
             db.session.commit()
-            flash(f"Cuenta creada. Contraseña temporal: {temporary_password}", "success")
+            email_sent = _send_judge_credentials_email(coordinator, temporary_password)
+            flash(
+                "Cuenta creada y credenciales enviadas por correo."
+                if email_sent else f"Cuenta creada. Contraseña temporal: {temporary_password}",
+                "success",
+            )
             return redirect(url_for("admin.institutions_page"))
 
         if action == "update_coordinator" and institution:
@@ -10577,10 +10642,21 @@ def institutions_page():
         return redirect(url_for("admin.institutions_page"))
 
     institutions = Institution.query.order_by(Institution.name.asc()).all()
+    active_coordinators = Judge.query.filter_by(
+        role=Judge.ROLE_SCHOOL_COORDINATOR,
+        is_active_user=True,
+    ).filter(Judge.institution_id.isnot(None), Judge.email.isnot(None))
+    coordinator_access_counts = {
+        "active": active_coordinators.count(),
+        "pending": active_coordinators.filter(
+            or_(Judge.must_change_password.is_(True), Judge.last_login_at.is_(None))
+        ).count(),
+    }
     return _render(
         "admin/institutions.html",
         "institutions",
         institutions=institutions,
+        coordinator_access_counts=coordinator_access_counts,
         institution_statuses=[
             (Institution.STATUS_INVITED, "Invitado"),
             (Institution.STATUS_REGISTERED, "Registrado"),

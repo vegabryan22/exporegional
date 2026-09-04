@@ -77,3 +77,48 @@ def send_email(to_email: str, subject: str, body: str, html_body: str | None = N
 
     _log_email(to_email, subject, ok=True, error=None)
     return True, None
+
+
+def send_email_batch(messages: list[dict]):
+    """Send multiple personalized messages over one SMTP connection."""
+    config = get_smtp_config()
+    if not smtp_is_configured():
+        return [(False, "SMTP no configurado.") for _ in messages]
+
+    prepared = []
+    for item in messages:
+        message = EmailMessage()
+        message["Subject"] = item["subject"]
+        message["From"] = config["from_email"]
+        message["To"] = item["to_email"]
+        message.set_content(item["body"])
+        if item.get("html_body"):
+            message.add_alternative(item["html_body"], subtype="html")
+        prepared.append((item, message))
+
+    try:
+        if config["use_ssl"]:
+            server = smtplib.SMTP_SSL(config["host"], config["port"], timeout=30)
+        else:
+            server = smtplib.SMTP(config["host"], config["port"], timeout=30)
+        with server:
+            if config["use_tls"] and not config["use_ssl"]:
+                server.starttls()
+            if config["username"]:
+                server.login(config["username"], config["password"])
+            results = []
+            for item, message in prepared:
+                try:
+                    server.send_message(message)
+                    results.append((True, None))
+                    _log_email(item["to_email"], item["subject"], ok=True, error=None)
+                except Exception as error:  # noqa: BLE001
+                    error_text = str(error)
+                    results.append((False, error_text))
+                    _log_email(item["to_email"], item["subject"], ok=False, error=error_text)
+            return results
+    except Exception as error:  # noqa: BLE001
+        error_text = str(error)
+        for item in messages:
+            _log_email(item["to_email"], item["subject"], ok=False, error=error_text)
+        return [(False, error_text) for _ in messages]

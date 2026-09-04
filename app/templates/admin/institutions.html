@@ -3,8 +3,29 @@
 <div class="institutions-page">
     <section class="card admin-section institutions-hero">
         <div><p class="maintenance-kicker">Administración regional</p><h3>Colegios participantes</h3><p>Consulta, corrige o elimina colegios. Toda modificación administrativa queda registrada en bitácora.</p></div>
-        <span class="tag ok">{{ institutions|length }} participantes</span>
+        <div class="page-head-actions">
+            <span class="tag ok">{{ institutions|length }} participantes</span>
+            <button type="button" class="secondary-btn" data-dialog-open="bulk-coordinator-password-dialog">Enviar accesos</button>
+        </div>
     </section>
+
+    <dialog id="bulk-coordinator-password-dialog" class="maintenance-dialog institution-dialog institution-dialog-small">
+        <div class="dialog-card">
+            <div class="dialog-head"><div><p class="maintenance-kicker">Acceso de coordinaciones</p><h4>Enviar contraseñas temporales</h4></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+            <div class="institution-delete-warning" role="note"><strong>Esta acción cambia las contraseñas.</strong><span>Cada coordinación recibirá una clave temporal individual y deberá cambiarla al ingresar.</span></div>
+            <form method="post" class="compact-form" onsubmit="return confirm('¿Generar nuevas contraseñas temporales y enviar los correos ahora?')">
+                <input type="hidden" name="action" value="bulk_reset_coordinator_passwords">
+                <label>Destinatarios
+                    <select name="coordinator_password_scope">
+                        <option value="pending">Pendientes o sin primer acceso ({{ coordinator_access_counts.pending }})</option>
+                        <option value="all">Todas las coordinaciones activas ({{ coordinator_access_counts.active }})</option>
+                    </select>
+                    <small>Las cuentas inactivas y los usuarios que no sean coordinadores quedan excluidos.</small>
+                </label>
+                <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit" class="secondary-btn">Generar y enviar accesos</button></div>
+            </form>
+        </div>
+    </dialog>
 
     <section class="regional-auto-rule institution-responsibility-rule">
         <div><strong>El colegio administra</strong><span>perfil, escudo, responsables y proyectos manuales</span></div>

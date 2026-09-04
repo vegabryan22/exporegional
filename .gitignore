@@ -28,6 +28,7 @@ tmp/
 output/
 outputs/
 sql/backups/pre_restore_*.sql
+.local-backups/
 
 # Uploaded files
 app/static/uploads/

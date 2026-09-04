@@ -985,10 +985,10 @@ def _normalize_person_gender(form_data, field_name):
     return (form_data.get(f"{field_name}_other") or "").strip()
 
 
-def _build_student(form_data, index, sections_by_id, specialties_by_id):
-    section_id_raw = (form_data.get(f"student_{index}_section_id") or "").strip()
-    section_id = int(section_id_raw) if section_id_raw.isdigit() else None
-    section = sections_by_id.get(section_id)
+def _build_student(form_data, index, levels_by_id, specialties_by_id):
+    level_id_raw = (form_data.get(f"student_{index}_level_id") or "").strip()
+    level_id = int(level_id_raw) if level_id_raw.isdigit() else None
+    level = levels_by_id.get(level_id)
     specialty_id_raw = (form_data.get(f"student_{index}_specialty_id") or "").strip()
     specialty_id = int(specialty_id_raw) if specialty_id_raw.isdigit() else None
     specialty = specialties_by_id.get(specialty_id)
@@ -998,10 +998,10 @@ def _build_student(form_data, index, sections_by_id, specialties_by_id):
         "identity_number": _normalize_identity(form_data.get(f"student_{index}_identity")),
         "birth_date": _parse_date(form_data.get(f"student_{index}_birth_date")),
         "gender": _normalize_gender(form_data, index),
+        "level_id": level_id,
         "specialty_id": specialty_id,
         "specialty": specialty.name if specialty else "",
-        "section_name": section.name if section else "",
-        "section_level_code": section.level.code if section and section.level else "",
+        "level_code": level.code if level else "",
         "participates_in_english": (form_data.get(f"student_{index}_english") or "").strip().lower() == "si",
         "phone": _normalize_phone(form_data.get(f"student_{index}_phone")),
         "email": (form_data.get(f"student_{index}_email") or "").strip().lower(),
@@ -1020,15 +1020,15 @@ def _validate_students(students, required_numbers):
             student["gender"],
             student["phone"],
             student["email"],
-            student["section_name"],
-            student["section_level_code"],
+            student["level_id"],
+            student["level_code"],
             student["specialty_id"],
             student["specialty"],
         ]
         if not all(required):
             return f"Completa todos los datos obligatorios del estudiante N.{number}."
-        if student["section_level_code"] not in {"10", "11", "12"}:
-            return f"La sección del estudiante N.{number} debe pertenecer a especialidad técnica (niveles 10, 11 o 12)."
+        if student["level_code"] not in {"10", "11", "12"}:
+            return f"El nivel del estudiante N.{number} debe ser 10, 11 o 12."
         identity_error = _identity_error(student["identity_number"], f"La cedula/documento del estudiante N.{number}")
         if identity_error:
             return identity_error
@@ -1067,13 +1067,6 @@ def _current_form_context(form_data):
         .all()
     )
     levels = Level.query.filter_by(is_active=True).order_by(Level.sort_order.asc()).all()
-    sections = (
-        Section.query.join(Level, Level.id == Section.level_id)
-        .filter(Section.is_active.is_(True), Level.is_active.is_(True))
-        .filter(Level.code.in_(["10", "11", "12"]))
-        .order_by(Level.sort_order.asc(), Section.sort_order.asc(), Section.name.asc())
-        .all()
-    )
     specialties = Specialty.query.filter_by(is_active=True).order_by(Specialty.sort_order.asc()).all()
     thematic_axes = ThematicAxis.query.filter_by(is_active=True).order_by(ThematicAxis.sort_order.asc(), ThematicAxis.name.asc()).all()
     project_types = ProjectType.query.filter_by(is_active=True).order_by(ProjectType.sort_order.asc(), ProjectType.name.asc()).all()
@@ -1098,7 +1091,6 @@ def _current_form_context(form_data):
         "requirement_items": requirement_items,
         "categories": categories,
         "levels": levels,
-        "sections": sections,
         "specialties": specialties,
         "thematic_axes": thematic_axes,
         "project_types": project_types,
@@ -1249,17 +1241,17 @@ def register_project():
         thematic_axis = ThematicAxis.query.get(thematic_axis_id) if thematic_axis_id else None
         project_type = ProjectType.query.get(project_type_id) if project_type_id else None
 
-        sections_by_id = {
+        levels_by_id = {
             item.id: item
-            for item in Section.query.join(Level, Level.id == Section.level_id)
-            .filter(Section.is_active.is_(True), Level.is_active.is_(True), Level.code.in_(["10", "11", "12"]))
+            for item in Level.query
+            .filter(Level.is_active.is_(True), Level.code.in_(["10", "11", "12"]))
             .all()
         }
         specialties_by_id = {item.id: item for item in Specialty.query.filter_by(is_active=True).all()}
-        students = [_build_student(form_data, i, sections_by_id, specialties_by_id) for i in [1, 2, 3]]
+        students = [_build_student(form_data, i, levels_by_id, specialties_by_id) for i in [1, 2, 3]]
         required_student_records = [student for student in students if student["student_number"] in required_students]
-        project_sections_summary = ", ".join(
-            sorted({student["section_name"] for student in required_student_records if student["section_name"]})
+        project_levels_summary = ", ".join(
+            sorted({student["level_code"] for student in required_student_records if student["level_code"]})
         )
         project_specialties_summary = ", ".join(
             sorted({student["specialty"] for student in required_student_records if student["specialty"]})
@@ -1291,7 +1283,7 @@ def register_project():
             category_id=next((item.id for item in valid_categories_records if item.code == category), None),
             origin=Project.ORIGIN_REGIONAL_MANUAL,
             regional_status=Project.STATUS_DRAFT,
-            grade_level=project_sections_summary,
+            grade_level=project_levels_summary,
             specialty=project_specialties_summary,
             section_id=None,
             specialty_id=None,
@@ -1424,7 +1416,7 @@ def register_project():
         db.session.flush()
         for number in required_students:
             student = next(item for item in students if item["student_number"] == number)
-            student_payload = {key: value for key, value in student.items() if key != "section_level_code"}
+            student_payload = {key: value for key, value in student.items() if key != "level_code"}
             db.session.add(ProjectMember(project_id=project.id, **student_payload))
 
         log_event(

@@ -16680,6 +16680,113 @@ body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
     .judge-profile-chip { display: none; }
     .judge-availability-form { grid-template-columns: 1fr; }
 }
+
+/* Resumen de coordinación: mayor jerarquía y menos espacio desperdiciado. */
+.school-dashboard-hero {
+    overflow: hidden;
+    padding: 1rem 1.15rem;
+    border-color: #bfd9e7;
+    background: linear-gradient(125deg, #fff 0%, #f4faff 72%, #e7f6fb 100%);
+    box-shadow: 0 12px 28px rgba(18, 62, 86, .08);
+}
+.school-dashboard-hero .section-heading-row { align-items: center; }
+.school-dashboard-heading { display: flex; align-items: center; gap: .9rem; min-width: 0; }
+.school-dashboard-shield {
+    display: grid;
+    place-items: center;
+    width: 68px;
+    height: 68px;
+    flex: 0 0 68px;
+    overflow: hidden;
+    border: 1px solid #c9dce7;
+    border-radius: 17px;
+    background: #fff;
+    box-shadow: 0 7px 18px rgba(18, 62, 86, .1);
+}
+.school-dashboard-shield img { width: 58px; height: 58px; object-fit: contain; }
+.school-dashboard-shield span { color: #1b6687; font-weight: 900; }
+.school-dashboard-hero h3 { margin: .12rem 0 .18rem; font-size: clamp(1.45rem, 2.3vw, 1.8rem); }
+.school-dashboard-hero .school-dashboard-heading p:last-child { margin: 0; color: #60778b; font-size: .88rem; }
+.school-shift-pill {
+    display: inline-block;
+    margin-left: .35rem;
+    padding: .22rem .48rem;
+    border-radius: 999px;
+    background: #dff1f8;
+    color: #176b91;
+    font-size: .67rem;
+    letter-spacing: .04em;
+}
+.school-summary-grid { gap: .72rem; }
+.school-summary-card {
+    grid-template-columns: 46px minmax(0, 1fr);
+    align-items: center;
+    gap: .72rem;
+    min-height: 112px;
+    padding: .85rem;
+    border-color: #d1e0e9;
+    box-shadow: 0 8px 20px rgba(18, 62, 86, .07);
+}
+.school-summary-card > div { display: grid; gap: .16rem; min-width: 0; }
+.school-summary-icon {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    background: #e3f2f8;
+    color: #187499 !important;
+}
+.school-summary-icon svg { width: 23px; height: 23px; fill: currentColor; }
+.school-summary-card > div > strong { font-size: 1.65rem; }
+.school-summary-card > div > small { font-size: .76rem; line-height: 1.25; }
+.school-summary-card.documents .school-summary-icon { background: #e9f6e3; color: #4b8a28 !important; }
+.school-summary-card.judges .school-summary-icon { background: #e9edf7; color: #4e6590 !important; }
+.school-submission-summary.is-pending,
+.school-submission-summary.is-complete { border-width: 1px; }
+.school-submission-summary.is-pending .school-summary-icon { background: #ffe3ab; color: #a45c00 !important; }
+.school-submission-summary.is-complete .school-summary-icon { background: #dcedc8; color: #397d1d !important; }
+.school-attention {
+    justify-content: flex-start;
+    gap: .75rem;
+    min-height: 68px;
+    padding: .7rem .85rem;
+    border-left: 5px solid #eda31f;
+    box-shadow: 0 7px 18px rgba(165, 100, 0, .06);
+}
+.school-attention-icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border-radius: 50%;
+    background: #f2a71e;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 1000;
+}
+.school-attention-tags { margin-left: auto; }
+.school-attention-tags a { background: #fff8e9; text-decoration: none; }
+
+@media (max-width: 1180px) {
+    .school-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+    .school-dashboard-hero .section-heading-row { align-items: stretch; flex-direction: column; }
+    .school-dashboard-actions { justify-content: stretch; }
+    .school-dashboard-actions > * { flex: 1; justify-content: center; }
+    .school-attention { align-items: flex-start; flex-wrap: wrap; }
+    .school-attention-tags { width: 100%; margin-left: 48px; }
+}
+
+@media (max-width: 560px) {
+    .school-dashboard-shield { width: 56px; height: 56px; flex-basis: 56px; }
+    .school-dashboard-shield img { width: 48px; height: 48px; }
+    .school-summary-grid { grid-template-columns: 1fr; }
+    .school-attention-tags { margin-left: 0; }
+}
 .identity-name-pending { background: #eef2f4 !important; color: #6d7d85 !important; cursor: not-allowed; }
 .identity-name-verified { border-color: #82bf94 !important; background: #f1faf3 !important; color: #174f2c !important; }
 

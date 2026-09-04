@@ -2,7 +2,10 @@
 {% block school_content %}
 <section class="card admin-section school-dashboard-hero">
     <div class="section-heading-row">
-        <div><p class="maintenance-kicker">Coordinación del colegio · Jornada {{ current_user.shift_label }}</p><h3>Resumen de participación</h3><p>Seguimiento privado de {{ school.name }} para la jornada {{ current_user.shift_label|lower }}. No se muestran proyectos de la otra jornada, datos de otros colegios ni calificaciones parciales.</p></div>
+        <div class="school-dashboard-heading">
+            <div class="school-dashboard-shield">{% if school.shield_path %}<img src="{{ url_for('static', filename=school.shield_path) }}" alt="Escudo de {{ school.name }}">{% else %}<span>{{ school.code[:3]|upper }}</span>{% endif %}</div>
+            <div><p class="maintenance-kicker">Coordinación del colegio <span class="school-shift-pill">Jornada {{ current_user.shift_label }}</span></p><h3>Resumen de participación</h3><p>Control de proyectos, documentación y jueces de <strong>{{ school.name }}</strong>.</p></div>
+        </div>
         <div class="actions-row school-dashboard-actions">
             <a class="outline-btn school-dashboard-data-action" href="{{ url_for('school.profile') }}"><svg aria-hidden="true"><use href="#ico-settings"></use></svg><span>Datos del colegio</span></a>
             <a class="action-btn school-dashboard-new-action" href="{{ url_for('school.project_form') }}"><svg aria-hidden="true"><use href="#ico-plus"></use></svg><span>Nuevo proyecto</span></a>
@@ -11,14 +14,12 @@
 </section>
 
 <section class="school-summary-grid" aria-label="Resumen del colegio">
-    <article class="card school-summary-card"><span>Proyectos registrados</span><strong>{{ metrics.projects }}</strong><small>Proyectos inscritos por esta jornada</small></article>
+    <article class="card school-summary-card projects"><span class="school-summary-icon"><svg aria-hidden="true"><use href="#ico-chart"></use></svg></span><div><span>Proyectos registrados</span><strong>{{ metrics.projects }}</strong><small>Inscritos en esta jornada</small></div></article>
     <article class="card school-summary-card school-submission-summary {{ 'is-complete' if metrics.all_projects_submitted else 'is-pending' }}">
-        <span>Envío para aprobación</span>
-        <strong>{{ metrics.submitted_projects }} de {{ metrics.projects }}</strong>
-        <small>{% if not metrics.projects %}Aún no hay proyectos registrados{% elif metrics.all_projects_submitted %}Todos los proyectos fueron enviados{% else %}Falta enviar {{ metrics.pending_submission }} proyecto{{ '' if metrics.pending_submission == 1 else 's' }}{% endif %}</small>
+        <span class="school-summary-icon"><svg aria-hidden="true"><use href="#ico-send"></use></svg></span><div><span>Envío para aprobación</span><strong>{{ metrics.submitted_projects }} de {{ metrics.projects }}</strong><small>{% if not metrics.projects %}Aún no hay proyectos registrados{% elif metrics.all_projects_submitted %}Todos los proyectos fueron enviados{% else %}Falta enviar {{ metrics.pending_submission }} proyecto{{ '' if metrics.pending_submission == 1 else 's' }}{% endif %}</small></div>
     </article>
-    <article class="card school-summary-card"><span>Documentación completa</span><strong>{{ metrics.files_complete }} de {{ metrics.projects }}</strong><small>Proyectos con todos los documentos requeridos</small></article>
-    <article class="card school-summary-card"><span>Jueces registrados</span><strong>{{ metrics.judges }} de {{ metrics.minimum_judges }}</strong><small>{% if metrics.judges_pending %}Faltan {{ metrics.judges_pending }} para cumplir el mínimo{% else %}Cantidad mínima cumplida{% endif %}</small></article>
+    <article class="card school-summary-card documents"><span class="school-summary-icon"><svg aria-hidden="true"><use href="#ico-check"></use></svg></span><div><span>Documentación completa</span><strong>{{ metrics.files_complete }} de {{ metrics.projects }}</strong><small>Expedientes con todos los documentos</small></div></article>
+    <article class="card school-summary-card judges"><span class="school-summary-icon"><svg aria-hidden="true"><use href="#ico-users"></use></svg></span><div><span>Jueces registrados</span><strong>{{ metrics.judges }} de {{ metrics.minimum_judges }}</strong><small>{% if metrics.judges_pending %}Faltan {{ metrics.judges_pending }} para cumplir el mínimo{% else %}Cantidad mínima cumplida{% endif %}</small></div></article>
 </section>
 
 {% if metrics.projects %}
@@ -32,7 +33,7 @@
 
 {% if metrics.attention_projects or metrics.judges_pending %}
 <section class="school-attention" aria-label="Pendientes del colegio">
-    <div><p class="maintenance-kicker">Requiere atención</p><strong>Hay tareas pendientes para completar la participación del colegio.</strong></div>
+    <span class="school-attention-icon" aria-hidden="true">!</span><div><p class="maintenance-kicker">Requiere atención</p><strong>Hay tareas pendientes para completar la participación del colegio.</strong></div>
     <div class="school-attention-tags">
         {% if metrics.attention_projects %}<span>{{ metrics.attention_projects }} proyecto{{ '' if metrics.attention_projects == 1 else 's' }} con pendientes</span>{% endif %}
         {% if metrics.judges_pending %}<a href="{{ url_for('school.judges') }}">Inscribir {{ metrics.judges_pending }} juez{{ '' if metrics.judges_pending == 1 else 'ces' }}</a>{% endif %}

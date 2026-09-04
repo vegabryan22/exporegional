@@ -16522,6 +16522,51 @@ body.admin-page .ov2-header-actions .ov2-pending-expo-download:hover {
     .school-review-summary { grid-template-columns: 1fr; }
     .school-review-summary-title { grid-column: auto; }
 }
+
+/* Gestión de jueces: tarjetas densas, sin columnas estiradas innecesariamente. */
+.judge-pool-card {
+    grid-template-columns: minmax(190px, .8fr) minmax(300px, 1.55fr) minmax(245px, .8fr) minmax(180px, .65fr);
+    gap: .55rem;
+    padding: .65rem;
+    align-items: center;
+}
+.judge-pool-identity,
+.judge-pool-profile,
+.judge-pool-load,
+.judge-pool-attendance {
+    min-height: 142px;
+    padding: .7rem .8rem;
+    border-radius: 12px;
+}
+.judge-pool-identity,
+.judge-pool-profile { align-content: center; }
+.judge-pool-profile { gap: .45rem; }
+.judge-pool-identity h4 { font-size: 1.08rem; }
+.judge-pool-load strong { font-size: 1.55rem; }
+.judge-eval-progress { margin-top: .15rem; }
+.judge-load-actions {
+    display: flex;
+    justify-content: center;
+    gap: .3rem;
+    width: auto;
+    margin-top: .25rem;
+}
+.judge-load-actions form { width: auto; margin: 0; }
+.judge-load-action-btn { width: 38px; min-width: 38px; height: 38px; min-height: 38px; padding: .45rem; }
+.judge-pool-attendance { justify-content: center; }
+.judge-pool-attendance .ghost-btn { padding: .35rem .55rem; }
+
+@media (max-width: 1180px) {
+    .judge-pool-card { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .judge-pool-identity,
+    .judge-pool-profile,
+    .judge-pool-load,
+    .judge-pool-attendance { min-height: 0; }
+}
+
+@media (max-width: 680px) {
+    .judge-pool-card { grid-template-columns: 1fr; }
+}
 .identity-name-pending { background: #eef2f4 !important; color: #6d7d85 !important; cursor: not-allowed; }
 .identity-name-verified { border-color: #82bf94 !important; background: #f1faf3 !important; color: #174f2c !important; }
 

@@ -375,12 +375,33 @@
 
 <dialog id="logistics-project-{{ project.id }}" class="maintenance-dialog">
     <div class="dialog-card">
-        <div class="dialog-head"><h4>Mantenimiento del expediente</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
-        <p><strong>{{ project.title }}</strong> - {{ project.team_name }}</p>
-        <form method="post" action="{{ action_url }}" class="compact-form">
+        <div class="dialog-head"><div><span>Expediente del proyecto</span><h4>Completar documentación</h4><p>Seleccioná todos los archivos y controles necesarios; guardá todo una sola vez al final.</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+        <p class="expedient-project-name"><strong>{{ project.title }}</strong> · {{ project.team_name }}</p>
+        <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form school-expedient-form">
             <input type="hidden" name="next" value="{{ next_url }}">
-            <input type="hidden" name="action" value="update_project_logistics">
+            <input type="hidden" name="action" value="{{ 'save_school_expedient' if school_mode else 'update_project_logistics' }}">
             <input type="hidden" name="project_id" value="{{ project.id }}">
+            {% if school_mode %}
+            <section class="expedient-section expedient-digital">
+                <div class="expedient-section-head"><span class="expedient-step">1</span><div><h5>Archivos digitales</h5><p>Podés seleccionar todos los archivos y guardarlos juntos.</p></div></div>
+                <div class="expedient-upload-grid">
+                    <label class="expedient-file-card {{ 'has-file' if project.project_document_path else '' }}">
+                        <span><strong>Documento escrito</strong><small>{{ 'PDF cargado · seleccioná otro solo para reemplazarlo' if project.project_document_path else 'Pendiente de adjuntar · formato PDF' }}</small></span>
+                        {% if project.project_document_path %}<a href="{{ url_for('static', filename=project.project_document_path) }}" target="_blank" rel="noopener">Ver archivo actual</a>{% endif %}
+                        <input type="file" name="project_document" accept="application/pdf,.pdf">
+                    </label>
+                    {% if project.category == 'steam' %}<label class="expedient-file-card {{ 'has-file' if project.project_logbook_path else '' }}">
+                        <span><strong>Bitácora STEAM</strong><small>{{ 'PDF cargado · seleccioná otro solo para reemplazarlo' if project.project_logbook_path else 'Pendiente de adjuntar · formato PDF' }}</small></span>
+                        {% if project.project_logbook_path %}<a href="{{ url_for('static', filename=project.project_logbook_path) }}" target="_blank" rel="noopener">Ver archivo actual</a>{% endif %}
+                        <input type="file" name="project_logbook" accept="application/pdf,.pdf">
+                    </label>{% endif %}
+                    <label class="expedient-file-card {{ 'has-file' if project.has_real_logo else '' }}">
+                        <span><strong>Logo del proyecto</strong><small>{{ 'Imagen cargada · seleccioná otra solo para reemplazarla' if project.has_real_logo else 'Pendiente de adjuntar · PNG, JPG o WEBP' }}</small></span>
+                        <input type="file" name="project_logo" accept="image/png,image/jpeg,image/webp">
+                    </label>
+                </div>
+            </section>
+            {% endif %}
             {% if not school_mode %}<div class="grid-2">
                 <label>Estado del proyecto
                     <select name="project_is_active" required>
@@ -419,10 +440,10 @@
                     </label>
                 </div>
             </div>{% endif %}
-            <div class="logistics-review-card">
+            <div class="logistics-review-card{% if school_mode %} expedient-section{% endif %}">
                 <div>
-                    <h5>Documentos fisicos firmados</h5>
-                    <p>Los estudiantes deben entregar el paquete impreso y firmado a la organizacion.</p>
+                    <h5>{% if school_mode %}<span class="expedient-step">2</span>{% endif %} Documentos físicos firmados</h5>
+                    <p>Marcá únicamente los documentos que ya fueron recibidos.</p>
                 </div>
                 <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" target="_blank" class="table-link-btn secondary" data-no-iconify>Imprimir paquete PDF</a>
             </div>
@@ -475,10 +496,10 @@
                     </div>
                 </div>
             </div>
-            <label>Observaciones del expediente
+            <label class="expedient-notes">Observaciones del expediente
                 <textarea name="logistics_notes" rows="4">{{ project.logistics_notes or '' }}</textarea>
             </label>
-            <div class="actions-row"><button type="submit">Guardar expediente</button></div>
+            <div class="actions-row expedient-save-bar"><small>Los archivos, controles y observaciones se guardarán en una sola operación.</small><button type="submit"><svg aria-hidden="true"><use href="#ico-save"></use></svg> Guardar expediente completo</button></div>
         </form>
 
         {% if not school_mode %}<div class="tutor-reminder-bar">
@@ -566,7 +587,7 @@
         </form>
         {% endif %}
 
-        <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form">
+        <form method="post" action="{{ action_url }}" enctype="multipart/form-data" class="compact-form legacy-project-logo-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="upload_project_logo">
             <input type="hidden" name="project_id" value="{{ project.id }}">

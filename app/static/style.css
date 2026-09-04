@@ -16884,6 +16884,72 @@ body.school-project-embedded .project-maintenance-list { padding: 0; }
     .school-dashboard-projects .project-maintenance-actions { grid-template-columns: 1fr; }
     .school-dashboard-projects .project-action-group-danger { grid-column: auto; }
 }
+
+/* Expediente escolar guiado con un único guardado. */
+body.school-portal-page .logistics-upload-form,
+body.school-portal-page .legacy-project-logo-form { display: none; }
+.expedient-project-name { margin: .25rem 0 0; padding: .65rem 1rem 0; color: #5f7488; }
+.school-expedient-form { gap: .85rem; }
+.expedient-section { border: 1px solid #cfe0eb; border-radius: 15px; background: #f8fbfd; }
+.expedient-digital { padding: .9rem; }
+.expedient-section-head { display: flex; align-items: center; gap: .65rem; margin-bottom: .75rem; }
+.expedient-section-head h5 { margin: 0; color: #173f55; font-size: 1rem; }
+.expedient-section-head p { margin: .08rem 0 0; color: #657c8f; font-size: .78rem; }
+.expedient-step {
+    display: inline-grid;
+    place-items: center;
+    width: 29px;
+    height: 29px;
+    flex: 0 0 29px;
+    border-radius: 50%;
+    background: #1b789f;
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 900;
+}
+.expedient-upload-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+.expedient-file-card {
+    display: grid !important;
+    align-content: start;
+    gap: .5rem !important;
+    min-width: 0;
+    padding: .75rem;
+    border: 1px dashed #9cbdd0;
+    border-radius: 12px;
+    background: #fff;
+}
+.expedient-file-card.has-file { border-style: solid; border-color: #9dcc83; background: #f6fcf1; }
+.expedient-file-card > span { display: grid; gap: .12rem; }
+.expedient-file-card strong { color: #173f55; font-size: .86rem; }
+.expedient-file-card small { color: #657c8f; font-size: .7rem; font-weight: 600; line-height: 1.3; }
+.expedient-file-card a { width: fit-content; color: #176b91; font-size: .73rem; font-weight: 850; }
+.expedient-file-card input[type="file"] { width: 100%; min-height: 40px; padding: .3rem; border-radius: 8px; background: #fff; font-size: .72rem; }
+.school-expedient-form .logistics-review-card { margin: 0; }
+.school-expedient-form .logistics-review-card h5 { display: flex; align-items: center; gap: .55rem; }
+.expedient-notes { padding-top: .25rem; color: #173f55; font-weight: 850; }
+.expedient-save-bar {
+    position: sticky;
+    bottom: -.05rem;
+    z-index: 3;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: .25rem -.15rem -.15rem;
+    padding: .75rem;
+    border: 1px solid #aed08c;
+    border-radius: 13px;
+    background: rgba(244, 252, 236, .96);
+    box-shadow: 0 -7px 22px rgba(40, 89, 25, .1);
+}
+.expedient-save-bar small { color: #557047; font-size: .75rem; }
+.expedient-save-bar button { display: inline-flex; align-items: center; gap: .45rem; min-height: 46px; background: #63ae28; border-color: #51951f; }
+.expedient-save-bar button svg { width: 20px; height: 20px; fill: currentColor; }
+
+@media (max-width: 900px) { .expedient-upload-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) {
+    .expedient-save-bar { align-items: stretch; flex-direction: column; }
+    .expedient-save-bar button { justify-content: center; width: 100%; }
+}
 .identity-name-pending { background: #eef2f4 !important; color: #6d7d85 !important; cursor: not-allowed; }
 .identity-name-verified { border-color: #82bf94 !important; background: #f1faf3 !important; color: #174f2c !important; }
 

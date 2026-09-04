@@ -96,6 +96,62 @@ def _delete_project_asset(relative_path: str | None):
         os.remove(target)
 
 
+def _save_school_expedient(project: Project):
+    """Persist the complete school-facing project record in one operation."""
+    uploads = {
+        "project_document": ("document", "Documento escrito"),
+        "project_logbook": ("document", "Bitácora STEAM"),
+        "project_logo": ("logo", "Logo del proyecto"),
+    }
+    if project.category != "steam" and request.files.get("project_logbook") and request.files["project_logbook"].filename:
+        raise ValueError("La bitácora solo corresponde a proyectos STEAM.")
+    for field, (kind, label) in uploads.items():
+        uploaded = request.files.get(field)
+        if not uploaded or not uploaded.filename:
+            continue
+        extension = os.path.splitext(secure_filename(uploaded.filename))[1].lower()
+        allowed = {".pdf"} if kind == "document" else {".png", ".jpg", ".jpeg", ".webp"}
+        if extension not in allowed:
+            raise ValueError(f"{label}: formato no permitido.")
+
+    replacements = {}
+    for field, (kind, _) in uploads.items():
+        uploaded = request.files.get(field)
+        if uploaded and uploaded.filename:
+            replacements[field] = _save_project_file(project, uploaded, kind)
+
+    old_assets = []
+    if "project_document" in replacements:
+        old_assets.append(project.project_document_path)
+        project.project_document_path = replacements["project_document"]
+        project.logistics_document_ok = True
+    if "project_logbook" in replacements:
+        old_assets.append(project.project_logbook_path)
+        project.project_logbook_path = replacements["project_logbook"]
+    if "project_logo" in replacements:
+        old_assets.append(project.project_logo_path)
+        project.project_logo_path = replacements["project_logo"]
+        project.logistics_logo_ok = True
+
+    project.logistics_registration_form_signed_ok = request.form.get("logistics_registration_form_signed_ok") == "1"
+    project.logistics_cedula_tutor_ok = request.form.get("logistics_cedula_tutor_ok") == "1"
+    for member in project.members:
+        member.consent_signed_ok = request.form.get(f"consent_member_{member.id}") == "1"
+        member.cedula_encargado_ok = request.form.get(f"cedula_encargado_{member.id}") == "1"
+        member.cedula_estudiante_ok = request.form.get(f"cedula_estudiante_{member.id}") == "1"
+        member.cedula_copies_ok = member.cedula_encargado_ok and member.cedula_estudiante_ok
+    project.logistics_student_consents_signed_ok = bool(project.members) and all(member.consent_signed_ok for member in project.members)
+    project.logistics_photos_ok = bool(project.members) and all(member.photo_url for member in project.members)
+    project.logistics_notes = (request.form.get("logistics_notes") or "").strip()
+    missing = approval_missing_requirements(project)
+    project.logistics_status = "incompleto" if missing else "completo"
+    log_event("school.project.expedient.save", "project", project.id, f"Expediente guardado; archivos={', '.join(replacements) or 'sin cambios'}")
+    db.session.commit()
+    for old_path in old_assets:
+        _delete_project_asset(old_path)
+    flash("Expediente guardado correctamente." if not missing else "Expediente guardado. Aún hay requisitos pendientes.", "success" if not missing else "warning")
+
+
 def _return_project_to_regional_review(project: Project, reason: str):
     previous_status = project.regional_status
     if previous_status != Project.STATUS_UNDER_REVIEW:
@@ -118,7 +174,7 @@ def dashboard():
     if request.method == "POST":
         action = (request.form.get("action") or "").strip()
         allowed_actions = {
-            "update_project", "update_project_logistics", "replace_project_document", "replace_project_logbook",
+            "update_project", "update_project_logistics", "save_school_expedient", "replace_project_document", "replace_project_logbook",
             "upload_project_logo", "upload_member_photo", "delete_member_photo",
             "create_project_member", "update_project_member", "delete_project_member", "delete_project",
         }
@@ -133,7 +189,13 @@ def dashboard():
             db.session.commit()
             flash("La acción solicitada no pertenece a un proyecto de esta coordinación.", "error")
             return redirect(url_for("school.dashboard"))
-        admin_controller._handle_action(action)
+        if action == "save_school_expedient":
+            try:
+                _save_school_expedient(project)
+            except ValueError as error:
+                flash(str(error), "error")
+        else:
+            admin_controller._handle_action(action)
         return redirect(url_for("school.dashboard", _anchor=f"project-{project_id}"))
 
     projects_query = Project.query.filter_by(institution_id=current_user.institution_id)
@@ -332,7 +394,7 @@ def project_workspace(project_id: int):
     if request.method == "POST":
         action = (request.form.get("action") or "").strip()
         allowed_actions = {
-            "update_project", "update_project_logistics", "replace_project_document", "replace_project_logbook",
+            "update_project", "update_project_logistics", "save_school_expedient", "replace_project_document", "replace_project_logbook",
             "upload_project_logo", "upload_member_photo", "delete_member_photo",
             "create_project_member", "update_project_member", "delete_project_member", "delete_project",
         }
@@ -346,7 +408,13 @@ def project_workspace(project_id: int):
             db.session.commit()
             flash("La acción solicitada no pertenece a este proyecto o no está permitida.", "error")
             return redirect(url_for("school.project_workspace", project_id=project.id, embedded=1 if embedded else None))
-        admin_controller._handle_action(action)
+        if action == "save_school_expedient":
+            try:
+                _save_school_expedient(project)
+            except ValueError as error:
+                flash(str(error), "error")
+        else:
+            admin_controller._handle_action(action)
         if action == "delete_project" and db.session.get(Project, project_id) is None:
             return redirect(url_for("school.dashboard"))
         return redirect(url_for("school.project_workspace", project_id=project.id, embedded=1 if embedded else None))

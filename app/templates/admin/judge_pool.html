@@ -189,6 +189,11 @@
                     <p>Sin alertas</p>
                 {% endif %}
                 <div class="judge-load-actions">
+                    {% if judge.is_active_user %}
+                    <form method="post" action="{{ url_for('admin.impersonate_judge', judge_id=judge.id) }}" onsubmit="return confirm('¿Ingresar temporalmente con esta cuenta de juez?')">
+                        <button type="submit" class="outline-btn judge-load-action-btn" title="Ingresar como juez" aria-label="Ingresar como juez" data-no-iconify><svg class="btn-svg" aria-hidden="true"><use href="#ico-login"></use></svg><span class="sr-only">Ingresar como juez</span></button>
+                    </form>
+                    {% endif %}
                     <form method="post" action="{{ action_url }}" class="judge-balance-form" onsubmit="return confirm('&iquest;Equilibrar carga moviendo solo proyectos/rubros sin evaluar hacia este juez?')">
                         <input type="hidden" name="next" value="{{ next_url }}">
                         <input type="hidden" name="action" value="balance_judge_assignments">

@@ -109,7 +109,7 @@ def stop_impersonation():
         flash("La sesión administrativa original ya no está disponible.", "error")
         return redirect(url_for("auth.login"))
     if current_user.id == admin.id:
-        for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at"]:
+        for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at", "impersonation_return_endpoint"]:
             session.pop(key, None)
         session.modified = True
         log_event("admin.impersonation.stale_session_recovered", "auth", admin.id, "El administrador original recuperó una sesión huérfana")
@@ -121,8 +121,11 @@ def stop_impersonation():
     institution_name = session.get("impersonated_institution_name", "colegio")
     log_event("admin.impersonation.stop", "institution", current_user.institution_id, f"Fin de suplantación de {institution_name}; regreso a {admin.email}")
     db.session.commit()
-    for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at"]:
+    return_endpoint = session.get("impersonation_return_endpoint")
+    for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at", "impersonation_return_endpoint"]:
         session.pop(key, None)
     login_user(admin, fresh=True)
     flash("Volviste a tu sesión administrativa.", "success")
-    return redirect(url_for("admin.institutions_page"))
+    if return_endpoint not in {"admin.institutions_page", "admin.judge_pool_page"}:
+        return_endpoint = "admin.institutions_page"
+    return redirect(url_for(return_endpoint))

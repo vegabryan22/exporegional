@@ -10540,7 +10540,7 @@ def impersonate_institution(institution_id: int):
     existing_admin_id = session.get("impersonator_admin_id")
     if existing_admin_id:
         if int(existing_admin_id) == current_user.id:
-            for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at"]:
+            for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at", "impersonation_return_endpoint"]:
                 session.pop(key, None)
             session.modified = True
             log_event("admin.impersonation.stale_session_recovered", "auth", current_user.id, "Se limpió una suplantación huérfana antes de iniciar otra")
@@ -10570,9 +10570,46 @@ def impersonate_institution(institution_id: int):
     session["impersonated_user_id"] = coordinator.id
     session["impersonated_institution_name"] = f"{institution.name} · Jornada {coordinator.shift_label}"
     session["impersonation_started_at"] = datetime.utcnow().isoformat()
+    session["impersonation_return_endpoint"] = "admin.institutions_page"
     login_user(coordinator, fresh=True)
     flash(f"Ingresaste temporalmente como coordinación de {institution.name}, jornada {coordinator.shift_label.lower()}.", "success")
     return redirect(url_for("school.dashboard"))
+
+
+@admin_module_required("judge_pool")
+def impersonate_judge(judge_id: int):
+    existing_admin_id = session.get("impersonator_admin_id")
+    if existing_admin_id:
+        if int(existing_admin_id) == current_user.id:
+            for key in ["impersonator_admin_id", "impersonated_user_id", "impersonated_institution_name", "impersonation_started_at", "impersonation_return_endpoint"]:
+                session.pop(key, None)
+            session.modified = True
+            log_event("admin.impersonation.stale_session_recovered", "auth", current_user.id, "Se limpió una suplantación huérfana antes de ingresar como juez")
+            db.session.commit()
+        else:
+            flash("Ya existe una sesión de suplantación activa.", "error")
+            return redirect(url_for("admin.judge_pool_page"))
+
+    judge = db.session.get(Judge, judge_id)
+    if not judge or judge.effective_role != Judge.ROLE_JUDGE:
+        flash("La cuenta seleccionada no corresponde a un juez.", "error")
+        return redirect(url_for("admin.judge_pool_page"))
+    if not judge.is_active_user:
+        flash("No se puede ingresar como un juez inactivo.", "error")
+        return redirect(url_for("admin.judge_pool_page"))
+
+    admin_id = current_user.id
+    admin_name = current_user.full_name
+    log_event("admin.impersonation.start", "judge", judge.id, f"{admin_name} ingresó temporalmente como juez {judge.full_name} <{judge.email}>")
+    db.session.commit()
+    session["impersonator_admin_id"] = admin_id
+    session["impersonated_user_id"] = judge.id
+    session["impersonated_institution_name"] = "Acceso temporal como juez"
+    session["impersonation_started_at"] = datetime.utcnow().isoformat()
+    session["impersonation_return_endpoint"] = "admin.judge_pool_page"
+    login_user(judge, fresh=True)
+    flash(f"Ingresaste temporalmente como el juez {judge.full_name}.", "success")
+    return redirect(url_for("judge.dashboard"))
 
 
 @admin_module_required("projects")

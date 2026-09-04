@@ -1,4 +1,7 @@
+import html
 import json
+import re
+import unicodedata
 
 from app.models.category import Category
 from app.models.evaluation_type import EvaluationType
@@ -36,9 +39,52 @@ DEFAULT_SECTIONS = [
 ]
 
 DEFAULT_SPECIALTIES = [
-    {"name": "Especialidad 1", "sort_order": 1},
-    {"name": "Especialidad 2", "sort_order": 2},
+    {"name": "Configuración y Soporte de Redes de Comunicación y Sistemas Operativos", "sort_order": 1},
+    {"name": "Administración, Logística y Distribución", "sort_order": 2},
+    {"name": "Contabilidad y Control Interno", "sort_order": 3},
+    {"name": "Contabilidad", "sort_order": 4},
+    {"name": "Mercadeo", "sort_order": 5},
+    {"name": "Ciberseguridad", "sort_order": 6},
+    {"name": "Electrónica Industrial", "sort_order": 7},
+    {"name": "Dibujo y Modelado de Edificaciones", "sort_order": 8},
+    {"name": "Contabilidad y Finanzas", "sort_order": 9},
+    {"name": "Ejecutivo Comercial y Servicio al Cliente", "sort_order": 10},
+    {"name": "Diseño y Desarrollo Digital", "sort_order": 11},
+    {"name": "Desarrollo Web", "sort_order": 12},
 ]
+
+
+def _specialty_key(value):
+    value = html.unescape(value or "").strip().rstrip(".,")
+    value = "".join(char for char in unicodedata.normalize("NFKD", value) if not unicodedata.combining(char))
+    value = re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
+    aliases = {
+        "accounting": "contabilidad",
+        "administracion logistica y distribucion": "administracion logistica distribucion",
+        "administracion logistica distribucion": "administracion logistica distribucion",
+        "configuracion y soporte a redes de comunicacion y sistemas operativos": "configuracion soporte redes comunicacion sistemas operativos",
+        "configuracion y soporte de redes de comunicacion y sistemas operativos": "configuracion soporte redes comunicacion sistemas operativos",
+    }
+    return aliases.get(value, value)
+
+
+def ensure_specialty_catalog(database, *, commit=True):
+    """Add missing specialties safely even when GitOps does not run data migrations."""
+    rows = Specialty.query.order_by(Specialty.sort_order.asc()).all()
+    existing = {_specialty_key(row.name) for row in rows}
+    next_order = max((row.sort_order or 0 for row in rows), default=0) + 1
+    created = False
+    for default in DEFAULT_SPECIALTIES:
+        key = _specialty_key(default["name"])
+        if key in existing:
+            continue
+        database.session.add(Specialty(name=default["name"], sort_order=next_order, is_active=True))
+        existing.add(key)
+        next_order += 1
+        created = True
+    if created and commit:
+        database.session.commit()
+    return created
 
 DEFAULT_WORKSHOPS = [
     {"name": "Taller 1", "sort_order": 1},
@@ -320,9 +366,7 @@ def bootstrap_defaults(db):
         )
         created = True
 
-    if Specialty.query.count() == 0:
-        for row in DEFAULT_SPECIALTIES:
-            db.session.add(Specialty(**row))
+    if ensure_specialty_catalog(db, commit=False):
         created = True
 
     if Workshop.query.count() == 0:

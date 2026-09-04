@@ -8,11 +8,11 @@ from zoneinfo import ZoneInfo
 
 from flask import Flask, render_template, request
 from sqlalchemy import inspect, text
-from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, OperationalError, SQLAlchemyError
 
 from config import Config
 from app.extensions import db, login_manager, migrate
-from app.services.parameter_service import bootstrap_defaults
+from app.services.parameter_service import bootstrap_defaults, ensure_specialty_catalog
 
 
 DEFAULT_DEPARTMENT_PERMISSIONS = {
@@ -104,6 +104,11 @@ def create_app():
             # Campos críticos requeridos por el código en ejecución. Esta verificación
             # permite que un despliegue GitOps arranque antes de ejecutar Alembic.
             ensure_jornada_schema()
+            try:
+                ensure_specialty_catalog(db)
+            except IntegrityError:
+                # Otro worker pudo completar el catálogo durante el arranque.
+                db.session.rollback()
 
     register_cli(app)
     register_template_filters(app)

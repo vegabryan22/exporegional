@@ -113,12 +113,24 @@ def _save_school_expedient(project: Project):
         allowed = {".pdf"} if kind == "document" else {".png", ".jpg", ".jpeg", ".webp"}
         if extension not in allowed:
             raise ValueError(f"{label}: formato no permitido.")
+    for member in project.members:
+        uploaded = request.files.get(f"member_photo_{member.id}")
+        if not uploaded or not uploaded.filename:
+            continue
+        extension = os.path.splitext(secure_filename(uploaded.filename))[1].lower()
+        if extension not in {".png", ".jpg", ".jpeg", ".webp"}:
+            raise ValueError(f"Fotografía de {member.full_name}: formato no permitido.")
 
     replacements = {}
     for field, (kind, _) in uploads.items():
         uploaded = request.files.get(field)
         if uploaded and uploaded.filename:
             replacements[field] = _save_project_file(project, uploaded, kind)
+    member_photo_replacements = {}
+    for member in project.members:
+        uploaded = request.files.get(f"member_photo_{member.id}")
+        if uploaded and uploaded.filename:
+            member_photo_replacements[member.id] = _save_project_file(project, uploaded, "member_photo")
 
     old_assets = []
     if "project_document" in replacements:
@@ -132,6 +144,10 @@ def _save_school_expedient(project: Project):
         old_assets.append(project.project_logo_path)
         project.project_logo_path = replacements["project_logo"]
         project.logistics_logo_ok = True
+    for member in project.members:
+        if member.id in member_photo_replacements:
+            old_assets.append(member.photo_url)
+            member.photo_url = member_photo_replacements[member.id]
 
     project.logistics_registration_form_signed_ok = request.form.get("logistics_registration_form_signed_ok") == "1"
     project.logistics_cedula_tutor_ok = request.form.get("logistics_cedula_tutor_ok") == "1"
@@ -145,7 +161,8 @@ def _save_school_expedient(project: Project):
     project.logistics_notes = (request.form.get("logistics_notes") or "").strip()
     missing = approval_missing_requirements(project)
     project.logistics_status = "incompleto" if missing else "completo"
-    log_event("school.project.expedient.save", "project", project.id, f"Expediente guardado; archivos={', '.join(replacements) or 'sin cambios'}")
+    saved_files = list(replacements) + [f"foto_integrante_{member_id}" for member_id in member_photo_replacements]
+    log_event("school.project.expedient.save", "project", project.id, f"Expediente guardado; archivos={', '.join(saved_files) or 'sin cambios'}")
     db.session.commit()
     for old_path in old_assets:
         _delete_project_asset(old_path)

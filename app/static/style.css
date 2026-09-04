@@ -16924,6 +16924,28 @@ body.school-portal-page .legacy-project-logo-form { display: none; }
 .expedient-file-card small { color: #657c8f; font-size: .7rem; font-weight: 600; line-height: 1.3; }
 .expedient-file-card a { width: fit-content; color: #176b91; font-size: .73rem; font-weight: 850; }
 .expedient-file-card input[type="file"] { width: 100%; min-height: 40px; padding: .3rem; border-radius: 8px; background: #fff; font-size: .72rem; }
+.expedient-photos { padding: .9rem; }
+.expedient-student-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+.expedient-student-photo {
+    display: grid !important;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center;
+    gap: .6rem !important;
+    min-width: 0;
+    padding: .65rem;
+    border: 1px dashed #e1ab57;
+    border-radius: 12px;
+    background: #fffaf1;
+}
+.expedient-student-photo.has-file { border-style: solid; border-color: #9dcc83; background: #f6fcf1; }
+.expedient-student-preview { width: 58px; height: 58px; grid-row: span 2; overflow: hidden; border: 1px solid #cfdee7; border-radius: 13px; background: #fff; }
+.expedient-student-preview img { width: 100%; height: 100%; object-fit: cover; }
+.expedient-student-copy { display: grid; gap: .1rem; min-width: 0; }
+.expedient-student-copy strong { overflow: hidden; color: #173f55; font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
+.expedient-student-copy small { color: #687e90; font-size: .67rem; font-weight: 600; line-height: 1.25; }
+.expedient-student-photo input[type="file"] { grid-column: 2; width: 100%; min-width: 0; padding: .25rem; border-radius: 8px; background: #fff; font-size: .68rem; }
+.expedient-no-students { grid-column: 1 / -1; display: grid; gap: .15rem; padding: .75rem; border: 1px dashed #b9cad5; border-radius: 11px; color: #657c8f; }
+.expedient-no-students strong { color: #173f55; }
 .school-expedient-form .logistics-review-card { margin: 0; }
 .school-expedient-form .logistics-review-card h5 { display: flex; align-items: center; gap: .55rem; }
 .expedient-notes { padding-top: .25rem; color: #173f55; font-weight: 850; }
@@ -16945,7 +16967,11 @@ body.school-portal-page .legacy-project-logo-form { display: none; }
 .expedient-save-bar button { display: inline-flex; align-items: center; gap: .45rem; min-height: 46px; background: #63ae28; border-color: #51951f; }
 .expedient-save-bar button svg { width: 20px; height: 20px; fill: currentColor; }
 
-@media (max-width: 900px) { .expedient-upload-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .expedient-student-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) {
+    .expedient-upload-grid,
+    .expedient-student-grid { grid-template-columns: 1fr; }
+}
 @media (max-width: 600px) {
     .expedient-save-bar { align-items: stretch; flex-direction: column; }
     .expedient-save-bar button { justify-content: center; width: 100%; }

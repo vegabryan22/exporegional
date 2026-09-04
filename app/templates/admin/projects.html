@@ -401,6 +401,21 @@
                     </label>
                 </div>
             </section>
+            <section class="expedient-section expedient-photos">
+                <div class="expedient-section-head"><span class="expedient-step">2</span><div><h5>Fotografías de estudiantes</h5><p>Cargá o reemplazá las fotografías de todos los integrantes desde aquí.</p></div></div>
+                <div class="expedient-student-grid">
+                    {% for member in project.members | sort(attribute='student_number') %}
+                    <label class="expedient-student-photo {{ 'has-file' if member.photo_url else '' }}">
+                        <span class="expedient-student-preview">
+                            {% if member.photo_url %}<img src="{{ url_for('static', filename=member.photo_url) }}" alt="Foto de {{ member.full_name }}">
+                            {% else %}{% set member_placeholder = female_member_placeholder if member.gender == 'femenino' else male_member_placeholder %}<img src="{{ member_placeholder }}" alt="Sin foto de {{ member.full_name }}">{% endif %}
+                        </span>
+                        <span class="expedient-student-copy"><strong>{{ member.full_name }}</strong><small>{{ 'Fotografía cargada · elegí otra solo para reemplazarla' if member.photo_url else 'Fotografía pendiente' }}</small></span>
+                        <input type="file" name="member_photo_{{ member.id }}" accept="image/png,image/jpeg,image/webp">
+                    </label>
+                    {% else %}<div class="expedient-no-students"><strong>No hay integrantes registrados</strong><span>Agregá los estudiantes desde la opción Integrantes para poder cargar sus fotografías.</span></div>{% endfor %}
+                </div>
+            </section>
             {% endif %}
             {% if not school_mode %}<div class="grid-2">
                 <label>Estado del proyecto
@@ -442,7 +457,7 @@
             </div>{% endif %}
             <div class="logistics-review-card{% if school_mode %} expedient-section{% endif %}">
                 <div>
-                    <h5>{% if school_mode %}<span class="expedient-step">2</span>{% endif %} Documentos físicos firmados</h5>
+                    <h5>{% if school_mode %}<span class="expedient-step">3</span>{% endif %} Documentos físicos firmados</h5>
                     <p>Marcá únicamente los documentos que ya fueron recibidos.</p>
                 </div>
                 <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" target="_blank" class="table-link-btn secondary" data-no-iconify>Imprimir paquete PDF</a>

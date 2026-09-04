@@ -234,6 +234,11 @@ ACTION_MODULE_MAP = {
     "toggle_judge_active": "judges",
     "toggle_judge_admin": "judges",
     "delete_judge": "judges",
+    "pool_create_judge": "judge_pool",
+    "pool_update_judge": "judge_pool",
+    "pool_reset_judge_password": "judge_pool",
+    "pool_set_judge_password": "judge_pool",
+    "pool_delete_judge": "judge_pool",
     "save_judge_form_settings": "judges",
     "rotate_judge_form_secret": "judges",
     "send_attendance_invitation": "judges",
@@ -4170,6 +4175,13 @@ def _resolve_member_academic_fields(form_data):
 
 
 def _handle_action(action: str):
+    action = {
+        "pool_create_judge": "create_judge",
+        "pool_update_judge": "update_judge",
+        "pool_reset_judge_password": "reset_judge_password",
+        "pool_set_judge_password": "set_judge_password",
+        "pool_delete_judge": "delete_judge",
+    }.get(action, action)
     if action == "create_campaign":
         name = request.form.get("campaign_name", "").strip()
         start_date = _parse_date(request.form.get("campaign_start_date"))
@@ -8337,7 +8349,11 @@ def pending_evaluations_report_excel():
 
 @admin_module_required("judges")
 def judges_page():
-    system_users = Judge.query.options(joinedload(Judge.institution_ref)).order_by(Judge.full_name.asc()).all()
+    system_users = [
+        user
+        for user in Judge.query.options(joinedload(Judge.institution_ref)).order_by(Judge.full_name.asc()).all()
+        if user.effective_role != Judge.ROLE_JUDGE
+    ]
     institutions = Institution.query.order_by(Institution.name.asc()).all()
     return _render("admin/judges.html", "judges", judges=system_users, institutions=institutions)
 

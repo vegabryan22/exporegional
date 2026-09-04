@@ -1,11 +1,10 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
 <div data-account-async-root data-refresh-url="{{ url_for('admin.judges_page') }}"></div>
-{% set ns = namespace(active=0, inactive=0, admins=0, judges_count=0, coordinators=0, temp=0) %}
+{% set ns = namespace(active=0, inactive=0, admins=0, coordinators=0, temp=0) %}
 {% for user in judges %}
     {% if user.is_active_user %}{% set ns.active = ns.active + 1 %}{% else %}{% set ns.inactive = ns.inactive + 1 %}{% endif %}
     {% if user.has_admin_access %}{% set ns.admins = ns.admins + 1 %}{% endif %}
-    {% if user.effective_role == 'judge' %}{% set ns.judges_count = ns.judges_count + 1 %}{% endif %}
     {% if user.effective_role == 'school_coordinator' %}{% set ns.coordinators = ns.coordinators + 1 %}{% endif %}
     {% if user.must_change_password %}{% set ns.temp = ns.temp + 1 %}{% endif %}
 {% endfor %}
@@ -26,7 +25,6 @@
         <article><strong>{{ judges|length }}</strong><span>Total usuarios</span></article>
         <article><strong>{{ ns.active }}</strong><span>Activos</span></article>
         <article><strong>{{ ns.admins }}</strong><span>Administrativos</span></article>
-        <article><strong>{{ ns.judges_count }}</strong><span>Jueces</span></article>
         <article><strong>{{ ns.coordinators }}</strong><span>Coordinaciones</span></article>
         <article><strong>{{ ns.temp }}</strong><span>Clave temporal</span></article>
     </div>
@@ -36,7 +34,7 @@
             <div>
                 <p class="maintenance-kicker">Acción principal</p>
                 <h4>Crear cuenta manual</h4>
-                <p>Úsalo para administradores regionales, coordinaciones de colegio o jueces que deban quedar activos de inmediato.</p>
+                <p>Úsalo para administradores regionales y otras cuentas operativas. Los jueces se administran exclusivamente en Gestión de jueces.</p>
             </div>
             <button type="button" class="secondary-btn" data-dialog-open="create-judge-dialog">Crear usuario</button>
         </article>
@@ -140,7 +138,7 @@
                 <label>Rol
                     <select name="judge_role" data-role-select>
                         {% for role_code, role_name in user_roles %}
-                            {% if role_code != 'superadmin' or current_user.is_superadmin %}
+                            {% if role_code != 'judge' and (role_code != 'superadmin' or current_user.is_superadmin) %}
                                 <option value="{{ role_code }}">{{ role_name }}</option>
                             {% endif %}
                         {% endfor %}
@@ -237,7 +235,7 @@
                 <label>Rol
                     <select name="judge_role" data-role-select>
                         {% for role_code, role_name in user_roles %}
-                            {% if role_code != 'superadmin' or current_user.is_superadmin %}
+                            {% if role_code != 'judge' and (role_code != 'superadmin' or current_user.is_superadmin) %}
                                 <option value="{{ role_code }}" {% if judge.effective_role == role_code %}selected{% endif %}>{{ role_name }}</option>
                             {% endif %}
                         {% endfor %}

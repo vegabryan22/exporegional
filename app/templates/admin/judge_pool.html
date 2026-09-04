@@ -10,7 +10,7 @@
         <div class="page-head-actions judge-pool-actions">
             <a class="action-btn outline-btn" href="{{ url_for('admin.assignments_page') }}">Asignar proyectos</a>
             <a class="action-btn outline-btn" href="{{ url_for('admin.reports_page') }}">Abrir reportes</a>
-            <a class="action-btn secondary-btn" href="{{ url_for('admin.judges_page') }}">Gestionar cuentas</a>
+            <button type="button" class="action-btn secondary-btn" data-dialog-open="create-pool-judge">Nuevo juez</button>
             <form method="post" action="{{ action_url }}" onsubmit="return confirm('&iquest;Enviar invitaci&oacute;n de confirmaci&oacute;n de asistencia a todos los jueces activos?')">
                 <input type="hidden" name="next" value="{{ next_url }}">
                 <input type="hidden" name="action" value="send_all_attendance_invitations">
@@ -202,6 +202,13 @@
                         <svg class="btn-svg" aria-hidden="true" focusable="false"><use href="#ico-edit"></use></svg>
                         <span class="sr-only">Editar disponibilidad</span>
                     </button>
+                    <button type="button" class="outline-btn judge-load-action-btn" title="Gestionar contraseña" aria-label="Gestionar contraseña" data-dialog-open="judge-password-{{ judge.id }}" data-no-iconify>
+                        <svg class="btn-svg" aria-hidden="true" focusable="false"><use href="#ico-key"></use></svg><span class="sr-only">Gestionar contraseña</span>
+                    </button>
+                    <form method="post" action="{{ action_url }}" onsubmit="return confirm('¿Eliminar definitivamente a este juez y sus accesos?')">
+                        <input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="pool_delete_judge"><input type="hidden" name="judge_id" value="{{ judge.id }}">
+                        <button type="submit" class="danger-btn judge-load-action-btn" title="Eliminar juez" aria-label="Eliminar juez" data-no-iconify><svg class="btn-svg" aria-hidden="true"><use href="#ico-delete"></use></svg><span class="sr-only">Eliminar juez</span></button>
+                    </form>
                 </div>
             </div>
 
@@ -261,11 +268,10 @@
                 </div>
                 <form method="post" action="{{ action_url }}" class="compact-form">
                     <input type="hidden" name="next" value="{{ next_url }}">
-                    <input type="hidden" name="action" value="update_judge">
+                    <input type="hidden" name="action" value="pool_update_judge">
                     <input type="hidden" name="judge_id" value="{{ judge.id }}">
                     <input type="hidden" name="judge_role" value="judge">
                     <input type="hidden" name="judge_department" value="">
-                    <input type="hidden" name="judge_is_active_user" value="{{ 1 if judge.is_active_user else 0 }}">
 
                     <p class="judge-edit-section-label">Información personal</p>
                     <div class="grid-2">
@@ -289,6 +295,9 @@
                     </div>
 
                     <p class="judge-edit-section-label">Disponibilidad como evaluador</p>
+                    <label>Estado de la cuenta
+                        <select name="judge_is_active_user"><option value="1" {% if judge.is_active_user %}selected{% endif %}>Activo</option><option value="0" {% if not judge.is_active_user %}selected{% endif %}>Inactivo</option></select>
+                    </label>
                     <div class="grid-2">
                         <label>Categoría que puede evaluar
                             <select name="judge_category_scope">
@@ -317,12 +326,30 @@
                 </form>
             </div>
         </dialog>
+
+        <dialog id="judge-password-{{ judge.id }}" class="maintenance-dialog"><div class="dialog-card">
+            <div class="dialog-head"><div><h4>Contraseña del juez</h4><p>{{ judge.full_name }}</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+            <form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="pool_set_judge_password"><input type="hidden" name="judge_id" value="{{ judge.id }}"><div class="grid-2"><label>Nueva contraseña<input type="password" name="judge_new_password" minlength="8" required></label><label>Confirmar contraseña<input type="password" name="judge_confirm_password" minlength="8" required></label></div><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar contraseña</button></div></form>
+            <form method="post" action="{{ action_url }}"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="pool_reset_judge_password"><input type="hidden" name="judge_id" value="{{ judge.id }}"><button type="submit" class="outline-btn">Generar y enviar clave temporal</button></form>
+        </div></dialog>
     {% else %}
         <section class="card admin-section">
             <p class="muted-empty">No hay jueces registrados todavía.</p>
         </section>
     {% endfor %}
 </section>
+
+<dialog id="create-pool-judge" class="maintenance-dialog"><div class="dialog-card">
+    <div class="dialog-head"><div><h4>Nuevo juez</h4><p>Crear cuenta y disponibilidad de evaluación</p></div><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>
+    <form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="pool_create_judge"><input type="hidden" name="judge_role" value="judge"><input type="hidden" name="judge_department" value="">
+        <div class="grid-2"><label>Nombre completo<input type="text" name="judge_full_name" required></label><label>Correo electrónico<input type="email" name="judge_email" required></label></div>
+        <div class="grid-2"><label>Cédula<input type="text" name="judge_identity"></label><label>Teléfono<input type="text" name="judge_phone"></label><label>Profesión o área técnica<input type="text" name="judge_job_title"></label><label>Institución o empresa<input type="text" name="judge_institution"></label></div>
+        <div class="grid-2"><label>Categoría<select name="judge_category_scope"><option value="ambas">Ambas categorías</option><option value="steam">STEAM</option><option value="emprendimiento">Emprendimiento</option></select></label><label>Evaluaciones disponibles<select name="judge_evaluation_scope"><option value="ambas">Documento y exposición</option><option value="documento">Solo documento</option><option value="exposicion">Solo exposición</option></select></label></div>
+        <label class="checkbox-card"><input type="checkbox" name="judge_can_evaluate_english" value="1"> Puede evaluar exposición en inglés</label>
+        <label>Contraseña inicial <small>(opcional)</small><input type="password" name="judge_password" minlength="8"><small>Si queda vacía, el sistema genera y envía una clave temporal.</small></label>
+        <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear juez</button></div>
+    </form>
+</div></dialog>
 
 <script>
 (() => {

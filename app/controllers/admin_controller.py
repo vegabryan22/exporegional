@@ -10687,11 +10687,25 @@ def institutions_page():
             or_(Judge.must_change_password.is_(True), Judge.last_login_at.is_(None))
         ).count(),
     }
+    coordination_shifts_by_institution = {}
+    for coordinator in active_coordinators.all():
+        shift = (coordinator.shift or "").strip().lower()
+        if shift:
+            coordination_shifts_by_institution.setdefault(coordinator.institution_id, set()).add(shift)
+    coordination_shifts_by_institution = {
+        institution_id: sorted(shifts, key=lambda value: (value != "diurno", value))
+        for institution_id, shifts in coordination_shifts_by_institution.items()
+    }
+    participating_coordination_count = sum(
+        len(shifts) for shifts in coordination_shifts_by_institution.values()
+    )
     return _render(
         "admin/institutions.html",
         "institutions",
         institutions=institutions,
         coordinator_access_counts=coordinator_access_counts,
+        coordination_shifts_by_institution=coordination_shifts_by_institution,
+        participating_coordination_count=participating_coordination_count,
         institution_statuses=[
             (Institution.STATUS_INVITED, "Invitado"),
             (Institution.STATUS_REGISTERED, "Registrado"),

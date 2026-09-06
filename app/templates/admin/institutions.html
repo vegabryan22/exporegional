@@ -4,7 +4,7 @@
     <section class="card admin-section institutions-hero">
         <div><p class="maintenance-kicker">Administración regional</p><h3>Colegios participantes</h3><p>Consulta, corrige o elimina colegios. Toda modificación administrativa queda registrada en bitácora.</p></div>
         <div class="page-head-actions">
-            <span class="tag ok">{{ institutions|length }} participantes</span>
+            <span class="tag ok">{{ institutions|length }} colegios &middot; {{ participating_coordination_count }} coordinaciones por jornada</span>
             <button type="button" class="secondary-btn" data-dialog-open="bulk-coordinator-password-dialog">Enviar accesos</button>
         </div>
     </section>
@@ -35,6 +35,7 @@
 
     <section class="institutions-list" aria-label="Directorio de colegios">
         {% for school in institutions %}
+        {% set school_coordination_shifts = coordination_shifts_by_institution.get(school.id, []) %}
         <article class="card institution-card">
             <header class="institution-card-header">
                 <div class="institution-identity">{% if school.shield_path %}<img class="institution-shield" src="{{ url_for('static', filename=school.shield_path) }}" alt="Escudo de {{ school.name }}">{% else %}<span class="institution-code">{{ school.code }}</span>{% endif %}<div><h3>{{ school.name }}</h3><p>{{ school.regional_directorate or "Dirección regional pendiente" }} · Circuito {{ school.circuit or "N/D" }}</p></div></div>
@@ -44,7 +45,7 @@
                 <div><span>Responsable</span><strong>{{ school.responsible_name }}</strong><small>{{ school.responsible_email }}{% if school.responsible_phone %} · {{ school.responsible_phone }}{% endif %}</small></div>
                 <div><span>Modalidad</span><strong>{{ "API institucional" if school.uses_institutional_platform else "Inscripción manual" }}</strong><small>{{ school.api_credentials|selectattr('is_active')|list|length }} conexiones activas</small></div>
                 <div><span>Proyectos</span><strong>{{ school.project_count }}</strong><small>recibidos</small></div>
-                <div><span>Accesos</span><strong>{{ school.users|length }}</strong><small>coordinaciones</small></div>
+                <div><span>Jornadas participantes</span><strong>{{ school_coordination_shifts|length }}</strong><small>{% if school_coordination_shifts %}{{ school_coordination_shifts|map('capitalize')|join(' &middot; ')|safe }}{% else %}Sin coordinaci&oacute;n activa{% endif %}</small></div>
             </div>
             <div class="institution-actions">
                 <button type="button" class="outline-btn" data-dialog-open="edit-institution-{{ school.id }}">Editar colegio</button>

@@ -1548,15 +1548,50 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         minimum_judges_per_school = max(1, min(50, int(SystemSetting.get_value("regional_minimum_judges_per_school", "2") or 2)))
     except (TypeError, ValueError):
         minimum_judges_per_school = 2
+    # La cobertura se controla por coordinacion/jornada, no solo por colegio.
+    # Un mismo centro puede participar de forma independiente en diurno y nocturno.
+    participating_coordinations = {}
+    coordinators = (
+        Judge.query.filter_by(role=Judge.ROLE_SCHOOL_COORDINATOR, is_active_user=True)
+        .filter(Judge.institution_id.isnot(None))
+        .all()
+    )
+    for coordinator in coordinators:
+        shift = (coordinator.shift or "").strip().lower()
+        key = (coordinator.institution_id, shift)
+        participating_coordinations.setdefault(key, coordinator.institution_ref)
+
+    shifts_by_institution = {}
+    for institution_id, shift in participating_coordinations:
+        shifts_by_institution.setdefault(institution_id, set()).add(shift)
+
     active_judge_counts = {}
     for judge in active_judges:
-        if judge.institution_id:
-            active_judge_counts[judge.institution_id] = active_judge_counts.get(judge.institution_id, 0) + 1
-    schools_below_judge_minimum = []
-    for institution in Institution.query.filter_by(is_active=True).order_by(Institution.name).all():
-        registered = active_judge_counts.get(institution.id, 0)
+        if not judge.institution_id:
+            continue
+        shift = (judge.shift or "").strip().lower()
+        if not shift:
+            known_shifts = shifts_by_institution.get(judge.institution_id, set())
+            # Compatibilidad con jueces anteriores al registro de jornada.
+            shift = next(iter(known_shifts)) if len(known_shifts) == 1 else ""
+        key = (judge.institution_id, shift)
+        active_judge_counts[key] = active_judge_counts.get(key, 0) + 1
+
+    coordinations_below_judge_minimum = []
+    for (institution_id, shift), institution in sorted(
+        participating_coordinations.items(),
+        key=lambda item: ((item[1].name if item[1] else "").lower(), item[0][1]),
+    ):
+        registered = active_judge_counts.get((institution_id, shift), 0)
         if registered < minimum_judges_per_school:
-            schools_below_judge_minimum.append({"institution": institution, "registered": registered, "missing": minimum_judges_per_school - registered})
+            coordinations_below_judge_minimum.append(
+                {
+                    "institution": institution,
+                    "shift": shift,
+                    "registered": registered,
+                    "missing": minimum_judges_per_school - registered,
+                }
+            )
 
     # — Category breakdown —
     steam_projects = [p for p in active_projects if "steam" in (p.category or "").lower()]
@@ -1627,8 +1662,8 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
         "judges_with_assignments": judges_with_assignments,
         "judges_without_assignments": judges_without_assignments,
         "minimum_judges_per_school": minimum_judges_per_school,
-        "schools_below_judge_minimum": schools_below_judge_minimum,
-        "schools_below_judge_minimum_count": len(schools_below_judge_minimum),
+        "coordinations_below_judge_minimum": coordinations_below_judge_minimum,
+        "coordinations_below_judge_minimum_count": len(coordinations_below_judge_minimum),
         # category
         "steam_projects": len(steam_projects),
         "emp_projects": len(emp_projects),

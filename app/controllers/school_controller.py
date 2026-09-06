@@ -346,6 +346,7 @@ def judges():
                     is_active_user=True,
                     must_change_password=True,
                     registered_from_public_form=False,
+                    shift=current_user.shift,
                 )
                 judge.set_password(temporary_password)
                 db.session.add(judge)
@@ -365,6 +366,7 @@ def judges():
             judge.is_admin = False
             judge.institution_id = school.id
             judge.institution = school.name
+            judge.shift = current_user.shift
             db.session.flush()
             after = {"nombre": judge.full_name, "correo": judge.email, "activo": judge.is_active_user}
             log_event(

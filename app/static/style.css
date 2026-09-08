@@ -5465,6 +5465,12 @@ dialog.maintenance-dialog.institution-access-dialog { width: min(820px, calc(100
 .coordinator-avatar { width: 42px; height: 42px; display: grid; place-items: center; flex: 0 0 42px; border-radius: 12px; background: #dff0f7; color: #154f6d; font-weight: 900; font-size: 1.05rem; }
 .coordinator-account-fields { margin-top: .9rem; }
 .coordinator-account-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: .9rem; }
+.coordinator-security-panel { margin-top: 1rem; padding-top: .85rem; border-top: 1px solid #e3eaee; }
+.coordinator-security-panel summary { cursor: pointer; color: #36586a; font-weight: 800; }
+.coordinator-security-actions { display: grid; gap: .85rem; margin-top: .9rem; padding: 1rem; border-radius: 12px; background: #f7fafb; }
+.coordinator-password-form { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto; align-items: end; gap: .75rem; }
+.coordinator-delete-form { display: grid; grid-template-columns: minmax(260px, 1fr) auto; align-items: end; gap: .75rem; padding-top: .85rem; border-top: 1px solid #ead9dc; }
+.institution-access-footer > span { align-self: center; color: #657b87; font-size: .9rem; }
 .coordinator-status-check { display: inline-flex !important; align-items: center; gap: .55rem; margin: 0 !important; color: #315366; font-weight: 750; }
 .coordinator-status-check input { width: 18px !important; height: 18px; margin: 0; }
 .coordinator-empty-state { display: grid; gap: .3rem; margin: 1.25rem 1.5rem 0; padding: 1rem 1.1rem; border: 1px dashed #b8ccd6; border-radius: 14px; background: #f7fafb; color: #607783; }
@@ -5479,6 +5485,7 @@ dialog.maintenance-dialog.institution-access-dialog { width: min(820px, calc(100
   .users-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .coordinator-account-fields { grid-template-columns: 1fr; }
   .coordinator-account-footer, .institution-access-footer { align-items: stretch; flex-direction: column; }
+  .coordinator-password-form, .coordinator-delete-form { grid-template-columns: 1fr; }
 }
 
 dialog.members-overview-dialog {

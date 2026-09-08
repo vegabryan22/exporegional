@@ -108,6 +108,7 @@ def create_app():
             # Campos críticos requeridos por el código en ejecución. Esta verificación
             # permite que un despliegue GitOps arranque antes de ejecutar Alembic.
             ensure_jornada_schema()
+            ensure_institution_responsibles_schema()
             try:
                 ensure_specialty_catalog(db)
             except IntegrityError:
@@ -183,6 +184,7 @@ def _initialize_database(max_attempts: int = 5, retry_delay_seconds: float = 1.5
     for attempt in range(1, max_attempts + 1):
         try:
             db.create_all()
+            ensure_institution_responsibles_schema()
             ensure_schema_updates()
             _reconcile_tutor_catalog()
             bootstrap_defaults(db)
@@ -211,6 +213,28 @@ def ensure_jornada_schema():
                 "ALTER TABLE projects ADD COLUMN project_logbook_path VARCHAR(300) NULL",
                 "columna projects.project_logbook_path",
             )
+
+
+def ensure_institution_responsibles_schema():
+    """Permite arrancar GitOps antes de ejecutar la migración formal de colegios."""
+    inspector = inspect(db.engine)
+    if "institutions" not in inspector.get_table_names():
+        return
+    columns = {column["name"] for column in inspector.get_columns("institutions")}
+    definitions = {
+        "director_name": "VARCHAR(160) NULL",
+        "director_email": "VARCHAR(160) NULL",
+        "technical_coordinator_name": "VARCHAR(160) NULL",
+        "technical_coordinator_email": "VARCHAR(160) NULL",
+    }
+    with db.engine.begin() as connection:
+        for column_name, definition in definitions.items():
+            if column_name not in columns:
+                _run_optional_schema_statement(
+                    connection,
+                    f"ALTER TABLE institutions ADD COLUMN {column_name} {definition}",
+                    f"columna institutions.{column_name}",
+                )
 
 
 def ensure_project_member_level_schema():

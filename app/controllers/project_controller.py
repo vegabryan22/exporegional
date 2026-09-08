@@ -477,17 +477,18 @@ def _render_project_documents_packet(project: Project):
     width, height = landscape(letter)
     today = _pdf_date(project.registration_date or date.today())
     members = sorted(project.members, key=lambda item: item.student_number)
-    school_name = project.institution_name or _pdf_setting("school_name", "ExpoTécnica Regional")
+    school = project.institution
+    school_name = (school.name if school else None) or project.institution_name or _pdf_setting("school_name", "ExpoTécnica Regional")
     service_type = _pdf_setting("expotec_service_type", "Tecnico profesional")
-    school_phone = _pdf_setting("school_phone", "")
-    school_email = _pdf_setting("school_email", "")
-    director_name = _pdf_setting_any(["expotec_director_name", "director_name", "school_director_name"], "")
-    director_email = _pdf_setting_any(["expotec_director_email", "director_email", "school_director_email"], "")
-    coordinator_name = _pdf_setting_any(
+    school_phone = (school.responsible_phone if school else None) or _pdf_setting("school_phone", "")
+    school_email = (school.responsible_email if school else None) or _pdf_setting("school_email", "")
+    director_name = (school.director_name if school else None) or _pdf_setting_any(["expotec_director_name", "director_name", "school_director_name"], "")
+    director_email = (school.director_email if school else None) or _pdf_setting_any(["expotec_director_email", "director_email", "school_director_email"], "")
+    coordinator_name = (school.technical_coordinator_name if school else None) or _pdf_setting_any(
         ["expotec_technical_coordinator_name", "technical_coordinator_name", "school_coordinator_name"],
         "",
     )
-    coordinator_email = _pdf_setting_any(
+    coordinator_email = (school.technical_coordinator_email if school else None) or _pdf_setting_any(
         ["expotec_technical_coordinator_email", "technical_coordinator_email", "school_coordinator_email"],
         "",
     )

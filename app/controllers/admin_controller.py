@@ -4266,6 +4266,22 @@ def _handle_action(action: str):
         "pool_set_judge_password": "set_judge_password",
         "pool_delete_judge": "delete_judge",
     }.get(action, action)
+    coordinator_managed_actions = {
+        "update_judge", "reset_judge_password", "set_judge_password",
+        "toggle_judge_active", "toggle_judge_admin", "delete_judge",
+    }
+    requested_role = (request.form.get("judge_role") or "").strip().lower()
+    managed_user_id = request.form.get("judge_id", type=int)
+    managed_user = Judge.query.get(managed_user_id) if managed_user_id else None
+    if action == "create_judge" and requested_role == Judge.ROLE_SCHOOL_COORDINATOR:
+        flash("Las cuentas coordinadoras se crean únicamente desde Colegios participantes.", "error")
+        return
+    if action in coordinator_managed_actions and (
+        requested_role == Judge.ROLE_SCHOOL_COORDINATOR
+        or (managed_user and managed_user.effective_role == Judge.ROLE_SCHOOL_COORDINATOR)
+    ):
+        flash("Las cuentas coordinadoras se administran únicamente desde Colegios participantes.", "error")
+        return
     if action == "create_campaign":
         name = request.form.get("campaign_name", "").strip()
         start_date = _parse_date(request.form.get("campaign_start_date"))
@@ -8444,11 +8460,19 @@ def pending_evaluations_report_excel():
 def judges_page():
     system_users = [
         user
-        for user in Judge.query.options(joinedload(Judge.institution_ref)).order_by(Judge.full_name.asc()).all()
+        for user in (
+            Judge.query.options(joinedload(Judge.institution_ref))
+            .filter(Judge.role != Judge.ROLE_SCHOOL_COORDINATOR)
+            .order_by(Judge.full_name.asc())
+            .all()
+        )
         if user.effective_role != Judge.ROLE_JUDGE
     ]
-    institutions = Institution.query.order_by(Institution.name.asc()).all()
-    return _render("admin/judges.html", "judges", judges=system_users, institutions=institutions)
+    system_user_roles = [
+        role for role in USER_ROLES
+        if role[0] not in {Judge.ROLE_JUDGE, Judge.ROLE_SCHOOL_COORDINATOR}
+    ]
+    return _render("admin/judges.html", "judges", judges=system_users, user_roles=system_user_roles)
 
 
 @admin_module_required("permissions")
@@ -10491,7 +10515,7 @@ def institutions_page():
                 except ValueError as error:
                     flash(str(error), "error")
                     return redirect(url_for("admin.institutions_page", _anchor=f"edit-institution-{institution.id}"))
-            before = {"code": institution.code, "name": institution.name, "circuit": institution.circuit, "regional_directorate": institution.regional_directorate, "responsible_name": institution.responsible_name, "responsible_email": institution.responsible_email, "responsible_phone": institution.responsible_phone, "address": institution.address, "participation_status": institution.participation_status, "uses_institutional_platform": institution.uses_institutional_platform, "shield_path": institution.shield_path}
+            before = {"code": institution.code, "name": institution.name, "circuit": institution.circuit, "regional_directorate": institution.regional_directorate, "responsible_name": institution.responsible_name, "responsible_email": institution.responsible_email, "responsible_phone": institution.responsible_phone, "director_name": institution.director_name, "director_email": institution.director_email, "technical_coordinator_name": institution.technical_coordinator_name, "technical_coordinator_email": institution.technical_coordinator_email, "address": institution.address, "participation_status": institution.participation_status, "uses_institutional_platform": institution.uses_institutional_platform, "shield_path": institution.shield_path}
             previous_shield_path = institution.shield_path
             institution.code = code
             institution.name = name
@@ -10500,6 +10524,10 @@ def institutions_page():
             institution.responsible_name = responsible_name
             institution.responsible_email = responsible_email
             institution.responsible_phone = (request.form.get("responsible_phone") or "").strip() or None
+            institution.director_name = (request.form.get("director_name") or "").strip() or None
+            institution.director_email = (request.form.get("director_email") or "").strip().lower() or None
+            institution.technical_coordinator_name = (request.form.get("technical_coordinator_name") or "").strip() or None
+            institution.technical_coordinator_email = (request.form.get("technical_coordinator_email") or "").strip().lower() or None
             institution.address = (request.form.get("address") or "").strip() or None
             institution.participation_status = status
             institution.is_active = status not in {Institution.STATUS_SUSPENDED, Institution.STATUS_CLOSED}
@@ -10658,6 +10686,69 @@ def institutions_page():
                 )
                 db.session.commit()
                 flash("Datos de la coordinación actualizados.", "success")
+            return redirect(url_for("admin.institutions_page"))
+
+        if action in {"reset_coordinator_password", "set_coordinator_password", "delete_coordinator"} and institution:
+            coordinator_id = request.form.get("coordinator_id", type=int)
+            coordinator = Judge.query.filter_by(
+                id=coordinator_id,
+                institution_id=institution.id,
+                role=Judge.ROLE_SCHOOL_COORDINATOR,
+            ).first()
+            if not coordinator:
+                flash("La cuenta coordinadora no pertenece a este colegio.", "error")
+                return redirect(url_for("admin.institutions_page"))
+
+            if action == "reset_coordinator_password":
+                if not smtp_is_configured():
+                    flash("Configura y prueba el correo SMTP antes de restablecer y enviar el acceso.", "error")
+                    return redirect(url_for("admin.institutions_page", _anchor=f"access-institution-{institution.id}"))
+                temporary_password = secrets.token_urlsafe(10)
+                coordinator.set_password(temporary_password)
+                coordinator.must_change_password = True
+                log_event(
+                    "admin.institution.coordinator.password.reset", "judge", coordinator.id,
+                    f"Clave temporal regenerada para coordinación de {institution.code}",
+                )
+                db.session.commit()
+                email_sent = _send_judge_credentials_email(coordinator, temporary_password)
+                flash(
+                    "Nueva contraseña temporal enviada al coordinador."
+                    if email_sent else "La contraseña cambió, pero el correo no pudo enviarse. Revisa la configuración SMTP.",
+                    "success" if email_sent else "error",
+                )
+                return redirect(url_for("admin.institutions_page", _anchor=f"access-institution-{institution.id}"))
+
+            if action == "set_coordinator_password":
+                new_password = request.form.get("coordinator_new_password", "")
+                confirm_password = request.form.get("coordinator_confirm_password", "")
+                if len(new_password) < 8:
+                    flash("La nueva contraseña debe tener al menos 8 caracteres.", "error")
+                elif new_password != confirm_password:
+                    flash("Las contraseñas no coinciden.", "error")
+                else:
+                    coordinator.set_password(new_password)
+                    coordinator.must_change_password = False
+                    log_event(
+                        "admin.institution.coordinator.password.set", "judge", coordinator.id,
+                        f"Contraseña asignada manualmente a coordinación de {institution.code}",
+                    )
+                    db.session.commit()
+                    flash("Contraseña actualizada manualmente.", "success")
+                return redirect(url_for("admin.institutions_page", _anchor=f"access-institution-{institution.id}"))
+
+            confirmation = (request.form.get("confirmation_email") or "").strip().lower()
+            if confirmation != coordinator.email.lower():
+                flash("Escribe el correo exacto de la cuenta para confirmar su eliminación.", "error")
+                return redirect(url_for("admin.institutions_page", _anchor=f"access-institution-{institution.id}"))
+            coordinator_snapshot = f"{coordinator.full_name} <{coordinator.email}> · {institution.code} · {coordinator.shift_label}"
+            log_event(
+                "admin.institution.coordinator.delete", "judge", coordinator.id,
+                f"Cuenta coordinadora eliminada: {coordinator_snapshot}",
+            )
+            db.session.delete(coordinator)
+            db.session.commit()
+            flash("Cuenta coordinadora eliminada. La operación quedó registrada en bitácora.", "success")
             return redirect(url_for("admin.institutions_page"))
 
         if action == "toggle" and institution:

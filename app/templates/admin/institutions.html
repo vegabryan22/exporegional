@@ -49,7 +49,7 @@
             </div>
             <div class="institution-actions">
                 <button type="button" class="outline-btn" data-dialog-open="edit-institution-{{ school.id }}">Editar colegio</button>
-                <button type="button" class="outline-btn" data-dialog-open="access-institution-{{ school.id }}">Acceso del colegio</button>
+                <button type="button" class="outline-btn" data-dialog-open="access-institution-{{ school.id }}">Gestionar coordinadores</button>
                 {% if school.uses_institutional_platform %}<button type="button" class="secondary-btn" data-dialog-open="api-institution-{{ school.id }}">Conexión API</button>{% endif %}
                 {% set active_coordinators = school.users|selectattr('is_active_user')|selectattr('effective_role', 'equalto', 'school_coordinator')|list %}
                 {% if current_user.has_admin_access and active_coordinators %}<div class="institution-impersonation-actions" aria-label="Ingresar como coordinación de {{ school.name }}">
@@ -75,25 +75,53 @@
                 {% if coordinators %}
                 <div class="coordinator-account-list">
                     {% for coordinator in coordinators %}
-                    <form method="post" class="coordinator-account-card">
-                        <input type="hidden" name="action" value="update_coordinator">
-                        <input type="hidden" name="institution_id" value="{{ school.id }}">
-                        <input type="hidden" name="coordinator_id" value="{{ coordinator.id }}">
+                    <article class="coordinator-account-card">
                         <div class="coordinator-account-title">
                             <span class="coordinator-avatar">{{ coordinator.full_name[:1]|upper }}</span>
-                            <span><strong>{{ coordinator.full_name }}</strong><small>{{ coordinator.role_label }} · Jornada {{ coordinator.shift_label }}</small></span>
+                            <span><strong>{{ coordinator.full_name }}</strong><small>Jornada {{ coordinator.shift_label }} · {{ 'Clave temporal' if coordinator.must_change_password else 'Clave establecida' }} · {{ coordinator.last_login_at|local_datetime if coordinator.last_login_at else 'Sin acceso' }}</small></span>
                             <span class="tag {{ 'ok' if coordinator.is_active_user else 'off' }}">{{ 'Activo' if coordinator.is_active_user else 'Inactivo' }}</span>
                         </div>
-                        <div class="grid-2 coordinator-account-fields">
-                            <label>Nombre completo<input type="text" name="coordinator_name" value="{{ coordinator.full_name }}" required></label>
-                            <label>Correo de acceso<input type="email" name="coordinator_email" value="{{ coordinator.email }}" required></label>
-                            <label>Jornada<select name="coordinator_shift" required><option value="diurno" {% if coordinator.shift != 'nocturno' %}selected{% endif %}>Diurno</option><option value="nocturno" {% if coordinator.shift == 'nocturno' %}selected{% endif %}>Nocturno</option></select></label>
-                        </div>
-                        <div class="coordinator-account-footer">
-                            <label class="coordinator-status-check"><input type="checkbox" name="coordinator_is_active" value="1" {% if coordinator.is_active_user %}checked{% endif %}> Cuenta habilitada</label>
-                            <button type="submit" class="secondary-btn">Guardar cuenta</button>
-                        </div>
-                    </form>
+                        <form method="post" class="coordinator-account-edit">
+                            <input type="hidden" name="action" value="update_coordinator">
+                            <input type="hidden" name="institution_id" value="{{ school.id }}">
+                            <input type="hidden" name="coordinator_id" value="{{ coordinator.id }}">
+                            <div class="grid-2 coordinator-account-fields">
+                                <label>Nombre completo<input type="text" name="coordinator_name" value="{{ coordinator.full_name }}" required></label>
+                                <label>Correo de acceso<input type="email" name="coordinator_email" value="{{ coordinator.email }}" required></label>
+                                <label>Jornada<select name="coordinator_shift" required><option value="diurno" {% if coordinator.shift != 'nocturno' %}selected{% endif %}>Diurno</option><option value="nocturno" {% if coordinator.shift == 'nocturno' %}selected{% endif %}>Nocturno</option></select></label>
+                            </div>
+                            <div class="coordinator-account-footer">
+                                <label class="coordinator-status-check"><input type="checkbox" name="coordinator_is_active" value="1" {% if coordinator.is_active_user %}checked{% endif %}> Cuenta habilitada</label>
+                                <button type="submit" class="secondary-btn">Guardar cuenta</button>
+                            </div>
+                        </form>
+                        <details class="coordinator-security-panel">
+                            <summary>Contraseña y eliminación</summary>
+                            <div class="coordinator-security-actions">
+                                <form method="post" onsubmit="return confirm('¿Generar una contraseña temporal nueva y enviarla a {{ coordinator.email }}?')">
+                                    <input type="hidden" name="action" value="reset_coordinator_password">
+                                    <input type="hidden" name="institution_id" value="{{ school.id }}">
+                                    <input type="hidden" name="coordinator_id" value="{{ coordinator.id }}">
+                                    <button type="submit" class="secondary-btn">Restablecer y enviar acceso</button>
+                                </form>
+                                <form method="post" class="coordinator-password-form">
+                                    <input type="hidden" name="action" value="set_coordinator_password">
+                                    <input type="hidden" name="institution_id" value="{{ school.id }}">
+                                    <input type="hidden" name="coordinator_id" value="{{ coordinator.id }}">
+                                    <label>Nueva contraseña<input type="password" name="coordinator_new_password" minlength="8" required></label>
+                                    <label>Confirmar<input type="password" name="coordinator_confirm_password" minlength="8" required></label>
+                                    <button type="submit" class="outline-btn">Asignar contraseña</button>
+                                </form>
+                                <form method="post" class="coordinator-delete-form">
+                                    <input type="hidden" name="action" value="delete_coordinator">
+                                    <input type="hidden" name="institution_id" value="{{ school.id }}">
+                                    <input type="hidden" name="coordinator_id" value="{{ coordinator.id }}">
+                                    <label>Para eliminar, escribe <strong>{{ coordinator.email }}</strong><input type="email" name="confirmation_email" autocomplete="off" required></label>
+                                    <button type="submit" class="danger-btn">Eliminar coordinador</button>
+                                </form>
+                            </div>
+                        </details>
+                    </article>
                     {% endfor %}
                 </div>
                 {% else %}
@@ -113,7 +141,7 @@
                         <div class="actions-row"><button type="submit">Crear acceso</button></div>
                     </form>
                 </details>
-                <div class="institution-access-footer"><a class="outline-btn" href="{{ url_for('admin.judges_page') }}">Ver todos los usuarios</a><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div>
+                <div class="institution-access-footer"><span>La administración de coordinadores se realiza completamente desde este colegio.</span><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div>
             </div>
         </dialog>
 

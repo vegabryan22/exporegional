@@ -1,11 +1,10 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
 <div data-account-async-root data-refresh-url="{{ url_for('admin.judges_page') }}"></div>
-{% set ns = namespace(active=0, inactive=0, admins=0, coordinators=0, temp=0) %}
+{% set ns = namespace(active=0, inactive=0, admins=0, temp=0) %}
 {% for user in judges %}
     {% if user.is_active_user %}{% set ns.active = ns.active + 1 %}{% else %}{% set ns.inactive = ns.inactive + 1 %}{% endif %}
     {% if user.has_admin_access %}{% set ns.admins = ns.admins + 1 %}{% endif %}
-    {% if user.effective_role == 'school_coordinator' %}{% set ns.coordinators = ns.coordinators + 1 %}{% endif %}
     {% if user.must_change_password %}{% set ns.temp = ns.temp + 1 %}{% endif %}
 {% endfor %}
 
@@ -25,7 +24,6 @@
         <article><strong>{{ judges|length }}</strong><span>Total usuarios</span></article>
         <article><strong>{{ ns.active }}</strong><span>Activos</span></article>
         <article><strong>{{ ns.admins }}</strong><span>Administrativos</span></article>
-        <article><strong>{{ ns.coordinators }}</strong><span>Coordinaciones</span></article>
         <article><strong>{{ ns.temp }}</strong><span>Clave temporal</span></article>
     </div>
 

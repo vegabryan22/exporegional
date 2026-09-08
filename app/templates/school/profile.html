@@ -26,11 +26,9 @@
         <label>Teléfono<input type="text" name="responsible_phone" value="{{ school.responsible_phone or '' }}"></label>
         <label>Dirección física<input type="text" name="address" value="{{ school.address or '' }}"></label>
 
-        <div class="school-profile-section-title institution-field-wide"><strong>Responsables para formularios ExpoTEC</strong><span>Estos nombres y correos se imprimirán en el ExpoTEC-1 y ExpoTEC-2 de los proyectos de este colegio.</span></div>
+        <div class="school-profile-section-title institution-field-wide"><strong>Dirección para formularios ExpoTEC</strong><span>Estos datos se imprimirán en el ExpoTEC-1 y ExpoTEC-2. La coordinación se obtiene automáticamente de la cuenta asignada a la jornada del proyecto.</span></div>
         <label>Persona directora<input type="text" name="director_name" value="{{ school.director_name or '' }}"></label>
         <label>Correo de la persona directora<input type="email" name="director_email" value="{{ school.director_email or '' }}"></label>
-        <label>Persona coordinadora técnica<input type="text" name="technical_coordinator_name" value="{{ school.technical_coordinator_name or '' }}"></label>
-        <label>Correo de coordinación técnica<input type="email" name="technical_coordinator_email" value="{{ school.technical_coordinator_email or '' }}"></label>
 
         <footer class="school-profile-actions institution-field-wide"><a class="ghost-btn" href="{{ url_for('school.dashboard') }}">Cancelar</a><button type="submit">Guardar información</button></footer>
     </form>

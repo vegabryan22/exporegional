@@ -479,8 +479,6 @@ def profile():
     school.responsible_phone = (request.form.get("responsible_phone") or "").strip() or None
     school.director_name = (request.form.get("director_name") or "").strip() or None
     school.director_email = (request.form.get("director_email") or "").strip().lower() or None
-    school.technical_coordinator_name = (request.form.get("technical_coordinator_name") or "").strip() or None
-    school.technical_coordinator_email = (request.form.get("technical_coordinator_email") or "").strip().lower() or None
     if new_shield:
         school.shield_path = new_shield
     db.session.flush()

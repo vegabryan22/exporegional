@@ -226,8 +226,6 @@ def ensure_institution_responsibles_schema():
         "institutional_email": "VARCHAR(160) NULL",
         "director_name": "VARCHAR(160) NULL",
         "director_email": "VARCHAR(160) NULL",
-        "technical_coordinator_name": "VARCHAR(160) NULL",
-        "technical_coordinator_email": "VARCHAR(160) NULL",
     }
     with db.engine.begin() as connection:
         for column_name, definition in definitions.items():

@@ -486,16 +486,20 @@ def _render_project_documents_packet(project: Project):
     service_type = _pdf_setting("expotec_service_type", "Tecnico profesional")
     school_phone = (school.institutional_phone if school else None) or (school.responsible_phone if school else None) or _pdf_setting("school_phone", "")
     school_email = (school.institutional_email if school else None) or (school.responsible_email if school else None) or _pdf_setting("school_email", "")
-    director_name = (school.director_name if school else None) or _pdf_setting_any(["expotec_director_name", "director_name", "school_director_name"], "")
-    director_email = (school.director_email if school else None) or _pdf_setting_any(["expotec_director_email", "director_email", "school_director_email"], "")
-    coordinator_name = (school.technical_coordinator_name if school else None) or _pdf_setting_any(
-        ["expotec_technical_coordinator_name", "technical_coordinator_name", "school_coordinator_name"],
-        "",
-    )
-    coordinator_email = (school.technical_coordinator_email if school else None) or _pdf_setting_any(
-        ["expotec_technical_coordinator_email", "technical_coordinator_email", "school_coordinator_email"],
-        "",
-    )
+    director_name = (school.director_name or "") if school else _pdf_setting_any(["expotec_director_name", "director_name", "school_director_name"], "")
+    director_email = (school.director_email or "") if school else _pdf_setting_any(["expotec_director_email", "director_email", "school_director_email"], "")
+    project_shift = (project.shift or "").strip().lower()
+    coordinator = None
+    if school:
+        coordinator_query = Judge.query.filter_by(
+            institution_id=school.id,
+            role=Judge.ROLE_SCHOOL_COORDINATOR,
+        )
+        if project_shift:
+            coordinator_query = coordinator_query.filter(func.lower(Judge.shift) == project_shift)
+        coordinator = coordinator_query.order_by(Judge.is_active_user.desc(), Judge.full_name.asc()).first()
+    coordinator_name = coordinator.full_name if coordinator else ""
+    coordinator_email = coordinator.email if coordinator else ""
     course_year = _pdf_setting("expotec_school_year", "2026")
     stage = _pdf_setting("expotec_stage", "Regional")
     start_date = _pdf_date(project.project_start_date) or _pdf_date(project.campaign.start_date if project.campaign else "")

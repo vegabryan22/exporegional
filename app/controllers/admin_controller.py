@@ -10515,7 +10515,7 @@ def institutions_page():
                 except ValueError as error:
                     flash(str(error), "error")
                     return redirect(url_for("admin.institutions_page", _anchor=f"edit-institution-{institution.id}"))
-            before = {"code": institution.code, "name": institution.name, "circuit": institution.circuit, "regional_directorate": institution.regional_directorate, "institutional_phone": institution.institutional_phone, "institutional_email": institution.institutional_email, "responsible_name": institution.responsible_name, "responsible_email": institution.responsible_email, "responsible_phone": institution.responsible_phone, "director_name": institution.director_name, "director_email": institution.director_email, "technical_coordinator_name": institution.technical_coordinator_name, "technical_coordinator_email": institution.technical_coordinator_email, "address": institution.address, "participation_status": institution.participation_status, "uses_institutional_platform": institution.uses_institutional_platform, "shield_path": institution.shield_path}
+            before = {"code": institution.code, "name": institution.name, "circuit": institution.circuit, "regional_directorate": institution.regional_directorate, "institutional_phone": institution.institutional_phone, "institutional_email": institution.institutional_email, "responsible_name": institution.responsible_name, "responsible_email": institution.responsible_email, "responsible_phone": institution.responsible_phone, "director_name": institution.director_name, "director_email": institution.director_email, "address": institution.address, "participation_status": institution.participation_status, "uses_institutional_platform": institution.uses_institutional_platform, "shield_path": institution.shield_path}
             previous_shield_path = institution.shield_path
             institution.code = code
             institution.name = name
@@ -10528,8 +10528,6 @@ def institutions_page():
             institution.responsible_phone = (request.form.get("responsible_phone") or "").strip() or None
             institution.director_name = (request.form.get("director_name") or "").strip() or None
             institution.director_email = (request.form.get("director_email") or "").strip().lower() or None
-            institution.technical_coordinator_name = (request.form.get("technical_coordinator_name") or "").strip() or None
-            institution.technical_coordinator_email = (request.form.get("technical_coordinator_email") or "").strip().lower() or None
             institution.address = (request.form.get("address") or "").strip() or None
             institution.participation_status = status
             institution.is_active = status not in {Institution.STATUS_SUSPENDED, Institution.STATUS_CLOSED}

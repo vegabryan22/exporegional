@@ -478,10 +478,14 @@ def _render_project_documents_packet(project: Project):
     today = _pdf_date(project.registration_date or date.today())
     members = sorted(project.members, key=lambda item: item.student_number)
     school = project.institution
+    if not school and project.institution_name:
+        school = Institution.query.filter(
+            func.lower(Institution.name) == project.institution_name.strip().lower()
+        ).first()
     school_name = (school.name if school else None) or project.institution_name or _pdf_setting("school_name", "ExpoTécnica Regional")
     service_type = _pdf_setting("expotec_service_type", "Tecnico profesional")
-    school_phone = (school.responsible_phone if school else None) or _pdf_setting("school_phone", "")
-    school_email = (school.responsible_email if school else None) or _pdf_setting("school_email", "")
+    school_phone = (school.institutional_phone if school else None) or (school.responsible_phone if school else None) or _pdf_setting("school_phone", "")
+    school_email = (school.institutional_email if school else None) or (school.responsible_email if school else None) or _pdf_setting("school_email", "")
     director_name = (school.director_name if school else None) or _pdf_setting_any(["expotec_director_name", "director_name", "school_director_name"], "")
     director_email = (school.director_email if school else None) or _pdf_setting_any(["expotec_director_email", "director_email", "school_director_email"], "")
     coordinator_name = (school.technical_coordinator_name if school else None) or _pdf_setting_any(

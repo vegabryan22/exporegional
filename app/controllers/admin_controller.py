@@ -10515,12 +10515,14 @@ def institutions_page():
                 except ValueError as error:
                     flash(str(error), "error")
                     return redirect(url_for("admin.institutions_page", _anchor=f"edit-institution-{institution.id}"))
-            before = {"code": institution.code, "name": institution.name, "circuit": institution.circuit, "regional_directorate": institution.regional_directorate, "responsible_name": institution.responsible_name, "responsible_email": institution.responsible_email, "responsible_phone": institution.responsible_phone, "director_name": institution.director_name, "director_email": institution.director_email, "technical_coordinator_name": institution.technical_coordinator_name, "technical_coordinator_email": institution.technical_coordinator_email, "address": institution.address, "participation_status": institution.participation_status, "uses_institutional_platform": institution.uses_institutional_platform, "shield_path": institution.shield_path}
+            before = {"code": institution.code, "name": institution.name, "circuit": institution.circuit, "regional_directorate": institution.regional_directorate, "institutional_phone": institution.institutional_phone, "institutional_email": institution.institutional_email, "responsible_name": institution.responsible_name, "responsible_email": institution.responsible_email, "responsible_phone": institution.responsible_phone, "director_name": institution.director_name, "director_email": institution.director_email, "technical_coordinator_name": institution.technical_coordinator_name, "technical_coordinator_email": institution.technical_coordinator_email, "address": institution.address, "participation_status": institution.participation_status, "uses_institutional_platform": institution.uses_institutional_platform, "shield_path": institution.shield_path}
             previous_shield_path = institution.shield_path
             institution.code = code
             institution.name = name
             institution.circuit = (request.form.get("circuit") or "").strip() or None
             institution.regional_directorate = (request.form.get("regional_directorate") or "").strip() or None
+            institution.institutional_phone = (request.form.get("institutional_phone") or "").strip() or None
+            institution.institutional_email = (request.form.get("institutional_email") or "").strip().lower() or None
             institution.responsible_name = responsible_name
             institution.responsible_email = responsible_email
             institution.responsible_phone = (request.form.get("responsible_phone") or "").strip() or None

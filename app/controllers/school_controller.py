@@ -472,6 +472,8 @@ def profile():
     school.circuit = (request.form.get("circuit") or "").strip() or None
     school.regional_directorate = (request.form.get("regional_directorate") or "").strip() or None
     school.address = (request.form.get("address") or "").strip() or None
+    school.institutional_phone = (request.form.get("institutional_phone") or "").strip() or None
+    school.institutional_email = (request.form.get("institutional_email") or "").strip().lower() or None
     school.responsible_name = responsible_name
     school.responsible_email = responsible_email
     school.responsible_phone = (request.form.get("responsible_phone") or "").strip() or None

@@ -222,6 +222,8 @@ def ensure_institution_responsibles_schema():
         return
     columns = {column["name"] for column in inspector.get_columns("institutions")}
     definitions = {
+        "institutional_phone": "VARCHAR(40) NULL",
+        "institutional_email": "VARCHAR(160) NULL",
         "director_name": "VARCHAR(160) NULL",
         "director_email": "VARCHAR(160) NULL",
         "technical_coordinator_name": "VARCHAR(160) NULL",

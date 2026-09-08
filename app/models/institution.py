@@ -25,6 +25,8 @@ class Institution(db.Model):
     circuit = db.Column(db.String(80), nullable=True, index=True)
     regional_directorate = db.Column(db.String(160), nullable=True, index=True)
     address = db.Column(db.String(300), nullable=True)
+    institutional_phone = db.Column(db.String(40), nullable=True)
+    institutional_email = db.Column(db.String(160), nullable=True)
     responsible_name = db.Column(db.String(160), nullable=False)
     responsible_email = db.Column(db.String(160), nullable=False, index=True)
     responsible_phone = db.Column(db.String(40), nullable=True)

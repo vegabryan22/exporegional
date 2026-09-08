@@ -17,6 +17,8 @@
         <label>Código regional<input type="text" value="{{ school.code }}" disabled><small>No puede modificarse desde esta cuenta.</small></label>
         <label>Circuito<input type="text" name="circuit" value="{{ school.circuit or '' }}"></label>
         <label>Dirección regional<input type="text" name="regional_directorate" value="{{ school.regional_directorate or '' }}"></label>
+        <label>Teléfono del centro educativo<input type="text" name="institutional_phone" value="{{ school.institutional_phone or '' }}"></label>
+        <label>Correo del centro educativo<input type="email" name="institutional_email" value="{{ school.institutional_email or '' }}"></label>
 
         <div class="school-profile-section-title institution-field-wide"><strong>Contacto de coordinación</strong><span>Estos datos se utilizan para seguimiento y comunicaciones oficiales.</span></div>
         <label>Persona responsable<input type="text" name="responsible_name" value="{{ school.responsible_name }}" required></label>

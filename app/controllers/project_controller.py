@@ -1318,6 +1318,80 @@ def home_intro():
         visible_projects = [project for project in projects if project.institution_id == school.id]
         school_rows.append({"school": school, "project_count": len(visible_projects)})
 
+    # La participación se controla por coordinación/jornada. Un mismo colegio
+    # puede aportar equipos independientes en jornada diurna y nocturna.
+    coordinators = (
+        Judge.query.filter_by(role=Judge.ROLE_SCHOOL_COORDINATOR, is_active_user=True)
+        .filter(Judge.institution_id.isnot(None))
+        .options(joinedload(Judge.institution_ref))
+        .order_by(Judge.institution_id.asc(), Judge.shift.asc(), Judge.full_name.asc())
+        .all()
+    )
+    coordination_map = {}
+    for coordinator in coordinators:
+        shift = (coordinator.shift or "").strip().lower() or "sin_jornada"
+        coordination_map.setdefault((coordinator.institution_id, shift), coordinator.institution_ref)
+
+    institutions_with_coordination = {institution_id for institution_id, _shift in coordination_map}
+    for school in schools:
+        if school.id not in institutions_with_coordination:
+            coordination_map[(school.id, "sin_jornada")] = school
+
+    all_active_projects = Project.query.filter_by(is_active=True).all()
+    active_judges = Judge.query.filter_by(role=Judge.ROLE_JUDGE, is_active_user=True).all()
+    shifts_by_institution = {}
+    for institution_id, shift in coordination_map:
+        shifts_by_institution.setdefault(institution_id, set()).add(shift)
+
+    def normalized_participant_shift(item):
+        shift = (item.shift or "").strip().lower()
+        known_shifts = shifts_by_institution.get(item.institution_id, set())
+        if not shift and len(known_shifts) == 1:
+            return next(iter(known_shifts))
+        return shift or "sin_jornada"
+
+    try:
+        projects_per_coordination = max(
+            1,
+            min(20, int(SystemSetting.get_value("regional_projects_per_coordination", "2") or 2)),
+        )
+    except (TypeError, ValueError):
+        projects_per_coordination = 2
+
+    participation_rows = []
+    for (institution_id, shift), school in sorted(
+        coordination_map.items(),
+        key=lambda item: ((item[1].name if item[1] else "").lower(), item[0][1]),
+    ):
+        row_projects = [
+            project for project in all_active_projects
+            if project.institution_id == institution_id and normalized_participant_shift(project) == shift
+        ]
+        row_judges = [
+            judge for judge in active_judges
+            if judge.institution_id == institution_id and normalized_participant_shift(judge) == shift
+        ]
+        documentation_judges = sum(bool(judge.can_evaluate_documentation) for judge in row_judges)
+        exposition_judges = sum(bool(judge.can_evaluate_exposition) for judge in row_judges)
+        judges_complete = documentation_judges >= 3 and exposition_judges >= 3
+        participation_rows.append({
+            "school": school,
+            "shift": shift,
+            "projects": len(row_projects),
+            "project_target": projects_per_coordination,
+            "judges": len(row_judges),
+            "documentation_judges": documentation_judges,
+            "exposition_judges": exposition_judges,
+            "judges_complete": judges_complete,
+        })
+
+    participation_totals = {
+        "projects": sum(row["projects"] for row in participation_rows),
+        "project_target": len(participation_rows) * projects_per_coordination,
+        "complete_coordinations": sum(row["judges_complete"] for row in participation_rows),
+        "coordinations": len(participation_rows),
+    }
+
     return render_template(
         "public/home_intro.html",
         projects=projects,
@@ -1325,6 +1399,8 @@ def home_intro():
         category_map=category_map,
         school_rows=school_rows,
         schools_with_projects=sum(1 for row in school_rows if row["project_count"]),
+        participation_rows=participation_rows,
+        participation_totals=participation_totals,
     )
 
 

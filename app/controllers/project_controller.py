@@ -2,8 +2,10 @@ import os
 import re
 import uuid
 import json
+from copy import copy
 from io import BytesIO
 from datetime import date, datetime, timezone
+from pathlib import Path
 
 from flask import abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user
@@ -933,6 +935,132 @@ def _render_project_documents_packet(project: Project):
     return buffer
 
 
+def _render_project_documents_excel(project: Project):
+    """Fill the official Excel workbook without rebuilding its visual format."""
+    try:
+        from openpyxl import load_workbook
+    except ImportError as error:
+        raise RuntimeError("openpyxl no está instalado en el servidor.") from error
+
+    template_path = Path(current_app.root_path) / "document_templates" / "formularios_expotec_2026.xlsx"
+    if not template_path.is_file():
+        raise RuntimeError("No se encontró la plantilla oficial de formularios ExpoTEC.")
+
+    workbook = load_workbook(template_path)
+    registration_sheet = workbook.worksheets[0]
+    consent_template = workbook.worksheets[1]
+    members = sorted(project.members, key=lambda item: item.student_number)
+    school = project.institution
+    if not school and project.institution_name:
+        school = Institution.query.filter(
+            func.lower(Institution.name) == project.institution_name.strip().lower()
+        ).first()
+
+    project_shift = (project.shift or "").strip().lower()
+    coordinator = None
+    if school:
+        coordinator_query = Judge.query.filter_by(
+            institution_id=school.id,
+            role=Judge.ROLE_SCHOOL_COORDINATOR,
+        )
+        if project_shift:
+            coordinator_query = coordinator_query.filter(func.lower(Judge.shift) == project_shift)
+        coordinator = coordinator_query.order_by(Judge.is_active_user.desc(), Judge.full_name.asc()).first()
+
+    def value(cell, content):
+        cell.value = "" if content is None else content
+
+    def person_specialty(person):
+        specialty_ref = getattr(person, "specialty_ref", None)
+        return (specialty_ref.name if specialty_ref else None) or getattr(person, "specialty", None) or ""
+
+    school_name = (school.name if school else None) or project.institution_name or ""
+    value(registration_sheet["A4"], f"Curso lectivo {_pdf_setting('expotec_school_year', '2026')}")
+    value(registration_sheet["B7"], _pdf_setting("expotec_stage", "Regional"))
+    value(registration_sheet["G7"], _pdf_date(project.registration_date or date.today()))
+    value(registration_sheet["D9"], school_name)
+    value(registration_sheet["D11"], _pdf_setting("expotec_service_type", "Técnico profesional"))
+    value(registration_sheet["D13"], (school.institutional_phone if school else None) or (school.responsible_phone if school else None) or "")
+    value(registration_sheet["H13"], (school.institutional_email if school else None) or (school.responsible_email if school else None) or "")
+    value(registration_sheet["C15"], (school.director_name if school else None) or "")
+    value(registration_sheet["H15"], (school.director_email if school else None) or "")
+    value(registration_sheet["D17"], coordinator.full_name if coordinator else "")
+    value(registration_sheet["I17"], coordinator.email if coordinator else "")
+    value(registration_sheet["C19"], project.title)
+    value(registration_sheet["B21"], _project_category_label(project))
+    value(registration_sheet["H21"], _project_thematic_axis_label(project))
+    value(registration_sheet["C23"], _project_type_label(project))
+    value(registration_sheet["D27"], "X" if project.requirements_current_ok else "")
+    value(registration_sheet["B28"], "X" if project.requirements_outlets_ok else "")
+    value(registration_sheet["B29"], "X" if project.requirements_water_ok else "")
+    value(registration_sheet["B30"], "X" if project.requirements_internet_ok else "")
+    value(registration_sheet["B31"], project.requirements_other or "")
+    value(registration_sheet["D33"], _pdf_date(project.project_start_date))
+    value(registration_sheet["D35"], _pdf_date(project.project_end_date))
+
+    for row_number, member in zip((40, 41, 42), members):
+        value(registration_sheet[f"A{row_number}"], member.full_name)
+        value(registration_sheet[f"C{row_number}"], person_specialty(member))
+        value(registration_sheet[f"F{row_number}"], _pdf_date(member.birth_date))
+        value(registration_sheet[f"G{row_number}"], member.gender or "")
+        value(registration_sheet[f"H{row_number}"], member.identity_number or "")
+        value(registration_sheet[f"I{row_number}"], member.phone or "")
+        value(registration_sheet[f"J{row_number}"], member.email or "")
+        value(registration_sheet[f"K{row_number}"], "Sí" if member.participates_in_english else "No")
+
+    tutor_values = (
+        project.advisor_name, project.advisor_specialty, project.advisor_birth_date,
+        project.advisor_gender, project.advisor_identity, project.advisor_phone, project.advisor_email,
+    )
+    for coordinate, content in zip(("A47", "C47", "F47", "G47", "H47", "I47", "J47"), tutor_values):
+        value(registration_sheet[coordinate], _pdf_date(content) if coordinate == "F47" else (content or ""))
+
+    mentor_values = (
+        project.mentor_name, project.mentor_specialty, project.mentor_birth_date,
+        project.mentor_gender, project.mentor_identity, project.mentor_phone, project.mentor_email,
+    )
+    for coordinate, content in zip(("A52", "C52", "F52", "G52", "H52", "I52", "J52"), mentor_values):
+        value(registration_sheet[coordinate], _pdf_date(content) if coordinate == "F52" else (content or ""))
+
+    for row_number, member in zip((58, 59, 60), members):
+        value(registration_sheet[f"A{row_number}"], member.full_name)
+        value(registration_sheet[f"D{row_number}"], "X" if member.participates_in_english else "")
+        value(registration_sheet[f"E{row_number}"], "" if member.participates_in_english else "X")
+
+    from openpyxl.drawing.image import Image as ExcelImage
+
+    consent_images = [
+        (image._data(), image.width, image.height, copy(image.anchor))
+        for image in consent_template._images
+    ]
+    consent_template._images = []
+    for image_data, width, height, anchor in consent_images:
+        image = ExcelImage(BytesIO(image_data))
+        image.width, image.height = width, height
+        consent_template.add_image(image, copy(anchor))
+
+    consent_sheets = [consent_template]
+    for _member in members[1:]:
+        copied_sheet = workbook.copy_worksheet(consent_template)
+        for image_data, width, height, anchor in consent_images:
+            image = ExcelImage(BytesIO(image_data))
+            image.width, image.height = width, height
+            copied_sheet.add_image(image, copy(anchor))
+        consent_sheets.append(copied_sheet)
+
+    for index, (sheet, member) in enumerate(zip(consent_sheets, members), start=1):
+        sheet.title = f"ExpoTEC-2 Estudiante {index}"
+        value(sheet["A4"], f"Curso lectivo {_pdf_setting('expotec_school_year', '2026')}")
+        value(sheet["F8"], member.full_name)
+        value(sheet["L8"], member.identity_number or "")
+        value(sheet["K32"], _pdf_date(date.today()))
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    return output
+
+
 def _clear_registration_draft():
     draft = session.pop(REGISTRATION_DRAFT_SESSION_KEY, None) or {}
     _delete_uploaded_file(draft.get("temp_document_path", ""))
@@ -1474,21 +1602,23 @@ def project_documents_packet(project_id: int):
             joinedload(Project.thematic_axis),
             joinedload(Project.project_type),
             joinedload(Project.workshop_ref),
+            joinedload(Project.institution),
         )
         .filter(Project.id == project_id)
         .first_or_404()
     )
     _require_project_management_access(project)
-    if not REPORTLAB_AVAILABLE:
-        flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
+    try:
+        excel_bytes = _render_project_documents_excel(project)
+    except RuntimeError as error:
+        flash(str(error), "error")
         return redirect(url_for("public.project_documents", project_id=project.id))
-    pdf_bytes = _render_project_documents_packet(project)
     safe_title = "".join(char for char in project.title.lower().replace(" ", "_") if char.isalnum() or char in {"_", "-"})
     return send_file(
-        pdf_bytes,
-        mimetype="application/pdf",
+        excel_bytes,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name=f"expotec_documentos_{project.id}_{safe_title or 'proyecto'}.pdf",
+        download_name=f"formularios_expotec_{project.id}_{safe_title or 'proyecto'}.xlsx",
     )
 
 

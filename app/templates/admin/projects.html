@@ -312,7 +312,7 @@
                             <span class="project-action-btn action-disabled">Sin documento</span>
                         {% endif %}
                         {% if project.category == 'steam' %}{% if project.project_logbook_path %}<a href="{{ url_for('static', filename=project.project_logbook_path) }}" target="_blank" class="project-action-btn action-doc" data-no-iconify>Bitácora STEAM</a>{% else %}<span class="project-action-btn action-disabled">Sin bitácora</span>{% endif %}{% endif %}
-                        <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" target="_blank" class="project-action-btn action-packet" data-no-iconify>Requisitos PDF</a>
+                        <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" class="project-action-btn action-packet" data-no-iconify>Formularios Excel</a>
                     </div>
                     <div class="project-action-group project-action-group-danger">
                         <span class="project-action-label">Riesgo</span>
@@ -465,7 +465,7 @@
                     <h5>{% if school_mode %}<span class="expedient-step">3</span>{% endif %} Documentos físicos firmados</h5>
                     <p>Marcá únicamente los documentos que ya fueron recibidos.</p>
                 </div>
-                <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" target="_blank" class="table-link-btn secondary" data-no-iconify>Imprimir paquete PDF</a>
+                <a href="{{ url_for('public.project_documents_packet', project_id=project.id) }}" class="table-link-btn secondary" data-no-iconify>Descargar formularios Excel</a>
             </div>
             <div class="logistics-check-section logistics-check-section-physical">
                 <div class="logistics-check-head">

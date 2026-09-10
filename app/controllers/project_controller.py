@@ -1371,6 +1371,14 @@ def home_intro():
             judge for judge in active_judges
             if judge.institution_id == institution_id and normalized_participant_shift(judge) == shift
         ]
+        ready_projects = sum(
+            project.regional_status in {
+                Project.STATUS_APPROVED,
+                Project.STATUS_EVALUATED,
+                Project.STATUS_REGIONAL_WINNER,
+            }
+            for project in row_projects
+        )
         documentation_judges = sum(bool(judge.can_evaluate_documentation) for judge in row_judges)
         exposition_judges = sum(bool(judge.can_evaluate_exposition) for judge in row_judges)
         judges_complete = documentation_judges >= 3 and exposition_judges >= 3
@@ -1378,6 +1386,7 @@ def home_intro():
             "school": school,
             "shift": shift,
             "projects": len(row_projects),
+            "ready_projects": ready_projects,
             "project_target": projects_per_coordination,
             "judges": len(row_judges),
             "documentation_judges": documentation_judges,
@@ -1387,6 +1396,7 @@ def home_intro():
 
     participation_totals = {
         "projects": sum(row["projects"] for row in participation_rows),
+        "ready_projects": sum(row["ready_projects"] for row in participation_rows),
         "project_target": len(participation_rows) * projects_per_coordination,
         "complete_coordinations": sum(row["judges_complete"] for row in participation_rows),
         "coordinations": len(participation_rows),

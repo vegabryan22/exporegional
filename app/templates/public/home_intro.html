@@ -41,23 +41,25 @@
     <div class="regional-section-heading regional-heading-row">
         <div><p class="regional-eyebrow">Avance de inscripción</p><h3>Participación por colegio</h3><p>Cada coordinación debe cubrir 3 jueces para documento escrito y 3 para exposición. Un mismo juez puede contar en ambas cuotas si está habilitado para las dos.</p></div>
         <div class="regional-progress-summary" aria-label="Resumen de avance">
-            <span><strong>{{ participation_totals.projects }}</strong> de {{ participation_totals.project_target }} proyectos</span>
+            <span><strong>{{ participation_totals.projects }}</strong> de {{ participation_totals.project_target }} proyectos inscritos</span>
+            <span><strong>{{ participation_totals.ready_projects }}</strong> de {{ participation_totals.project_target }} listos para evaluar</span>
             <span><strong>{{ participation_totals.complete_coordinations }}</strong> de {{ participation_totals.coordinations }} coordinaciones con cobertura completa</span>
         </div>
     </div>
     <div class="regional-participation-table-wrap">
         <table class="regional-participation-table">
-            <thead><tr><th>Colegio y jornada</th><th>Proyectos inscritos</th><th>Jueces para documento</th><th>Jueces para exposición</th><th>Cobertura de jueces</th></tr></thead>
+            <thead><tr><th>Colegio y jornada</th><th>Proyectos inscritos</th><th>Listos para evaluar</th><th>Jueces para documento</th><th>Jueces para exposición</th><th>Cobertura de jueces</th></tr></thead>
             <tbody>
                 {% for row in participation_rows %}
                 <tr>
                     <td><div class="regional-table-school">{% if row.school and row.school.shield_path %}<img src="{{ url_for('static', filename=row.school.shield_path) }}" alt="">{% endif %}<span><strong>{{ row.school.name if row.school else 'Colegio sin identificar' }}</strong><small>{{ {'diurno':'Jornada diurna','nocturno':'Jornada nocturna'}.get(row.shift, 'Jornada por definir') }}</small></span></div></td>
                     <td><span class="regional-count {{ 'complete' if row.projects >= row.project_target else 'pending' }}"><strong>{{ row.projects }}</strong>/{{ row.project_target }}</span></td>
+                    <td><span class="regional-count {{ 'complete' if row.ready_projects >= row.project_target else 'pending' }}"><strong>{{ row.ready_projects }}</strong>/{{ row.project_target }}</span></td>
                     <td><span class="regional-count {{ 'complete' if row.documentation_judges >= 3 else 'pending' }}"><strong>{{ row.documentation_judges }}</strong>/3</span></td>
                     <td><span class="regional-count {{ 'complete' if row.exposition_judges >= 3 else 'pending' }}"><strong>{{ row.exposition_judges }}</strong>/3</span></td>
                     <td><span class="regional-status {{ 'complete' if row.judges_complete else 'pending' }}">{{ 'Completa' if row.judges_complete else 'Pendiente' }}</span></td>
                 </tr>
-                {% else %}<tr><td colspan="5" class="regional-table-empty">Todavía no hay coordinaciones participantes.</td></tr>{% endfor %}
+                {% else %}<tr><td colspan="6" class="regional-table-empty">Todavía no hay coordinaciones participantes.</td></tr>{% endfor %}
             </tbody>
         </table>
     </div>

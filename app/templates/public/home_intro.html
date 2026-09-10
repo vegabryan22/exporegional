@@ -65,16 +65,6 @@
     </div>
 </section>
 
-<section id="colegios-participantes" class="regional-section regional-schools-section">
-    <div class="regional-section-heading regional-heading-row"><div><p class="regional-eyebrow">Participación regional</p><h3>Colegios participantes</h3><p>Explorá los centros educativos que forman parte de esta edición.</p></div><label class="regional-search">Buscar colegio<input type="search" placeholder="Nombre o circuito" data-school-search></label></div>
-    <div class="regional-school-grid" data-school-grid>
-        {% for row in school_rows %}<article class="regional-school-card" data-school-card data-search="{{ (row.school.name ~ ' ' ~ (row.school.circuit or '') ~ ' ' ~ row.school.code)|lower }}">
-            <div class="regional-school-shield">{% if row.school.shield_path %}<img src="{{ url_for('static', filename=row.school.shield_path) }}" alt="Escudo de {{ row.school.name }}">{% else %}<span>{{ row.school.code[:3] }}</span>{% endif %}</div>
-            <div><h4>{{ row.school.name }}</h4><p>{{ 'Circuito ' ~ row.school.circuit if row.school.circuit else 'Circuito por confirmar' }}</p><span>{{ row.project_count }} proyecto{{ '' if row.project_count == 1 else 's' }} publicado{{ '' if row.project_count == 1 else 's' }}</span></div>
-        </article>{% else %}<p>No hay colegios participantes publicados.</p>{% endfor %}
-    </div>
-</section>
-
 <section class="regional-section regional-project-preview">
     <div class="regional-section-heading regional-heading-row"><div><p class="regional-eyebrow">Muestra regional</p><h3>Proyectos destacados</h3><p>Una vista rápida de los proyectos disponibles en el catálogo público.</p></div><a href="{{ url_for('public.projects') }}">Ver catálogo completo →</a></div>
     <div class="regional-project-grid">
@@ -87,5 +77,4 @@
 
 <section class="regional-access-strip"><div><p class="regional-eyebrow">Acceso privado</p><h3>¿Sos coordinación de colegio o juez regional?</h3><p>Ingresá al espacio operativo para gestionar proyectos, jueces o evaluaciones.</p></div><a href="{{ url_for('auth.login') }}">Ingresar a la plataforma</a></section>
 
-<script>(()=>{const input=document.querySelector('[data-school-search]');if(!input)return;input.addEventListener('input',()=>{const term=input.value.trim().toLowerCase();document.querySelectorAll('[data-school-card]').forEach(card=>card.hidden=!card.dataset.search.includes(term));});})();</script>
 {% endblock %}

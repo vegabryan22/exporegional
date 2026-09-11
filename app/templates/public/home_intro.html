@@ -33,7 +33,7 @@
 
 <section class="regional-stats" aria-label="Resumen de participación">
     <article><strong>{{ school_rows|length }}</strong><span>Colegios participantes</span></article>
-    <article><strong>{{ projects|length }}</strong><span>Proyectos publicados</span></article>
+    <article><strong>{{ projects|length }}</strong><span>Proyectos registrados</span></article>
     <article><strong>{{ category_map|length }}</strong><span>Categorías regionales</span></article>
 </section>
 
@@ -70,8 +70,8 @@
     <div class="regional-project-grid">
         {% for project in projects[:6] %}<article class="regional-project-card">
             <div class="regional-project-logo">{% if project.has_real_logo %}<img src="{{ project.project_logo_path if project.project_logo_path.startswith('http') else url_for('static', filename=project.project_logo_path) }}" alt="Logo de {{ project.title }}">{% else %}<span>{{ project.title[:2]|upper }}</span>{% endif %}</div>
-            <div><span class="regional-project-category">{{ category_map.get(project.category, project.category) }}</span><h4>{{ project.title }}</h4><p>{{ project.institution.name if project.institution else project.institution_name }}</p><a href="{{ url_for('public.projects') }}#project-{{ project.id }}">Conocer proyecto</a></div>
-        </article>{% else %}<div class="regional-empty"><strong>La muestra pública está en preparación</strong><p>Los proyectos aparecerán aquí cuando sean aprobados para evaluación regional.</p></div>{% endfor %}
+            <div><span class="regional-project-category">{{ category_map.get(project.category, project.category) }}</span><span class="regional-project-state {{ 'ready' if project.regional_status in ['approved_for_evaluation','evaluated','regional_winner'] else 'preparing' }}">{{ 'Listo para evaluar' if project.regional_status in ['approved_for_evaluation','evaluated','regional_winner'] else 'En preparación' }}</span><h4>{{ project.title }}</h4><p>{{ project.institution.name if project.institution else project.institution_name }}</p><a href="{{ url_for('public.projects') }}#project-{{ project.id }}">Conocer proyecto</a></div>
+        </article>{% else %}<div class="regional-empty"><strong>La muestra pública está en preparación</strong><p>Los proyectos aparecerán aquí conforme sean registrados por los colegios.</p></div>{% endfor %}
     </div>
 </section>
 

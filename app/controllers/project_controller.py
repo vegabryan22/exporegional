@@ -1253,10 +1253,7 @@ def list_projects():
         )
 
     projects = (
-        Project.query.filter(
-            Project.is_active.is_(True),
-            Project.regional_status.in_([Project.STATUS_APPROVED, Project.STATUS_EVALUATED, Project.STATUS_REGIONAL_WINNER]),
-        )
+        Project.query.filter(Project.is_active.is_(True))
         .options(joinedload(Project.members), joinedload(Project.section), joinedload(Project.specialty_ref), joinedload(Project.workshop_ref))
         .order_by(Project.created_at.desc())
         .all()
@@ -1297,10 +1294,7 @@ def list_projects():
 
 def home_intro():
     projects = (
-        Project.query.filter(
-            Project.is_active.is_(True),
-            Project.regional_status.in_([Project.STATUS_APPROVED, Project.STATUS_EVALUATED, Project.STATUS_REGIONAL_WINNER]),
-        )
+        Project.query.filter(Project.is_active.is_(True))
         .options(joinedload(Project.members), joinedload(Project.section), joinedload(Project.specialty_ref), joinedload(Project.workshop_ref))
         .order_by(Project.created_at.desc())
         .all()
@@ -1320,7 +1314,7 @@ def home_intro():
 
     # La cuota regional pertenece al colegio, no a cada jornada. Los proyectos
     # y jueces diurnos/nocturnos se consolidan en una única fila institucional.
-    all_active_projects = Project.query.filter_by(is_active=True).all()
+    all_active_projects = projects
     active_judges = Judge.query.filter_by(role=Judge.ROLE_JUDGE, is_active_user=True).all()
 
     try:

@@ -64,7 +64,7 @@
             <div>
                 <span class="banner-kicker">Catálogo regional</span>
                 <h1>Proyectos de la región</h1>
-                <p>Explorá proyectos aprobados por categoría y centro educativo.</p>
+                <p>Explorá los proyectos registrados por categoría y centro educativo. La información se completa conforme avanza su inscripción.</p>
             </div>
         </header>
 
@@ -94,6 +94,7 @@
                             {% endif %}
                         </div>
                         <div class="pd-hero-body">
+                            <span class="pd-public-state {{ 'ready' if project.regional_status in ['approved_for_evaluation','evaluated','regional_winner'] else 'preparing' }}">{{ 'Listo para evaluar' if project.regional_status in ['approved_for_evaluation','evaluated','regional_winner'] else 'En preparación' }}</span>
                             <h2 class="pd-title">{{ project.title }}</h2>
                             <span class="pd-category-badge">{{ category_label }}</span>
                             {% if project.description and project.description != 'Proyecto registrado por formulario ExpoTEC-1.' %}
@@ -165,7 +166,7 @@
 </div>
 
 <style>
-.project-category-menu summary span{line-height:1.2}.project-link{display:grid!important;gap:.18rem;text-align:left}.project-link strong{font-size:.92rem}.project-link small{font-size:.72rem;font-weight:800;opacity:.72;text-transform:uppercase;letter-spacing:.06em}.pd-title+.pd-category-badge{display:inline-flex;margin:.45rem 0 .35rem}
+.project-category-menu summary span{line-height:1.2}.project-link{display:grid!important;gap:.18rem;text-align:left}.project-link strong{font-size:.92rem}.project-link small{font-size:.72rem;font-weight:800;opacity:.72;text-transform:uppercase;letter-spacing:.06em}.pd-title+.pd-category-badge{display:inline-flex;margin:.45rem 0 .35rem}.pd-public-state{display:inline-flex;width:max-content;margin-bottom:.4rem;padding:.3rem .65rem;border-radius:999px;font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.06em}.pd-public-state.ready{background:#e5f4d6;color:#397112}.pd-public-state.preparing{background:#fff0d6;color:#965900}
 </style>
 
 <script>

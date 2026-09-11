@@ -13135,6 +13135,49 @@ body {
     display: none;
 }
 
+.projects-showcase-page .project-category-menu summary {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    margin: 0;
+    padding: 0.8rem 0.9rem;
+    border-radius: 10px;
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.projects-showcase-page .project-category-menu summary::after {
+    content: "+";
+    display: grid;
+    place-items: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    border: 1px solid #bdd0e2;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #174d78;
+    font-weight: 900;
+}
+
+.projects-showcase-page .project-category-menu[open] {
+    border-color: #1c628f;
+    box-shadow: 0 7px 18px rgba(19, 74, 112, 0.14);
+}
+
+.projects-showcase-page .project-category-menu[open] summary {
+    border-radius: 10px 10px 0 0;
+    background: linear-gradient(135deg, #174f78, #247ba5);
+    color: #ffffff;
+}
+
+.projects-showcase-page .project-category-menu[open] summary small {
+    color: #d9f2ff;
+}
+
+.projects-showcase-page .project-category-menu[open] summary::after {
+    content: "−";
+    border-color: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+}
+
 @media (max-width: 820px) {
     .projects-showcase-page .container {
         padding-top: 0.75rem !important;

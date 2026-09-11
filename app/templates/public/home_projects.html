@@ -31,13 +31,7 @@
 
         <div class="project-sidebar-list">
             {% for group in school_groups %}
-                    {% set school_state = namespace(has_first=false) %}
-                    {% for project in group.projects %}
-                        {% if ns.first_id == project.id|string %}
-                            {% set school_state.has_first = true %}
-                        {% endif %}
-                    {% endfor %}
-                    <details class="project-category-menu" {% if school_state.has_first %}open{% endif %}>
+                    <details class="project-category-menu">
                         <summary>
                             <span>{{ group.name }}</span>
                             <small>{{ group.projects|length }} proyecto{{ '' if group.projects|length == 1 else 's' }}</small>
@@ -175,25 +169,6 @@
     var panels = document.querySelectorAll('[data-project-panel]');
     var projectMenus = document.querySelectorAll('.project-category-menu');
 
-    function syncProjectMenus() {
-        var isMobile = window.matchMedia('(max-width: 820px)').matches;
-        if (!isMobile) {
-            projectMenus.forEach(function (details) {
-                details.open = true;
-            });
-            return;
-        }
-
-        var hasOpen = false;
-        projectMenus.forEach(function (details) {
-            if (details.open && !hasOpen) {
-                hasOpen = true;
-            } else if (details.open) {
-                details.open = false;
-            }
-        });
-    }
-
     function activate(projectId) {
         links.forEach(function (link) {
             link.classList.toggle('active', link.getAttribute('data-project-target') === projectId);
@@ -230,8 +205,6 @@
         });
     });
 
-    window.addEventListener('resize', syncProjectMenus);
-    syncProjectMenus();
 })();
 </script>
 {% endblock %}

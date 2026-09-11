@@ -1318,58 +1318,28 @@ def home_intro():
         visible_projects = [project for project in projects if project.institution_id == school.id]
         school_rows.append({"school": school, "project_count": len(visible_projects)})
 
-    # La participación se controla por coordinación/jornada. Un mismo colegio
-    # puede aportar equipos independientes en jornada diurna y nocturna.
-    coordinators = (
-        Judge.query.filter_by(role=Judge.ROLE_SCHOOL_COORDINATOR, is_active_user=True)
-        .filter(Judge.institution_id.isnot(None))
-        .options(joinedload(Judge.institution_ref))
-        .order_by(Judge.institution_id.asc(), Judge.shift.asc(), Judge.full_name.asc())
-        .all()
-    )
-    coordination_map = {}
-    for coordinator in coordinators:
-        shift = (coordinator.shift or "").strip().lower() or "sin_jornada"
-        coordination_map.setdefault((coordinator.institution_id, shift), coordinator.institution_ref)
-
-    institutions_with_coordination = {institution_id for institution_id, _shift in coordination_map}
-    for school in schools:
-        if school.id not in institutions_with_coordination:
-            coordination_map[(school.id, "sin_jornada")] = school
-
+    # La cuota regional pertenece al colegio, no a cada jornada. Los proyectos
+    # y jueces diurnos/nocturnos se consolidan en una única fila institucional.
     all_active_projects = Project.query.filter_by(is_active=True).all()
     active_judges = Judge.query.filter_by(role=Judge.ROLE_JUDGE, is_active_user=True).all()
-    shifts_by_institution = {}
-    for institution_id, shift in coordination_map:
-        shifts_by_institution.setdefault(institution_id, set()).add(shift)
-
-    def normalized_participant_shift(item):
-        shift = (item.shift or "").strip().lower()
-        known_shifts = shifts_by_institution.get(item.institution_id, set())
-        if not shift and len(known_shifts) == 1:
-            return next(iter(known_shifts))
-        return shift or "sin_jornada"
 
     try:
-        projects_per_coordination = max(
+        projects_per_school = max(
             1,
-            min(20, int(SystemSetting.get_value("regional_projects_per_coordination", "2") or 2)),
+            min(20, int(SystemSetting.get_value("regional_projects_per_school", "2") or 2)),
         )
     except (TypeError, ValueError):
-        projects_per_coordination = 2
+        projects_per_school = 2
 
     participation_rows = []
-    for (institution_id, shift), school in sorted(
-        coordination_map.items(),
-        key=lambda item: ((item[1].name if item[1] else "").lower(), item[0][1]),
-    ):
+    for school in schools:
         row_projects = [
             project for project in all_active_projects
-            if project.institution_id == institution_id and normalized_participant_shift(project) == shift
+            if project.institution_id == school.id
         ]
         row_judges = [
             judge for judge in active_judges
-            if judge.institution_id == institution_id and normalized_participant_shift(judge) == shift
+            if judge.institution_id == school.id
         ]
         ready_projects = sum(
             project.regional_status in {
@@ -1384,10 +1354,9 @@ def home_intro():
         judges_complete = documentation_judges >= 3 and exposition_judges >= 3
         participation_rows.append({
             "school": school,
-            "shift": shift,
             "projects": len(row_projects),
             "ready_projects": ready_projects,
-            "project_target": projects_per_coordination,
+            "project_target": projects_per_school,
             "judges": len(row_judges),
             "documentation_judges": documentation_judges,
             "exposition_judges": exposition_judges,
@@ -1397,9 +1366,9 @@ def home_intro():
     participation_totals = {
         "projects": sum(row["projects"] for row in participation_rows),
         "ready_projects": sum(row["ready_projects"] for row in participation_rows),
-        "project_target": len(participation_rows) * projects_per_coordination,
-        "complete_coordinations": sum(row["judges_complete"] for row in participation_rows),
-        "coordinations": len(participation_rows),
+        "project_target": len(participation_rows) * projects_per_school,
+        "complete_schools": sum(row["judges_complete"] for row in participation_rows),
+        "schools": len(participation_rows),
     }
 
     return render_template(

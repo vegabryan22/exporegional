@@ -13117,16 +13117,22 @@ body {
 
 .projects-showcase-page .project-sidebar {
     top: calc(var(--fixed-header-height, 96px) + 1rem) !important;
-    position: static;
-    height: auto;
-    max-height: none;
-    overflow: visible;
+    position: static !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
 }
 
 .projects-showcase-page .project-sidebar-list {
-    flex: none;
-    max-height: none;
-    overflow: visible;
+    flex: none !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    scrollbar-width: none;
+}
+
+.projects-showcase-page .project-sidebar-list::-webkit-scrollbar {
+    display: none;
 }
 
 @media (max-width: 820px) {

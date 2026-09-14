@@ -77,9 +77,9 @@
             <div class="student-donut" style="background:conic-gradient({{ student_stats.gender_gradient }})" role="img" aria-label="{% for row in student_stats.gender_rows %}{{ row.label }}: {{ row.count }}{% if not loop.last %}, {% endif %}{% endfor %}"><div><strong>{{ student_stats.total }}</strong><span>estudiantes</span></div></div>
             <div class="student-chart-legend">{% for row in student_stats.gender_rows %}{% if row.count or row.label != 'No indicado / otro' %}<div><span><i style="background:{{ row.color }}"></i>{{ row.label }}</span><strong>{{ row.count }} <small>({{ row.percentage }}%)</small></strong></div>{% endif %}{% endfor %}</div>
         </div></article>
-        <article class="student-chart-card"><h4>Estudiantes por categoría</h4><div class="student-category-bars" role="img" aria-label="{% for row in student_stats.category_rows %}{{ row.label }}: {{ row.count }}{% if not loop.last %}, {% endif %}{% endfor %}">
-            {% for row in student_stats.category_rows %}<div class="student-category-bar"><div><span>{{ row.label }}</span><strong>{{ row.count }}</strong></div><div class="student-bar-track"><span style="width:{{ row.width }}%"></span></div></div>{% else %}<p>Sin estudiantes registrados.</p>{% endfor %}
-        </div></article>
+        <article class="student-chart-card"><h4>Estudiantes por categoría</h4><div class="student-category-columns" role="img" aria-label="{% for row in student_stats.category_rows %}{{ row.label }}: {{ row.count }} estudiantes, {{ row.english }} exponen en inglés{% if not loop.last %}; {% endif %}{% endfor %}">
+            {% for row in student_stats.category_rows %}<div class="student-category-group"><div class="student-column-plot"><div class="student-column" style="height:{{ row.height }}%"><strong>{{ row.count }}</strong></div><div class="student-column english" style="height:{{ row.english_height }}%"><strong>{{ row.english }}</strong></div></div><span class="student-column-label">{{ row.label }}</span></div>{% else %}<p>Sin estudiantes registrados.</p>{% endfor %}
+        </div><div class="student-column-legend"><span><i></i>Total estudiantes</span><span><i class="english"></i>Exponen en inglés</span></div></article>
     </div>
 </section>
 

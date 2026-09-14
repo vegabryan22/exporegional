@@ -35,10 +35,15 @@
 .student-chart-legend span { display:flex; align-items:center; gap:8px; }
 .student-chart-legend i { width:10px; height:10px; border-radius:50%; }
 .student-chart-legend small { font-weight:400; color:#6d8796; }
-.student-category-bars { display:grid; gap:24px; }
-.student-category-bar > div:first-child { display:flex; justify-content:space-between; gap:14px; margin-bottom:12px; color:#456a81; font-size:14px; }
-.student-bar-track { height:22px; border-radius:6px; background:#edf3f7; overflow:hidden; }
-.student-bar-track span { display:block; height:100%; background:#247db9; border-radius:inherit; }
-.student-category-bar:nth-child(2n) .student-bar-track span { background:#eda629; }
+.student-category-columns { display:flex; gap:24px; padding-top:24px; }
+.student-category-group { flex:1; min-width:0; text-align:center; }
+.student-column-plot { height:150px; display:flex; align-items:flex-end; justify-content:center; gap:12px; border-bottom:1px solid #cadde8; background:repeating-linear-gradient(to top,transparent 0,transparent 36px,#edf3f7 37px,transparent 38px); }
+.student-column { position:relative; width:clamp(20px,4vw,54px); background:#1a6fba; border-radius:6px 6px 0 0; }
+.student-column.english,.student-column-legend i.english { background:#f5a623; }
+.student-column strong { position:absolute; bottom:calc(100% + 5px); left:50%; transform:translateX(-50%); color:#456a81; font-size:13px; }
+.student-column-label { display:block; margin-top:12px; color:#456a81; font-size:13px; overflow-wrap:anywhere; }
+.student-column-legend { display:flex; justify-content:center; flex-wrap:wrap; gap:18px; margin-top:18px; font-size:12px; color:#607c8d; }
+.student-column-legend span { display:flex; align-items:center; gap:8px; }
+.student-column-legend i { width:12px; height:12px; border-radius:3px; background:#1a6fba; }
 @media(max-width:800px) { .student-two-charts { grid-template-columns:1fr; } .student-detail-cards { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:500px) { .student-detail-cards { grid-template-columns:1fr; } .student-gender-chart { justify-content:center; } .student-chart-legend { flex-basis:100%; } }

@@ -1373,9 +1373,11 @@ def home_intro():
         gender_counts[label] += 1
     english_count = sum(bool(member.participates_in_english) for member in members)
     category_counts = {}
+    category_english_counts = {}
     for project in projects:
         label = category_map.get(project.category, project.category or "Sin categoría")
         category_counts[label] = category_counts.get(label, 0) + len(project.members)
+        category_english_counts[label] = category_english_counts.get(label, 0) + sum(bool(member.participates_in_english) for member in project.members)
     total_students = len(members)
     def percentage(count):
         return round(count / total_students * 100, 1) if total_students else 0
@@ -1401,7 +1403,9 @@ def home_intro():
     student_stats["gender_rows"] = gender_rows
     student_stats["gender_gradient"] = ", ".join(f"{row['color']} {row['start']}% {row['end']}%" for row in gender_rows) if total_students else "#edf3f7 0% 100%"
     maximum = max(category_counts.values(), default=0)
-    student_stats["category_rows"] = [{"label": label, "count": count, "width": round(count / maximum * 100, 2) if maximum else 0} for label, count in category_counts.items()]
+    student_stats["category_rows"] = [{"label": label, "count": count, "height": round(count / maximum * 100, 2) if maximum else 0,
+                                       "english": category_english_counts[label], "english_height": round(category_english_counts[label] / maximum * 100, 2) if maximum else 0}
+                                      for label, count in category_counts.items()]
 
     return render_template(
         "public/home_intro.html",

@@ -61,14 +61,14 @@
         <div class="projects-filter-row">
             <label class="projects-filter-field projects-filter-search">
                 <span>Buscar</span>
-                <input type="text" id="projects-filter-text" placeholder="Proyecto, equipo o sección">
+                <input type="text" id="projects-filter-text" placeholder="Proyecto, equipo o institución">
             </label>
             <label class="projects-filter-field">
-                <span>Tutor</span>
-                <select id="projects-filter-advisor">
+                <span>Institución</span>
+                <select id="projects-filter-institution">
                     <option value="">Todos</option>
-                    {% for advisor in advisor_stats | sort(attribute='name') %}
-                        <option value="{{ advisor.name|lower }}">{{ advisor.name }} ({{ advisor.total }})</option>
+                    {% for institution_row in project_institutions %}
+                        <option value="{{ institution_row.value }}">{{ institution_row.name }}</option>
                     {% endfor %}
                 </select>
             </label>
@@ -194,7 +194,7 @@
                                 'birth_date': 'Fecha de nacimiento',
                                 'gender': 'Género',
                                 'specialty': 'Especialidad',
-                                'section_name': 'Sección',
+                                'section_name': 'Nivel (registro anterior)',
                                 'participates_in_english': 'Expone en inglés',
                                 'phone': 'Teléfono',
                                 'email': 'Correo',
@@ -255,8 +255,7 @@
                 class="project-row project-maintenance-card"
                 data-project-title="{{ project.title|lower }}"
                 data-project-team="{{ project.team_name|lower }}"
-                data-project-section="{{ (project.section.name if project.section else 'n/d')|lower }}"
-                data-project-advisor="{{ (project.advisor_name or 'sin tutor')|trim|lower }}"
+                data-project-institution="{{ (project.institution.name if project.institution else (project.institution_name or 'sin institución'))|trim|lower }}"
                 data-project-category="{{ project.category|lower }}"
                 data-project-status="{{ project.logistics_status|lower }}"
                 data-project-active="{{ 'activo' if project.is_active else 'inactivo' }}"
@@ -498,7 +497,8 @@
                                 <label class="logistics-consent-member">
                                     <input type="checkbox" name="consent_member_{{ member.id }}" value="1" {% if member.consent_signed_ok %}checked{% endif %}>
                                     <span class="logistics-consent-name">{{ member.full_name }}</span>
-                                    {% if member.section_name %}<em class="logistics-consent-section">{{ member.section_name }}</em>{% endif %}
+                                    {% set member_level = member.level.code if member.level else project.grade_level %}
+                                    {% if member_level %}<em class="logistics-consent-section">Nivel {{ member_level }}</em>{% endif %}
                                 </label>
                                 <div class="logistics-consent-cedulas">
                                     <label class="logistics-consent-cedula">
@@ -652,7 +652,7 @@
                 <div class="member-profile-content">
                     <div class="member-profile-title"><strong>{{ member.full_name|natural_title }}</strong><span class="tag {{ 'ok' if member.photo_url else 'warning' }}">{{ 'Foto lista' if member.photo_url else 'Sin foto' }}</span></div>
                     <div class="member-profile-facts">
-                        <span><small>Secci&oacute;n</small><strong>{{ member.section_name or 'N/D' }}</strong></span>
+                        <span><small>Nivel</small><strong>{{ (member.level.code if member.level else project.grade_level) or 'N/D' }}</strong></span>
                         <span><small>G&eacute;nero</small><strong>{{ member.gender|capitalize if member.gender else 'N/D' }}</strong></span>
                     </div>
                     <p>{{ member.specialty|natural_title if member.specialty else 'Especialidad no indicada' }}</p>
@@ -725,14 +725,12 @@
                 </label>
             </div>
             <div class="grid-3">
-                <label>Sección
-                    <select name="member_section_id" required>
+                <label>Nivel
+                    <select name="member_level_id" required>
                         <option value="">Seleccione...</option>
-                        {% for section in sections %}
-                            {% if section.level and section.level.code in ['10', '11', '12'] %}
-                            <option value="{{ section.id }}" data-level-code="{{ section.level.code if section.level else '' }}" {% if project.section and section.id == project.section.id %}selected{% endif %}>
-                                {{ section.name }} (Nivel {{ section.level.code if section.level else 'N/D' }})
-                            </option>
+                        {% for level in levels %}
+                            {% if level.is_active and level.code in ['10', '11', '12'] %}
+                            <option value="{{ level.id }}" data-level-code="{{ level.code }}" {% if project.grade_level == level.code %}selected{% endif %}>Nivel {{ level.code }}</option>
                             {% endif %}
                         {% endfor %}
                     </select>
@@ -785,14 +783,12 @@
                 </label>
             </div>
             <div class="grid-3">
-                <label>Sección
-                    <select name="member_section_id" required>
+                <label>Nivel
+                    <select name="member_level_id" required>
                         <option value="">Seleccione...</option>
-                        {% for section in sections %}
-                            {% if section.level and section.level.code in ['10', '11', '12'] %}
-                            <option value="{{ section.id }}" data-level-code="{{ section.level.code if section.level else '' }}" {% if member.section_name == section.name %}selected{% endif %}>
-                                {{ section.name }} (Nivel {{ section.level.code if section.level else 'N/D' }})
-                            </option>
+                        {% for level in levels %}
+                            {% if level.is_active and level.code in ['10', '11', '12'] %}
+                            <option value="{{ level.id }}" data-level-code="{{ level.code }}" {% if member.level_id == level.id or (not member.level_id and project.grade_level == level.code) %}selected{% endif %}>Nivel {{ level.code }}</option>
                             {% endif %}
                         {% endfor %}
                     </select>
@@ -868,14 +864,14 @@
         });
 
         function syncAcademicFields(form) {
-            var sectionSelect = form.querySelector('select[name="member_section_id"]');
+            var levelSelect = form.querySelector('select[name="member_level_id"]');
             var specialtyWrap = form.querySelector('.member-specialty-wrap');
             var specialtySelect = form.querySelector('select[name="member_specialty_id"]');
-            if (!sectionSelect || !specialtyWrap || !specialtySelect) {
+            if (!levelSelect || !specialtyWrap || !specialtySelect) {
                 return;
             }
 
-            var selected = sectionSelect.options[sectionSelect.selectedIndex];
+            var selected = levelSelect.options[levelSelect.selectedIndex];
             var levelCode = selected ? (selected.getAttribute('data-level-code') || '') : '';
             var isSpecialty = levelCode === '10' || levelCode === '11' || levelCode === '12';
 
@@ -889,9 +885,9 @@
 
         var forms = document.querySelectorAll('.member-academic-form');
         forms.forEach(function (form) {
-            var sectionSelect = form.querySelector('select[name="member_section_id"]');
-            if (sectionSelect) {
-                sectionSelect.addEventListener('change', function () {
+            var levelSelect = form.querySelector('select[name="member_level_id"]');
+            if (levelSelect) {
+                levelSelect.addEventListener('change', function () {
                     syncAcademicFields(form);
                 });
             }
@@ -899,7 +895,7 @@
         });
 
         var textInput = document.getElementById('projects-filter-text');
-        var advisorSelect = document.getElementById('projects-filter-advisor');
+        var institutionSelect = document.getElementById('projects-filter-institution');
         var categorySelect = document.getElementById('projects-filter-category');
         var statusSelect = document.getElementById('projects-filter-status');
         var activeRadios = document.querySelectorAll('input[name="projects-filter-active"]');
@@ -912,7 +908,7 @@
                 return;
             }
             var text = (textInput && textInput.value ? textInput.value : '').trim().toLowerCase();
-            var advisor = (advisorSelect && advisorSelect.value ? advisorSelect.value : '').trim().toLowerCase();
+            var institution = (institutionSelect && institutionSelect.value ? institutionSelect.value : '').trim().toLowerCase();
             var category = (categorySelect && categorySelect.value ? categorySelect.value : '').trim().toLowerCase();
             var status = (statusSelect && statusSelect.value ? statusSelect.value : '').trim().toLowerCase();
             var active = '';
@@ -927,18 +923,18 @@
                 var haystack = [
                     row.getAttribute('data-project-title') || '',
                     row.getAttribute('data-project-team') || '',
-                    row.getAttribute('data-project-section') || ''
+                    row.getAttribute('data-project-institution') || ''
                 ].join(' ');
-                var rowAdvisor = (row.getAttribute('data-project-advisor') || '').trim().toLowerCase();
+                var rowInstitution = (row.getAttribute('data-project-institution') || '').trim().toLowerCase();
                 var rowCategory = (row.getAttribute('data-project-category') || '').toLowerCase();
                 var rowStatus = (row.getAttribute('data-project-status') || '').toLowerCase();
                 var rowActive = (row.getAttribute('data-project-active') || '').toLowerCase();
                 var matchesText = !text || haystack.indexOf(text) !== -1;
-                var matchesAdvisor = !advisor || rowAdvisor === advisor;
+                var matchesInstitution = !institution || rowInstitution === institution;
                 var matchesCategory = !category || rowCategory === category;
                 var matchesStatus = !status || rowStatus === status;
                 var matchesActive = !active || rowActive === active;
-                var show = matchesText && matchesAdvisor && matchesCategory && matchesStatus && matchesActive;
+                var show = matchesText && matchesInstitution && matchesCategory && matchesStatus && matchesActive;
                 row.style.display = show ? '' : 'none';
                 if (show) {
                     visible += 1;
@@ -953,8 +949,8 @@
         if (textInput) {
             textInput.addEventListener('input', applyProjectFilters);
         }
-        if (advisorSelect) {
-            advisorSelect.addEventListener('change', applyProjectFilters);
+        if (institutionSelect) {
+            institutionSelect.addEventListener('change', applyProjectFilters);
         }
         if (categorySelect) {
             categorySelect.addEventListener('change', applyProjectFilters);
@@ -970,8 +966,8 @@
                 if (textInput) {
                     textInput.value = '';
                 }
-                if (advisorSelect) {
-                    advisorSelect.value = '';
+                if (institutionSelect) {
+                    institutionSelect.value = '';
                 }
                 if (categorySelect) {
                     categorySelect.value = '';
@@ -991,8 +987,8 @@
             if (textInput) {
                 textInput.value = '';
             }
-            if (advisorSelect) {
-                advisorSelect.value = '';
+            if (institutionSelect) {
+                institutionSelect.value = '';
             }
             if (categorySelect) {
                 categorySelect.value = '';

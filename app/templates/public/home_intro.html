@@ -65,6 +65,20 @@
     </div>
 </section>
 
+<section class="regional-section regional-student-section" aria-labelledby="student-stats-title">
+    <div class="regional-section-heading"><p class="regional-eyebrow">Talento regional</p><h3 id="student-stats-title">Participación estudiantil</h3><p>Estudiantes registrados en los proyectos activos. Los datos se actualizan conforme avanza la inscripción.</p></div>
+    <div class="regional-student-charts">
+        {% for chart in student_charts %}
+        <article class="regional-student-chart">
+            <header><span>{{ chart.title }}</span><strong>{{ chart.count }}</strong><small>{{ chart.subtitle }}</small></header>
+            <div class="regional-chart-bars" role="img" aria-label="{{ chart.title }}: {% for row in chart.rows %}{{ row.label }} {{ row.count }}{% if not loop.last %}, {% endif %}{% endfor %}">
+                {% for row in chart.rows %}<div class="regional-chart-row"><div><span>{{ row.label }}</span><strong>{{ row.count }}</strong></div><div class="regional-chart-track"><span style="width:{{ row.width }}%"></span></div></div>{% else %}<p>Sin estudiantes registrados.</p>{% endfor %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
 <section class="regional-section regional-project-preview">
     <div class="regional-section-heading regional-heading-row"><div><p class="regional-eyebrow">Muestra regional</p><h3>Proyectos destacados</h3><p>Una vista rápida de los proyectos disponibles en el catálogo público.</p></div><a href="{{ url_for('public.projects') }}">Ver catálogo completo →</a></div>
     <div class="regional-project-grid">

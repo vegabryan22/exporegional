@@ -4242,11 +4242,11 @@ def _add_member_change(project_id, member_id, action: str, details: str):
 
 
 def _resolve_member_academic_fields(form_data):
-    section = Section.query.options(joinedload(Section.level)).get(form_data.get("member_section_id", type=int))
-    if not section:
-        return None, None, None, "Debes seleccionar una seccion valida."
+    level = Level.query.get(form_data.get("member_level_id", type=int))
+    if not level or not level.is_active:
+        return None, None, None, "Debes seleccionar un nivel válido."
 
-    level_code = (section.level.code or "").strip() if section.level else ""
+    level_code = (level.code or "").strip()
     if level_code not in {"10", "11", "12"}:
         return None, None, None, "La ExpoTécnica solo permite estudiantes de especialidad tecnica (niveles 10, 11 y 12)."
 
@@ -4255,7 +4255,7 @@ def _resolve_member_academic_fields(form_data):
         return None, None, None, "Debes seleccionar la especialidad tecnica del integrante."
     focus_name = specialty.name
 
-    return section.name, focus_name, specialty.id, None
+    return level, focus_name, specialty.id, None
 
 
 def _handle_action(action: str):
@@ -6064,7 +6064,7 @@ def _handle_action(action: str):
             email = request.form.get("member_email", "").strip().lower()
             participates_in_english = _str_to_bool(request.form.get("member_participates_in_english"))
             photo_file = request.files.get("member_photo")
-            section_name, specialty, specialty_id, academic_error = _resolve_member_academic_fields(request.form)
+            level, specialty, specialty_id, academic_error = _resolve_member_academic_fields(request.form)
 
             if not full_name:
                 flash("El nombre del integrante es obligatorio.", "error")
@@ -6094,9 +6094,10 @@ def _handle_action(action: str):
                         identity_number=identity_number,
                         birth_date=birth_date,
                         gender=gender,
+                        level_id=level.id,
                         specialty_id=specialty_id,
                         specialty=specialty,
-                        section_name=section_name,
+                        section_name=None,
                         participates_in_english=participates_in_english,
                         phone=phone,
                         email=email,
@@ -6140,7 +6141,7 @@ def _handle_action(action: str):
             number = request.form.get("member_student_number", type=int)
             gender = request.form.get("member_gender", "").strip().lower()
             photo_file = request.files.get("member_photo")
-            section_name, specialty, specialty_id, academic_error = _resolve_member_academic_fields(request.form)
+            level, specialty, specialty_id, academic_error = _resolve_member_academic_fields(request.form)
             if not full_name:
                 flash("El nombre del integrante es obligatorio.", "error")
             elif gender not in {"masculino", "femenino"}:
@@ -6161,7 +6162,7 @@ def _handle_action(action: str):
                     flash("Ese numero de estudiante ya esta en uso.", "error")
                 else:
                     before = (
-                        f"#{member.student_number} {member.full_name} / {member.section_name or 'N/D'} / "
+                        f"#{member.student_number} {member.full_name} / nivel {member.academic_level_label or 'N/D'} / "
                         f"{member.specialty or 'N/D'}"
                     )
                     member.student_number = number
@@ -6169,9 +6170,10 @@ def _handle_action(action: str):
                     member.identity_number = request.form.get("member_identity_number", "").strip()
                     member.birth_date = _parse_date(request.form.get("member_birth_date"))
                     member.gender = gender
+                    member.level_id = level.id
                     member.specialty_id = specialty_id
                     member.specialty = specialty
-                    member.section_name = section_name
+                    member.section_name = None
                     if "member_participates_in_english" in request.form:
                         member.participates_in_english = _str_to_bool(request.form.get("member_participates_in_english"))
                     member.phone = request.form.get("member_phone", "").strip()
@@ -6186,7 +6188,7 @@ def _handle_action(action: str):
                             return
                     _sync_project_logistics_status(member.project)
                     after = (
-                        f"#{member.student_number} {member.full_name} / {member.section_name or 'N/D'} / "
+                        f"#{member.student_number} {member.full_name} / nivel {member.academic_level_label or 'N/D'} / "
                         f"{member.specialty or 'N/D'}"
                     )
                     _add_member_change(member.project_id, member.id, "updated", f"{before} => {after}")
@@ -8610,6 +8612,15 @@ def projects_page():
     context = _base_context("projects")
     projects = context.get("projects", [])
     context["advisor_stats"] = _build_advisor_stats(projects)
+    institutions = {}
+    for project in projects:
+        name = (project.institution.name if project.institution else project.institution_name or "").strip()
+        if name:
+            institutions[name.lower()] = name
+    context["project_institutions"] = [
+        {"value": key, "name": institutions[key]}
+        for key in sorted(institutions, key=lambda item: institutions[item].lower())
+    ]
     context["project_logistics_summary"] = _build_project_logistics_summary(projects)
     return render_template("admin/projects.html", **context)
 

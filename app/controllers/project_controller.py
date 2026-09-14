@@ -1365,6 +1365,39 @@ def home_intro():
         "schools": len(participation_rows),
     }
 
+    members = [member for project in projects for member in project.members]
+    gender_counts = {"Femenino": 0, "Masculino": 0, "No indicado / otro": 0}
+    for member in members:
+        gender = (member.gender or "").strip().lower()
+        label = {"femenino": "Femenino", "female": "Femenino", "masculino": "Masculino", "male": "Masculino"}.get(gender, "No indicado / otro")
+        gender_counts[label] += 1
+    english_count = sum(bool(member.participates_in_english) for member in members)
+    category_counts = {}
+    for project in projects:
+        label = category_map.get(project.category, project.category or "Sin categoría")
+        category_counts[label] = category_counts.get(label, 0) + len(project.members)
+    school_counts = {
+        school.name: sum(len(project.members) for project in projects if project.institution_id == school.id)
+        for school in schools
+    }
+    unidentified = sum(len(project.members) for project in projects if project.institution_id not in {school.id for school in schools})
+    if unidentified:
+        school_counts["Otros / sin institución"] = unidentified
+
+    def student_chart(title, count, subtitle, counts):
+        maximum = max(counts.values(), default=0)
+        return {"title": title, "count": count, "subtitle": subtitle, "rows": [
+            {"label": label, "count": value, "width": round(value / maximum * 100, 2) if maximum else 0}
+            for label, value in counts.items()
+        ]}
+
+    student_charts = [
+        student_chart("Estudiantes inscritos", len(members), "Distribución por colegio", school_counts),
+        student_chart("Estudiantes por género", len(members), "Total registrado por género", gender_counts),
+        student_chart("Exponen en inglés", english_count, "Participación en exposición en inglés", {"Exponen en inglés": english_count, "No exponen en inglés": len(members) - english_count}),
+        student_chart("Estudiantes por categoría", len(members), "Integrantes de proyectos por categoría", category_counts),
+    ]
+
     return render_template(
         "public/home_intro.html",
         projects=projects,
@@ -1374,6 +1407,7 @@ def home_intro():
         schools_with_projects=sum(1 for row in school_rows if row["project_count"]),
         participation_rows=participation_rows,
         participation_totals=participation_totals,
+        student_charts=student_charts,
     )
 
 

@@ -17181,3 +17181,11 @@ body.admin-page .admin-menu-advanced-items {
     .campaigns-summary-grid { grid-template-columns: 1fr; padding-inline: .75rem; }
     .campaigns-list-head, .campaigns-table-wrap { margin-inline: .75rem; }
 }
+body.admin-page .admin-menu-advanced.admin-menu-section { border:1px solid #d4e2ec; border-radius:14px; background:#fff; margin:0 0 10px; padding:0; overflow:hidden; }
+body.admin-page .admin-menu-advanced.admin-menu-section summary { padding:14px 12px; color:#235575; font-size:12px; cursor:pointer; font-weight:800; }
+body.admin-page .admin-menu-section[open] { border-color:#87b8d4; }
+body.admin-page .admin-menu-section[open] summary { background:#e5f2fa; color:#123e5e; }
+body.admin-page .admin-menu-section .admin-menu-advanced-items { padding:6px; }
+body.admin-page .admin-menu-section:not([open]) .admin-menu-advanced-items { display:none; }
+body.admin-page .admin-shell > .admin-sidebar .admin-menu { grid-auto-rows:max-content; align-content:start; }
+body.admin-page .admin-menu-section { min-height:0; height:auto; align-self:start; }

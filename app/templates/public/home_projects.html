@@ -94,18 +94,20 @@
                             {% if project.description and project.description != 'Proyecto registrado por formulario ExpoTEC-1.' %}
                                 <p class="pd-description">{{ project.description }}</p>
                             {% endif %}
+                            <div class="pd-document-actions">
                             {% if project.project_document_path %}
-                                <a class="pd-document-link" href="{{ project.project_document_path if project.project_document_path.startswith('https://') or project.project_document_path.startswith('http://') else url_for('static', filename=project.project_document_path) }}" target="_blank" rel="noopener noreferrer">Ver documento · PDF ↗</a>
+                                <a class="pd-document-link" href="{{ project.project_document_path if project.project_document_path.startswith('https://') or project.project_document_path.startswith('http://') else url_for('static', filename=project.project_document_path) }}" target="_blank" rel="noopener noreferrer" data-no-iconify><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5"/></svg><span>Ver documento</span><small>PDF ↗</small></a>
                             {% else %}
                                 <p class="pd-document-pending">Documento del proyecto pendiente de cargar.</p>
                             {% endif %}
                             {% if project.requires_project_logbook %}
                                 {% if project.project_logbook_path %}
-                                    <a class="pd-document-link" href="{{ project.project_logbook_path if project.project_logbook_path.startswith('https://') or project.project_logbook_path.startswith('http://') else url_for('static', filename=project.project_logbook_path) }}" target="_blank" rel="noopener noreferrer">Ver bitácora · PDF ↗</a>
+                                    <a class="pd-document-link pd-logbook-link" href="{{ project.project_logbook_path if project.project_logbook_path.startswith('https://') or project.project_logbook_path.startswith('http://') else url_for('static', filename=project.project_logbook_path) }}" target="_blank" rel="noopener noreferrer" data-no-iconify><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="15" height="18" rx="2"/><path d="M9 3v18M3 7h4M3 12h4M3 17h4M12 8h5M12 12h5"/></svg><span>Ver bitácora</span><small>PDF ↗</small></a>
                                 {% else %}
                                     <p class="pd-document-pending">Bitácora STEAM pendiente de cargar.</p>
                                 {% endif %}
                             {% endif %}
+                            </div>
                         </div>
                     </div>
 

@@ -51,6 +51,7 @@
                     <th>Solo expo</th>
                     <th>Doc + Expo</th>
                     <th>Total</th>
+                    <th>Pueden evaluar inglés</th>
                 </tr>
             </thead>
             <tbody>
@@ -60,6 +61,7 @@
                     <td>{{ m.steam.expo_only }}</td>
                     <td>{{ m.steam.both }}</td>
                     <td><strong>{{ m.steam.total }}</strong></td>
+                    <td><strong>{{ m.steam.english }}</strong></td>
                 </tr>
                 <tr>
                     <td>Emprendimiento</td>
@@ -67,6 +69,7 @@
                     <td>{{ m.emprendimiento.expo_only }}</td>
                     <td>{{ m.emprendimiento.both }}</td>
                     <td><strong>{{ m.emprendimiento.total }}</strong></td>
+                    <td><strong>{{ m.emprendimiento.english }}</strong></td>
                 </tr>
                 <tr>
                     <td>Ambas categor&iacute;as</td>
@@ -74,6 +77,7 @@
                     <td>{{ m.ambas.expo_only }}</td>
                     <td>{{ m.ambas.both }}</td>
                     <td><strong>{{ m.ambas.total }}</strong></td>
+                    <td><strong>{{ m.ambas.english }}</strong></td>
                 </tr>
             </tbody>
             <tfoot>
@@ -83,10 +87,11 @@
                     <td><strong>{{ m.totals.expo_only }}</strong></td>
                     <td><strong>{{ m.totals.both }}</strong></td>
                     <td><strong>{{ m.totals.total }}</strong></td>
+                    <td><strong>{{ m.totals.english }}</strong></td>
                 </tr>
             </tfoot>
         </table>
-        <p class="judge-scope-matrix-note">{{ judge_pool_stats.english }} jueces eval&uacute;an exposici&oacute;n en ingl&eacute;s (evaluaci&oacute;n individual por estudiante)</p>
+        <p class="judge-scope-matrix-note">{{ judge_pool_stats.english }} jueces activos pueden evaluar exposición en inglés. La columna de inglés es parte del total, no una cantidad adicional; no depende de tener proyectos asignados.</p>
     </div>
 
     <div class="judge-filter-panel">

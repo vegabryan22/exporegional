@@ -7881,12 +7881,14 @@ def _build_judge_pool_context(context: dict) -> dict:
                 "expo_only": sum(1 for j in subset if j.can_evaluate_exposition and not j.can_evaluate_documentation),
                 "both": sum(1 for j in subset if j.can_evaluate_documentation and j.can_evaluate_exposition),
                 "total": len(subset),
+                "english": sum(1 for j in subset if j.can_evaluate_english and j.can_evaluate_exposition),
             }
         result["totals"] = {
             "doc_only": sum(result[c]["doc_only"] for c in cats),
             "expo_only": sum(result[c]["expo_only"] for c in cats),
             "both": sum(result[c]["both"] for c in cats),
             "total": sum(result[c]["total"] for c in cats),
+            "english": sum(result[c]["english"] for c in cats),
         }
         return result
 

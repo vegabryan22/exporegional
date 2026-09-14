@@ -99,6 +99,13 @@
                             {% else %}
                                 <p class="pd-document-pending">Documento del proyecto pendiente de cargar.</p>
                             {% endif %}
+                            {% if project.requires_project_logbook %}
+                                {% if project.project_logbook_path %}
+                                    <a class="pd-document-link" href="{{ project.project_logbook_path if project.project_logbook_path.startswith('https://') or project.project_logbook_path.startswith('http://') else url_for('static', filename=project.project_logbook_path) }}" target="_blank" rel="noopener noreferrer">Ver bitácora · PDF ↗</a>
+                                {% else %}
+                                    <p class="pd-document-pending">Bitácora STEAM pendiente de cargar.</p>
+                                {% endif %}
+                            {% endif %}
                         </div>
                     </div>
 

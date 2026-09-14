@@ -95,7 +95,7 @@
                                 <p class="pd-description">{{ project.description }}</p>
                             {% endif %}
                             {% if project.project_document_path %}
-                                <a class="pd-document-link" href="{{ project.project_document_path if project.project_document_path.startswith('https://') or project.project_document_path.startswith('http://') else url_for('static', filename=project.project_document_path) }}" target="_blank" rel="noopener noreferrer">Ver documento del proyecto (PDF) ↗</a>
+                                <a class="pd-document-link" href="{{ project.project_document_path if project.project_document_path.startswith('https://') or project.project_document_path.startswith('http://') else url_for('static', filename=project.project_document_path) }}" target="_blank" rel="noopener noreferrer">Ver documento · PDF ↗</a>
                             {% else %}
                                 <p class="pd-document-pending">Documento del proyecto pendiente de cargar.</p>
                             {% endif %}

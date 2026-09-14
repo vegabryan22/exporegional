@@ -17233,3 +17233,7 @@ body.admin-page .admin-menu-section { min-height:0; height:auto; align-self:star
 .ops-participants { display:flex; flex-wrap:wrap; gap:24px; margin-top:16px; }
 @media(max-width:1100px) { .ops-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } .ops-header,.ops-section-head { align-items:start; flex-direction:column; } }
 @media(max-width:650px) { .ops-summary,.ops-evaluation-grid { grid-template-columns:1fr; } .ops-panel { padding:18px; } }
+.pd-document-link { display:inline-flex; align-items:center; margin-top:18px; padding:12px 18px; border:1px solid #bfd9e8; border-radius:12px; background:#eaf5fb; color:#145c83; font-weight:750; text-decoration:none; }
+.pd-document-link:hover { background:#d9edf7; }
+.pd-document-link:focus-visible { outline:3px solid #247db9; outline-offset:3px; }
+.pd-document-pending { margin-top:18px; color:#657e8d; font-size:14px; }

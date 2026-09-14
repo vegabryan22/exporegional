@@ -47,3 +47,10 @@
 .student-column-legend i { width:12px; height:12px; border-radius:3px; background:#1a6fba; }
 @media(max-width:800px) { .student-two-charts { grid-template-columns:1fr; } .student-detail-cards { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media(max-width:500px) { .student-detail-cards { grid-template-columns:1fr; } .student-gender-chart { justify-content:center; } .student-chart-legend { flex-basis:100%; } }
+.regional-project-access { display:flex; align-items:center; justify-content:space-between; gap:24px; margin-top:40px; padding:28px; border:1px solid #cde0eb; border-radius:24px; background:#edf6fa; }
+.regional-project-access h3 { margin:8px 0; color:#153f58; font-size:28px; }
+.regional-project-access p:last-child { margin:0; color:#607c8d; }
+.regional-project-access > a { flex-shrink:0; padding:14px 24px; border-radius:12px; background:#17668b; color:#fff; font-weight:800; text-decoration:none; }
+.regional-project-access > a:hover { background:#124e6c; }
+.regional-project-access > a:focus-visible { outline:3px solid #247db9; outline-offset:4px; }
+@media(max-width:650px) { .regional-project-access { flex-direction:column; align-items:stretch; } .regional-project-access > a { text-align:center; } }

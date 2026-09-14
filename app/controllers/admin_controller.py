@@ -1544,54 +1544,34 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     judges_pending_att = sum(1 for j in attendance_judges if j.attendance_confirmed is None)
     judges_with_assignments = len({a.judge_id for a in active_assignments if a.judge_id})
     judges_without_assignments = max(0, len(active_judges) - judges_with_assignments)
+
+    # Regional dashboard: aggregate shifts into their institution and require coverage, not six people.
+    institutions = Institution.query.filter_by(is_active=True).order_by(Institution.name).all()
     try:
-        minimum_judges_per_school = max(1, min(50, int(SystemSetting.get_value("regional_minimum_judges_per_school", "2") or 2)))
+        projects_per_school = max(1, int(SystemSetting.get_value("regional_projects_per_school", "2") or 2))
     except (TypeError, ValueError):
-        minimum_judges_per_school = 2
-    # La cobertura se controla por coordinacion/jornada, no solo por colegio.
-    # Un mismo centro puede participar de forma independiente en diurno y nocturno.
-    participating_coordinations = {}
-    coordinators = (
-        Judge.query.filter_by(role=Judge.ROLE_SCHOOL_COORDINATOR, is_active_user=True)
-        .filter(Judge.institution_id.isnot(None))
-        .all()
-    )
-    for coordinator in coordinators:
-        shift = (coordinator.shift or "").strip().lower()
-        key = (coordinator.institution_id, shift)
-        participating_coordinations.setdefault(key, coordinator.institution_ref)
-
-    shifts_by_institution = {}
-    for institution_id, shift in participating_coordinations:
-        shifts_by_institution.setdefault(institution_id, set()).add(shift)
-
-    active_judge_counts = {}
-    for judge in active_judges:
-        if not judge.institution_id:
-            continue
-        shift = (judge.shift or "").strip().lower()
-        if not shift:
-            known_shifts = shifts_by_institution.get(judge.institution_id, set())
-            # Compatibilidad con jueces anteriores al registro de jornada.
-            shift = next(iter(known_shifts)) if len(known_shifts) == 1 else ""
-        key = (judge.institution_id, shift)
-        active_judge_counts[key] = active_judge_counts.get(key, 0) + 1
-
-    coordinations_below_judge_minimum = []
-    for (institution_id, shift), institution in sorted(
-        participating_coordinations.items(),
-        key=lambda item: ((item[1].name if item[1] else "").lower(), item[0][1]),
-    ):
-        registered = active_judge_counts.get((institution_id, shift), 0)
-        if registered < minimum_judges_per_school:
-            coordinations_below_judge_minimum.append(
-                {
-                    "institution": institution,
-                    "shift": shift,
-                    "registered": registered,
-                    "missing": minimum_judges_per_school - registered,
-                }
-            )
+        projects_per_school = 2
+    ready_statuses = {"approved_for_evaluation", "evaluated", "regional_winner"}
+    school_followup = []
+    for institution in institutions:
+        school_projects = [p for p in active_projects if p.institution_id == institution.id]
+        school_judges = [j for j in active_judges if j.institution_id == institution.id]
+        documentation = sum(bool(j.can_evaluate_documentation) for j in school_judges)
+        exposition = sum(bool(j.can_evaluate_exposition) for j in school_judges)
+        project_rows = [{"project": p, "missing": approval_missing_requirements(p),
+                         "ready": p.regional_status in ready_statuses,
+                         "assignments": len(p.assignments)} for p in school_projects]
+        school_followup.append({
+            "institution": institution, "projects": project_rows,
+            "registered": len(school_projects), "target": projects_per_school,
+            "incomplete": sum(bool(row["missing"]) for row in project_rows),
+            "ready": sum(row["ready"] for row in project_rows),
+            "documentation": documentation, "exposition": exposition,
+            "coverage_complete": documentation >= 3 and exposition >= 3,
+        })
+    schools_covered = sum(row["coverage_complete"] for row in school_followup)
+    coordinations_below_judge_minimum = [row for row in school_followup if not row["coverage_complete"]]
+    minimum_judges_per_school = 3
 
     # — Category breakdown —
     steam_projects = [p for p in active_projects if "steam" in (p.category or "").lower()]
@@ -1614,6 +1594,11 @@ def _build_overview_metrics(projects, assignments, logistics_page=1, logistics_p
     logistics_complete = sum(1 for p in active_projects if not approval_missing_requirements(p))
 
     return {
+        "school_followup": school_followup,
+        "schools_total": len(institutions),
+        "schools_covered": schools_covered,
+        "regional_project_target": len(institutions) * projects_per_school,
+        "ready_for_evaluation": sum(p.regional_status in ready_statuses for p in active_projects),
         "active_projects": len(active_projects),
         "active_assignments": len(active_assignments),
         "total_members": len(active_members),

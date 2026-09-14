@@ -67,15 +67,19 @@
 
 <section class="regional-section regional-student-section" aria-labelledby="student-stats-title">
     <div class="regional-section-heading"><p class="regional-eyebrow">Talento regional</p><h3 id="student-stats-title">Participación estudiantil</h3><p>Estudiantes registrados en los proyectos activos. Los datos se actualizan conforme avanza la inscripción.</p></div>
-    <div class="regional-student-charts">
-        {% for chart in student_charts %}
-        <article class="regional-student-chart">
-            <header><span>{{ chart.title }}</span><strong>{{ chart.count }}</strong><small>{{ chart.subtitle }}</small></header>
-            <div class="regional-chart-bars" role="img" aria-label="{{ chart.title }}: {% for row in chart.rows %}{{ row.label }} {{ row.count }}{% if not loop.last %}, {% endif %}{% endfor %}">
-                {% for row in chart.rows %}<div class="regional-chart-row"><div><span>{{ row.label }}</span><strong>{{ row.count }}</strong></div><div class="regional-chart-track"><span style="width:{{ row.width }}%"></span></div></div>{% else %}<p>Sin estudiantes registrados.</p>{% endfor %}
-            </div>
-        </article>
-        {% endfor %}
+    <div class="student-detail-cards">
+        <article><span>Estudiantes inscritos</span><strong>{{ student_stats.total }}</strong><small>Total de estudiantes</small></article>
+        <article><span>Jueces activos</span><strong>{{ student_stats.judges }}</strong><small>Total de jueces</small></article>
+        {% for card in student_stats.cards %}<article class="{{ 'student-english-card' if card.english else '' }}"><span>{{ card.label }}</span><strong>{{ card.count }}</strong><small>{{ card.percentage }}% del total de estudiantes</small></article>{% endfor %}
+    </div>
+    <div class="student-two-charts">
+        <article class="student-chart-card"><h4>Estudiantes por género</h4><div class="student-gender-chart">
+            <div class="student-donut" style="background:conic-gradient({{ student_stats.gender_gradient }})" role="img" aria-label="{% for row in student_stats.gender_rows %}{{ row.label }}: {{ row.count }}{% if not loop.last %}, {% endif %}{% endfor %}"><div><strong>{{ student_stats.total }}</strong><span>estudiantes</span></div></div>
+            <div class="student-chart-legend">{% for row in student_stats.gender_rows %}{% if row.count or row.label != 'No indicado / otro' %}<div><span><i style="background:{{ row.color }}"></i>{{ row.label }}</span><strong>{{ row.count }} <small>({{ row.percentage }}%)</small></strong></div>{% endif %}{% endfor %}</div>
+        </div></article>
+        <article class="student-chart-card"><h4>Estudiantes por categoría</h4><div class="student-category-bars" role="img" aria-label="{% for row in student_stats.category_rows %}{{ row.label }}: {{ row.count }}{% if not loop.last %}, {% endif %}{% endfor %}">
+            {% for row in student_stats.category_rows %}<div class="student-category-bar"><div><span>{{ row.label }}</span><strong>{{ row.count }}</strong></div><div class="student-bar-track"><span style="width:{{ row.width }}%"></span></div></div>{% else %}<p>Sin estudiantes registrados.</p>{% endfor %}
+        </div></article>
     </div>
 </section>
 

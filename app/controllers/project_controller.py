@@ -1376,27 +1376,32 @@ def home_intro():
     for project in projects:
         label = category_map.get(project.category, project.category or "Sin categoría")
         category_counts[label] = category_counts.get(label, 0) + len(project.members)
-    school_counts = {
-        school.name: sum(len(project.members) for project in projects if project.institution_id == school.id)
-        for school in schools
+    total_students = len(members)
+    def percentage(count):
+        return round(count / total_students * 100, 1) if total_students else 0
+
+    student_stats = {
+        "total": total_students,
+        "judges": len(active_judges),
+        "cards": [
+            {"label": "Masculino", "count": gender_counts["Masculino"], "percentage": percentage(gender_counts["Masculino"])},
+            {"label": "Femenino", "count": gender_counts["Femenino"], "percentage": percentage(gender_counts["Femenino"])},
+            {"label": "Exponen en inglés", "count": english_count, "percentage": percentage(english_count), "english": True},
+        ],
     }
-    unidentified = sum(len(project.members) for project in projects if project.institution_id not in {school.id for school in schools})
-    if unidentified:
-        school_counts["Otros / sin institución"] = unidentified
-
-    def student_chart(title, count, subtitle, counts):
-        maximum = max(counts.values(), default=0)
-        return {"title": title, "count": count, "subtitle": subtitle, "rows": [
-            {"label": label, "count": value, "width": round(value / maximum * 100, 2) if maximum else 0}
-            for label, value in counts.items()
-        ]}
-
-    student_charts = [
-        student_chart("Estudiantes inscritos", len(members), "Distribución por colegio", school_counts),
-        student_chart("Estudiantes por género", len(members), "Total registrado por género", gender_counts),
-        student_chart("Exponen en inglés", english_count, "Participación en exposición en inglés", {"Exponen en inglés": english_count, "No exponen en inglés": len(members) - english_count}),
-        student_chart("Estudiantes por categoría", len(members), "Integrantes de proyectos por categoría", category_counts),
-    ]
+    if gender_counts["No indicado / otro"]:
+        student_stats["cards"].insert(2, {"label": "No indicado / otro", "count": gender_counts["No indicado / otro"], "percentage": percentage(gender_counts["No indicado / otro"])})
+    colors = ["#247db9", "#df298d", "#92a7b5"]
+    gender_rows = []
+    offset = 0
+    for (label, count), color in zip(gender_counts.items(), [colors[1], colors[0], colors[2]]):
+        end = offset + (count / total_students * 100 if total_students else 0)
+        gender_rows.append({"label": label, "count": count, "percentage": percentage(count), "color": color, "start": offset, "end": end})
+        offset = end
+    student_stats["gender_rows"] = gender_rows
+    student_stats["gender_gradient"] = ", ".join(f"{row['color']} {row['start']}% {row['end']}%" for row in gender_rows) if total_students else "#edf3f7 0% 100%"
+    maximum = max(category_counts.values(), default=0)
+    student_stats["category_rows"] = [{"label": label, "count": count, "width": round(count / maximum * 100, 2) if maximum else 0} for label, count in category_counts.items()]
 
     return render_template(
         "public/home_intro.html",
@@ -1407,7 +1412,7 @@ def home_intro():
         schools_with_projects=sum(1 for row in school_rows if row["project_count"]),
         participation_rows=participation_rows,
         participation_totals=participation_totals,
-        student_charts=student_charts,
+        student_stats=student_stats,
     )
 
 

@@ -22,6 +22,8 @@
 .student-detail-cards strong { margin:12px 0 8px; }
 .student-detail-cards small { color:#647f8e; font-size:13px; }
 .student-detail-cards .student-english-card { background:#edfaf2; border-color:#97d7b0; }
+.student-detail-cards .student-judges-card { background:#f2f0fa; border-color:#cec6e5; border-left:4px solid #8270ac; }
+.student-detail-cards .student-judges-card > span,.student-detail-cards .student-judges-card > strong { color:#655184; }
 .student-chart-card h4 { font-size:18px; color:#204e66; margin:0 0 24px; }
 .student-gender-chart { display:flex; align-items:center; gap:30px; flex-wrap:wrap; }
 .student-donut { width:180px; height:180px; border-radius:50%; padding:23px; flex-shrink:0; box-sizing:border-box; }

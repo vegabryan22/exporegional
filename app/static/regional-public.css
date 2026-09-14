@@ -54,3 +54,13 @@
 .regional-project-access > a:hover { background:#124e6c; }
 .regional-project-access > a:focus-visible { outline:3px solid #247db9; outline-offset:4px; }
 @media(max-width:650px) { .regional-project-access { flex-direction:column; align-items:stretch; } .regional-project-access > a { text-align:center; } }
+.regional-public-home .regional-access-strip { margin-top:32px; padding:28px 32px; border:1px solid #244c65; border-radius:20px; background:#153c53; gap:24px; }
+.regional-private-copy { display:flex; align-items:center; gap:20px; min-width:0; }
+.regional-private-icon { width:48px; height:48px; flex:0 0 48px; padding:10px; box-sizing:border-box; color:#a7def0; background:#244e66; border-radius:14px; }
+.regional-public-home .regional-access-strip .regional-eyebrow { color:#a7def0; font-size:11px; margin:0 0 8px; }
+.regional-public-home .regional-access-strip h3 { color:#fff; font-size:24px; line-height:1.25; margin:0 0 8px; }
+.regional-public-home .regional-access-strip .regional-private-copy p:last-child { color:#c0d5e2; font-size:14px; margin:0; }
+.regional-public-home .regional-access-strip > a { display:inline-flex; align-items:center; justify-content:center; gap:18px; padding:12px 22px; border-radius:10px; background:#fff; color:#153c53; font-size:14px; text-decoration:none; font-weight:800; }
+.regional-public-home .regional-access-strip > a:hover { background:#dff1f8; }
+.regional-public-home .regional-access-strip > a:focus-visible { outline:3px solid #a7def0; outline-offset:4px; }
+@media(max-width:600px) { .regional-public-home .regional-access-strip { padding:22px; } .regional-private-copy { align-items:flex-start; gap:12px; } .regional-public-home .regional-access-strip h3 { font-size:21px; } }

@@ -109,6 +109,7 @@ def create_app():
             # permite que un despliegue GitOps arranque antes de ejecutar Alembic.
             ensure_jornada_schema()
             ensure_institution_responsibles_schema()
+            ensure_campaign_schema()
             try:
                 ensure_specialty_catalog(db)
             except IntegrityError:
@@ -497,33 +498,31 @@ def _reconcile_existing_logistics_statuses(connection):
     )
 
 
-def ensure_schema_updates():
-    inspector = inspect(db.engine)
+def ensure_campaign_schema():
+    """Ensure campaign deadlines exist even when AUTO_INIT_DB is disabled."""
+    from app.models.campaign import Campaign
+
+    Campaign.__table__.create(bind=db.engine, checkfirst=True)
+    campaign_columns = {column["name"] for column in inspect(db.engine).get_columns("campaigns")}
     with db.engine.begin() as connection:
-        if "campaigns" not in inspector.get_table_names():
-            connection.execute(
-                text(
-                    """
-                    CREATE TABLE campaigns (
-                        id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                        name VARCHAR(180) NOT NULL UNIQUE,
-                        start_date DATE NOT NULL,
-                        end_date DATE NOT NULL,
-                        project_registration_closes_at DATETIME NULL,
-                        judge_registration_closes_at DATETIME NULL,
-                        is_active BOOLEAN NOT NULL DEFAULT 0,
-                        notes TEXT NULL,
-                        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    )
-                    """
-                )
+        if "project_registration_closes_at" not in campaign_columns:
+            _run_optional_schema_statement(
+                connection,
+                "ALTER TABLE campaigns ADD COLUMN project_registration_closes_at DATETIME NULL",
+                "campaigns.project_registration_closes_at",
+            )
+        if "judge_registration_closes_at" not in campaign_columns:
+            _run_optional_schema_statement(
+                connection,
+                "ALTER TABLE campaigns ADD COLUMN judge_registration_closes_at DATETIME NULL",
+                "campaigns.judge_registration_closes_at",
             )
 
-        campaign_columns = {column["name"] for column in inspect(db.engine).get_columns("campaigns")}
-        if "project_registration_closes_at" not in campaign_columns:
-            connection.execute(text("ALTER TABLE campaigns ADD COLUMN project_registration_closes_at DATETIME NULL"))
-        if "judge_registration_closes_at" not in campaign_columns:
-            connection.execute(text("ALTER TABLE campaigns ADD COLUMN judge_registration_closes_at DATETIME NULL"))
+
+def ensure_schema_updates():
+    ensure_campaign_schema()
+    inspector = inspect(db.engine)
+    with db.engine.begin() as connection:
 
         judge_columns = {column["name"] for column in inspector.get_columns("judges")}
         if "is_admin" not in judge_columns:

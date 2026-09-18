@@ -353,6 +353,9 @@ def register_cli(app):
         if not judge or not project:
             print("Juez o proyecto no encontrado.")
             return
+        if judge.institution_id and project.institution_id and judge.institution_id == project.institution_id:
+            print("Asignación rechazada: el juez no puede evaluar proyectos de su propia institución.")
+            return
 
         exists = Assignment.query.filter_by(judge_id=judge_id, project_id=project_id).first()
         if exists:

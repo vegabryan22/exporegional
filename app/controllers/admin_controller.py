@@ -381,6 +381,9 @@ def _assignment_compatibility_error(
         return "Debes seleccionar un juez válido."
     if not project:
         return "Debes seleccionar un proyecto válido."
+    if judge.institution_id and project.institution_id and judge.institution_id == project.institution_id:
+        institution_name = project.institution.name if project.institution else "la misma institución"
+        return f"{judge.full_name} pertenece a {institution_name} y no puede evaluar proyectos de su propio colegio."
     if not judge.is_active_user:
         return f"{judge.full_name} está inactivo y no puede recibir asignaciones."
     if can_documentation and not judge.can_evaluate_documentation:
@@ -487,6 +490,8 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
 
         def compatible(judge: Judge, required_scope: str | None = None) -> bool:
             if judge.id in already_assigned_ids:
+                return False
+            if judge.institution_id and project.institution_id and judge.institution_id == project.institution_id:
                 return False
             if not judge.can_evaluate_category(project.category):
                 return False
@@ -4578,6 +4583,25 @@ def _handle_action(action: str):
             flash("No hay asignaciones en borrador para confirmar.", "error")
         else:
             draft_project_ids = {assignment.project_id for assignment in drafts}
+            institutional_conflicts = [
+                assignment
+                for assignment in drafts
+                if assignment.judge
+                and assignment.project
+                and assignment.judge.institution_id
+                and assignment.project.institution_id
+                and assignment.judge.institution_id == assignment.project.institution_id
+            ]
+            if institutional_conflicts:
+                sample = ", ".join(
+                    f"{assignment.judge.full_name} → {assignment.project.title}"
+                    for assignment in institutional_conflicts[:5]
+                )
+                flash(
+                    "No se pueden confirmar borradores: hay jueces asignados a proyectos de su propia institución: " + sample,
+                    "error",
+                )
+                return
             english_projects_without_judge = []
             projects_under_minimum = []
             for project_id in draft_project_ids:

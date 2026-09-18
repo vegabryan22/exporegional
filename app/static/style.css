@@ -17266,3 +17266,4 @@ body.admin-page .admin-menu-section { min-height:0; height:auto; align-self:star
 .member-card-english-switch input[type="checkbox"]:checked ~ i::after { transform:translateX(16px); }
 .member-card-english-switch:has(input:checked) { border-color:#91d2ac; background:#effaf3; }
 .member-card-english-switch:focus-within { outline:3px solid rgba(36,125,185,.22); outline-offset:2px; }
+.member-card-english-form.is-saving { opacity:.6; pointer-events:none; }

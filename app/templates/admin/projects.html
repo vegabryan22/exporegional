@@ -655,12 +655,12 @@
                         <span><small>Nivel</small><strong>{{ (member.level.code if member.level else project.grade_level) or 'N/D' }}</strong></span>
                         <span><small>G&eacute;nero</small><strong>{{ member.gender|capitalize if member.gender else 'N/D' }}</strong></span>
                     </div>
-                    <form method="post" action="{{ action_url }}" class="member-card-english-form">
+                    <form method="post" action="{{ action_url }}" class="member-card-english-form" data-member-english-form data-current="{{ '1' if member.participates_in_english else '0' }}">
                         <input type="hidden" name="next" value="{{ next_url }}#members-project-{{ project.id }}">
                         <input type="hidden" name="action" value="toggle_member_english">
                         <input type="hidden" name="member_id" value="{{ member.id }}">
                         <label class="member-card-english-switch">
-                            <span><strong>Exposici&oacute;n en ingl&eacute;s</strong><small>{{ 'Sí, participa' if member.participates_in_english else 'No participa' }}</small></span>
+                            <span><strong>Exposici&oacute;n en ingl&eacute;s</strong><small data-member-english-state>{{ 'Sí, participa' if member.participates_in_english else 'No participa' }}</small></span>
                             <input type="checkbox" name="member_participates_in_english" value="1" {% if member.participates_in_english %}checked{% endif %} onchange="this.form.requestSubmit()">
                             <input type="hidden" name="member_participates_in_english" value="0">
                             <i aria-hidden="true"></i>
@@ -861,6 +861,55 @@
 
 <script>
     (function () {
+        function showEnglishNotice(message, tone) {
+            var notice = document.querySelector('[data-admin-async-notice]');
+            if (!notice) {
+                notice = document.createElement('div');
+                notice.setAttribute('data-admin-async-notice', '');
+                document.body.appendChild(notice);
+            }
+            notice.className = 'account-async-notice ' + (tone || 'success');
+            notice.textContent = message;
+            notice.hidden = false;
+            window.clearTimeout(notice._hideTimer);
+            notice._hideTimer = window.setTimeout(function () { notice.hidden = true; }, 4000);
+        }
+
+        document.querySelectorAll('[data-member-english-form]').forEach(function (form) {
+            if (form.dataset.asyncBound === '1') { return; }
+            form.dataset.asyncBound = '1';
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                var checkbox = form.querySelector('input[type="checkbox"]');
+                var state = form.querySelector('[data-member-english-state]');
+                var previous = form.dataset.current === '1';
+                var data = new FormData(form);
+                data.set('batch_mode', '1');
+                checkbox.disabled = true;
+                form.classList.add('is-saving');
+                try {
+                    var response = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+                        body: data
+                    });
+                    var payload = await response.json();
+                    var message = (payload.messages || []).map(function (item) { return item.message; }).join(' ');
+                    if (!response.ok || !payload.ok) { throw new Error(message || 'No se pudo guardar el cambio.'); }
+                    form.dataset.current = checkbox.checked ? '1' : '0';
+                    state.textContent = checkbox.checked ? 'Sí, participa' : 'No participa';
+                    showEnglishNotice(message || 'Participación en inglés actualizada.');
+                } catch (error) {
+                    checkbox.checked = previous;
+                    showEnglishNotice(error.message || 'No se pudo guardar el cambio.', 'error');
+                } finally {
+                    checkbox.disabled = false;
+                    form.classList.remove('is-saving');
+                }
+            });
+        });
+
         document.querySelectorAll('.expedient-file-control').forEach(function (control) {
             var input = control.querySelector('input[type="file"]');
             var button = control.querySelector('[data-file-select]');

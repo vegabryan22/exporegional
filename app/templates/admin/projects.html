@@ -748,6 +748,11 @@
                 <label>Teléfono<input type="text" name="member_phone"></label>
                 <label>Correo<input type="email" name="member_email"></label>
             </div>
+            <label class="member-english-toggle">
+                <input type="checkbox" name="member_participates_in_english" value="1">
+                <input type="hidden" name="member_participates_in_english" value="0">
+                <span><strong>Expone en inglés</strong><small>Marcá esta opción si el estudiante realizará la exposición individual en inglés.</small></span>
+            </label>
             <label>Foto del integrante
                 <input type="file" name="member_photo" accept="image/png,image/jpeg,image/webp,image/gif">
             </label>
@@ -806,6 +811,11 @@
                 <label>Teléfono<input type="text" name="member_phone" value="{{ member.phone or '' }}"></label>
                 <label>Correo<input type="email" name="member_email" value="{{ member.email or '' }}"></label>
             </div>
+            <label class="member-english-toggle">
+                <input type="checkbox" name="member_participates_in_english" value="1" {% if member.participates_in_english %}checked{% endif %}>
+                <input type="hidden" name="member_participates_in_english" value="0">
+                <span><strong>Expone en inglés</strong><small>Activalo si este estudiante realizará la exposición individual en inglés.</small></span>
+            </label>
             <div class="member-photo-editor">
                 <div class="member-photo-preview">
                 {% if member.photo_url %}

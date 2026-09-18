@@ -17247,3 +17247,10 @@ body.admin-page .admin-menu-section { min-height:0; height:auto; align-self:star
 .pd-hero-body .pd-logbook-link:hover { background:#e1f1e9; }
 .pd-logbook-link small { background:#deeee6; }
 .pd-document-actions .pd-document-pending { margin:0; font-size:12px; }
+.member-english-toggle { display:flex!important; align-items:center; gap:14px; padding:16px 18px; border:1px solid #b9d7e7; border-radius:14px; background:#f2f9fc; cursor:pointer; }
+.member-english-toggle:has(input[type="checkbox"]:checked) { border-color:#78c695; background:#ebf9f0; box-shadow:inset 4px 0 #3fa66a; }
+.member-english-toggle input[type="checkbox"] { width:22px; height:22px; flex:0 0 22px; accent-color:#278d55; }
+.member-english-toggle input[type="hidden"] { display:none; }
+.member-english-toggle span { display:grid; gap:3px; }
+.member-english-toggle strong { color:#164b68; font-size:15px; }
+.member-english-toggle small { color:#5f7989; font-size:13px; font-weight:400; }

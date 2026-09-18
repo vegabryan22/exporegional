@@ -891,12 +891,28 @@
                 try {
                     var response = await fetch(form.action, {
                         method: 'POST',
-                        headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+                        headers: {'Accept': 'application/json, text/html', 'X-Requested-With': 'XMLHttpRequest'},
                         body: data
                     });
-                    var payload = await response.json();
-                    var message = (payload.messages || []).map(function (item) { return item.message; }).join(' ');
-                    if (!response.ok || !payload.ok) { throw new Error(message || 'No se pudo guardar el cambio.'); }
+                    var contentType = response.headers.get('content-type') || '';
+                    var message = '';
+                    if (contentType.indexOf('application/json') !== -1) {
+                        var payload = await response.json();
+                        message = (payload.messages || []).map(function (item) { return item.message; }).join(' ');
+                        if (!response.ok || !payload.ok) { throw new Error(message || payload.error || 'No se pudo guardar el cambio.'); }
+                    } else {
+                        var html = await response.text();
+                        var parsed = new DOMParser().parseFromString(html, 'text/html');
+                        var alerts = Array.prototype.slice.call(parsed.querySelectorAll('.alert'));
+                        var errorAlert = alerts.find(function (item) { return item.classList.contains('error'); });
+                        message = alerts.map(function (item) { return item.textContent.trim(); }).filter(Boolean).join(' ');
+                        if (response.redirected && response.url.indexOf('/auth/login') !== -1) {
+                            throw new Error('La sesión venció. Ingresá nuevamente para guardar el cambio.');
+                        }
+                        if (!response.ok || errorAlert || !parsed.querySelector('.admin-main')) {
+                            throw new Error((errorAlert && errorAlert.textContent.trim()) || message || 'El servidor no confirmó el cambio.');
+                        }
+                    }
                     form.dataset.current = checkbox.checked ? '1' : '0';
                     state.textContent = checkbox.checked ? 'Sí, participa' : 'No participa';
                     showEnglishNotice(message || 'Participación en inglés actualizada.');

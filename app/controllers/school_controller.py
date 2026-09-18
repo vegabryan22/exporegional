@@ -214,8 +214,14 @@ def _return_project_to_regional_review(project: Project, reason: str):
 def dashboard():
     from app.controllers import admin_controller
 
+    project_management_closed, project_management_message, _active_campaign = _project_management_status()
     if request.method == "POST":
         action = (request.form.get("action") or "").strip()
+        if project_management_closed:
+            log_event("school.project.management_blocked", "campaign", _active_campaign.id if _active_campaign else None, project_management_message)
+            db.session.commit()
+            flash(project_management_message, "warning")
+            return redirect(url_for("school.dashboard"))
         allowed_actions = {
             "update_project", "update_project_logistics", "save_school_expedient", "replace_project_document", "replace_project_logbook",
             "upload_project_logo", "upload_member_photo", "delete_member_photo",
@@ -320,6 +326,8 @@ def dashboard():
     context["school_dashboard_mode"] = True
     context["school"] = school
     context["school_metrics"] = metrics
+    context["school_project_management_closed"] = project_management_closed
+    context["school_project_management_message"] = project_management_message
     return render_template("admin/projects.html", **context)
 
 
@@ -328,6 +336,22 @@ def _minimum_school_judges() -> int:
         return max(1, min(50, int(SystemSetting.get_value("regional_minimum_judges_per_school", "2"))))
     except (TypeError, ValueError):
         return 2
+
+
+def _project_management_status():
+    active_campaign = Campaign.query.filter_by(is_active=True).order_by(Campaign.start_date.desc()).first()
+    deadline_closed, deadline = registration_is_closed(active_campaign, "project")
+    closed = not active_campaign or deadline_closed
+    if not active_campaign:
+        message = "No hay una campaña activa. Los proyectos quedaron disponibles solo para consulta."
+    elif deadline_closed:
+        message = (
+            f"La inscripción de proyectos cerró el {deadline_display(deadline)}. "
+            "Desde ahora solo la administración regional puede realizar cambios."
+        )
+    else:
+        message = ""
+    return closed, message, active_campaign
 
 
 def judges():
@@ -456,6 +480,14 @@ def project_workspace(project_id: int):
         flash("Proyecto no encontrado.", "error")
         return redirect(url_for("school.dashboard"))
 
+    project_management_closed, project_management_message, _active_campaign = _project_management_status()
+    if project_management_closed:
+        if request.method == "POST":
+            log_event("school.project.management_blocked", "project", project.id, project_management_message)
+            db.session.commit()
+        flash(project_management_message, "warning")
+        return redirect(url_for("school.dashboard", _anchor=f"project-{project.id}"))
+
     embedded = request.args.get("embedded") == "1"
 
     if request.method == "POST":
@@ -542,6 +574,13 @@ def project_form(project_id: int | None = None):
     project = _owned_project(project_id) if project_id else None
     if project_id and not project:
         flash("Proyecto no encontrado.", "error")
+        return redirect(url_for("school.dashboard"))
+    project_management_closed, project_management_message, _active_campaign = _project_management_status()
+    if project_management_closed:
+        if request.method == "POST":
+            log_event("school.project.management_blocked", "project", project.id if project else None, project_management_message)
+            db.session.commit()
+        flash(project_management_message, "warning")
         return redirect(url_for("school.dashboard"))
     if project and project.regional_status in {Project.STATUS_EVALUATED, Project.STATUS_REGIONAL_WINNER}:
         flash("Un proyecto evaluado no puede modificarse desde el colegio.", "error")
@@ -687,6 +726,12 @@ def submit_project(project_id: int):
     if not project:
         flash("Proyecto no encontrado.", "error")
         return redirect(url_for("school.dashboard"))
+    project_management_closed, project_management_message, _active_campaign = _project_management_status()
+    if project_management_closed:
+        log_event("school.project.management_blocked", "project", project.id, project_management_message)
+        db.session.commit()
+        flash(project_management_message, "warning")
+        return redirect(url_for("school.dashboard", _anchor=f"project-{project.id}"))
     needs_logbook = (project.category or "").strip().lower() == "steam" and not project.project_logbook_path
     if not project.members or not project.project_document_path or needs_logbook or not project.has_real_logo or any(not member.photo_url for member in project.members):
         flash("Antes de enviar debes completar estudiantes, documento escrito, bitácora para STEAM, logo y fotografía de cada integrante.", "error")

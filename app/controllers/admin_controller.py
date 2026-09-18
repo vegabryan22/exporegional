@@ -262,6 +262,7 @@ ACTION_MODULE_MAP = {
     "delete_member_photo": "projects",
     "create_project_member": "projects",
     "update_project_member": "projects",
+    "toggle_member_english": "projects",
     "delete_project_member": "projects",
     "create_category": "categories",
     "update_category": "categories",
@@ -6139,6 +6140,33 @@ def _handle_action(action: str):
                     )
                     db.session.commit()
                     flash("Integrante agregado.", "success")
+
+    elif action == "toggle_member_english":
+        member_id = request.form.get("member_id", type=int)
+        member = ProjectMember.query.options(joinedload(ProjectMember.project)).get(member_id) if member_id else None
+        enabled = _str_to_bool(request.form.get("member_participates_in_english"))
+        if not member:
+            flash("Integrante no encontrado.", "error")
+        elif not enabled and Evaluation.query.filter_by(
+            project_id=member.project_id,
+            project_member_id=member.id,
+            evaluation_type=ENGLISH_EVAL_TYPE_CODE,
+        ).first():
+            flash("No se puede desactivar inglés porque este estudiante ya tiene una evaluación registrada.", "error")
+        elif member.participates_in_english == enabled:
+            flash("La participación en inglés no cambió.", "info")
+        else:
+            member.participates_in_english = enabled
+            state_label = "Sí expone en inglés" if enabled else "No expone en inglés"
+            _add_member_change(member.project_id, member.id, "english_updated", f"{member.full_name}: {state_label}")
+            log_event(
+                "admin.member.english_toggle",
+                "project_member",
+                entity_id=member.id,
+                detail=f"Participación en inglés actualizada: {member.full_name}; proyecto #{member.project_id}; estado={enabled}",
+            )
+            db.session.commit()
+            flash(f"{member.full_name}: {state_label}.", "success")
 
     elif action == "update_project_member":
         member_id = request.form.get("member_id", type=int)

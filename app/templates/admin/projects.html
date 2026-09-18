@@ -655,6 +655,17 @@
                         <span><small>Nivel</small><strong>{{ (member.level.code if member.level else project.grade_level) or 'N/D' }}</strong></span>
                         <span><small>G&eacute;nero</small><strong>{{ member.gender|capitalize if member.gender else 'N/D' }}</strong></span>
                     </div>
+                    <form method="post" action="{{ action_url }}" class="member-card-english-form">
+                        <input type="hidden" name="next" value="{{ next_url }}#members-project-{{ project.id }}">
+                        <input type="hidden" name="action" value="toggle_member_english">
+                        <input type="hidden" name="member_id" value="{{ member.id }}">
+                        <label class="member-card-english-switch">
+                            <span><strong>Exposici&oacute;n en ingl&eacute;s</strong><small>{{ 'S&iacute;, participa' if member.participates_in_english else 'No participa' }}</small></span>
+                            <input type="checkbox" name="member_participates_in_english" value="1" {% if member.participates_in_english %}checked{% endif %} onchange="this.form.requestSubmit()">
+                            <input type="hidden" name="member_participates_in_english" value="0">
+                            <i aria-hidden="true"></i>
+                        </label>
+                    </form>
                     <p>{{ member.specialty|natural_title if member.specialty else 'Especialidad no indicada' }}</p>
                     <div class="member-profile-actions">
                         <button type="button" class="outline-btn" data-dialog-open="edit-member-{{ member.id }}">Editar informaci&oacute;n</button>
@@ -687,6 +698,7 @@
                             {% elif change.action == 'updated' %}Informaci&oacute;n actualizada
                             {% elif change.action == 'deleted' %}Integrante eliminado
                             {% elif change.action == 'photo_deleted' %}Fotograf&iacute;a eliminada
+                            {% elif change.action == 'english_updated' %}Participaci&oacute;n en ingl&eacute;s actualizada
                             {% else %}Cambio en el integrante{% endif %}
                         </strong>
                         <p>{{ change.details }}</p>

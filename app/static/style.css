@@ -15479,6 +15479,8 @@ body.school-portal-page .admin-sidebar-top h2 {
     font-size: 1.32rem;
     line-height: 1.2;
 }
+.judge-action-link.logbook { background:#e7f5ef; border-color:#9bceb9; color:#176b50; }
+.judge-action-link.logbook:hover { background:#d5ecdf; border-color:#68ad91; }
 
 .school-sidebar-identity {
     display: flex;

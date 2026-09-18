@@ -131,6 +131,21 @@
                         {% else %}
                             <span class="judge-action-link missing">Sin documento</span>
                         {% endif %}
+                        {% if project.requires_project_logbook %}
+                            {% if project.project_logbook_path %}
+                                <a
+                                    href="{{ url_for('judge.project_logbook', project_id=project.id) }}"
+                                    target="_blank"
+                                    rel="noopener"
+                                    class="judge-action-link logbook"
+                                    data-no-iconify
+                                >
+                                    Bit&aacute;cora STEAM
+                                </a>
+                            {% else %}
+                                <span class="judge-action-link missing">Sin bit&aacute;cora</span>
+                            {% endif %}
+                        {% endif %}
                         {% for eval_entry in available_eval_entries %}
                             {% if evaluation_map.get((project.id, eval_entry.code, eval_entry.project_member_id or 0)) %}
                                 <span class="judge-action-link done">{{ eval_entry.label }} listo</span>

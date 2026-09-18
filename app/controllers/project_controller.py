@@ -1445,6 +1445,7 @@ def register_project():
             "public/project_registration_closed.html",
             deadline_label="",
             closed_message="No hay una campaña de inscripción activa en este momento.",
+            school=current_user.institution_ref,
         )
     registration_closed, registration_deadline = registration_is_closed(active_campaign, "project")
     if registration_closed:
@@ -1453,6 +1454,7 @@ def register_project():
         return render_template(
             "public/project_registration_closed.html",
             deadline_label=deadline_display(registration_deadline),
+            school=current_user.institution_ref,
         )
     if request.method == "POST":
         form_data = request.form

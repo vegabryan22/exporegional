@@ -10,6 +10,7 @@ from werkzeug.utils import secure_filename
 
 from app.extensions import db
 from app.models.category import Category
+from app.models.campaign import Campaign
 from app.models.judge import Judge
 from app.models.project import Project
 from app.models.project_member import ProjectMember
@@ -18,6 +19,7 @@ from app.models.system_setting import SystemSetting
 from app.services.audit_service import log_event
 from app.services.regional_readiness_service import approval_missing_requirements
 from app.services.regional_project_service import RegionalTransitionError, transition_project
+from app.services.registration_deadline_service import deadline_display, registration_is_closed
 
 
 def school_coordinator_required(view_func):
@@ -330,8 +332,27 @@ def _minimum_school_judges() -> int:
 
 def judges():
     school = current_user.institution_ref
+    active_campaign = Campaign.query.filter_by(is_active=True).order_by(Campaign.start_date.desc()).first()
+    deadline_closed, judge_deadline = registration_is_closed(active_campaign, "judge")
+    judge_registration_closed = not active_campaign or deadline_closed
+    if not active_campaign:
+        judge_registration_message = "No hay una campaña activa para inscribir jueces."
+    elif deadline_closed:
+        judge_registration_message = f"La inscripción de jueces cerró el {deadline_display(judge_deadline)}."
+    else:
+        judge_registration_message = ""
     if request.method == "POST":
         action = (request.form.get("action") or "").strip()
+        if action == "create" and judge_registration_closed:
+            log_event(
+                "school.judge.registration_blocked",
+                "campaign",
+                active_campaign.id if active_campaign else None,
+                f"Colegio={school.code}; {judge_registration_message}",
+            )
+            db.session.commit()
+            flash(judge_registration_message, "warning")
+            return redirect(url_for("school.judges"))
         judge_id = request.form.get("judge_id", type=int)
         judge = None
         if judge_id:
@@ -421,6 +442,9 @@ def judges():
         "school/judges.html", school=school, judges=school_judges,
         minimum_judges=minimum, active_judges=active_count,
         missing_judges=max(0, minimum - active_count),
+        judge_registration_closed=judge_registration_closed,
+        judge_registration_message=judge_registration_message,
+        judge_registration_deadline=judge_deadline,
     )
 
 

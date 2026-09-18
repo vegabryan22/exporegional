@@ -3,14 +3,20 @@
 <section class="card admin-section users-admin-hero">
   <div class="page-head users-admin-head">
     <div><p class="maintenance-kicker">Coordinación del colegio</p><h3>Jueces inscritos</h3><p>Estos jueces quedan vinculados exclusivamente a {{ school.name }}.</p></div>
-    <button type="button" class="secondary-btn" data-dialog-open="create-school-judge">Inscribir juez</button>
+    {% if judge_registration_closed %}
+      <button type="button" class="secondary-btn" disabled aria-disabled="true" title="{{ judge_registration_message }}">Inscripción cerrada</button>
+    {% else %}
+      <button type="button" class="secondary-btn" data-dialog-open="create-school-judge">Inscribir juez</button>
+    {% endif %}
   </div>
   <div class="users-summary-grid">
     <article><strong>{{ active_judges }}</strong><span>Jueces activos</span></article>
     <article><strong>{{ minimum_judges }}</strong><span>Mínimo requerido</span></article>
     <article><strong>{{ missing_judges }}</strong><span>{{ 'Pendientes' if missing_judges else 'Requisito cumplido' }}</span></article>
   </div>
-  {% if missing_judges %}<div class="flash warning">El colegio debe inscribir {{ missing_judges }} juez{{ '' if missing_judges == 1 else 'ces' }} más.</div>{% endif %}
+  {% if judge_registration_closed %}
+    <div class="flash warning"><strong>Inscripción cerrada.</strong> {{ judge_registration_message }} No es posible iniciar un nuevo registro.</div>
+  {% elif missing_judges %}<div class="flash warning">El colegio debe inscribir {{ missing_judges }} juez{{ '' if missing_judges == 1 else 'ces' }} más.</div>{% endif %}
 </section>
 
 <section class="card admin-section users-table-section">
@@ -29,5 +35,5 @@
 <fieldset><legend>Información personal</legend><div class="school-judge-form-grid"><label class="school-judge-span-2">Nombre completo<input name="full_name" value="{{ judge.full_name if judge else '' }}" required></label><label>Correo<input type="email" name="email" value="{{ judge.email if judge else '' }}" required></label><label>Teléfono<input name="phone" value="{{ judge.phone or '' if judge else '' }}"></label><label>Identificación<input name="identity" value="{{ judge.identity or '' if judge else '' }}"></label><label>Cargo o especialidad<input name="job_title" value="{{ judge.job_title or '' if judge else '' }}"></label></div></fieldset>
 <fieldset><legend>Perfil de evaluación</legend><div class="school-judge-form-grid"><label>Categorías<select name="category_scope"><option value="ambas" {% if not judge or judge.category_scope_normalized == 'ambas' %}selected{% endif %}>STEAM y Emprendimiento</option><option value="steam" {% if judge and judge.category_scope_normalized == 'steam' %}selected{% endif %}>Solo STEAM</option><option value="emprendimiento" {% if judge and judge.category_scope_normalized == 'emprendimiento' %}selected{% endif %}>Solo Emprendimiento</option></select></label><label>Puede evaluar<select name="evaluation_scope"><option value="ambas" {% if not judge or (judge.can_evaluate_documentation and judge.can_evaluate_exposition) %}selected{% endif %}>Documento y exposición</option><option value="documentacion" {% if judge and judge.can_evaluate_documentation and not judge.can_evaluate_exposition %}selected{% endif %}>Solo documento</option><option value="exposicion" {% if judge and judge.can_evaluate_exposition and not judge.can_evaluate_documentation %}selected{% endif %}>Solo exposición</option></select></label><label>Estado de la cuenta<select name="is_active_user"><option value="1" {% if not judge or judge.is_active_user %}selected{% endif %}>Activo</option><option value="0" {% if judge and not judge.is_active_user %}selected{% endif %}>Inactivo</option></select></label><label class="school-judge-toggle"><input type="checkbox" name="can_evaluate_english" value="1" {% if judge and judge.can_evaluate_english %}checked{% endif %}><span><strong>Evaluación en inglés</strong><small>Puede evaluar exposiciones de proyectos en inglés.</small></span></label></div></fieldset>
 <div class="school-judge-dialog-actions"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">{{ 'Guardar cambios' if judge else 'Inscribir juez' }}</button></div></form></div></dialog>{% endmacro %}
-{{ judge_form('create-school-judge', 'Inscribir juez') }}{% for judge in judges %}{{ judge_form('edit-school-judge-' ~ judge.id, 'Editar juez', judge) }}{% endfor %}
+{% if not judge_registration_closed %}{{ judge_form('create-school-judge', 'Inscribir juez') }}{% endif %}{% for judge in judges %}{{ judge_form('edit-school-judge-' ~ judge.id, 'Editar juez', judge) }}{% endfor %}
 {% endblock %}

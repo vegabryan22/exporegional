@@ -10058,7 +10058,7 @@ dialog.members-overview-dialog {
 
 .audit-filter-grid {
     display: grid;
-    grid-template-columns: minmax(220px, 1.2fr) minmax(180px, 0.9fr) minmax(180px, 0.9fr) auto;
+    grid-template-columns: minmax(190px, 1.25fr) repeat(3, minmax(145px, 0.85fr)) minmax(110px, 0.55fr) auto;
     gap: 0.65rem;
     align-items: end;
 }

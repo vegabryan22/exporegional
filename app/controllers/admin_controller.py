@@ -59,10 +59,7 @@ from app.models.workshop import Workshop
 from app.services.audit_service import log_event
 from app.services.assignment_service import balance_assignments_to_judge, reassign_absent_judge_assignments
 from app.services.registration_deadline_service import (
-    JUDGE_DEADLINE_KEY,
-    PROJECT_DEADLINE_KEY,
     deadline_display,
-    deadline_input_value,
     registration_is_closed,
 )
 from app.services.evaluation_service import (
@@ -220,7 +217,6 @@ PERMISSION_MANAGEABLE_MODULES = [
 ]
 
 ACTION_MODULE_MAP = {
-    "update_registration_deadlines": "campaigns",
     "create_campaign": "campaigns",
     "update_campaign": "campaigns",
     "delete_campaign": "campaigns",
@@ -369,6 +365,68 @@ def _assignment_scope_valid(can_documentation: bool, can_exposition: bool) -> bo
     return bool(can_documentation or can_exposition)
 
 
+ASSIGNMENTS_PER_SCOPE = 3
+
+
+def _assignment_capacity_error(
+    project: Project,
+    can_documentation: bool,
+    can_exposition: bool,
+    exclude_assignment_id: int | None = None,
+) -> str:
+    """Prevent more than three evaluators from being assigned to either rubric."""
+    query = Assignment.query.filter_by(project_id=project.id)
+    if exclude_assignment_id:
+        query = query.filter(Assignment.id != exclude_assignment_id)
+    assignments = query.all()
+    documentation_total = sum(bool(item.can_evaluate_documentation) for item in assignments)
+    exposition_total = sum(bool(item.can_evaluate_exposition) for item in assignments)
+    exceeded = []
+    if can_documentation and documentation_total >= ASSIGNMENTS_PER_SCOPE:
+        exceeded.append("documento")
+    if can_exposition and exposition_total >= ASSIGNMENTS_PER_SCOPE:
+        exceeded.append("exposición")
+    if not exceeded:
+        return ""
+    scope = " y ".join(exceeded)
+    return (
+        f"El proyecto '{project.title}' ya tiene {ASSIGNMENTS_PER_SCOPE} jueces para {scope}. "
+        "No se permite una cuarta evaluación del mismo rubro."
+    )
+
+
+def _trim_excess_draft_scopes(assignments: list[Assignment]) -> int:
+    """Trim only draft scopes so confirmed evaluations are never altered silently."""
+    confirmed = [item for item in assignments if item.status == Assignment.STATUS_CONFIRMED]
+    drafts = sorted(
+        (item for item in assignments if item.status == Assignment.STATUS_DRAFT),
+        key=lambda item: item.id or 0,
+    )
+    documentation_slots = max(
+        0,
+        ASSIGNMENTS_PER_SCOPE - sum(bool(item.can_evaluate_documentation) for item in confirmed),
+    )
+    exposition_slots = max(
+        0,
+        ASSIGNMENTS_PER_SCOPE - sum(bool(item.can_evaluate_exposition) for item in confirmed),
+    )
+    trimmed = 0
+    for assignment in drafts:
+        keep_documentation = bool(assignment.can_evaluate_documentation and documentation_slots > 0)
+        keep_exposition = bool(assignment.can_evaluate_exposition and exposition_slots > 0)
+        if keep_documentation:
+            documentation_slots -= 1
+        if keep_exposition:
+            exposition_slots -= 1
+        if keep_documentation != assignment.can_evaluate_documentation or keep_exposition != assignment.can_evaluate_exposition:
+            trimmed += 1
+        assignment.can_evaluate_documentation = keep_documentation
+        assignment.can_evaluate_exposition = keep_exposition
+        if not keep_documentation and not keep_exposition:
+            db.session.delete(assignment)
+    return trimmed
+
+
 def _apply_assignment_scope(assignment: Assignment, can_documentation: bool, can_exposition: bool):
     assignment.can_evaluate_documentation = bool(can_documentation)
     assignment.can_evaluate_exposition = bool(can_exposition)
@@ -415,7 +473,7 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
     - Remaining needs are filled by least-loaded judges so more judges participate.
     """
     SOFT_CAP = 3
-    target_evaluations = max(1, int(target_evaluations or 1))
+    target_evaluations = ASSIGNMENTS_PER_SCOPE
 
     if replace_drafts:
         Assignment.query.filter_by(status=Assignment.STATUS_DRAFT).delete()
@@ -482,6 +540,9 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
 
     for project in active_projects:
         existing = Assignment.query.options(joinedload(Assignment.judge)).filter_by(project_id=project.id).all()
+        _trim_excess_draft_scopes(existing)
+        db.session.flush()
+        existing = Assignment.query.options(joinedload(Assignment.judge)).filter_by(project_id=project.id).all()
         confirmed = [assignment for assignment in existing if assignment.status == Assignment.STATUS_CONFIRMED]
         existing_drafts = [assignment for assignment in existing if assignment.status == Assignment.STATUS_DRAFT]
         active_existing = confirmed + existing_drafts
@@ -521,8 +582,12 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
 
         def assign(judge: Judge):
             nonlocal doc_count, expo_count, english_count
-            can_documentation = bool(judge.can_evaluate_documentation)
-            can_exposition = bool(judge.can_evaluate_exposition)
+            # Only assign a rubric while it still needs coverage. A judge may
+            # cover both rubrics, but never become a fourth evaluator in either.
+            can_documentation = bool(judge.can_evaluate_documentation and doc_count < target_evaluations)
+            can_exposition = bool(judge.can_evaluate_exposition and expo_count < target_evaluations)
+            if not can_documentation and not can_exposition:
+                return False
             assignment = Assignment(
                 judge_id=judge.id,
                 project_id=project.id,
@@ -541,6 +606,7 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
                 expo_count += 1
             if can_exposition and judge.can_evaluate_english:
                 english_count += 1
+            return True
 
         if needs_english and english_count == 0:
             english_judge = pick("ingles", "ingles")
@@ -560,7 +626,8 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
                 next_judge = None
             if not next_judge:
                 break
-            assign(next_judge)
+            if not assign(next_judge):
+                break
 
         if new_assignments:
             created += len(new_assignments)
@@ -683,6 +750,16 @@ def _normalize_department_for_role(role: str, department: str) -> str:
 def _parse_date(raw_value):
     try:
         return datetime.strptime((raw_value or "").strip(), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _parse_datetime(raw_value):
+    value = (raw_value or "").strip()
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
     except ValueError:
         return None
 
@@ -4281,38 +4358,21 @@ def _handle_action(action: str):
     ):
         flash("Las cuentas coordinadoras se administran únicamente desde Colegios participantes.", "error")
         return
-    if action == "update_registration_deadlines":
-        project_value = (request.form.get("project_registration_closes_at") or "").strip()
-        judge_value = (request.form.get("judge_registration_closes_at") or "").strip()
-        invalid = []
-        for label, value in (("proyectos", project_value), ("jueces", judge_value)):
-            if value:
-                try:
-                    datetime.fromisoformat(value)
-                except ValueError:
-                    invalid.append(label)
-        if invalid:
-            flash(f"La fecha y hora de cierre de {', '.join(invalid)} no es válida.", "error")
-        else:
-            SystemSetting.set_value(PROJECT_DEADLINE_KEY, project_value)
-            SystemSetting.set_value(JUDGE_DEADLINE_KEY, judge_value)
-            log_event(
-                "admin.registration_deadlines.update",
-                "system_setting",
-                detail=f"Cierre proyectos={project_value or 'sin límite'}; jueces={judge_value or 'sin límite'}",
-            )
-            db.session.commit()
-            flash("Fechas de cierre actualizadas.", "success")
-
-    elif action == "create_campaign":
+    if action == "create_campaign":
         name = request.form.get("campaign_name", "").strip()
         start_date = _parse_date(request.form.get("campaign_start_date"))
         end_date = _parse_date(request.form.get("campaign_end_date"))
         is_active = _str_to_bool(request.form.get("campaign_is_active"))
         notes = request.form.get("campaign_notes", "").strip()
+        project_closes_raw = (request.form.get("project_registration_closes_at") or "").strip()
+        judge_closes_raw = (request.form.get("judge_registration_closes_at") or "").strip()
+        project_closes_at = _parse_datetime(project_closes_raw)
+        judge_closes_at = _parse_datetime(judge_closes_raw)
 
         if not name or not start_date or not end_date:
             flash("Nombre y fechas de campana son obligatorios.", "error")
+        elif (project_closes_raw and not project_closes_at) or (judge_closes_raw and not judge_closes_at):
+            flash("Las fechas y horas de cierre no son válidas.", "error")
         elif start_date > end_date:
             flash("La fecha de inicio no puede ser mayor a la fecha final.", "error")
         elif Campaign.query.filter_by(name=name).first():
@@ -4320,7 +4380,11 @@ def _handle_action(action: str):
         else:
             if is_active:
                 Campaign.query.update({"is_active": False})
-            campaign = Campaign(name=name, start_date=start_date, end_date=end_date, is_active=is_active, notes=notes)
+            campaign = Campaign(
+                name=name, start_date=start_date, end_date=end_date, is_active=is_active, notes=notes,
+                project_registration_closes_at=project_closes_at,
+                judge_registration_closes_at=judge_closes_at,
+            )
             db.session.add(campaign)
             log_event("admin.campaign.create", "campaign", detail=f"Campana creada: {name} ({start_date} a {end_date})")
             db.session.commit()
@@ -4337,9 +4401,15 @@ def _handle_action(action: str):
             end_date = _parse_date(request.form.get("campaign_end_date"))
             is_active = _str_to_bool(request.form.get("campaign_is_active"))
             notes = request.form.get("campaign_notes", "").strip()
+            project_closes_raw = (request.form.get("project_registration_closes_at") or "").strip()
+            judge_closes_raw = (request.form.get("judge_registration_closes_at") or "").strip()
+            project_closes_at = _parse_datetime(project_closes_raw)
+            judge_closes_at = _parse_datetime(judge_closes_raw)
             duplicate = Campaign.query.filter(Campaign.name == name, Campaign.id != campaign.id).first()
             if not name or not start_date or not end_date:
                 flash("Nombre y fechas de campana son obligatorios.", "error")
+            elif (project_closes_raw and not project_closes_at) or (judge_closes_raw and not judge_closes_at):
+                flash("Las fechas y horas de cierre no son válidas.", "error")
             elif start_date > end_date:
                 flash("La fecha de inicio no puede ser mayor a la fecha final.", "error")
             elif duplicate:
@@ -4352,6 +4422,8 @@ def _handle_action(action: str):
                 campaign.end_date = end_date
                 campaign.is_active = is_active
                 campaign.notes = notes
+                campaign.project_registration_closes_at = project_closes_at
+                campaign.judge_registration_closes_at = judge_closes_at
                 log_event("admin.campaign.update", "campaign", entity_id=campaign.id, detail=f"Campana actualizada: {name}")
                 db.session.commit()
                 flash("Campana actualizada.", "success")
@@ -4437,6 +4509,14 @@ def _handle_action(action: str):
                 )
                 if error:
                     compatibility_errors.append(error)
+                    continue
+                capacity_error = _assignment_capacity_error(
+                    project_map[project_id],
+                    can_documentation,
+                    can_exposition,
+                )
+                if capacity_error:
+                    compatibility_errors.append(capacity_error)
             if compatibility_errors:
                 flash(compatibility_errors[0], "error")
                 return
@@ -4587,8 +4667,7 @@ def _handle_action(action: str):
                     flash(f"Error inesperado: {exc}", "error")
 
     elif action == "auto_assign":
-        target_evaluations = request.form.get("max_per_project", type=int) or 3
-        target_evaluations = max(1, min(target_evaluations, 10))
+        target_evaluations = ASSIGNMENTS_PER_SCOPE
         replace_drafts = request.form.get("replace_drafts") == "1"
         created, skipped = _auto_assign_judges(target_evaluations, replace_drafts)
         if created:
@@ -4634,8 +4713,19 @@ def _handle_action(action: str):
                     "error",
                 )
                 return
+            trimmed_draft_scopes = 0
+            for project_id in draft_project_ids:
+                current_assignments = Assignment.query.filter_by(project_id=project_id).all()
+                trimmed_draft_scopes += _trim_excess_draft_scopes(current_assignments)
+            db.session.flush()
+            drafts = (
+                Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project).joinedload(Project.members))
+                .filter_by(status=Assignment.STATUS_DRAFT)
+                .all()
+            )
+
             english_projects_without_judge = []
-            projects_under_minimum = []
+            projects_with_invalid_coverage = []
             for project_id in draft_project_ids:
                 project_assignments = (
                     Assignment.query.options(joinedload(Assignment.judge), joinedload(Assignment.project).joinedload(Project.members))
@@ -4648,8 +4738,10 @@ def _handle_action(action: str):
                 project = project_assignments[0].project if project_assignments else None
                 doc_total = sum(1 for assignment in project_assignments if assignment.can_evaluate_documentation)
                 expo_total = sum(1 for assignment in project_assignments if assignment.can_evaluate_exposition)
-                if project and (doc_total < 3 or expo_total < 3):
-                    projects_under_minimum.append(f"{project.title} (Doc {doc_total}/3, Expo {expo_total}/3)")
+                if project and (doc_total != ASSIGNMENTS_PER_SCOPE or expo_total != ASSIGNMENTS_PER_SCOPE):
+                    projects_with_invalid_coverage.append(
+                        f"{project.title} (Doc {doc_total}/{ASSIGNMENTS_PER_SCOPE}, Expo {expo_total}/{ASSIGNMENTS_PER_SCOPE})"
+                    )
                 if (
                     project
                     and _project_requires_english(project)
@@ -4668,22 +4760,31 @@ def _handle_action(action: str):
                     "error",
                 )
                 return
-            if projects_under_minimum:
+            if projects_with_invalid_coverage:
                 flash(
-                    "No se pueden confirmar borradores: estos proyectos no alcanzan 3 evaluaciones por tipo: "
-                    + ", ".join(projects_under_minimum[:5]),
+                    "No se pueden confirmar borradores: cada proyecto debe tener exactamente 3 jueces por rubro: "
+                    + ", ".join(projects_with_invalid_coverage[:5]),
                     "error",
                 )
                 return
+            confirmed_count = 0
             for assignment in drafts:
                 assignment.status = Assignment.STATUS_CONFIRMED
-            db.session.commit()
+                confirmed_count += 1
             log_event(
                 "admin.assignment.confirm_drafts",
                 "assignment",
-                detail=f"Confirmadas {len(drafts)} asignaciones en borrador. Pendientes de notificación a jueces confirmados.",
+                detail=(
+                    f"Confirmadas {confirmed_count} asignaciones en borrador; "
+                    f"{trimmed_draft_scopes} alcances sobrantes corregidos. Pendientes de notificación."
+                ),
             )
-            flash(f"{len(drafts)} asignación(es) confirmadas. Usa 'Notificar confirmados' para enviar solo a jueces que confirmaron asistencia.", "success")
+            db.session.commit()
+            correction_note = f" Se corrigieron {trimmed_draft_scopes} alcances sobrantes." if trimmed_draft_scopes else ""
+            flash(
+                f"{confirmed_count} asignación(es) confirmadas.{correction_note} Usa 'Notificar confirmados' para enviar solo a jueces que confirmaron asistencia.",
+                "success",
+            )
 
     elif action == "send_confirmed_assignment_notifications":
         pending_assignments = (
@@ -4792,6 +4893,21 @@ def _handle_action(action: str):
                 ),
                 "error",
             )
+        elif _assignment_capacity_error(
+            assignment.project,
+            can_documentation,
+            can_exposition,
+            exclude_assignment_id=assignment.id,
+        ):
+            flash(
+                _assignment_capacity_error(
+                    assignment.project,
+                    can_documentation,
+                    can_exposition,
+                    exclude_assignment_id=assignment.id,
+                ),
+                "error",
+            )
         else:
             previous_judge = assignment.judge
             target_judge = judge if judge else previous_judge
@@ -4835,6 +4951,8 @@ def _handle_action(action: str):
             flash("Ya existe un usuario con ese correo.", "error")
         elif manual_password and len(manual_password) < 8:
             flash("La contrasena manual debe tener al menos 8 caracteres.", "error")
+        elif _assignment_capacity_error(project, can_documentation, can_exposition):
+            flash(_assignment_capacity_error(project, can_documentation, can_exposition), "error")
         else:
             password_value = manual_password if manual_password else secrets.token_urlsafe(8)
             judge = Judge(
@@ -5620,7 +5738,16 @@ def _handle_action(action: str):
                             old_file.unlink()
                     except OSError:
                         pass
-                log_event("admin.project.logbook.replace", "project", project.id, f"Bitácora STEAM actualizada para proyecto #{project.id}")
+                log_event(
+                    "admin.project.logbook.replace",
+                    "project",
+                    project.id,
+                    (
+                        f"Bitácora STEAM {'reemplazada' if old_path else 'cargada'} para el proyecto "
+                        f"#{project.id} '{project.title}'. Archivo anterior: {old_path or 'ninguno'}; "
+                        f"archivo nuevo: {project.project_logbook_path}."
+                    ),
+                )
                 db.session.commit()
                 flash("Bitácora del proyecto STEAM guardada.", "success")
             except ValueError as error:
@@ -10478,6 +10605,8 @@ def logs_page():
     q = (request.args.get("q", "") or "").strip()
     action = (request.args.get("action", "") or "").strip()
     entity = (request.args.get("entity", "") or "").strip()
+    group = (request.args.get("group", "") or "").strip()
+    project_id = request.args.get("project_id", type=int)
 
     query = SystemAuditLog.query
     if q:
@@ -10485,12 +10614,26 @@ def logs_page():
         query = query.filter(
             (SystemAuditLog.actor_name.ilike(like))
             | (SystemAuditLog.actor_email.ilike(like))
+            | (SystemAuditLog.action.ilike(like))
+            | (SystemAuditLog.entity.ilike(like))
             | (SystemAuditLog.detail.ilike(like))
         )
     if action:
         query = query.filter(SystemAuditLog.action == action)
     if entity:
         query = query.filter(SystemAuditLog.entity == entity)
+    if project_id:
+        query = query.filter(SystemAuditLog.entity == "project", SystemAuditLog.entity_id == project_id)
+    audit_groups = {
+        "documents": {"label": "Documentos y archivos", "patterns": ["%project.document%", "%project.logbook%", "%project.logo%", "%project.expedient%"]},
+        "projects": {"label": "Proyectos", "patterns": ["%project.%"]},
+        "judges": {"label": "Jueces", "patterns": ["%judge%"]},
+        "evaluations": {"label": "Evaluaciones", "patterns": ["%evaluation%"]},
+        "institutions": {"label": "Colegios", "patterns": ["%institution%", "%school.%"]},
+        "system": {"label": "Sistema y respaldos", "patterns": ["%database%", "%backup%", "%restore%", "%git%"]},
+    }
+    if group in audit_groups:
+        query = query.filter(or_(*(SystemAuditLog.action.ilike(pattern) for pattern in audit_groups[group]["patterns"])))
 
     logs = query.order_by(SystemAuditLog.created_at.desc()).limit(500).all()
     actions = [row[0] for row in db.session.query(SystemAuditLog.action).distinct().order_by(SystemAuditLog.action.asc()).all()]
@@ -10505,6 +10648,25 @@ def logs_page():
             "filter_q": q,
             "filter_action": action,
             "filter_entity": entity,
+            "filter_group": group,
+            "filter_project_id": project_id or "",
+            "audit_groups": audit_groups,
+            "audit_action_labels": {
+                "admin.project.document.replace": "Documento escrito actualizado",
+                "admin.project.logbook.replace": "Bitácora STEAM actualizada",
+                "admin.project.logo.upload": "Logo del proyecto actualizado",
+                "school.project.document.replace": "Documento escrito actualizado por el colegio",
+                "school.project.logbook.replace": "Bitácora STEAM actualizada por el colegio",
+                "school.project.logo.replace": "Logo actualizado por el colegio",
+                "school.project.expedient.save": "Expediente guardado por el colegio",
+                "public.project.document_revision.submit": "Actualización de documento solicitada",
+                "admin.project.document_revision.approve": "Actualización de documento aprobada",
+                "admin.project.document_revision.reject": "Actualización de documento rechazada",
+            },
+            "audit_entity_labels": {
+                "project": "Proyecto", "judge": "Juez", "institution": "Colegio",
+                "evaluation": "Evaluación", "system_setting": "Configuración",
+            },
         }
     )
     return render_template("admin/logs.html", **context)
@@ -10512,20 +10674,7 @@ def logs_page():
 
 @admin_module_required("campaigns")
 def campaigns_page():
-    project_closed, project_deadline = registration_is_closed(PROJECT_DEADLINE_KEY)
-    judge_closed, judge_deadline = registration_is_closed(JUDGE_DEADLINE_KEY)
-    return _render(
-        "admin/campaigns.html",
-        "campaigns",
-        registration_deadlines={
-            "project_value": deadline_input_value(PROJECT_DEADLINE_KEY),
-            "judge_value": deadline_input_value(JUDGE_DEADLINE_KEY),
-            "project_closed": project_closed,
-            "judge_closed": judge_closed,
-            "project_label": deadline_display(project_deadline),
-            "judge_label": deadline_display(judge_deadline),
-        },
-    )
+    return _render("admin/campaigns.html", "campaigns")
 
 
 @admin_module_required("institutions")
@@ -11298,13 +11447,18 @@ def judge_form_webhook():
         db.session.commit()
         return jsonify({"ok": False, "error": "Webhook deshabilitado."}), 403
 
-    registration_closed, registration_deadline = registration_is_closed(JUDGE_DEADLINE_KEY)
-    if registration_closed:
+    active_campaign = Campaign.query.filter_by(is_active=True).order_by(Campaign.start_date.desc()).first()
+    registration_closed, registration_deadline = registration_is_closed(active_campaign, "judge")
+    if not active_campaign or registration_closed:
         log_event("forms.judge_access.blocked", "judge", detail="Plazo de inscripción vencido")
         db.session.commit()
         return jsonify({
             "ok": False,
-            "error": f"El registro de jueces cerró el {deadline_display(registration_deadline)}.",
+            "error": (
+                f"El registro de jueces cerró el {deadline_display(registration_deadline)}."
+                if registration_deadline
+                else "No hay una campaña activa para registrar jueces."
+            ),
         }), 403
 
     expected_secret = _get_judge_form_secret()
@@ -11357,8 +11511,9 @@ def _validate_judge_registration_captcha(answer):
 
 
 def public_judge_registration():
-    registration_closed, registration_deadline = registration_is_closed(JUDGE_DEADLINE_KEY)
-    if SystemSetting.get_value("judge_public_registration_enabled", "1") != "1" or registration_closed:
+    active_campaign = Campaign.query.filter_by(is_active=True).order_by(Campaign.start_date.desc()).first()
+    registration_closed, registration_deadline = registration_is_closed(active_campaign, "judge")
+    if SystemSetting.get_value("judge_public_registration_enabled", "1") != "1" or not active_campaign or registration_closed:
         if request.method == "POST":
             flash("El registro de jueces esta cerrado en este momento.", "warning")
         return render_template(

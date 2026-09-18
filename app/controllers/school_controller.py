@@ -133,6 +133,11 @@ def _save_school_expedient(project: Project):
             member_photo_replacements[member.id] = _save_project_file(project, uploaded, "member_photo")
 
     old_assets = []
+    previous_files = {
+        "project_document": project.project_document_path,
+        "project_logbook": project.project_logbook_path,
+        "project_logo": project.project_logo_path if project.has_real_logo else None,
+    }
     if "project_document" in replacements:
         old_assets.append(project.project_document_path)
         project.project_document_path = replacements["project_document"]
@@ -162,7 +167,26 @@ def _save_school_expedient(project: Project):
     missing = approval_missing_requirements(project)
     project.logistics_status = "incompleto" if missing else "completo"
     saved_files = list(replacements) + [f"foto_integrante_{member_id}" for member_id in member_photo_replacements]
-    log_event("school.project.expedient.save", "project", project.id, f"Expediente guardado; archivos={', '.join(saved_files) or 'sin cambios'}")
+    file_events = {
+        "project_document": ("school.project.document.replace", "Documento escrito"),
+        "project_logbook": ("school.project.logbook.replace", "Bitácora STEAM"),
+        "project_logo": ("school.project.logo.replace", "Logo del proyecto"),
+    }
+    for field, new_path in replacements.items():
+        event_action, label = file_events[field]
+        operation = "reemplazado" if previous_files[field] else "cargado"
+        log_event(
+            event_action,
+            "project",
+            project.id,
+            f"{label} {operation} en el proyecto #{project.id} '{project.title}'. Archivo nuevo: {new_path}",
+        )
+    log_event(
+        "school.project.expedient.save",
+        "project",
+        project.id,
+        f"Expediente del proyecto #{project.id} '{project.title}' guardado; archivos actualizados: {', '.join(saved_files) or 'ninguno'}.",
+    )
     db.session.commit()
     for old_path in old_assets:
         _delete_project_asset(old_path)
@@ -583,6 +607,8 @@ def project_form(project_id: int | None = None):
             return redirect(request.url)
         obsolete_paths = list(removed_member_photos)
         document_changed = bool(document_path)
+        previous_document_path = project.project_document_path
+        previous_logo_path = project.project_logo_path if project.has_real_logo else None
         if document_path:
             if project.project_document_path:
                 obsolete_paths.append(project.project_document_path)
@@ -607,6 +633,22 @@ def project_form(project_id: int | None = None):
 
         audit_change = json.dumps({"colegio": current_user.institution_ref.code, "antes": before, "después": after}, ensure_ascii=False, default=str)
         log_event(event_action, "project", project.id, audit_change)
+        if document_path:
+            operation = "reemplazado" if previous_document_path else "cargado"
+            log_event(
+                "school.project.document.replace",
+                "project",
+                project.id,
+                f"Documento escrito {operation} en el proyecto #{project.id} '{project.title}'. Archivo nuevo: {document_path}",
+            )
+        if logo_path:
+            operation = "reemplazado" if previous_logo_path else "cargado"
+            log_event(
+                "school.project.logo.replace",
+                "project",
+                project.id,
+                f"Logo del proyecto {operation} en el proyecto #{project.id} '{project.title}'. Archivo nuevo: {logo_path}",
+            )
         db.session.commit()
         for path in obsolete_paths:
             _delete_project_asset(path)

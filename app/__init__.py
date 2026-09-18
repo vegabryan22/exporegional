@@ -509,6 +509,8 @@ def ensure_schema_updates():
                         name VARCHAR(180) NOT NULL UNIQUE,
                         start_date DATE NOT NULL,
                         end_date DATE NOT NULL,
+                        project_registration_closes_at DATETIME NULL,
+                        judge_registration_closes_at DATETIME NULL,
                         is_active BOOLEAN NOT NULL DEFAULT 0,
                         notes TEXT NULL,
                         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -516,6 +518,12 @@ def ensure_schema_updates():
                     """
                 )
             )
+
+        campaign_columns = {column["name"] for column in inspect(db.engine).get_columns("campaigns")}
+        if "project_registration_closes_at" not in campaign_columns:
+            connection.execute(text("ALTER TABLE campaigns ADD COLUMN project_registration_closes_at DATETIME NULL"))
+        if "judge_registration_closes_at" not in campaign_columns:
+            connection.execute(text("ALTER TABLE campaigns ADD COLUMN judge_registration_closes_at DATETIME NULL"))
 
         judge_columns = {column["name"] for column in inspector.get_columns("judges")}
         if "is_admin" not in judge_columns:

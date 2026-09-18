@@ -10,6 +10,8 @@ class Campaign(db.Model):
     name = db.Column(db.String(180), nullable=False, unique=True)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
+    project_registration_closes_at = db.Column(db.DateTime, nullable=True)
+    judge_registration_closes_at = db.Column(db.DateTime, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=False, index=True)
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

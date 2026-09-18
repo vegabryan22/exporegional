@@ -1,12 +1,7 @@
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from app.models.system_setting import SystemSetting
-
-
 LOCAL_TIMEZONE = ZoneInfo("America/Guatemala")
-PROJECT_DEADLINE_KEY = "project_registration_closes_at"
-JUDGE_DEADLINE_KEY = "judge_registration_closes_at"
 
 
 def parse_local_deadline(value):
@@ -22,20 +17,27 @@ def parse_local_deadline(value):
     return parsed.astimezone(LOCAL_TIMEZONE)
 
 
-def get_registration_deadline(key):
-    return parse_local_deadline(SystemSetting.get_value(key, ""))
+def campaign_registration_deadline(campaign, registration_type):
+    if not campaign:
+        return None
+    attribute = (
+        "project_registration_closes_at"
+        if registration_type == "project"
+        else "judge_registration_closes_at"
+    )
+    return parse_local_deadline(getattr(campaign, attribute, None))
 
 
-def registration_is_closed(key, now=None):
-    deadline = get_registration_deadline(key)
+def registration_is_closed(campaign, registration_type, now=None):
+    deadline = campaign_registration_deadline(campaign, registration_type)
     current = now or datetime.now(LOCAL_TIMEZONE)
     if current.tzinfo is None:
         current = current.replace(tzinfo=LOCAL_TIMEZONE)
     return bool(deadline and current >= deadline), deadline
 
 
-def deadline_input_value(key):
-    deadline = get_registration_deadline(key)
+def deadline_input_value(deadline):
+    deadline = parse_local_deadline(deadline)
     return deadline.strftime("%Y-%m-%dT%H:%M") if deadline else ""
 
 

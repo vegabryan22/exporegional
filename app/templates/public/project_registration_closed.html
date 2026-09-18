@@ -5,7 +5,7 @@
     <article class="judge-register-intro judge-invitation-card">
         <div class="judge-intro-eyebrow">Inscripción de proyectos</div>
         <h2>Periodo de inscripción cerrado</h2>
-        <p>El plazo para registrar nuevos proyectos finalizó{% if deadline_label %} el {{ deadline_label }}{% endif %}.</p>
+        <p>{{ closed_message if closed_message else 'El plazo para registrar nuevos proyectos finalizó' }}{% if deadline_label %} el {{ deadline_label }}{% endif %}.</p>
         <p>Los proyectos ya registrados continúan disponibles desde el panel del colegio.</p>
         <a class="primary-btn" href="{{ url_for('school.dashboard') }}">Volver a mis proyectos</a>
     </article>

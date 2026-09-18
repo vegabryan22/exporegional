@@ -29,6 +29,8 @@
                     <th>Nombre</th>
                     <th>Inicio</th>
                     <th>Fin</th>
+                    <th>Cierre proyectos</th>
+                    <th>Cierre jueces</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -40,6 +42,8 @@
                     <td><strong class="campaign-name">{{ campaign.name }}</strong></td>
                     <td class="table-cell-center"><span class="campaign-badge">{{ campaign.start_date.strftime('%Y-%m-%d') }}</span></td>
                     <td class="table-cell-center"><span class="campaign-badge">{{ campaign.end_date.strftime('%Y-%m-%d') }}</span></td>
+                    <td class="table-cell-center">{{ campaign.project_registration_closes_at.strftime('%d/%m/%Y %H:%M') if campaign.project_registration_closes_at else 'Sin límite' }}</td>
+                    <td class="table-cell-center">{{ campaign.judge_registration_closes_at.strftime('%d/%m/%Y %H:%M') if campaign.judge_registration_closes_at else 'Sin límite' }}</td>
                     <td class="table-cell-center"><span class="tag {{ 'ok' if campaign.is_active else 'off' }}">{{ 'Activa' if campaign.is_active else 'Inactiva' }}</span></td>
                     <td class="actions-cell table-cell-center">
                         <button type="button" class="outline-btn" data-dialog-open="edit-campaign-{{ campaign.id }}">Editar</button>
@@ -67,39 +71,11 @@
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="6">No hay campañas registradas.</td></tr>
+                <tr><td colspan="8">No hay campañas registradas.</td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
-</section>
-
-<section class="card admin-section maintenance-page campaigns-page">
-    <div class="campaigns-list-head">
-        <div><span>Cierre automático</span><strong>Plazos de inscripción</strong></div>
-        <small>Hora local de Costa Rica y Guatemala (UTC−6). Deje un campo vacío para mantenerlo sin límite.</small>
-    </div>
-    <form method="post" action="{{ action_url }}" class="compact-form">
-        <input type="hidden" name="next" value="{{ next_url }}">
-        <input type="hidden" name="action" value="update_registration_deadlines">
-        <div class="grid-2">
-            <label>
-                Cierre de inscripción de proyectos
-                <input type="datetime-local" name="project_registration_closes_at" value="{{ registration_deadlines.project_value }}">
-                <small class="table-subtext">
-                    {% if registration_deadlines.project_value %}{{ 'Cerrada' if registration_deadlines.project_closed else 'Abierta' }} hasta {{ registration_deadlines.project_label }}{% else %}Sin cierre programado{% endif %}
-                </small>
-            </label>
-            <label>
-                Cierre de inscripción de jueces
-                <input type="datetime-local" name="judge_registration_closes_at" value="{{ registration_deadlines.judge_value }}">
-                <small class="table-subtext">
-                    {% if registration_deadlines.judge_value %}{{ 'Cerrada' if registration_deadlines.judge_closed else 'Abierta' }} hasta {{ registration_deadlines.judge_label }}{% else %}Sin cierre programado{% endif %}
-                </small>
-            </label>
-        </div>
-        <div class="actions-row"><button type="submit">Guardar fechas de cierre</button></div>
-    </form>
 </section>
 
 <dialog id="create-campaign-dialog" class="maintenance-dialog">
@@ -112,6 +88,10 @@
                 <label>Nombre<input type="text" name="campaign_name" required></label>
                 <label>Fecha inicio<input type="date" name="campaign_start_date" required></label>
                 <label>Fecha fin<input type="date" name="campaign_end_date" required></label>
+            </div>
+            <div class="grid-2">
+                <label>Cierre de proyectos<input type="datetime-local" name="project_registration_closes_at"><small>Fecha y hora límite para inscribir proyectos.</small></label>
+                <label>Cierre de jueces<input type="datetime-local" name="judge_registration_closes_at"><small>Fecha y hora límite para registrar jueces.</small></label>
             </div>
             <label>
                 Estado inicial
@@ -138,6 +118,10 @@
                 <label>Nombre<input type="text" name="campaign_name" value="{{ campaign.name }}" required></label>
                 <label>Fecha inicio<input type="date" name="campaign_start_date" value="{{ campaign.start_date.strftime('%Y-%m-%d') }}" required></label>
                 <label>Fecha fin<input type="date" name="campaign_end_date" value="{{ campaign.end_date.strftime('%Y-%m-%d') }}" required></label>
+            </div>
+            <div class="grid-2">
+                <label>Cierre de proyectos<input type="datetime-local" name="project_registration_closes_at" value="{{ campaign.project_registration_closes_at.strftime('%Y-%m-%dT%H:%M') if campaign.project_registration_closes_at else '' }}"><small>Fecha y hora límite para inscribir proyectos.</small></label>
+                <label>Cierre de jueces<input type="datetime-local" name="judge_registration_closes_at" value="{{ campaign.judge_registration_closes_at.strftime('%Y-%m-%dT%H:%M') if campaign.judge_registration_closes_at else '' }}"><small>Fecha y hora límite para registrar jueces.</small></label>
             </div>
             <label>
                 Estado de la campaña

@@ -543,10 +543,8 @@
         <form method="post" action="{{ action_url }}" class="compact-form">
             <input type="hidden" name="next" value="{{ next_url }}">
             <input type="hidden" name="action" value="auto_assign">
-            <p>El sistema asignar&aacute; jueces hasta cubrir la meta de evaluaciones de <strong>documento</strong> y <strong>exposici&oacute;n</strong> por proyecto. Las asignaciones se guardan como <strong>borrador</strong> sin enviar correos hasta que confirmes.</p>
-            <label>Evaluaciones m&iacute;nimas por tipo
-                <input type="number" name="max_per_project" value="3" min="1" max="10" required>
-            </label>
+            <p>El sistema asignar&aacute; exactamente <strong>3 jueces para documento</strong> y <strong>3 jueces para exposici&oacute;n</strong> por proyecto. Un mismo juez puede cubrir ambos rubros. Las asignaciones se guardan como <strong>borrador</strong> sin enviar correos hasta que confirmes.</p>
+            <input type="hidden" name="max_per_project" value="3">
             <label class="logistics-check-card" style="margin-top:0.5rem">
                 <input type="checkbox" name="replace_drafts" value="1">
                 <span class="check-card-title">Reemplazar borrador existente</span>
@@ -559,7 +557,7 @@
                     <li>Solo STEAM &rarr; no se asigna a proyectos de emprendimiento (y viceversa).</li>
                     <li>Proyectos con ingl&eacute;s &rarr; deben tener al menos un juez de exposici&oacute;n que eval&uacute;e ingl&eacute;s.</li>
                     <li>Jueces sin ingl&eacute;s &rarr; pueden apoyar documento o exposici&oacute;n general en proyectos con ingl&eacute;s.</li>
-                    <li>La meta num&eacute;rica aplica por rubro: 3 significa 3 evaluaciones de documento y 3 de exposici&oacute;n.</li>
+                    <li><strong>Cobertura exacta</strong> &rarr; cada proyecto recibe 3 evaluaciones de documento y 3 de exposici&oacute;n; nunca una cuarta por rubro.</li>
                     <li>Solo documento &rarr; se prioriza para cubrir documentaci&oacute;n.</li>
                     <li>Solo exposici&oacute;n &rarr; se usa para complementar proyectos que solo tienen documentaci&oacute;n.</li>
                     <li>Ambos &rarr; se usan para completar cobertura cuando falten documento o exposici&oacute;n.</li>

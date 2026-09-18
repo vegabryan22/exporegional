@@ -23,24 +23,35 @@
             <span>Entidades</span>
             <strong>{{ audit_entities|length }}</strong>
         </article>
-        <article class="{{ 'ok' if not filter_q and not filter_action and not filter_entity else 'warn' }}">
+        <article class="{{ 'ok' if not filter_q and not filter_action and not filter_entity and not filter_group and not filter_project_id else 'warn' }}">
             <span>Filtro activo</span>
-            <strong>{{ 'No' if not filter_q and not filter_action and not filter_entity else 'Sí' }}</strong>
+            <strong>{{ 'No' if not filter_q and not filter_action and not filter_entity and not filter_group and not filter_project_id else 'Sí' }}</strong>
         </article>
     </div>
 
     <form method="get" class="audit-filter-panel">
         <div class="audit-filter-grid">
             <label>Buscar
-                <input type="text" name="q" value="{{ filter_q }}" placeholder="Actor, correo o detalle">
+                <input type="text" name="q" value="{{ filter_q }}" placeholder="Persona, correo, acción o detalle">
+            </label>
+            <label>Módulo
+                <select name="group">
+                    <option value="">Todos los módulos</option>
+                    {% for key, data in audit_groups.items() %}
+                        <option value="{{ key }}" {% if filter_group == key %}selected{% endif %}>{{ data.label }}</option>
+                    {% endfor %}
+                </select>
             </label>
             <label>Acción
                 <select name="action">
                     <option value="">Todas las acciones</option>
                     {% for item in audit_actions %}
-                        <option value="{{ item }}" {% if filter_action == item %}selected{% endif %}>{{ item }}</option>
+                        <option value="{{ item }}" {% if filter_action == item %}selected{% endif %}>{{ audit_action_labels.get(item, item|replace('.', ' › ')) }}</option>
                     {% endfor %}
                 </select>
+            </label>
+            <label>N.º de proyecto
+                <input type="number" min="1" name="project_id" value="{{ filter_project_id }}" placeholder="Ej. 24">
             </label>
             <label>Entidad
                 <select name="entity">
@@ -63,7 +74,7 @@
                 <div class="audit-event-main">
                     <span class="audit-event-dot"></span>
                     <div>
-                        <strong>{{ item.action }}</strong>
+                        <strong>{{ audit_action_labels.get(item.action, item.action|replace('.', ' › ')) }}</strong>
                         <p>{{ item.detail or 'Sin detalle registrado.' }}</p>
                     </div>
                 </div>
@@ -71,7 +82,7 @@
                     <span data-label="Fecha">{{ item.created_at|local_datetime('%Y-%m-%d %H:%M:%S') if item.created_at else 'N/D' }}</span>
                     <span data-label="Actor">{{ item.actor_name or 'Sistema' }}{% if item.actor_email %}<small>{{ item.actor_email }}</small>{% endif %}</span>
                     <span data-label="Rol">{{ item.actor_role or 'N/D' }}</span>
-                    <span data-label="Entidad">{{ item.entity or 'N/D' }}{% if item.entity_id %}<small>ID {{ item.entity_id }}</small>{% endif %}</span>
+                    <span data-label="Entidad">{{ audit_entity_labels.get(item.entity, item.entity or 'N/D') }}{% if item.entity_id %}<small>ID {{ item.entity_id }}</small>{% endif %}</span>
                     <span data-label="IP">{{ item.ip_address or 'N/D' }}</span>
                 </div>
             </article>

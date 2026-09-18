@@ -58,6 +58,13 @@ from app.models.tutor import Tutor
 from app.models.workshop import Workshop
 from app.services.audit_service import log_event
 from app.services.assignment_service import balance_assignments_to_judge, reassign_absent_judge_assignments
+from app.services.registration_deadline_service import (
+    JUDGE_DEADLINE_KEY,
+    PROJECT_DEADLINE_KEY,
+    deadline_display,
+    deadline_input_value,
+    registration_is_closed,
+)
 from app.services.evaluation_service import (
     ENGLISH_EVAL_TYPE_CODE,
     assignment_allows_evaluation_type,
@@ -213,6 +220,7 @@ PERMISSION_MANAGEABLE_MODULES = [
 ]
 
 ACTION_MODULE_MAP = {
+    "update_registration_deadlines": "campaigns",
     "create_campaign": "campaigns",
     "update_campaign": "campaigns",
     "delete_campaign": "campaigns",
@@ -4273,7 +4281,30 @@ def _handle_action(action: str):
     ):
         flash("Las cuentas coordinadoras se administran únicamente desde Colegios participantes.", "error")
         return
-    if action == "create_campaign":
+    if action == "update_registration_deadlines":
+        project_value = (request.form.get("project_registration_closes_at") or "").strip()
+        judge_value = (request.form.get("judge_registration_closes_at") or "").strip()
+        invalid = []
+        for label, value in (("proyectos", project_value), ("jueces", judge_value)):
+            if value:
+                try:
+                    datetime.fromisoformat(value)
+                except ValueError:
+                    invalid.append(label)
+        if invalid:
+            flash(f"La fecha y hora de cierre de {', '.join(invalid)} no es válida.", "error")
+        else:
+            SystemSetting.set_value(PROJECT_DEADLINE_KEY, project_value)
+            SystemSetting.set_value(JUDGE_DEADLINE_KEY, judge_value)
+            log_event(
+                "admin.registration_deadlines.update",
+                "system_setting",
+                detail=f"Cierre proyectos={project_value or 'sin límite'}; jueces={judge_value or 'sin límite'}",
+            )
+            db.session.commit()
+            flash("Fechas de cierre actualizadas.", "success")
+
+    elif action == "create_campaign":
         name = request.form.get("campaign_name", "").strip()
         start_date = _parse_date(request.form.get("campaign_start_date"))
         end_date = _parse_date(request.form.get("campaign_end_date"))
@@ -10481,7 +10512,20 @@ def logs_page():
 
 @admin_module_required("campaigns")
 def campaigns_page():
-    return _render("admin/campaigns.html", "campaigns")
+    project_closed, project_deadline = registration_is_closed(PROJECT_DEADLINE_KEY)
+    judge_closed, judge_deadline = registration_is_closed(JUDGE_DEADLINE_KEY)
+    return _render(
+        "admin/campaigns.html",
+        "campaigns",
+        registration_deadlines={
+            "project_value": deadline_input_value(PROJECT_DEADLINE_KEY),
+            "judge_value": deadline_input_value(JUDGE_DEADLINE_KEY),
+            "project_closed": project_closed,
+            "judge_closed": judge_closed,
+            "project_label": deadline_display(project_deadline),
+            "judge_label": deadline_display(judge_deadline),
+        },
+    )
 
 
 @admin_module_required("institutions")
@@ -11254,6 +11298,15 @@ def judge_form_webhook():
         db.session.commit()
         return jsonify({"ok": False, "error": "Webhook deshabilitado."}), 403
 
+    registration_closed, registration_deadline = registration_is_closed(JUDGE_DEADLINE_KEY)
+    if registration_closed:
+        log_event("forms.judge_access.blocked", "judge", detail="Plazo de inscripción vencido")
+        db.session.commit()
+        return jsonify({
+            "ok": False,
+            "error": f"El registro de jueces cerró el {deadline_display(registration_deadline)}.",
+        }), 403
+
     expected_secret = _get_judge_form_secret()
     received_secret = _request_judge_form_token(payload)
     if not expected_secret or not hmac.compare_digest(expected_secret, received_secret):
@@ -11304,10 +11357,14 @@ def _validate_judge_registration_captcha(answer):
 
 
 def public_judge_registration():
-    if SystemSetting.get_value("judge_public_registration_enabled", "1") != "1":
+    registration_closed, registration_deadline = registration_is_closed(JUDGE_DEADLINE_KEY)
+    if SystemSetting.get_value("judge_public_registration_enabled", "1") != "1" or registration_closed:
         if request.method == "POST":
             flash("El registro de jueces esta cerrado en este momento.", "warning")
-        return render_template("public/judge_registration_closed.html")
+        return render_template(
+            "public/judge_registration_closed.html",
+            deadline_label=deadline_display(registration_deadline) if registration_closed else "",
+        )
 
     if request.method == "POST":
         if request.form.get("website", "").strip():

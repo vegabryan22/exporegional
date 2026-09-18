@@ -5,7 +5,11 @@
     <article class="judge-register-intro judge-invitation-card">
         <div class="judge-intro-eyebrow">Registro de jueces</div>
         <h2>Formulario cerrado</h2>
-        <p>El registro publico de jueces esta desactivado en este momento. La organizacion puede volver a habilitarlo desde el panel administrativo.</p>
+        {% if deadline_label %}
+            <p>El plazo para registrar jueces finalizó el {{ deadline_label }}.</p>
+        {% else %}
+            <p>El registro público de jueces está desactivado en este momento. La organización puede volver a habilitarlo desde el panel administrativo.</p>
+        {% endif %}
     </article>
 </section>
 {% endblock %}

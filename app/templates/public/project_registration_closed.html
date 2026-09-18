@@ -1,0 +1,13 @@
+{% extends "school/layout.html" %}
+{% block body_class %}school-portal-page project-registration-page{% endblock %}
+{% block school_content %}
+<section class="project-register-shell">
+    <article class="judge-register-intro judge-invitation-card">
+        <div class="judge-intro-eyebrow">Inscripción de proyectos</div>
+        <h2>Periodo de inscripción cerrado</h2>
+        <p>El plazo para registrar nuevos proyectos finalizó{% if deadline_label %} el {{ deadline_label }}{% endif %}.</p>
+        <p>Los proyectos ya registrados continúan disponibles desde el panel del colegio.</p>
+        <a class="primary-btn" href="{{ url_for('school.dashboard') }}">Volver a mis proyectos</a>
+    </article>
+</section>
+{% endblock %}

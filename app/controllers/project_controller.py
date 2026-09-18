@@ -34,6 +34,11 @@ from app.services.assignment_service import reassign_absent_judge_assignments
 from app.services.mail_service import send_email, smtp_is_configured
 from app.services.parameter_service import get_active_evaluation_types
 from app.services.identity_lookup_service import IdentityLookupError, lookup_identity_name
+from app.services.registration_deadline_service import (
+    PROJECT_DEADLINE_KEY,
+    deadline_display,
+    registration_is_closed,
+)
 
 try:
     from reportlab.lib import colors
@@ -1425,6 +1430,14 @@ def register_project():
     if not school_registration:
         flash("La inscripción manual requiere ingresar con una cuenta de colegio.", "error")
         return redirect(url_for("auth.login"))
+    registration_closed, registration_deadline = registration_is_closed(PROJECT_DEADLINE_KEY)
+    if registration_closed:
+        if request.method == "POST":
+            flash("La inscripción de proyectos ya cerró; no se guardó ningún cambio.", "warning")
+        return render_template(
+            "public/project_registration_closed.html",
+            deadline_label=deadline_display(registration_deadline),
+        )
     active_campaign = (
         Campaign.query.filter(
             Campaign.is_active.is_(True),

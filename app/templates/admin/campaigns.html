@@ -74,6 +74,34 @@
     </div>
 </section>
 
+<section class="card admin-section maintenance-page campaigns-page">
+    <div class="campaigns-list-head">
+        <div><span>Cierre automático</span><strong>Plazos de inscripción</strong></div>
+        <small>Hora local de Costa Rica y Guatemala (UTC−6). Deje un campo vacío para mantenerlo sin límite.</small>
+    </div>
+    <form method="post" action="{{ action_url }}" class="compact-form">
+        <input type="hidden" name="next" value="{{ next_url }}">
+        <input type="hidden" name="action" value="update_registration_deadlines">
+        <div class="grid-2">
+            <label>
+                Cierre de inscripción de proyectos
+                <input type="datetime-local" name="project_registration_closes_at" value="{{ registration_deadlines.project_value }}">
+                <small class="table-subtext">
+                    {% if registration_deadlines.project_value %}{{ 'Cerrada' if registration_deadlines.project_closed else 'Abierta' }} hasta {{ registration_deadlines.project_label }}{% else %}Sin cierre programado{% endif %}
+                </small>
+            </label>
+            <label>
+                Cierre de inscripción de jueces
+                <input type="datetime-local" name="judge_registration_closes_at" value="{{ registration_deadlines.judge_value }}">
+                <small class="table-subtext">
+                    {% if registration_deadlines.judge_value %}{{ 'Cerrada' if registration_deadlines.judge_closed else 'Abierta' }} hasta {{ registration_deadlines.judge_label }}{% else %}Sin cierre programado{% endif %}
+                </small>
+            </label>
+        </div>
+        <div class="actions-row"><button type="submit">Guardar fechas de cierre</button></div>
+    </form>
+</section>
+
 <dialog id="create-campaign-dialog" class="maintenance-dialog">
     <div class="dialog-card">
         <div class="dialog-head"><h4>Nueva campaña</h4><button type="button" class="ghost-btn dialog-close" data-dialog-close>&times;</button></div>

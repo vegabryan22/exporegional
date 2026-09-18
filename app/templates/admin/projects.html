@@ -660,7 +660,7 @@
                         <input type="hidden" name="action" value="toggle_member_english">
                         <input type="hidden" name="member_id" value="{{ member.id }}">
                         <label class="member-card-english-switch">
-                            <span><strong>Exposici&oacute;n en ingl&eacute;s</strong><small>{{ 'S&iacute;, participa' if member.participates_in_english else 'No participa' }}</small></span>
+                            <span><strong>Exposici&oacute;n en ingl&eacute;s</strong><small>{{ 'Sí, participa' if member.participates_in_english else 'No participa' }}</small></span>
                             <input type="checkbox" name="member_participates_in_english" value="1" {% if member.participates_in_english %}checked{% endif %} onchange="this.form.requestSubmit()">
                             <input type="hidden" name="member_participates_in_english" value="0">
                             <i aria-hidden="true"></i>

@@ -32,6 +32,7 @@ from werkzeug.utils import secure_filename
 from app import natural_title
 from app.extensions import db
 from app.models.assignment import Assignment
+from app.models.assignment_process import AssignmentProcess, AssignmentProcessItem
 from app.models.campaign import Campaign
 from app.models.project_document_revision import ProjectDocumentRevision
 from app.models.category import Category
@@ -58,6 +59,8 @@ from app.models.tutor import Tutor
 from app.models.workshop import Workshop
 from app.services.audit_service import log_event
 from app.services.assignment_service import balance_assignments_to_judge, reassign_absent_judge_assignments
+from app.services.assignment_process_service import approve_process, generate_process_draft
+from app.services.judge_invitation_service import send_process_invitations
 from app.services.registration_deadline_service import (
     deadline_display,
     registration_is_closed,
@@ -227,6 +230,10 @@ ACTION_MODULE_MAP = {
     "quick_create_assignment_judge": "assignments",
     "delete_assignment": "assignments",
     "auto_assign": "assignments",
+    "generate_assignment_process": "assignments",
+    "approve_assignment_process": "assignments",
+    "discard_assignment_process": "assignments",
+    "send_assignment_process": "assignments",
     "confirm_draft_assignments": "assignments",
     "discard_draft_assignments": "assignments",
     "send_confirmed_assignment_notifications": "assignments",
@@ -503,7 +510,7 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
 
     def assignment_covers_english(assignment: Assignment) -> bool:
         return bool(
-            assignment.can_evaluate_exposition
+            assignment.can_evaluate_english
             and assignment.judge
             and assignment.judge.can_evaluate_english
         )
@@ -593,6 +600,9 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
                 project_id=project.id,
                 can_evaluate_documentation=can_documentation,
                 can_evaluate_exposition=can_exposition,
+                can_evaluate_english=bool(
+                    needs_english and can_exposition and judge.can_evaluate_english and english_count == 0
+                ),
                 status=Assignment.STATUS_DRAFT,
             )
             assignment.judge = judge
@@ -604,7 +614,7 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
                 doc_count += 1
             if can_exposition:
                 expo_count += 1
-            if can_exposition and judge.can_evaluate_english:
+            if assignment.can_evaluate_english:
                 english_count += 1
             return True
 
@@ -4666,6 +4676,86 @@ def _handle_action(action: str):
                 except Exception as exc:
                     flash(f"Error inesperado: {exc}", "error")
 
+    elif action == "generate_assignment_process":
+        process_type = (request.form.get("process_type") or "").strip()
+        deadline_value = (request.form.get("deadline") or "").strip()
+        deadline = None
+        if deadline_value:
+            try:
+                deadline = datetime.fromisoformat(deadline_value)
+            except ValueError:
+                flash("La fecha y hora indicadas no son válidas.", "error")
+                return
+        try:
+            process, missing_projects = generate_process_draft(
+                process_type,
+                deadline=deadline,
+                created_by_id=current_user.id,
+            )
+            log_event(
+                "admin.assignment_process.generate",
+                "assignment_process",
+                entity_id=process.id,
+                detail=f"Borrador {process.type_label}: {len(process.items)} asignaciones; faltantes={len(missing_projects)}",
+            )
+            db.session.commit()
+            message = f"Borrador de {process.type_label.lower()} generado con {len(process.items)} asignación(es)."
+            if missing_projects:
+                message += f" {len(missing_projects)} proyecto(s) no alcanzaron la cobertura por falta de jueces compatibles."
+            flash(message, "warning" if missing_projects else "success")
+        except ValueError as error:
+            db.session.rollback()
+            flash(str(error), "error")
+
+    elif action == "approve_assignment_process":
+        process = AssignmentProcess.query.get(request.form.get("process_id", type=int))
+        if not process:
+            flash("Borrador de asignación no encontrado.", "error")
+        else:
+            try:
+                approve_process(process, approved_by_id=current_user.id)
+                log_event(
+                    "admin.assignment_process.approve",
+                    "assignment_process",
+                    entity_id=process.id,
+                    detail=f"Aprobado {process.type_label}: {len(process.items)} asignaciones",
+                )
+                db.session.commit()
+                flash(f"Borrador de {process.type_label.lower()} aprobado. Ya puedes enviar las invitaciones.", "success")
+            except ValueError as error:
+                db.session.rollback()
+                flash(str(error), "error")
+
+    elif action == "discard_assignment_process":
+        process = AssignmentProcess.query.get(request.form.get("process_id", type=int))
+        if not process or process.status != AssignmentProcess.STATUS_DRAFT:
+            flash("Solo se puede descartar un borrador vigente.", "error")
+        else:
+            label = process.type_label
+            db.session.delete(process)
+            db.session.commit()
+            flash(f"Borrador de {label.lower()} descartado.", "success")
+
+    elif action == "send_assignment_process":
+        process = AssignmentProcess.query.get(request.form.get("process_id", type=int))
+        if not process or process.status not in {AssignmentProcess.STATUS_APPROVED, AssignmentProcess.STATUS_SENT}:
+            flash("Primero debes aprobar el borrador antes de enviar invitaciones.", "error")
+        elif not smtp_is_configured():
+            flash("Configura y prueba el correo SMTP antes de enviar invitaciones.", "error")
+        else:
+            sent, failed = send_process_invitations(process)
+            log_event(
+                "admin.assignment_process.send",
+                "assignment_process",
+                entity_id=process.id,
+                detail=f"Invitaciones {process.type_label}: {sent} enviadas, {failed} fallidas",
+            )
+            db.session.commit()
+            flash(
+                f"Invitaciones de {process.type_label.lower()}: {sent} enviadas y {failed} fallidas.",
+                "success" if failed == 0 else "warning",
+            )
+
     elif action == "auto_assign":
         target_evaluations = ASSIGNMENTS_PER_SCOPE
         replace_drafts = request.form.get("replace_drafts") == "1"
@@ -4746,7 +4836,7 @@ def _handle_action(action: str):
                     project
                     and _project_requires_english(project)
                     and not any(
-                        assignment.can_evaluate_exposition
+                        assignment.can_evaluate_english
                         and assignment.judge
                         and assignment.judge.can_evaluate_english
                         for assignment in project_assignments
@@ -8140,7 +8230,23 @@ def overview():
 
 @admin_module_required("assignments")
 def assignments_page():
-    return _render("admin/assignments.html", "assignments")
+    assignment_processes = (
+        AssignmentProcess.query.options(
+            joinedload(AssignmentProcess.items).joinedload(AssignmentProcessItem.judge),
+            joinedload(AssignmentProcess.items).joinedload(AssignmentProcessItem.project),
+        )
+        .order_by(AssignmentProcess.created_at.desc(), AssignmentProcess.id.desc())
+        .all()
+    )
+    latest_processes = {}
+    for process in assignment_processes:
+        latest_processes.setdefault(process.process_type, process)
+    return _render(
+        "admin/assignments.html",
+        "assignments",
+        assignment_processes=assignment_processes,
+        latest_assignment_processes=latest_processes,
+    )
 
 
 @admin_module_required("judge_pool")
@@ -8170,8 +8276,8 @@ def _judge_report_rows(judges: list[Judge], assignments: list[Assignment]) -> tu
         expo_assignments = [assignment for assignment in confirmed_assignments if assignment.can_evaluate_exposition]
         english_assignments = [
             assignment
-            for assignment in expo_assignments
-            if assignment.project and assignment.project.requires_english_evaluation and judge.can_evaluate_english
+            for assignment in confirmed_assignments
+            if assignment.can_evaluate_english and assignment.project and assignment.project.requires_english_evaluation
         ]
         judge_rows.append(
             {
@@ -10104,7 +10210,7 @@ def judge_presence_report_excel():
         )
         target = row["draft_expo"] if assignment.is_draft else row["confirmed_expo"]
         target.append(project.title)
-        if project.requires_english_evaluation and judge.can_evaluate_english:
+        if assignment.can_evaluate_english and project.requires_english_evaluation:
             row["english_projects"].append(project.title)
 
     report_rows = []

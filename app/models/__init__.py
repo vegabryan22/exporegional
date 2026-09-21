@@ -1,4 +1,5 @@
 from app.models.assignment import Assignment
+from app.models.assignment_process import AssignmentProcess, AssignmentProcessItem
 from app.models.project_document_revision import ProjectDocumentRevision
 from app.models.campaign import Campaign
 from app.models.category import Category
@@ -49,6 +50,8 @@ __all__ = [
     "ThematicAxis",
     "Tutor",
     "Assignment",
+    "AssignmentProcess",
+    "AssignmentProcessItem",
     "Evaluation",
     "EvaluationScore",
     "ProjectDocumentRevision",

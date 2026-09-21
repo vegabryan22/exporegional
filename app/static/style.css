@@ -13123,6 +13123,127 @@ body {
     overflow: visible !important;
 }
 
+.assignment-processes-panel {
+    margin: 1.2rem 0;
+    padding: 1.25rem;
+    border: 1px solid #c9dfef;
+    border-radius: 22px;
+    background: linear-gradient(145deg, #f7fbff, #edf6fb);
+}
+
+.assignment-process-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.assignment-process-card {
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid #c9dfef;
+    border-top: 5px solid #167da3;
+    border-radius: 18px;
+    background: #fff;
+}
+
+.assignment-process-exposition { border-top-color: #ef9e18; }
+.assignment-process-english { border-top-color: #2da36b; }
+
+.assignment-process-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.assignment-process-card h5 {
+    margin: .2rem 0 0;
+    color: #103f61;
+    font-size: 1.15rem;
+}
+
+.assignment-process-card > p {
+    min-height: 3.3rem;
+    margin: 0;
+    color: #55728a;
+    line-height: 1.45;
+}
+
+.assignment-process-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .35rem .7rem;
+    padding: .75rem;
+    border-radius: 12px;
+    background: #f1f7fb;
+    color: #47657c;
+}
+
+.assignment-process-summary strong {
+    color: #103f61;
+    font-size: 1.35rem;
+}
+
+.assignment-process-review summary {
+    cursor: pointer;
+    color: #075985;
+    font-weight: 800;
+}
+
+.assignment-process-item-list {
+    max-height: 230px;
+    margin-top: .65rem;
+    overflow: auto;
+    border: 1px solid #d9e7f2;
+    border-radius: 12px;
+}
+
+.assignment-process-item-list > div {
+    display: grid;
+    gap: .15rem;
+    padding: .6rem .7rem;
+    border-bottom: 1px solid #e5eef5;
+}
+
+.assignment-process-item-list > div:last-child { border-bottom: 0; }
+.assignment-process-item-list span { color: #60798d; font-size: .86rem; }
+
+.assignment-process-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: .55rem;
+    margin-top: auto;
+}
+
+.assignment-process-generate-form {
+    display: flex;
+    flex: 1 1 100%;
+    align-items: flex-end;
+    gap: .55rem;
+}
+
+.assignment-process-generate-form label {
+    flex: 1;
+    color: #35566f;
+    font-size: .82rem;
+    font-weight: 800;
+}
+
+.assignment-process-generate-form input {
+    width: 100%;
+    margin-top: .3rem;
+}
+
+@media (max-width: 1050px) {
+    .assignment-process-grid { grid-template-columns: 1fr; }
+    .assignment-process-card > p { min-height: 0; }
+}
+
 .projects-showcase-page .project-sidebar-list {
     flex: none !important;
     height: auto !important;

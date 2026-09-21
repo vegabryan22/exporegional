@@ -28,7 +28,7 @@
                 <div class="assignments-action-group">
                     <button type="button" class="outline-btn assignment-tool-btn" data-dialog-open="quick-judge-dialog"><svg aria-hidden="true"><use href="#ico-plus"></use></svg><span>Juez r&aacute;pido</span></button>
                     <button type="button" class="outline-btn assignment-tool-btn" data-dialog-open="create-assignment-dialog"><svg aria-hidden="true"><use href="#ico-users"></use></svg><span>Asignaci&oacute;n masiva</span></button>
-                    <button type="button" class="outline-btn assignment-tool-btn" data-dialog-open="auto-assign-dialog"><svg aria-hidden="true"><use href="#ico-settings"></use></svg><span>Asignar autom&aacute;ticamente</span></button>
+                    <a class="outline-btn assignment-tool-btn" href="#assignment-processes"><svg aria-hidden="true"><use href="#ico-settings"></use></svg><span>Procesos separados</span></a>
                     <button type="button" class="outline-btn assignment-tool-btn" data-dialog-open="load-report-dialog"><svg aria-hidden="true"><use href="#ico-chart"></use></svg><span>Carga por juez</span></button>
                 </div>
             </section>
@@ -65,6 +65,96 @@
             </section>
         </div>
     </div>
+
+    <section id="assignment-processes" class="assignment-processes-panel">
+        <div class="page-head">
+            <div>
+                <p class="maintenance-kicker">Flujo por rubro</p>
+                <h4>Borradores, aprobaci&oacute;n e invitaciones</h4>
+                <p class="table-subtext">Cada proceso es independiente. Gener&aacute; el borrador, revis&aacute; juez y proyecto, aprobalo y luego envi&aacute; una invitaci&oacute;n PDF personalizada.</p>
+            </div>
+        </div>
+        <div class="assignment-process-grid">
+            {% for process_type, title, description, needs_deadline in [
+                ('documentation', 'Documento escrito', 'Tres jueces por proyecto. La fecha l&iacute;mite es obligatoria y se incluye en el PDF y el correo.', true),
+                ('exposition', 'Exposici&oacute;n', 'Tres jueces por proyecto, respetando categor&iacute;a, disponibilidad e instituci&oacute;n.', false),
+                ('english', 'Ingl&eacute;s', 'Un juez habilitado por proyecto con estudiantes que exponen en ingl&eacute;s.', false)
+            ] %}
+                {% set process = latest_assignment_processes.get(process_type) %}
+                <article class="assignment-process-card assignment-process-{{ process_type }}">
+                    <div class="assignment-process-card-head">
+                        <div>
+                            <span class="assignment-field-label">Proceso independiente</span>
+                            <h5>{{ title }}</h5>
+                        </div>
+                        {% if process %}
+                            <span class="tag {{ 'warning' if process.status == 'draft' else ('ok' if process.status == 'sent' else 'neutral') }}">
+                                {{ {'draft':'Borrador', 'approved':'Aprobado', 'sent':'Enviado'}.get(process.status, process.status) }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    <p>{{ description }}</p>
+
+                    {% if process %}
+                        <div class="assignment-process-summary">
+                            <strong>{{ process.items|length }}</strong> asignaciones
+                            {% if process.deadline %}<span>Fecha l&iacute;mite: {{ process.deadline.strftime('%d/%m/%Y %H:%M') }}</span>{% endif %}
+                        </div>
+                        {% if process.items %}
+                        <details class="assignment-process-review">
+                            <summary>Revisar borrador por juez y proyecto</summary>
+                            <div class="assignment-process-item-list">
+                                {% for item in process.items|sort(attribute='judge.full_name') %}
+                                    <div><strong>{{ item.judge.full_name }}</strong><span>{{ item.project.title }}</span></div>
+                                {% endfor %}
+                            </div>
+                        </details>
+                        {% endif %}
+                    {% endif %}
+
+                    <div class="assignment-process-actions">
+                        {% if not process or process.status == 'sent' or process.status == 'approved' %}
+                        <form method="post" action="{{ action_url }}" class="assignment-process-generate-form">
+                            <input type="hidden" name="next" value="{{ next_url }}#assignment-processes">
+                            <input type="hidden" name="action" value="generate_assignment_process">
+                            <input type="hidden" name="process_type" value="{{ process_type }}">
+                            {% if needs_deadline %}
+                                <label>Fecha y hora l&iacute;mite
+                                    <input type="datetime-local" name="deadline" required>
+                                </label>
+                            {% endif %}
+                            <button type="submit" class="outline-btn">{{ 'Generar nuevo borrador' if process else 'Generar borrador' }}</button>
+                        </form>
+                        {% endif %}
+
+                        {% if process and process.status == 'draft' %}
+                            <form method="post" action="{{ action_url }}">
+                                <input type="hidden" name="next" value="{{ next_url }}#assignment-processes">
+                                <input type="hidden" name="action" value="discard_assignment_process">
+                                <input type="hidden" name="process_id" value="{{ process.id }}">
+                                <button type="submit" class="ghost-btn" onclick="return confirm('Descartar este borrador?')">Descartar</button>
+                            </form>
+                            <form method="post" action="{{ action_url }}">
+                                <input type="hidden" name="next" value="{{ next_url }}#assignment-processes">
+                                <input type="hidden" name="action" value="approve_assignment_process">
+                                <input type="hidden" name="process_id" value="{{ process.id }}">
+                                <button type="submit" class="project-action-btn" onclick="return confirm('Aprobar este borrador? Despu&eacute;s quedar&aacute; habilitado el env&iacute;o de invitaciones.')">Aprobar borrador</button>
+                            </form>
+                        {% elif process and process.status in ['approved', 'sent'] %}
+                            <form method="post" action="{{ action_url }}">
+                                <input type="hidden" name="next" value="{{ next_url }}#assignment-processes">
+                                <input type="hidden" name="action" value="send_assignment_process">
+                                <input type="hidden" name="process_id" value="{{ process.id }}">
+                                <button type="submit" class="project-action-btn" onclick="return confirm('Enviar una invitaci&oacute;n PDF personalizada y la lista de proyectos a cada juez de este proceso?')">
+                                    {{ 'Reenviar invitaciones' if process.status == 'sent' else 'Enviar invitaciones' }}
+                                </button>
+                            </form>
+                        {% endif %}
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    </section>
 
     {% if draft_assignments %}
     <section class="doc-revision-admin-section auto-assign-draft-section">
@@ -170,7 +260,7 @@
                                     <span class="assignment-judge-name">{{ assignment.judge.full_name }}</span>
                                     <span class="assignment-judge-meta">
                                         <small>{{ assignment.scope_label }}</small>
-                                        {% if assignment.judge.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
+                                        {% if assignment.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
                                     </span>
                                 </li>
                             {% endfor %}
@@ -189,7 +279,7 @@
                                     <span class="assignment-judge-name">{{ assignment.judge.full_name }}</span>
                                     <span class="assignment-judge-meta">
                                         <small>{{ assignment.scope_label }}</small>
-                                        {% if assignment.judge.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
+                                        {% if assignment.can_evaluate_english %}<span class="pill-english-badge">EN</span>{% endif %}
                                     </span>
                                 </li>
                             {% endfor %}

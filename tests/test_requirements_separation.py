@@ -816,6 +816,7 @@ class RequirementsSeparationTest(unittest.TestCase):
             project_id=9,
             can_evaluate_documentation=True,
             can_evaluate_exposition=True,
+            can_evaluate_english=True,
             status=Assignment.STATUS_CONFIRMED,
         )
         assignment.judge = judge
@@ -831,6 +832,18 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual("juez@example.com", assignment_rows[0]["email"])
         self.assertEqual("Si", assignment_rows[0]["document"])
         self.assertEqual("Si", assignment_rows[0]["exposition"])
+
+    def test_assignment_workflow_is_split_into_three_independent_processes(self):
+        template = Path("app/templates/admin/assignments.html").read_text(encoding="utf-8")
+        controller = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")
+
+        self.assertIn("Documento escrito", template)
+        self.assertIn("Exposici&oacute;n", template)
+        self.assertIn("Ingl&eacute;s", template)
+        self.assertIn('name="deadline" required', template)
+        self.assertIn('value="approve_assignment_process"', template)
+        self.assertIn('value="send_assignment_process"', template)
+        self.assertIn('elif action == "approve_assignment_process"', controller)
 
     def test_judges_report_opens_on_judge_detail_sheet(self):
         source = Path("app/controllers/admin_controller.py").read_text(encoding="utf-8")

@@ -110,6 +110,7 @@ def create_app():
             ensure_jornada_schema()
             ensure_institution_responsibles_schema()
             ensure_campaign_schema()
+            ensure_assignment_process_schema()
             try:
                 ensure_specialty_catalog(db)
             except IntegrityError:
@@ -214,6 +215,29 @@ def ensure_jornada_schema():
                 "ALTER TABLE projects ADD COLUMN project_logbook_path VARCHAR(300) NULL",
                 "columna projects.project_logbook_path",
             )
+
+
+def ensure_assignment_process_schema():
+    """Garantiza el flujo separado de asignaciones aun antes de ejecutar Alembic."""
+    inspector = inspect(db.engine)
+    tables = set(inspector.get_table_names())
+    if "assignments" in tables:
+        assignment_columns = {column["name"] for column in inspector.get_columns("assignments")}
+        if "can_evaluate_english" not in assignment_columns:
+            with db.engine.begin() as connection:
+                _run_optional_schema_statement(
+                    connection,
+                    "ALTER TABLE assignments ADD COLUMN can_evaluate_english BOOLEAN NOT NULL DEFAULT 0",
+                    "columna assignments.can_evaluate_english",
+                )
+                _run_optional_schema_statement(
+                    connection,
+                    "UPDATE assignments SET can_evaluate_english = 1 WHERE can_evaluate_exposition = 1 "
+                    "AND judge_id IN (SELECT id FROM judges WHERE can_evaluate_english = 1)",
+                    "migracion de asignaciones de ingles",
+                )
+    db.metadata.tables["assignment_processes"].create(db.engine, checkfirst=True)
+    db.metadata.tables["assignment_process_items"].create(db.engine, checkfirst=True)
 
 
 def ensure_institution_responsibles_schema():
@@ -750,6 +774,10 @@ def ensure_schema_updates():
                 connection.execute(
                     text("ALTER TABLE assignments ADD COLUMN can_evaluate_exposition BOOLEAN NOT NULL DEFAULT 1")
                 )
+            if "can_evaluate_english" not in assignment_columns:
+                connection.execute(
+                    text("ALTER TABLE assignments ADD COLUMN can_evaluate_english BOOLEAN NOT NULL DEFAULT 0")
+                )
             if "notification_sent_at" not in assignment_columns:
                 connection.execute(text("ALTER TABLE assignments ADD COLUMN notification_sent_at DATETIME NULL"))
             if "notification_error" not in assignment_columns:
@@ -760,7 +788,8 @@ def ensure_schema_updates():
                     UPDATE assignments
                     SET
                         can_evaluate_documentation = COALESCE(can_evaluate_documentation, 1),
-                        can_evaluate_exposition = COALESCE(can_evaluate_exposition, 1)
+                        can_evaluate_exposition = COALESCE(can_evaluate_exposition, 1),
+                        can_evaluate_english = COALESCE(can_evaluate_english, 0)
                     """
                 )
             )

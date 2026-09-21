@@ -15,6 +15,7 @@ class Assignment(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey("projects.id"), nullable=False)
     can_evaluate_documentation = db.Column(db.Boolean, nullable=False, default=True)
     can_evaluate_exposition = db.Column(db.Boolean, nullable=False, default=True)
+    can_evaluate_english = db.Column(db.Boolean, nullable=False, default=False)
     status = db.Column(db.String(20), nullable=False, default=STATUS_CONFIRMED, index=True)
     notification_sent_at = db.Column(db.DateTime, nullable=True)
     notification_error = db.Column(db.Text, nullable=True)
@@ -28,6 +29,8 @@ class Assignment(db.Model):
 
     @property
     def scope_label(self):
+        if self.can_evaluate_english and not self.can_evaluate_documentation and not self.can_evaluate_exposition:
+            return "Evaluación en inglés"
         if self.can_evaluate_documentation and self.can_evaluate_exposition:
             return "Documento y exposición"
         if self.can_evaluate_documentation:

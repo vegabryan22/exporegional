@@ -84,7 +84,7 @@ def assignment_allows_evaluation_type(assignment, evaluation_type) -> bool:
     if evaluation_type.code == ENGLISH_EVAL_TYPE_CODE:
         judge = getattr(assignment, "judge", None)
         return bool(
-            getattr(assignment, "can_evaluate_exposition", True)
+            getattr(assignment, "can_evaluate_english", False)
             and judge
             and getattr(judge, "can_evaluate_english", False)
         )

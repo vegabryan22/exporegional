@@ -40,7 +40,26 @@ def smtp_is_configured():
     return base_ready
 
 
-def send_email(to_email: str, subject: str, body: str, html_body: str | None = None):
+def _add_attachments(message: EmailMessage, attachments: list[dict] | None):
+    for attachment in attachments or []:
+        content = attachment.get("content")
+        if content is None:
+            continue
+        message.add_attachment(
+            content,
+            maintype=attachment.get("maintype", "application"),
+            subtype=attachment.get("subtype", "octet-stream"),
+            filename=attachment.get("filename", "adjunto"),
+        )
+
+
+def send_email(
+    to_email: str,
+    subject: str,
+    body: str,
+    html_body: str | None = None,
+    attachments: list[dict] | None = None,
+):
     config = get_smtp_config()
     if not smtp_is_configured():
         return False, "SMTP no configurado."
@@ -52,6 +71,7 @@ def send_email(to_email: str, subject: str, body: str, html_body: str | None = N
     message.set_content(body)
     if html_body:
         message.add_alternative(html_body, subtype="html")
+    _add_attachments(message, attachments)
 
     try:
         if config["use_ssl"]:
@@ -94,6 +114,7 @@ def send_email_batch(messages: list[dict]):
         message.set_content(item["body"])
         if item.get("html_body"):
             message.add_alternative(item["html_body"], subtype="html")
+        _add_attachments(message, item.get("attachments"))
         prepared.append((item, message))
 
     try:

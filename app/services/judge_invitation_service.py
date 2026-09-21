@@ -51,7 +51,7 @@ def build_personalized_invitation_pdf(judge, process):
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.lib.utils import ImageReader
-    from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
     from PIL import Image as PILImage, ImageChops
 
     support_email = SystemSetting.get_value("judge_invitation_support_email", SUPPORT_EMAIL_DEFAULT)
@@ -155,8 +155,7 @@ def build_personalized_invitation_pdf(judge, process):
     ))
     story.append(Spacer(1, 6))
     story.append(Paragraph("Atentamente,", body))
-    story.append(Image(str(assets / "signature.png"), width=1.52 * inch, height=0.66 * inch, kind="proportional"))
-    story.append(Paragraph("<b>Erick Álvarez Sosa</b><br/>Teléfono: 8372-5297", body))
+    story.append(Paragraph("<b>Comité de Juzgamiento</b><br/>CORVEC Unidos por la Excelencia", body))
     doc.build(story, onFirstPage=original_letter_chrome, onLaterPages=original_letter_chrome)
     return output.getvalue()
 

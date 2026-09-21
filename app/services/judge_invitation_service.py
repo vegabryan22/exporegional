@@ -46,25 +46,25 @@ def _process_copy(process_type):
 
 def build_personalized_invitation_pdf(judge, process):
     from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_RIGHT
+    from reportlab.lib.enums import TA_JUSTIFY, TA_RIGHT
     from reportlab.lib.pagesizes import letter
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.lib.units import inch
     from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    from PIL import Image as PILImage, ImageChops
 
     support_email = SystemSetting.get_value("judge_invitation_support_email", SUPPORT_EMAIL_DEFAULT)
-    school_name = SystemSetting.get_value("school_name", "ExpoTécnica Regional")
-    school_logo_path = (SystemSetting.get_value("school_logo_path", "") or "").strip()
     copy = _process_copy(process.process_type)
     deadline = _deadline_label(process.deadline)
+    assets = Path(current_app.static_folder) / "judge_invitation"
     output = BytesIO()
     doc = SimpleDocTemplate(
         output,
         pagesize=letter,
-        rightMargin=0.72 * inch,
-        leftMargin=0.72 * inch,
-        topMargin=0.55 * inch,
-        bottomMargin=0.55 * inch,
+        rightMargin=0.8 * inch,
+        leftMargin=0.8 * inch,
+        topMargin=0.52 * inch,
+        bottomMargin=0.48 * inch,
         title=f"Invitación - {judge.full_name}",
         author="Comité de Juzgamiento CORVEC Unidos por la Excelencia",
     )
@@ -73,79 +73,65 @@ def build_personalized_invitation_pdf(judge, process):
         "InvitationBody",
         parent=styles["BodyText"],
         fontName="Helvetica",
-        fontSize=10.5,
-        leading=15,
+        fontSize=10.8,
+        leading=15.2,
         alignment=TA_JUSTIFY,
-        textColor=colors.HexColor("#17324d"),
-        spaceAfter=10,
+        textColor=colors.black,
+        spaceAfter=11,
     )
-    meta = ParagraphStyle("InvitationMeta", parent=body, leading=14, spaceAfter=3)
+    meta = ParagraphStyle("InvitationMeta", parent=body, alignment=0, spaceAfter=5)
     date_style = ParagraphStyle("InvitationDate", parent=body, alignment=TA_RIGHT, spaceAfter=14)
-    title_style = ParagraphStyle(
-        "InvitationTitle",
-        parent=styles["Heading2"],
-        fontName="Helvetica-Bold",
-        fontSize=14,
-        leading=18,
-        alignment=TA_CENTER,
-        textColor=colors.HexColor("#0e527a"),
-        spaceBefore=6,
-        spaceAfter=15,
-    )
     story = []
-    logo_file = Path(current_app.static_folder) / school_logo_path if school_logo_path else None
-    if logo_file and logo_file.is_file():
-        logo = Image(str(logo_file), width=0.9 * inch, height=0.9 * inch, kind="proportional")
-        header = Table(
-            [[logo, Paragraph(f"<b>{escape(school_name)}</b><br/>Comité de Juzgamiento<br/>CORVEC Unidos por la Excelencia", meta)]],
-            colWidths=[1.05 * inch, 5.4 * inch],
-        )
-    else:
-        header = Table(
-            [[Paragraph(f"<b>{escape(school_name)}</b><br/>Comité de Juzgamiento<br/>CORVEC Unidos por la Excelencia", meta)]],
-            colWidths=[6.45 * inch],
-        )
+    crest = Image(str(assets / "school_crest.jpg"), width=0.78 * inch, height=0.78 * inch, kind="proportional")
+    with PILImage.open(assets / "mep_logo.png") as source_logo:
+        background = PILImage.new("RGB", source_logo.size, "white")
+        logo_bounds = ImageChops.difference(source_logo.convert("RGB"), background).getbbox()
+        cropped_logo = BytesIO()
+        source_logo.crop(logo_bounds).save(cropped_logo, format="PNG")
+    cropped_logo.seek(0)
+    mep = Image(cropped_logo, width=1.65 * inch, height=0.48 * inch, kind="proportional")
+    header = Table([[crest, "", mep]], colWidths=[0.85 * inch, 3.95 * inch, 1.65 * inch])
     header.setStyle(TableStyle([
         ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#eef7fc")),
-        ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#86b9d5")),
-        ("LEFTPADDING", (0, 0), (-1, -1), 12),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-        ("TOPPADDING", (0, 0), (-1, -1), 8),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING", (0, 0), (-1, -1), 0),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
     ]))
-    story.extend([header, Spacer(1, 12)])
+    story.extend([header, Spacer(1, 20)])
     today = datetime.now()
     story.append(Paragraph(f"{today.day} de {SPANISH_MONTHS[today.month - 1]} de {today.year}", date_style))
-    story.append(Paragraph("<b>De:</b> Comité de Juzgamiento CORVEC Unidos por la Excelencia", meta))
+    story.append(Paragraph("<b>De:</b> Comité de Juzgamiento Corvec Unidos por la Excelencia", meta))
     story.append(Paragraph(f"<b>Para:</b> {escape(judge.full_name)}", meta))
-    story.append(Paragraph(f"<b>Asunto:</b> Solicitud de colaboración como juez(a) en la Feria Técnica Regional CORVEC", meta))
-    story.append(Paragraph(copy["title"], title_style))
+    story.append(Paragraph("<b>Asunto:</b> Solicitud de colaboración como juez(a) en la Feria Técnica Regional CORVEC", meta))
+    story.append(Spacer(1, 14))
     story.append(Paragraph("Reciba un cordial saludo desde el CTP Roberto Gamboa Valverde.", body))
     story.append(Paragraph(
-        "Por medio de la presente, el Comité de Juzgamiento del CORVEC Unidos por la Excelencia "
-        f"desea expresarle nuestro más sincero agradecimiento por su disposición a colaborar con {copy['purpose']}.",
+        "Por medio de la presente, el Comité de Juzgamiento del CORVEC Unidos por la Excelencia desea "
+        f"expresarle nuestro más sincero agradecimiento por su disposición a formar parte del jurado en {copy['purpose']}.",
         body,
     ))
     story.append(Paragraph(
-        "Estudiantes de once centros educativos se han preparado con esmero para la ExpoTécnica Regional. "
-        "Su aporte, retroalimentación y evaluación son fundamentales en su proceso de aprendizaje.",
+        "Estudiantes de once centros educativos se han preparado con esmero y han clasificado a la "
+        "ExpoTécnica 2026 en su etapa regional. Su aporte, retroalimentación y evaluación son "
+        "fundamentales en el proceso de aprendizaje de los estudiantes.",
         body,
+    ))
+    story.append(Paragraph(
+        "Para obtener detalles del proceso de cómo ingresar a la plataforma, utilice el enlace "
+        "que se incluye en el correo que acompaña esta invitación.", body,
     ))
     if process.process_type == AssignmentProcess.TYPE_DOCUMENTATION:
-        story.append(Paragraph(f"La evaluación debe quedar finalizada a más tardar el <b>{deadline}</b>.", body))
+        story.append(Paragraph(f"Le solicitamos completar la evaluación a más tardar el <b>{deadline}</b>.", body))
     story.append(Paragraph(
-        "Los proyectos asignados, el enlace de ingreso y las indicaciones operativas se incluyen en el cuerpo del correo que acompaña esta invitación.",
-        body,
-    ))
-    story.append(Paragraph(
+        "Agradecemos de antemano su apoyo para el éxito de esta actividad. "
         f"Para cualquier duda o soporte, por favor escriba a <b>{escape(support_email)}</b>.",
         body,
     ))
     story.append(Spacer(1, 8))
-    story.append(Paragraph("Agradecemos de antemano su apoyo para el éxito de esta actividad.", body))
-    story.append(Spacer(1, 12))
-    story.append(Paragraph("Atentamente,<br/><br/><b>Erick Álvarez Sosa</b><br/>Teléfono: 8372-5297", body))
+    story.append(Paragraph("Atentamente,", body))
+    story.append(Image(str(assets / "signature.png"), width=1.52 * inch, height=0.66 * inch, kind="proportional"))
+    story.append(Paragraph("<b>Erick Álvarez Sosa</b><br/>Teléfono: 8372-5297", body))
     doc.build(story)
     return output.getvalue()
 

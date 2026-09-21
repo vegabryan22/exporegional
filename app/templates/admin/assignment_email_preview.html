@@ -23,7 +23,7 @@
     <div class="notice">Vista previa solamente. No se ha enviado ningún correo.</div>
     <div class="toolbar">
         <label>Juez de ejemplo
-            <select onchange="window.location.search = '?judge_id=' + encodeURIComponent(this.value)">
+            <select onchange="window.location.search = new URLSearchParams({judge_id: this.value}).toString()">
                 {% for option in judges %}
                 <option value="{{ option.id }}" {% if option.id == judge.id %}selected{% endif %}>{{ option.full_name }}</option>
                 {% endfor %}

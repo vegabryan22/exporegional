@@ -8241,11 +8241,50 @@ def assignments_page():
     latest_processes = {}
     for process in assignment_processes:
         latest_processes.setdefault(process.process_type, process)
+    process_drafts_by_project = {}
+    process_summaries = {}
+    process_labels = {
+        AssignmentProcess.TYPE_DOCUMENTATION: "Documento",
+        AssignmentProcess.TYPE_EXPOSITION: "Exposición",
+        AssignmentProcess.TYPE_ENGLISH: "Inglés",
+    }
+    existing_assignments = {
+        (assignment.judge_id, assignment.project_id): assignment
+        for assignment in Assignment.query.filter_by(status=Assignment.STATUS_CONFIRMED).all()
+    }
+    for process_type, process in latest_processes.items():
+        process_summaries[process_type] = {
+            "projects": len({item.project_id for item in process.items}),
+            "judges": len({item.judge_id for item in process.items}),
+        }
+        if process.status != AssignmentProcess.STATUS_DRAFT:
+            continue
+        for item in process.items:
+            current_assignment = existing_assignments.get((item.judge_id, item.project_id))
+            already_confirmed = bool(
+                current_assignment
+                and (
+                    (process_type == AssignmentProcess.TYPE_DOCUMENTATION and current_assignment.can_evaluate_documentation)
+                    or (process_type == AssignmentProcess.TYPE_EXPOSITION and current_assignment.can_evaluate_exposition)
+                    or (process_type == AssignmentProcess.TYPE_ENGLISH and current_assignment.can_evaluate_english)
+                )
+            )
+            if already_confirmed:
+                continue
+            process_drafts_by_project.setdefault(item.project_id, []).append(
+                {
+                    "judge": item.judge,
+                    "process_type": process_type,
+                    "scope_label": process_labels[process_type],
+                }
+            )
     return _render(
         "admin/assignments.html",
         "assignments",
         assignment_processes=assignment_processes,
         latest_assignment_processes=latest_processes,
+        assignment_process_drafts_by_project=process_drafts_by_project,
+        assignment_process_summaries=process_summaries,
     )
 
 

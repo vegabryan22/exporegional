@@ -76,11 +76,12 @@
         </div>
         <div class="assignment-process-grid">
             {% for process_type, title, description, needs_deadline in [
-                ('documentation', 'Documento escrito', 'Tres jueces por proyecto. La fecha l&iacute;mite es obligatoria y se incluye en el PDF y el correo.', true),
-                ('exposition', 'Exposici&oacute;n', 'Tres jueces por proyecto, respetando categor&iacute;a, disponibilidad e instituci&oacute;n.', false),
-                ('english', 'Ingl&eacute;s', 'Un juez habilitado por proyecto con estudiantes que exponen en ingl&eacute;s.', false)
+                ('documentation', 'Documento escrito', 'Tres jueces por proyecto. La fecha límite es obligatoria y se incluye en el PDF y el correo.', true),
+                ('exposition', 'Exposición', 'Tres jueces por proyecto, respetando categoría, disponibilidad e institución.', false),
+                ('english', 'Inglés', 'Un juez habilitado por proyecto con estudiantes que exponen en inglés.', false)
             ] %}
                 {% set process = latest_assignment_processes.get(process_type) %}
+                {% set process_summary = assignment_process_summaries.get(process_type, {}) %}
                 <article class="assignment-process-card assignment-process-{{ process_type }}">
                     <div class="assignment-process-card-head">
                         <div>
@@ -97,19 +98,10 @@
 
                     {% if process %}
                         <div class="assignment-process-summary">
-                            <strong>{{ process.items|length }}</strong> asignaciones
-                            {% if process.deadline %}<span>Fecha l&iacute;mite: {{ process.deadline.strftime('%d/%m/%Y %H:%M') }}</span>{% endif %}
+                            <strong>{{ process_summary.get('projects', 0) }}</strong> proyectos
+                            <span>{{ process_summary.get('judges', 0) }} jueces</span>
+                            {% if process.deadline %}<span>Fecha límite: {{ process.deadline.strftime('%d/%m/%Y %H:%M') }}</span>{% endif %}
                         </div>
-                        {% if process.items %}
-                        <details class="assignment-process-review">
-                            <summary>Revisar borrador por juez y proyecto</summary>
-                            <div class="assignment-process-item-list">
-                                {% for item in process.items|sort(attribute='judge.full_name') %}
-                                    <div><strong>{{ item.judge.full_name }}</strong><span>{{ item.project.title }}</span></div>
-                                {% endfor %}
-                            </div>
-                        </details>
-                        {% endif %}
                     {% endif %}
 
                     <div class="assignment-process-actions">
@@ -119,7 +111,7 @@
                             <input type="hidden" name="action" value="generate_assignment_process">
                             <input type="hidden" name="process_type" value="{{ process_type }}">
                             {% if needs_deadline %}
-                                <label>Fecha y hora l&iacute;mite
+                                <label>Fecha y hora límite
                                     <input type="datetime-local" name="deadline" required>
                                 </label>
                             {% endif %}
@@ -218,11 +210,13 @@
 
     <div class="assignment-card-list">
         {% for project in active_projects|sort(attribute='title') %}
-            {% set ns = namespace(confirmed=[], drafts=[], doc_total=0, expo_total=0) %}
+            {% set process_drafts = assignment_process_drafts_by_project.get(project.id, []) %}
+            {% set ns = namespace(confirmed=[], drafts=[], doc_total=0, expo_total=0, english_total=0, process_judge_ids='') %}
             {% for assignment in assignments %}
                 {% if assignment.project_id == project.id %}
                     {% if assignment.can_evaluate_documentation %}{% set ns.doc_total = ns.doc_total + 1 %}{% endif %}
                     {% if assignment.can_evaluate_exposition %}{% set ns.expo_total = ns.expo_total + 1 %}{% endif %}
+                    {% if assignment.can_evaluate_english %}{% set ns.english_total = ns.english_total + 1 %}{% endif %}
                     {% if assignment.status == 'confirmed' %}
                         {% set ns.confirmed = ns.confirmed + [assignment] %}
                     {% else %}
@@ -230,15 +224,21 @@
                     {% endif %}
                 {% endif %}
             {% endfor %}
+            {% for draft in process_drafts %}
+                {% if draft.process_type == 'documentation' %}{% set ns.doc_total = ns.doc_total + 1 %}{% endif %}
+                {% if draft.process_type == 'exposition' %}{% set ns.expo_total = ns.expo_total + 1 %}{% endif %}
+                {% if draft.process_type == 'english' %}{% set ns.english_total = ns.english_total + 1 %}{% endif %}
+                {% set ns.process_judge_ids = ns.process_judge_ids ~ (',' if ns.process_judge_ids else '') ~ draft.judge.id %}
+            {% endfor %}
             {% set ns_all = namespace(project_assignments=ns.confirmed + ns.drafts) %}
             <article
                 class="assignment-project-card"
                 data-assignment-card
-                data-search="{{ (project.title ~ ' ' ~ project.team_name ~ ' ' ~ category_map.get(project.category, project.category) ~ ' ' ~ (ns_all.project_assignments|map(attribute='judge.full_name')|join(' ')))|lower }}"
+                data-search="{{ (project.title ~ ' ' ~ project.team_name ~ ' ' ~ category_map.get(project.category, project.category) ~ ' ' ~ (ns_all.project_assignments|map(attribute='judge.full_name')|join(' ')) ~ ' ' ~ (process_drafts|map(attribute='judge.full_name')|join(' ')))|lower }}"
                 data-category="{{ project.category }}"
-                data-judge-ids="{{ ns_all.project_assignments|map(attribute='judge_id')|join(',') }}"
+                data-judge-ids="{{ ns_all.project_assignments|map(attribute='judge_id')|join(',') }}{% if ns.process_judge_ids %},{{ ns.process_judge_ids }}{% endif %}"
                 data-confirmed="{{ ns.confirmed|length }}"
-                data-drafts="{{ ns.drafts|length }}"
+                data-drafts="{{ ns.drafts|length + process_drafts|length }}"
                 data-doc-complete="{{ 1 if ns.doc_total >= 3 else 0 }}"
                 data-expo-complete="{{ 1 if ns.expo_total >= 3 else 0 }}"
                 data-english="{{ 1 if project.requires_english_evaluation else 0 }}"
@@ -268,10 +268,10 @@
                     {% else %}
                         <span class="tag off">Sin jueces</span>
                     {% endif %}
-                    {% if ns.drafts %}
+                    {% if ns.drafts or process_drafts %}
                         <div class="assignment-column-head assignment-draft-head">
-                            <span class="assignment-field-label">Borrador</span>
-                            <strong>{{ ns.drafts|length }}</strong>
+                            <span class="assignment-field-label">Jueces en borrador</span>
+                            <strong>{{ ns.drafts|length + process_drafts|length }}</strong>
                         </div>
                         <ul class="assignment-summary-list assignment-summary-list-left">
                             {% for assignment in ns.drafts %}
@@ -283,16 +283,22 @@
                                     </span>
                                 </li>
                             {% endfor %}
+                            {% for draft in process_drafts|sort(attribute='judge.full_name') %}
+                                <li class="assignment-summary-pill assignment-pill-draft">
+                                    <span class="assignment-judge-name">{{ draft.judge.full_name }}</span>
+                                    <span class="assignment-judge-meta"><small>{{ draft.scope_label }}</small></span>
+                                </li>
+                            {% endfor %}
                         </ul>
                     {% endif %}
                 </div>
                 <div class="assignment-project-status">
                     <span class="assignment-field-label">Cobertura</span>
                     <span class="tag {{ 'ok' if ns.confirmed else 'off' }}">{{ ns.confirmed|length }} juez{{ 'ces' if ns.confirmed|length != 1 else '' }}</span>
-                    {% if ns.drafts %}<span class="tag warning">{{ ns.drafts|length }} borrador</span>{% endif %}
+                    {% if ns.drafts or process_drafts %}<span class="tag warning">{{ ns.drafts|length + process_drafts|length }} borrador</span>{% endif %}
                     <span class="tag {{ 'ok' if ns.doc_total >= 3 else 'warning' }}">Doc &middot; {{ ns.doc_total }}</span>
                     <span class="tag {{ 'ok' if ns.expo_total >= 3 else 'warning' }}">Expo &middot; {{ ns.expo_total }}</span>
-                    {% if project.requires_english_evaluation %}<span class="tag warning">Ingl&eacute;s &middot; {{ project.english_members_count }}</span>{% endif %}
+                    {% if project.requires_english_evaluation %}<span class="tag {{ 'ok' if ns.english_total >= 1 else 'warning' }}">Ingl&eacute;s &middot; {{ ns.english_total }}</span>{% endif %}
                 </div>
                 <button type="button" class="secondary-btn assignment-manage-btn" data-dialog-open="manage-project-{{ project.id }}"><svg aria-hidden="true"><use href="#ico-edit"></use></svg><span>Gestionar</span></button>
             </article>

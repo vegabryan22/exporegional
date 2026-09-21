@@ -13188,30 +13188,6 @@ body {
     font-size: 1.35rem;
 }
 
-.assignment-process-review summary {
-    cursor: pointer;
-    color: #075985;
-    font-weight: 800;
-}
-
-.assignment-process-item-list {
-    max-height: 230px;
-    margin-top: .65rem;
-    overflow: auto;
-    border: 1px solid #d9e7f2;
-    border-radius: 12px;
-}
-
-.assignment-process-item-list > div {
-    display: grid;
-    gap: .15rem;
-    padding: .6rem .7rem;
-    border-bottom: 1px solid #e5eef5;
-}
-
-.assignment-process-item-list > div:last-child { border-bottom: 0; }
-.assignment-process-item-list span { color: #60798d; font-size: .86rem; }
-
 .assignment-process-actions {
     display: flex;
     flex-wrap: wrap;

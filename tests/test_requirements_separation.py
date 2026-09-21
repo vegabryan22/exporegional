@@ -843,6 +843,9 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertIn('name="deadline" required', template)
         self.assertIn('value="approve_assignment_process"', template)
         self.assertIn('value="send_assignment_process"', template)
+        self.assertIn("Jueces en borrador", template)
+        self.assertIn("assignment_process_drafts_by_project", controller)
+        self.assertNotIn("Revisar borrador por juez y proyecto", template)
         self.assertIn('elif action == "approve_assignment_process"', controller)
 
     def test_judges_report_opens_on_judge_detail_sheet(self):

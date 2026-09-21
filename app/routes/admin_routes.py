@@ -10,6 +10,8 @@ admin_bp.add_url_rule("/colegios", view_func=admin_controller.institutions_page,
 admin_bp.add_url_rule("/revision-regional", view_func=admin_controller.regional_review_page, methods=["GET", "POST"])
 admin_bp.add_url_rule("/colegios/<int:institution_id>/suplantar", endpoint="impersonate_institution", view_func=admin_controller.impersonate_institution, methods=["POST"])
 admin_bp.add_url_rule("/asignaciones", view_func=admin_controller.assignments_page, methods=["GET"])
+admin_bp.add_url_rule("/asignaciones/procesos/<int:process_id>/correo", view_func=admin_controller.assignment_process_email_preview, methods=["GET"])
+admin_bp.add_url_rule("/asignaciones/procesos/<int:process_id>/carta.pdf", view_func=admin_controller.assignment_process_letter_preview, methods=["GET"])
 admin_bp.add_url_rule("/asignaciones/reporte/pdf", view_func=admin_controller.assignments_report_pdf, methods=["GET"])
 admin_bp.add_url_rule("/asignaciones/reporte/edecanes/pdf", view_func=admin_controller.exposition_usher_report_pdf, methods=["GET"])
 admin_bp.add_url_rule("/asignaciones/reporte/edecanes/excel", view_func=admin_controller.exposition_usher_report_excel, methods=["GET"])

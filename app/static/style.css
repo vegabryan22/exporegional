@@ -13188,6 +13188,19 @@ body {
     font-size: 1.35rem;
 }
 
+.assignment-process-preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.assignment-process-preview-actions .outline-btn {
+    flex: 1 1 140px;
+    justify-content: center;
+    text-align: center;
+    font-size: .82rem;
+}
+
 .assignment-process-actions {
     display: flex;
     flex-wrap: wrap;

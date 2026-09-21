@@ -151,10 +151,6 @@ def build_personalized_invitation_pdf(judge, process):
 
 
 def send_process_invitations(process):
-    support_email = SystemSetting.get_value("judge_invitation_support_email", SUPPORT_EMAIL_DEFAULT)
-    panel_url = url_for("judge.dashboard", _external=True)
-    copy = _process_copy(process.process_type)
-    deadline = _deadline_label(process.deadline)
     grouped = defaultdict(list)
     for item in process.items:
         retryable = process.status == AssignmentProcess.STATUS_SENT or item.notification_sent_at is None
@@ -164,44 +160,7 @@ def send_process_invitations(process):
     messages = []
     rows = []
     for items in grouped.values():
-        judge = items[0].judge
-        project_names = sorted({item.project.title for item in items if item.project})
-        project_lines = "\n".join(f"- {name}" for name in project_names)
-        project_html = "".join(f"<li>{escape(name)}</li>" for name in project_names)
-        deadline_plain = f"\nFecha límite: {deadline}\n" if process.process_type == AssignmentProcess.TYPE_DOCUMENTATION else ""
-        deadline_html = f"<p><strong>Fecha límite:</strong> {escape(deadline)}</p>" if process.process_type == AssignmentProcess.TYPE_DOCUMENTATION else ""
-        body = (
-            f"Hola {judge.full_name},\n\n"
-            f"Se aprobó su asignación para {copy['purpose']}.\n\n"
-            f"Proyectos asignados:\n{project_lines}\n"
-            f"{deadline_plain}\n"
-            f"Ingreso a la plataforma: {panel_url}\n\n"
-            f"Dudas o soporte: {support_email}\n\n"
-            "Adjuntamos la invitación formal personalizada en formato PDF."
-        )
-        html_body = (
-            "<html><body style='font-family:Arial,sans-serif;color:#17324d'>"
-            f"<h2 style='color:#0e527a'>{escape(copy['title'])}</h2>"
-            f"<p>Hola <strong>{escape(judge.full_name)}</strong>,</p>"
-            f"<p>Se aprobó su asignación para {escape(copy['purpose'])}.</p>"
-            f"<p><strong>Proyectos asignados:</strong></p><ul>{project_html}</ul>{deadline_html}"
-            f"<p><a href='{escape(panel_url)}' style='background:#0e527a;color:white;padding:11px 18px;border-radius:8px;text-decoration:none;font-weight:bold'>Ingresar a la plataforma</a></p>"
-            f"<p>Dudas o soporte: <a href='mailto:{escape(support_email)}'>{escape(support_email)}</a></p>"
-            "<p>Adjuntamos la invitación formal personalizada en formato PDF.</p></body></html>"
-        )
-        filename = f"Invitacion-{process.process_type}-{judge.full_name}.pdf".replace("/", "-").replace("\\", "-")
-        messages.append({
-            "to_email": judge.email,
-            "subject": copy["subject"],
-            "body": body,
-            "html_body": html_body,
-            "attachments": [{
-                "content": build_personalized_invitation_pdf(judge, process),
-                "maintype": "application",
-                "subtype": "pdf",
-                "filename": filename,
-            }],
-        })
+        messages.append(build_process_invitation_message(process, items))
         rows.append(items)
 
     results = send_email_batch(messages)
@@ -217,3 +176,54 @@ def send_process_invitations(process):
         process.status = AssignmentProcess.STATUS_SENT
         process.sent_at = now
     return sent, failed
+
+
+def build_process_invitation_message(process, items, *, include_attachment=True):
+    """One source of truth for both the preview and the actual SMTP payload."""
+    if not items:
+        raise ValueError("El juez no tiene proyectos en este proceso.")
+    support_email = SystemSetting.get_value("judge_invitation_support_email", SUPPORT_EMAIL_DEFAULT)
+    panel_url = url_for("judge.dashboard", _external=True)
+    copy = _process_copy(process.process_type)
+    deadline = _deadline_label(process.deadline)
+    judge = items[0].judge
+    project_names = sorted({item.project.title for item in items if item.project})
+    project_lines = "\n".join(f"- {name}" for name in project_names)
+    project_html = "".join(f"<li>{escape(name)}</li>" for name in project_names)
+    deadline_plain = f"\nFecha límite: {deadline}\n" if process.process_type == AssignmentProcess.TYPE_DOCUMENTATION else ""
+    deadline_html = f"<p><strong>Fecha límite:</strong> {escape(deadline)}</p>" if process.process_type == AssignmentProcess.TYPE_DOCUMENTATION else ""
+    body = (
+        f"Hola {judge.full_name},\n\n"
+        f"Se aprobó su asignación para {copy['purpose']}.\n\n"
+        f"Proyectos asignados:\n{project_lines}\n"
+        f"{deadline_plain}\n"
+        f"Ingreso a la plataforma: {panel_url}\n\n"
+        f"Dudas o soporte: {support_email}\n\n"
+        "Adjuntamos la invitación formal personalizada en formato PDF."
+    )
+    html_body = (
+        "<html><body style='font-family:Arial,sans-serif;color:#17324d'>"
+        f"<h2 style='color:#0e527a'>{escape(copy['title'])}</h2>"
+        f"<p>Hola <strong>{escape(judge.full_name)}</strong>,</p>"
+        f"<p>Se aprobó su asignación para {escape(copy['purpose'])}.</p>"
+        f"<p><strong>Proyectos asignados:</strong></p><ul>{project_html}</ul>{deadline_html}"
+        f"<p><a href='{escape(panel_url)}' style='background:#0e527a;color:white;padding:11px 18px;border-radius:8px;text-decoration:none;font-weight:bold'>Ingresar a la plataforma</a></p>"
+        f"<p>Dudas o soporte: <a href='mailto:{escape(support_email)}'>{escape(support_email)}</a></p>"
+        "<p>Adjuntamos la invitación formal personalizada en formato PDF.</p></body></html>"
+    )
+    filename = f"Invitacion-{process.process_type}-{judge.full_name}.pdf".replace("/", "-").replace("\\", "-")
+    message = {
+        "to_email": judge.email,
+        "subject": copy["subject"],
+        "body": body,
+        "html_body": html_body,
+        "attachment_filename": filename,
+    }
+    if include_attachment:
+        message["attachments"] = [{
+            "content": build_personalized_invitation_pdf(judge, process),
+            "maintype": "application",
+            "subtype": "pdf",
+            "filename": filename,
+        }]
+    return message

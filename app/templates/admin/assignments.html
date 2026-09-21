@@ -102,6 +102,12 @@
                             <span>{{ process_summary.get('judges', 0) }} jueces</span>
                             {% if process.deadline %}<span>Fecha límite: {{ process.deadline.strftime('%d/%m/%Y %H:%M') }}</span>{% endif %}
                         </div>
+                        {% if process.items %}
+                        <div class="assignment-process-preview-actions">
+                            <a class="outline-btn" target="_blank" rel="noopener" href="{{ url_for('admin.assignment_process_email_preview', process_id=process.id) }}">Vista previa del correo ↗</a>
+                            <a class="outline-btn" target="_blank" rel="noopener" href="{{ url_for('admin.assignment_process_letter_preview', process_id=process.id) }}">Ver carta PDF ↗</a>
+                        </div>
+                        {% endif %}
                     {% endif %}
 
                     <div class="assignment-process-actions">

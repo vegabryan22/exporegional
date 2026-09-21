@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Vista previa del correo - {{ process.type_label }}</title>
+    <style>
+        body { margin: 0; background: #eef5fb; color: #17324d; font: 16px/1.5 Arial, sans-serif; }
+        main { max-width: 760px; margin: 28px auto; padding: 0 16px 32px; }
+        .notice { padding: 14px 18px; border-radius: 12px; background: #fff2cb; color: #63470d; font-weight: 700; }
+        .toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 20px 0; }
+        label { display: grid; gap: 5px; flex: 1 1 260px; font-weight: 700; }
+        select, a.button { box-sizing: border-box; min-height: 42px; padding: 9px 12px; border: 1px solid #b8d1e4; border-radius: 9px; background: white; color: #123f6b; font: inherit; }
+        a.button { display: inline-flex; align-items: center; text-decoration: none; font-weight: 700; }
+        .message { overflow: hidden; border: 1px solid #cfe0f1; border-radius: 15px; background: white; }
+        .meta { padding: 15px 20px; border-bottom: 1px solid #ddeaf4; }
+        .meta p { margin: 4px 0; overflow-wrap: anywhere; }
+        .email-body { display: block; width: 100%; min-height: 430px; border: 0; background: white; }
+    </style>
+</head>
+<body>
+<main>
+    <div class="notice">Vista previa solamente. No se ha enviado ningún correo.</div>
+    <div class="toolbar">
+        <label>Juez de ejemplo
+            <select onchange="window.location.search = '?judge_id=' + encodeURIComponent(this.value)">
+                {% for option in judges %}
+                <option value="{{ option.id }}" {% if option.id == judge.id %}selected{% endif %}>{{ option.full_name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <a class="button" target="_blank" rel="noopener" href="{{ url_for('admin.assignment_process_letter_preview', process_id=process.id, judge_id=judge.id) }}">Ver carta PDF adjunta ↗</a>
+    </div>
+    <div class="message">
+        <div class="meta">
+            <p><strong>Para:</strong> {{ judge.full_name }} &lt;{{ message.to_email }}&gt;</p>
+            <p><strong>Asunto:</strong> {{ message.subject }}</p>
+            <p><strong>Adjunto:</strong> {{ message.attachment_filename }}</p>
+        </div>
+        <iframe class="email-body" title="Contenido del correo" sandbox="allow-popups" srcdoc="{{ message.html_body }}"></iframe>
+    </div>
+</main>
+</body>
+</html>

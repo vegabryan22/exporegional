@@ -60,7 +60,7 @@ from app.models.workshop import Workshop
 from app.services.audit_service import log_event
 from app.services.assignment_service import balance_assignments_to_judge, reassign_absent_judge_assignments
 from app.services.assignment_process_service import approve_process, generate_process_draft
-from app.services.judge_invitation_service import send_process_invitations
+from app.services.judge_invitation_service import build_process_invitation_message, build_personalized_invitation_pdf, send_process_invitations
 from app.services.registration_deadline_service import (
     deadline_display,
     registration_is_closed,
@@ -8286,6 +8286,52 @@ def assignments_page():
         assignment_process_drafts_by_project=process_drafts_by_project,
         assignment_process_summaries=process_summaries,
     )
+
+
+def _assignment_process_preview_target(process_id: int):
+    process = AssignmentProcess.query.options(
+        joinedload(AssignmentProcess.items).joinedload(AssignmentProcessItem.judge),
+        joinedload(AssignmentProcess.items).joinedload(AssignmentProcessItem.project),
+    ).filter_by(id=process_id).first_or_404()
+    judge_ids = {item.judge_id for item in process.items}
+    if not judge_ids:
+        abort(404)
+    judge_id = request.args.get("judge_id", type=int)
+    if judge_id is None:
+        judge_id = sorted(judge_ids)[0]
+    if judge_id not in judge_ids:
+        abort(404)
+    items = [item for item in process.items if item.judge_id == judge_id]
+    return process, items
+
+
+@admin_module_required("assignments")
+def assignment_process_email_preview(process_id: int):
+    process, items = _assignment_process_preview_target(process_id)
+    message = build_process_invitation_message(process, items, include_attachment=False)
+    response = current_app.make_response(render_template(
+        "admin/assignment_email_preview.html",
+        process=process,
+        judge=items[0].judge,
+        judges=sorted({item.judge_id: item.judge for item in process.items}.values(), key=lambda judge: judge.full_name.casefold()),
+        message=message,
+    ))
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@admin_module_required("assignments")
+def assignment_process_letter_preview(process_id: int):
+    process, items = _assignment_process_preview_target(process_id)
+    pdf = build_personalized_invitation_pdf(items[0].judge, process)
+    response = send_file(
+        BytesIO(pdf),
+        mimetype="application/pdf",
+        as_attachment=False,
+        download_name=f"invitacion-juez-{process.process_type}.pdf",
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @admin_module_required("judge_pool")

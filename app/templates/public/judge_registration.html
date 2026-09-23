@@ -83,6 +83,15 @@
         <div class="judge-register-band judge-register-card-accent profile">
             <span class="judge-step">2</span>
             <h3>Perfil profesional</h3>
+            <label>Colegio que presenta su inscripción
+                <select name="sponsoring_school_id" required>
+                    <option value="">Seleccione un colegio...</option>
+                    {% for school in schools %}
+                    <option value="{{ school.id }}" {% if form_data.get('sponsoring_school_id')|string == school.id|string %}selected{% endif %}>{{ school.name }}</option>
+                    {% endfor %}
+                </select>
+                <small>Este vínculo se usa para impedir que evalúe proyectos del mismo colegio. No es su lugar de trabajo.</small>
+            </label>
             <div class="form-grid">
                 <label>Profesión o área técnica
                     <input type="text" name="profesion" value="{{ form_data.get('profesion', '') }}" required>

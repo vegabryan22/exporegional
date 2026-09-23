@@ -455,6 +455,10 @@ def _assignment_compatibility_error(
         return "Debes seleccionar un juez válido."
     if not project:
         return "Debes seleccionar un proyecto válido."
+    if not judge.institution_id:
+        return f"{judge.full_name} no tiene un colegio inscritor vinculado. Corrige su ficha antes de asignarlo."
+    if not project.institution_id:
+        return "El proyecto no tiene un colegio vinculado y no se puede verificar el conflicto de interés."
     if judge.institution_id and project.institution_id and judge.institution_id == project.institution_id:
         institution_name = project.institution.name if project.institution else "la misma institución"
         return f"{judge.full_name} pertenece a {institution_name} y no puede evaluar proyectos de su propio colegio."
@@ -496,6 +500,7 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
     eligible_judges = Judge.query.filter(
         Judge.is_active_user == True,  # noqa: E712
         Judge.role == Judge.ROLE_JUDGE,
+        Judge.institution_id.isnot(None),
     ).all()
     if not eligible_judges or not active_projects:
         return 0, 0
@@ -568,7 +573,7 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
         def compatible(judge: Judge, required_scope: str | None = None) -> bool:
             if judge.id in already_assigned_ids:
                 return False
-            if judge.institution_id and project.institution_id and judge.institution_id == project.institution_id:
+            if not project.institution_id or judge.institution_id == project.institution_id:
                 return False
             if not judge.can_evaluate_category(project.category):
                 return False
@@ -3909,14 +3914,24 @@ def _request_judge_form_token(payload: dict):
 
 def _create_or_update_judge_from_form(payload: dict):
     data = _extract_judge_form_payload(payload)
+    school_id_raw = payload.get("sponsoring_school_id") or payload.get("colegio_id")
+    try:
+        school_id = int(school_id_raw)
+    except (TypeError, ValueError):
+        school_id = None
+    school = db.session.get(Institution, school_id) if school_id else None
     if not data["full_name"] or not data["email"]:
         return None, None, "Nombre y correo son obligatorios."
+    if not school or not school.is_active:
+        return None, None, "Selecciona el colegio que presenta al juez."
     if "@" not in data["email"]:
         return None, None, "El correo recibido no es valido."
     if data.get("accepts_participation") != "Si":
         return None, None, "La persona no confirmo participacion."
 
     judge = Judge.query.filter_by(email=data["email"]).first()
+    if judge and judge.institution_id not in {None, school.id}:
+        return None, None, "Esta cuenta ya está vinculada a otro colegio. Solicita el cambio a la coordinación regional."
     created = judge is None
     temporary_password = ""
     if created:
@@ -3928,6 +3943,7 @@ def _create_or_update_judge_from_form(payload: dict):
             job_title=data["job_title"],
             identity=data["identity"],
             institution=data["institution"],
+            institution_id=school.id,
             previous_expo=data["previous_expo"],
             phone=data["phone"],
             can_evaluate_documentation=data["can_evaluate_documentation"],
@@ -3950,6 +3966,7 @@ def _create_or_update_judge_from_form(payload: dict):
         judge.job_title = data["job_title"] or judge.job_title
         judge.identity = data["identity"] or judge.identity
         judge.institution = data["institution"] or judge.institution
+        judge.institution_id = school.id
         judge.previous_expo = data["previous_expo"] or judge.previous_expo
         judge.phone = data["phone"] or judge.phone
         judge.can_evaluate_documentation = data["can_evaluate_documentation"]
@@ -3964,7 +3981,7 @@ def _create_or_update_judge_from_form(payload: dict):
         judge.must_change_password = True
         judge.set_password(temporary_password)
 
-    detail = f"Solicitud de juez: {judge.full_name} <{judge.email}>"
+    detail = f"Solicitud de juez: {judge.full_name} <{judge.email}>; colegio={school.code}"
     if data["notes"]:
         detail = f"{detail}; notas={data['notes'][:300]}"
     log_event("forms.judge_access.created" if created else "forms.judge_access.updated", "judge", entity_id=judge.id, detail=detail)
@@ -5023,6 +5040,8 @@ def _handle_action(action: str):
     elif action == "quick_create_assignment_judge":
         full_name = request.form.get("quick_judge_full_name", "").strip()
         email = request.form.get("quick_judge_email", "").strip().lower()
+        school_id = request.form.get("quick_judge_school_id", type=int)
+        registering_school = Institution.query.get(school_id) if school_id else None
         phone = request.form.get("quick_judge_phone", "").strip()
         manual_password = request.form.get("quick_judge_password", "")
         category_scope = _judge_category_scope_from_value(request.form.get("quick_judge_category_scope", "ambas"))
@@ -5037,6 +5056,10 @@ def _handle_action(action: str):
             flash("Selecciona si el juez evaluará documento, exposición o ambos.", "error")
         elif not full_name or not email:
             flash("Nombre y correo son obligatorios para crear el juez.", "error")
+        elif not registering_school or not registering_school.is_active:
+            flash("Selecciona el colegio que inscribe al juez.", "error")
+        elif registering_school.id == project.institution_id:
+            flash("Un juez no puede evaluar proyectos del colegio que lo inscribió.", "error")
         elif Judge.query.filter_by(email=email).first():
             flash("Ya existe un usuario con ese correo.", "error")
         elif manual_password and len(manual_password) < 8:
@@ -5051,6 +5074,7 @@ def _handle_action(action: str):
                 department="",
                 job_title="",
                 phone=phone,
+                institution_id=registering_school.id,
                 can_evaluate_documentation=can_documentation,
                 can_evaluate_exposition=can_exposition,
                 can_evaluate_english=can_evaluate_english,
@@ -5106,6 +5130,8 @@ def _handle_action(action: str):
         institution = request.form.get("judge_institution", "").strip()
         coordinator_institution_id = request.form.get("judge_institution_id", type=int)
         coordinator_school = Institution.query.get(coordinator_institution_id) if coordinator_institution_id else None
+        judge_school_id = request.form.get("judge_school_id", type=int)
+        judge_school = Institution.query.get(judge_school_id) if judge_school_id else None
         identity = request.form.get("judge_identity", "").strip()
         previous_expo = _yes_no_value(request.form.get("judge_previous_expo", "")).strip()
         category_scope = _judge_category_scope_from_value(request.form.get("judge_category_scope", "ambas"))
@@ -5128,6 +5154,8 @@ def _handle_action(action: str):
             flash("El departamento es obligatorio para usuarios administrativos.", "error")
         elif role == Judge.ROLE_SCHOOL_COORDINATOR and not coordinator_school:
             flash("Debes seleccionar el colegio de la coordinación.", "error")
+        elif role == Judge.ROLE_JUDGE and (not judge_school or not judge_school.is_active):
+            flash("Debes seleccionar el colegio que inscribió al juez.", "error")
         elif role == Judge.ROLE_SUPERADMIN and not current_user.is_superadmin:
             flash("Solo un superadministrador puede crear otro superadministrador.", "error")
         elif Judge.query.filter_by(email=email).first():
@@ -5150,7 +5178,7 @@ def _handle_action(action: str):
                 can_evaluate_english=can_evaluate_english,
                 category_scope=category_scope,
                 role=role,
-                institution_id=coordinator_school.id if role == Judge.ROLE_SCHOOL_COORDINATOR else None,
+                institution_id=(coordinator_school.id if role == Judge.ROLE_SCHOOL_COORDINATOR else judge_school.id if role == Judge.ROLE_JUDGE else None),
                 is_admin=role in Judge.ADMIN_ROLES,
                 is_active_user=True,
                 must_change_password=not bool(manual_password),
@@ -5185,6 +5213,8 @@ def _handle_action(action: str):
             institution = request.form.get("judge_institution", "").strip()
             coordinator_institution_id = request.form.get("judge_institution_id", type=int)
             coordinator_school = Institution.query.get(coordinator_institution_id) if coordinator_institution_id else None
+            judge_school_id = request.form.get("judge_school_id", type=int)
+            judge_school = Institution.query.get(judge_school_id) if judge_school_id else None
             identity = request.form.get("judge_identity", "").strip()
             previous_expo = _yes_no_value(request.form.get("judge_previous_expo", "")).strip()
             category_scope = _judge_category_scope_from_value(request.form.get("judge_category_scope", "ambas"))
@@ -5208,6 +5238,8 @@ def _handle_action(action: str):
                 flash("El departamento es obligatorio para usuarios administrativos.", "error")
             elif role == Judge.ROLE_SCHOOL_COORDINATOR and not coordinator_school:
                 flash("Debes seleccionar el colegio de la coordinación.", "error")
+            elif role == Judge.ROLE_JUDGE and (not judge_school or not judge_school.is_active):
+                flash("Debes seleccionar el colegio que inscribió al juez.", "error")
             elif duplicate:
                 flash("Ya existe otro usuario con ese correo.", "error")
             elif judge.id == current_user.id and not is_active_user:
@@ -5232,7 +5264,7 @@ def _handle_action(action: str):
                 judge.can_evaluate_english = can_evaluate_english
                 judge.category_scope = category_scope
                 judge.role = role
-                judge.institution_id = coordinator_school.id if role == Judge.ROLE_SCHOOL_COORDINATOR else None
+                judge.institution_id = (coordinator_school.id if role == Judge.ROLE_SCHOOL_COORDINATOR else judge_school.id if role == Judge.ROLE_JUDGE else None)
                 judge.is_admin = role in Judge.ADMIN_ROLES
                 judge.is_active_user = is_active_user
                 log_event(
@@ -8160,6 +8192,11 @@ def _build_judge_pool_context(context: dict) -> dict:
     stats = {
         "total": len(judge_users),
         "active": len(active_judge_users),
+        "unlinked_school": sum(1 for judge in judge_users if not judge.institution_id),
+        "pending_access": sum(
+            1 for judge in active_judge_users
+            if judge.institution_id and judge.must_change_password and judge.last_login_at is None
+        ),
         "english": len(english_exposition_judges),
         "steam": sum(1 for judge in active_judge_users if judge.category_scope_normalized == "steam"),
         "entrepreneurship": sum(1 for judge in active_judge_users if judge.category_scope_normalized == "emprendimiento"),
@@ -8285,6 +8322,7 @@ def assignments_page():
         latest_assignment_processes=latest_processes,
         assignment_process_drafts_by_project=process_drafts_by_project,
         assignment_process_summaries=process_summaries,
+        institutions=Institution.query.filter_by(is_active=True).order_by(Institution.name.asc()).all(),
     )
 
 
@@ -8338,7 +8376,112 @@ def assignment_process_letter_preview(process_id: int):
 def judge_pool_page():
     context = _base_context("judge_pool")
     context.update(_build_judge_pool_context(context))
+    context["institutions"] = Institution.query.filter_by(is_active=True).order_by(Institution.name.asc()).all()
     return render_template("admin/judge_pool.html", **context)
+
+
+def _build_judge_credentials_workbook(credentials, results):
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.worksheet.table import Table, TableStyleInfo
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Accesos reenviados"
+    headers = ["Juez", "Correo de acceso", "Contraseña temporal", "Colegio que lo inscribió", "Envío", "Detalle"]
+    sheet.append(headers)
+    for (judge, temporary_password), (ok, error) in zip(credentials, results):
+        sheet.append([
+            judge.full_name,
+            judge.email,
+            temporary_password,
+            judge.institution_ref.name if judge.institution_ref else "Pendiente de vincular",
+            "Enviado" if ok else "No enviado",
+            "" if ok else (error or "Error no especificado"),
+        ])
+    for cell in sheet[1]:
+        cell.fill = PatternFill("solid", fgColor="1A4A7A")
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    widths = [34, 38, 28, 44, 16, 55]
+    for index, width in enumerate(widths, start=1):
+        sheet.column_dimensions[chr(64 + index)].width = width
+    for row in sheet.iter_rows(min_row=2):
+        for cell in row:
+            cell.alignment = Alignment(vertical="top", wrap_text=True)
+    sheet.freeze_panes = "A2"
+    sheet.sheet_view.showGridLines = False
+    table = Table(displayName="AccesosTemporalesJueces", ref=f"A1:F{sheet.max_row}")
+    table.tableStyleInfo = TableStyleInfo(name="TableStyleMedium2", showRowStripes=True)
+    sheet.add_table(table)
+
+    notes = workbook.create_sheet("Instrucciones")
+    notes.append(["REPORTE CONFIDENCIAL"])
+    notes.append(["Contiene contraseñas temporales. Guárdelo en un lugar seguro y elimínelo cuando ya no sea necesario."])
+    notes.append(["Solo incluye jueces activos, vinculados a un colegio, que nunca iniciaron sesión y aún tenían clave temporal."])
+    notes["A1"].font = Font(bold=True, color="FFFFFF", size=14)
+    notes["A1"].fill = PatternFill("solid", fgColor="8B1024")
+    notes.column_dimensions["A"].width = 105
+    notes["A2"].alignment = notes["A3"].alignment = Alignment(wrap_text=True, vertical="top")
+    notes.sheet_view.showGridLines = False
+    return workbook
+
+
+@admin_module_required("judge_pool")
+def resend_pending_judge_credentials():
+    """Rotate and resend credentials only for judges who have never signed in."""
+    if not smtp_is_configured():
+        flash("Configura y prueba el correo SMTP antes de reenviar accesos.", "error")
+        return redirect(url_for("admin.judge_pool_page"))
+
+    judges = (
+        Judge.query.options(joinedload(Judge.institution_ref))
+        .filter(
+            Judge.role == Judge.ROLE_JUDGE,
+            Judge.is_active_user == True,  # noqa: E712
+            Judge.must_change_password == True,  # noqa: E712
+            Judge.last_login_at.is_(None),
+            Judge.institution_id.isnot(None),
+            Judge.email.isnot(None),
+        )
+        .order_by(Judge.full_name.asc())
+        .all()
+    )
+    if not judges:
+        flash("No hay jueces vinculados a un colegio que nunca hayan iniciado sesión.", "warning")
+        return redirect(url_for("admin.judge_pool_page"))
+
+    credentials = []
+    for judge in judges:
+        temporary_password = secrets.token_urlsafe(10)
+        judge.set_password(temporary_password)
+        judge.must_change_password = True
+        credentials.append((judge, temporary_password))
+    log_event(
+        "admin.judge.credentials.bulk_resend",
+        "judge",
+        detail=f"Accesos temporales regenerados para {len(credentials)} jueces sin ingreso previo.",
+    )
+    db.session.commit()
+
+    results = send_email_batch([
+        _credentials_email_payload(judge, temporary_password)
+        for judge, temporary_password in credentials
+    ])
+
+    workbook = _build_judge_credentials_workbook(credentials, results)
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    response = send_file(
+        output,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"accesos_temporales_jueces_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+    )
+    response.headers["Cache-Control"] = "no-store, private"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 
 def _judge_report_rows(judges: list[Judge], assignments: list[Assignment]) -> tuple[list[dict], list[dict]]:
@@ -8371,6 +8514,7 @@ def _judge_report_rows(judges: list[Judge], assignments: list[Assignment]) -> tu
                 "email": (judge.email or "").strip().lower(),
                 "phone": judge.phone or "",
                 "job_title": natural_title(judge.job_title or ""),
+                "registered_school": judge.institution_ref.name if judge.institution_ref else "Pendiente de vincular",
                 "institution": natural_title(judge.institution or ""),
                 "active": "Si" if judge.is_active_user else "No",
                 "role": judge.role_label,
@@ -8431,7 +8575,7 @@ def judges_report_excel():
         return redirect(url_for("admin.judge_pool_page"))
 
     judges = (
-        Judge.query.filter(Judge.role == Judge.ROLE_JUDGE)
+        Judge.query.options(joinedload(Judge.institution_ref)).filter(Judge.role == Judge.ROLE_JUDGE)
         .order_by(Judge.full_name.asc())
         .all()
     )
@@ -8504,13 +8648,13 @@ def judges_report_excel():
     ws_summary.freeze_panes = "A3"
 
     judge_headers = [
-        "Juez", "Cedula", "Correo", "Telefono", "Profesion o area", "Institucion",
+        "Juez", "Cedula", "Correo", "Telefono", "Profesion o area", "Colegio que lo inscribio", "Institucion o empresa",
         "Activo", "Rol", "Categoria", "Evaluaciones", "Evalua ingles", "Expo previa",
         "Asistencia", "Parqueo", "Invitacion enviada", "Respondio", "Error invitacion",
         "Ultimo ingreso", "Registro publico", "Asignaciones confirmadas", "Asignaciones borrador",
         "Documento", "Exposicion", "Ingles", "Proyectos asignados",
     ]
-    judge_widths = [30, 18, 36, 18, 30, 32, 10, 16, 20, 24, 14, 14, 16, 12, 18, 18, 42, 18, 16, 18, 18, 12, 12, 12, 70]
+    judge_widths = [30, 18, 36, 18, 30, 38, 32, 10, 16, 20, 24, 14, 14, 16, 12, 18, 18, 42, 18, 16, 18, 18, 12, 12, 12, 70]
     ws_judges.append(judge_headers)
     for col_idx, width in enumerate(judge_widths, start=1):
         cell = ws_judges.cell(row=1, column=col_idx)
@@ -8521,7 +8665,7 @@ def judges_report_excel():
         ws_judges.column_dimensions[get_column_letter(col_idx)].width = width
     for row in judge_rows:
         ws_judges.append([row[key] for key in [
-            "name", "identity", "email", "phone", "job_title", "institution", "active", "role",
+            "name", "identity", "email", "phone", "job_title", "registered_school", "institution", "active", "role",
             "category_scope", "evaluation_scope", "english", "previous_expo", "attendance", "parking",
             "invitation_sent", "responded_at", "invitation_error", "last_login", "registered_public",
             "confirmed_assignments", "draft_assignments", "doc_assignments", "expo_assignments",
@@ -11704,6 +11848,7 @@ def _validate_judge_registration_captcha(answer):
 def public_judge_registration():
     active_campaign = Campaign.query.filter_by(is_active=True).order_by(Campaign.start_date.desc()).first()
     registration_closed, registration_deadline = registration_is_closed(active_campaign, "judge")
+    available_schools = Institution.query.filter_by(is_active=True).order_by(Institution.name.asc()).all()
     if SystemSetting.get_value("judge_public_registration_enabled", "1") != "1" or not active_campaign or registration_closed:
         if request.method == "POST":
             flash("El registro de jueces esta cerrado en este momento.", "warning")
@@ -11722,6 +11867,7 @@ def public_judge_registration():
             return render_template(
                 "public/judge_registration.html",
                 form_data=payload,
+                schools=available_schools,
                 captcha_question=_judge_registration_captcha_question(),
             )
 
@@ -11731,6 +11877,7 @@ def public_judge_registration():
             return render_template(
                 "public/judge_registration.html",
                 form_data=payload,
+                schools=available_schools,
                 captcha_question=_judge_registration_captcha_question(),
             )
 
@@ -11746,5 +11893,6 @@ def public_judge_registration():
     return render_template(
         "public/judge_registration.html",
         form_data={},
+        schools=available_schools,
         captcha_question=_judge_registration_captcha_question(),
     )

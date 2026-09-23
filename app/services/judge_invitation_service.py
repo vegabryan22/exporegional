@@ -4,7 +4,7 @@ from html import escape
 from io import BytesIO
 from pathlib import Path
 
-from flask import current_app, url_for
+from flask import current_app, render_template, url_for
 
 from app.models.assignment_process import AssignmentProcess
 from app.models.system_setting import SystemSetting
@@ -199,9 +199,7 @@ def build_process_invitation_message(process, items, *, include_attachment=True)
     judge = items[0].judge
     project_names = sorted({item.project.title for item in items if item.project})
     project_lines = "\n".join(f"- {name}" for name in project_names)
-    project_html = "".join(f"<li>{escape(name)}</li>" for name in project_names)
     deadline_plain = f"\nFecha límite: {deadline}\n" if process.process_type == AssignmentProcess.TYPE_DOCUMENTATION else ""
-    deadline_html = f"<p><strong>Fecha límite:</strong> {escape(deadline)}</p>" if process.process_type == AssignmentProcess.TYPE_DOCUMENTATION else ""
     body = (
         f"Hola {judge.full_name},\n\n"
         f"Se aprobó su asignación para {copy['purpose']}.\n\n"
@@ -211,15 +209,22 @@ def build_process_invitation_message(process, items, *, include_attachment=True)
         f"Dudas o soporte: {support_email}\n\n"
         "Adjuntamos la invitación formal personalizada en formato PDF."
     )
-    html_body = (
-        "<html><body style='font-family:Arial,sans-serif;color:#17324d'>"
-        f"<h2 style='color:#0e527a'>{escape(copy['title'])}</h2>"
-        f"<p>Hola <strong>{escape(judge.full_name)}</strong>,</p>"
-        f"<p>Se aprobó su asignación para {escape(copy['purpose'])}.</p>"
-        f"<p><strong>Proyectos asignados:</strong></p><ul>{project_html}</ul>{deadline_html}"
-        f"<p><a href='{escape(panel_url)}' style='background:#0e527a;color:white;padding:11px 18px;border-radius:8px;text-decoration:none;font-weight:bold'>Ingresar a la plataforma</a></p>"
-        f"<p>Dudas o soporte: <a href='mailto:{escape(support_email)}'>{escape(support_email)}</a></p>"
-        "<p>Adjuntamos la invitación formal personalizada en formato PDF.</p></body></html>"
+    school_name = SystemSetting.get_value("school_name", "ExpoTécnica Regional")
+    school_logo = SystemSetting.get_value("school_logo_path", "")
+    expo_logo = SystemSetting.get_value("expo_logo_path", "")
+    html_body = render_template(
+        "admin/email_judge_process_invitation.html",
+        judge=judge,
+        process=process,
+        title=copy["title"],
+        purpose=copy["purpose"],
+        project_names=project_names,
+        deadline=deadline if process.process_type == AssignmentProcess.TYPE_DOCUMENTATION else None,
+        panel_url=panel_url,
+        support_email=support_email,
+        school_name=school_name,
+        school_logo_url=url_for("static", filename=school_logo, _external=True) if school_logo else "",
+        expo_logo_url=url_for("static", filename=expo_logo, _external=True) if expo_logo else "",
     )
     filename = f"Invitacion-{process.process_type}-{judge.full_name}.pdf".replace("/", "-").replace("\\", "-")
     message = {

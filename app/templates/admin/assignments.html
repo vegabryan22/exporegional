@@ -422,6 +422,7 @@
                     <div class="assignment-inline-create assignment-inline-create-compact">
                         <label>Nombre completo<input type="text" name="quick_judge_full_name" required></label>
                         <label>Correo<input type="email" name="quick_judge_email" required></label>
+                        <label>Colegio que inscribe al juez<select name="quick_judge_school_id" required><option value="">Seleccione un colegio...</option>{% for school in institutions %}<option value="{{ school.id }}">{{ school.name }}</option>{% endfor %}</select></label>
                         <label>Contrase&ntilde;a inicial<input type="password" name="quick_judge_password" minlength="8"></label>
                         <label>&Aacute;rea que puede evaluar
                             <select name="quick_judge_category_scope">
@@ -455,6 +456,7 @@
             <div class="grid-2">
                 <label>Nombre completo<input type="text" name="quick_judge_full_name" required></label>
                 <label>Correo<input type="email" name="quick_judge_email" required></label>
+                <label>Colegio que inscribe al juez<select name="quick_judge_school_id" required><option value="">Seleccione un colegio...</option>{% for school in institutions %}<option value="{{ school.id }}">{{ school.name }}</option>{% endfor %}</select></label>
             </div>
             <label>Contraseña inicial<input type="password" name="quick_judge_password" minlength="8"></label>
             <label>Área que puede evaluar

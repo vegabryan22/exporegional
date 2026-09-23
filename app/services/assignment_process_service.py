@@ -65,7 +65,7 @@ def generate_process_draft(process_type, *, deadline=None, created_by_id=None):
         projects = [project for project in projects if project.requires_english_evaluation]
 
     judges = (
-        Judge.query.filter(Judge.role == Judge.ROLE_JUDGE, Judge.is_active_user == True)  # noqa: E712
+        Judge.query.filter(Judge.role == Judge.ROLE_JUDGE, Judge.is_active_user == True, Judge.institution_id.isnot(None))  # noqa: E712
         .order_by(Judge.full_name.asc())
         .all()
     )
@@ -81,7 +81,12 @@ def generate_process_draft(process_type, *, deadline=None, created_by_id=None):
         current = [
             assignment
             for assignment in project.assignments
-            if assignment.status == Assignment.STATUS_CONFIRMED and _assignment_covers(assignment, process_type)
+            if assignment.status == Assignment.STATUS_CONFIRMED
+            and assignment.judge
+            and assignment.judge.institution_id
+            and project.institution_id
+            and assignment.judge.institution_id != project.institution_id
+            and _assignment_covers(assignment, process_type)
         ]
         for assignment in current[:target]:
             db.session.add(
@@ -98,7 +103,8 @@ def generate_process_draft(process_type, *, deadline=None, created_by_id=None):
                 judge
                 for judge in judges
                 if judge.id not in used_ids
-                and (not judge.institution_id or not project.institution_id or judge.institution_id != project.institution_id)
+                and project.institution_id
+                and judge.institution_id != project.institution_id
                 and judge.can_evaluate_category(project.category)
             ]
             if not candidates:
@@ -123,7 +129,9 @@ def approve_process(process, approved_by_id=None):
     for item in process.items:
         judge = item.judge
         project = item.project
-        if judge.institution_id and project.institution_id and judge.institution_id == project.institution_id:
+        if not judge.institution_id or not project.institution_id:
+            raise ValueError(f"No se puede aprobar: {judge.full_name} o el proyecto no tiene colegio vinculado.")
+        if judge.institution_id == project.institution_id:
             raise ValueError(f"{judge.full_name} no puede evaluar un proyecto de su propia institución.")
         assignment = Assignment.query.filter_by(judge_id=item.judge_id, project_id=item.project_id).first()
         if not assignment:

@@ -11,6 +11,9 @@
             <a class="action-btn outline-btn" href="{{ url_for('admin.assignments_page') }}">Asignar proyectos</a>
             <a class="action-btn outline-btn" href="{{ url_for('admin.reports_page') }}">Abrir reportes</a>
             <button type="button" class="action-btn secondary-btn" data-dialog-open="create-pool-judge">Nuevo juez</button>
+            <form method="post" action="{{ url_for('admin.resend_pending_judge_credentials') }}" onsubmit="return confirm('&iquest;Generar nuevas claves, reenviar el acceso solo a jueces que nunca ingresaron y descargar el reporte confidencial?')">
+                <button type="submit" class="action-btn outline-btn">Reenviar accesos pendientes</button>
+            </form>
             <form method="post" action="{{ action_url }}" onsubmit="return confirm('&iquest;Enviar invitaci&oacute;n de confirmaci&oacute;n de asistencia a todos los jueces activos?')">
                 <input type="hidden" name="next" value="{{ next_url }}">
                 <input type="hidden" name="action" value="send_all_attendance_invitations">
@@ -39,6 +42,9 @@
         <span><strong>{{ judge_pool_stats.exposition_only }}</strong> solo expo</span>
         <span class="strip-sep">·</span>
         <span><strong>{{ judge_pool_stats.english }}</strong> con ingl&eacute;s</span>
+        <span class="strip-sep">&middot;</span>
+        <span><strong>{{ judge_pool_stats.pending_access }}</strong> accesos por reenviar</span>
+        {% if judge_pool_stats.unlinked_school %}<span class="strip-sep">&middot;</span><span class="tag off"><strong>{{ judge_pool_stats.unlinked_school }}</strong> sin colegio vinculado</span>{% endif %}
     </div>
 
     {% set m = judge_pool_stats.scope_matrix %}
@@ -137,7 +143,7 @@
         {% set scope_key = 'ambas' if judge.can_evaluate_documentation and judge.can_evaluate_exposition else ('documento' if judge.can_evaluate_documentation else ('exposicion' if judge.can_evaluate_exposition else 'ninguno')) %}
         <article class="card judge-pool-card"
             data-judge-card
-            data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ (judge.job_title or '') ~ ' ' ~ (judge.institution or '') ~ ' ' ~ (judge.identity or ''))|lower }}"
+            data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ (judge.job_title or '') ~ ' ' ~ (judge.institution or '') ~ ' ' ~ (judge.institution_ref.name if judge.institution_ref else '') ~ ' ' ~ (judge.identity or ''))|lower }}"
             data-category="{{ judge.category_scope_normalized }}"
             data-english="{{ 1 if judge.can_evaluate_english else 0 }}"
             data-scope="{{ scope_key }}"
@@ -148,6 +154,7 @@
                 <p>{{ judge.email }}</p>
                 {% if judge.phone %}<p>{{ judge.phone }}</p>{% endif %}
                 {% if judge.identity %}<small>Cédula: {{ judge.identity }}</small>{% endif %}
+                <p><strong>Colegio que lo inscribió:</strong> {{ judge.institution_ref.name if judge.institution_ref else 'Pendiente de vincular' }}</p>
             </div>
 
             <div class="judge-pool-profile">
@@ -303,6 +310,13 @@
                         <label>Profesión o área técnica<input type="text" name="judge_job_title" value="{{ judge.job_title or '' }}"></label>
                         <label>Institución o empresa<input type="text" name="judge_institution" value="{{ judge.institution or '' }}"></label>
                     </div>
+                    <label>Colegio que inscribió al juez
+                        <select name="judge_school_id" required>
+                            <option value="">Seleccione un colegio...</option>
+                            {% for school in institutions %}<option value="{{ school.id }}" {% if judge.institution_id == school.id %}selected{% endif %}>{{ school.name }}</option>{% endfor %}
+                        </select>
+                        <small>Vínculo obligatorio para aplicar la regla de conflicto de interés.</small>
+                    </label>
 
                     <p class="judge-edit-section-label">Disponibilidad como evaluador</p>
                     <label>Estado de la cuenta
@@ -354,6 +368,7 @@
     <form method="post" action="{{ action_url }}" class="compact-form"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="action" value="pool_create_judge"><input type="hidden" name="judge_role" value="judge"><input type="hidden" name="judge_department" value="">
         <div class="grid-2"><label>Nombre completo<input type="text" name="judge_full_name" required></label><label>Correo electrónico<input type="email" name="judge_email" required></label></div>
         <div class="grid-2"><label>Cédula<input type="text" name="judge_identity"></label><label>Teléfono<input type="text" name="judge_phone"></label><label>Profesión o área técnica<input type="text" name="judge_job_title"></label><label>Institución o empresa<input type="text" name="judge_institution"></label></div>
+        <label>Colegio que inscribe al juez<select name="judge_school_id" required><option value="">Seleccione un colegio...</option>{% for school in institutions %}<option value="{{ school.id }}">{{ school.name }}</option>{% endfor %}</select></label>
         <div class="grid-2"><label>Categoría<select name="judge_category_scope"><option value="ambas">Ambas categorías</option><option value="steam">STEAM</option><option value="emprendimiento">Emprendimiento</option></select></label><label>Evaluaciones disponibles<select name="judge_evaluation_scope"><option value="ambas">Documento y exposición</option><option value="documento">Solo documento</option><option value="exposicion">Solo exposición</option></select></label></div>
         <label class="checkbox-card"><input type="checkbox" name="judge_can_evaluate_english" value="1"> Puede evaluar exposición en inglés</label>
         <label>Contraseña inicial <small>(opcional)</small><input type="password" name="judge_password" minlength="8"><small>Si queda vacía, el sistema genera y envía una clave temporal.</small></label>

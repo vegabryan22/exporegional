@@ -48,6 +48,8 @@ def _target_can_receive_assignment(target_judge: Judge, project, can_documentati
         return False
     if getattr(target_judge, "role", None) != Judge.ROLE_JUDGE:
         return False
+    if not getattr(target_judge, "institution_id", None) or not getattr(project, "institution_id", None):
+        return False
     if (
         getattr(target_judge, "institution_id", None)
         and getattr(project, "institution_id", None)
@@ -289,6 +291,8 @@ def _find_reassignment_candidate(project, source_judge_id: int, can_documentatio
 
     ranked = []
     for candidate in candidates:
+        if not candidate.institution_id or not getattr(project, "institution_id", None):
+            continue
         if (
             candidate.institution_id
             and getattr(project, "institution_id", None)

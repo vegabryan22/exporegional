@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} - ExpoTécnica</title>
+</head>
+<body style="margin:0;padding:0;background:#eef5fb;font-family:Arial,Helvetica,sans-serif;color:#123f6b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#eef5fb;padding:28px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:700px;background:#ffffff;border:1px solid #cfe0f1;border-radius:22px;overflow:hidden;">
+        <tr><td style="background:#123f6b;padding:22px 26px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            <tr>
+              <td style="vertical-align:middle;">
+                {% if school_logo_url %}<img src="{{ school_logo_url }}" alt="{{ school_name }}" style="height:64px;max-width:86px;object-fit:contain;margin-right:14px;vertical-align:middle;">{% endif %}
+                {% if expo_logo_url %}<img src="{{ expo_logo_url }}" alt="ExpoTécnica" style="height:64px;max-width:150px;object-fit:contain;vertical-align:middle;">{% endif %}
+                {% if not school_logo_url and not expo_logo_url %}<strong style="font-size:22px;color:#ffffff;">ExpoTécnica</strong>{% endif %}
+              </td>
+              <td align="right" style="vertical-align:middle;color:#ffffff;">
+                <div style="font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">ExpoTécnica Regional</div>
+                <div style="font-size:18px;font-weight:800;margin-top:4px;">Invitación para evaluar</div>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:30px;">
+          <p style="margin:0 0 8px;font-size:14px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#1f8fb5;">Panel de evaluación</p>
+          <h1 style="margin:0 0 12px;font-size:30px;line-height:1.15;color:#123f6b;">Hola, {{ judge.full_name }}</h1>
+          <p style="margin:0 0 22px;font-size:16px;line-height:1.55;color:#4f6680;">Se aprobó tu asignación para {{ purpose }} en la ExpoTécnica de {{ school_name }}.</p>
+
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7fbff;border:1px solid #cfe0f1;border-radius:16px;margin:0 0 22px;">
+            <tr><td style="padding:20px;">
+              <div style="display:inline-block;background:#eaf6ff;border:1px solid #c9dff4;border-radius:999px;color:#123f6b;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;margin-bottom:12px;">{{ process.type_label }}</div>
+              <h2 style="margin:0 0 16px;font-size:24px;line-height:1.2;color:#123f6b;">{{ title }}</h2>
+              <p style="margin:0 0 10px;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#607998;">Proyectos asignados</p>
+              {% for project_name in project_names %}
+              <div style="padding:10px 0;color:#123f6b;font-size:16px;font-weight:700;{% if not loop.last %}border-bottom:1px solid #dce8f5;{% endif %}">{{ project_name }}</div>
+              {% endfor %}
+              {% if deadline %}
+              <p style="margin:16px 0 0;padding-top:14px;border-top:1px solid #dce8f5;color:#8b1024;font-size:15px;font-weight:800;">Fecha límite: {{ deadline }}</p>
+              {% endif %}
+            </td></tr>
+          </table>
+
+          <p style="margin:0 0 14px;font-size:15px;line-height:1.55;color:#4f6680;">Adjuntamos tu invitación formal personalizada en PDF. Ingresá al panel de juez para revisar los proyectos y completar las evaluaciones.</p>
+          <p style="margin:0 0 24px;text-align:center;"><a href="{{ panel_url }}" style="display:inline-block;background:#f5a11a;color:#123f6b;text-decoration:none;font-size:16px;font-weight:900;padding:14px 28px;border-radius:999px;border:1px solid #da8a0d;">Abrir panel de juez</a></p>
+        </td></tr>
+        <tr><td style="background:#eaf4fb;border-top:1px solid #cfe0f1;padding:16px 30px;color:#58708a;font-size:13px;line-height:1.45;">
+          ¿Tenés alguna duda o necesitás soporte? Escribí a <a href="mailto:{{ support_email }}" style="color:#123f6b;font-weight:800;">{{ support_email }}</a>.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

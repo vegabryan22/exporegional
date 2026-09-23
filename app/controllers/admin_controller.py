@@ -11,6 +11,7 @@ import shutil
 import sys
 import time
 import xml.etree.ElementTree as ET
+from threading import Thread
 from html import escape
 from io import BytesIO
 from datetime import datetime
@@ -8391,13 +8392,14 @@ def _build_judge_credentials_workbook(credentials, results):
     headers = ["Juez", "Correo de acceso", "Contraseña temporal", "Colegio que lo inscribió", "Envío", "Detalle"]
     sheet.append(headers)
     for (judge, temporary_password), (ok, error) in zip(credentials, results):
+        delivery_status = "Enviado" if ok is True else ("No enviado" if ok is False else "Programado")
         sheet.append([
             judge.full_name,
             judge.email,
             temporary_password,
             judge.institution_ref.name if judge.institution_ref else "Pendiente de vincular",
-            "Enviado" if ok else "No enviado",
-            "" if ok else (error or "Error no especificado"),
+            delivery_status,
+            "" if ok is True else (error or "Error no especificado"),
         ])
     for cell in sheet[1]:
         cell.fill = PatternFill("solid", fgColor="1A4A7A")
@@ -8464,12 +8466,31 @@ def resend_pending_judge_credentials():
     )
     db.session.commit()
 
-    results = send_email_batch([
+    messages = [
         _credentials_email_payload(judge, temporary_password)
         for judge, temporary_password in credentials
-    ])
+    ]
 
-    workbook = _build_judge_credentials_workbook(credentials, results)
+    app = current_app._get_current_object()
+
+    def send_in_background():
+        with app.app_context():
+            results = send_email_batch(messages)
+            sent = sum(1 for ok, _ in results if ok)
+            failed = len(results) - sent
+            log_event(
+                "admin.judge.credentials.bulk_resend.completed",
+                "judge",
+                detail=f"Reenvío finalizado: {sent} enviados y {failed} fallidos.",
+            )
+            db.session.commit()
+
+    Thread(target=send_in_background, name="judge-credential-resend", daemon=True).start()
+
+    workbook = _build_judge_credentials_workbook(
+        credentials,
+        [(None, "El correo se está enviando en segundo plano.") for _ in credentials],
+    )
     output = BytesIO()
     workbook.save(output)
     output.seek(0)

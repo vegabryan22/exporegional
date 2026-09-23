@@ -8493,15 +8493,17 @@ def resend_pending_judge_credentials():
     )
     output = BytesIO()
     workbook.save(output)
-    output.seek(0)
-    response = send_file(
-        output,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        as_attachment=True,
-        download_name=f"accesos_temporales_jueces_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
-    )
-    response.headers["Cache-Control"] = "no-store, private"
+    filename = f"accesos_temporales_jueces_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+    response = current_app.make_response(render_template(
+        "admin/judge_credentials_download.html",
+        filename=filename,
+        workbook_base64=base64.b64encode(output.getvalue()).decode("ascii"),
+        judge_count=len(credentials),
+    ))
+    response.headers["Content-Type"] = "text/html; charset=utf-8"
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
     response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
     return response
 
 

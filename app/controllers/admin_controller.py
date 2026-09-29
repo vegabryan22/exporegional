@@ -2155,7 +2155,7 @@ def _draw_certificate_watermark(pdf, width, height, relative_logo_path: str):
     if not image_width or not image_height:
         return
 
-    scale = min((width * 0.42) / image_width, (height * 0.52) / image_height)
+    scale = min((width * 0.68) / image_width, (height * 0.50) / image_height)
     draw_width = image_width * scale
     draw_height = image_height * scale
     draw_x = (width - draw_width) / 2
@@ -2164,7 +2164,7 @@ def _draw_certificate_watermark(pdf, width, height, relative_logo_path: str):
     pdf.saveState()
     try:
         if hasattr(pdf, "setFillAlpha"):
-            pdf.setFillAlpha(0.08)
+            pdf.setFillAlpha(0.10)
     except Exception:
         pass
     pdf.drawImage(image, draw_x, draw_y, width=draw_width, height=draw_height, mask="auto", preserveAspectRatio=True)
@@ -2705,6 +2705,8 @@ def _render_participation_certificates_pdf(context):
                 mask="auto",
                 preserveAspectRatio=False,
             )
+
+        _draw_certificate_watermark(pdf, width, height, context.get("expo_logo_path", ""))
 
         pdf.setFillColor(colors.black)
         pdf.setFont("Helvetica", 25)

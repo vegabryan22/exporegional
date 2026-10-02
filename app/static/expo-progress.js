@@ -30,7 +30,9 @@
         const english = element('td');
         if(!row.english_participants) english.textContent = 'No participa';
         else {english.append(badge(`${row.english}/${row.english_expected}`, !row.english_unassigned && row.english === row.english_expected ? 'complete' : 'pending')); if(row.english_unassigned) english.append(element('small','Sin juez de inglés asignado','progress-english-note'));}
-        const state = element('td'); state.append(badge(labels[row.status],row.status)); tr.append(english,state); body.append(tr);
+        const state = element('td'); state.append(badge(labels[row.status],row.status)); tr.append(english,state);
+        Array.from(tr.children).forEach((cell,index) => {cell.dataset.label = ['Proyecto','Colegio','Exposición','Inglés','Estado'][index];});
+        body.append(tr);
       });
       table.append(body); wrap.append(table); details.append(wrap); root.append(details);
     });

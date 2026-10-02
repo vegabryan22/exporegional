@@ -55,4 +55,4 @@ def venues_page():
         db.session.commit()
         flash("Recintos guardados. La vista pública ya refleja las ubicaciones.", "success")
         return redirect(url_for("admin.venues_page"))
-    return render_template("admin/expo_venues.html", **_base_context("assignments"), venues=config["venues"], locations=config["projects"], venue_projects=projects)
+    return render_template("admin/expo_venues.html", **_base_context("venues"), venues=config["venues"], locations=config["projects"], venue_projects=projects)

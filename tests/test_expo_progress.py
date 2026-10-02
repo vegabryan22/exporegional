@@ -47,5 +47,20 @@ class ExpoProgressTest(unittest.TestCase):
         project.evaluations.append(Row(judge_id=4, evaluation_type="expo", project_member_id=None))
         self.assertEqual("review", project_progress(project, {"expo"})["status"])
 
+    def test_pending_names_are_private_and_include_partial_english(self):
+        project = self.project(True)
+        project.members.append(Row(id=11, participates_in_english=True))
+        project.assignments = [Row(judge_id=4, status=Assignment.STATUS_CONFIRMED, can_evaluate_exposition=True, can_evaluate_english=True, judge=Row(full_name="Juez pendiente", can_evaluate_english=True))]
+        project.evaluations = [Row(judge_id=4, evaluation_type=ENGLISH_EVAL_TYPE_CODE, project_member_id=10)]
+        self.assertNotIn("pending_judges", project_progress(project, {"expo"}))
+        row = project_progress(project, {"expo"}, include_pending_judges=True)
+        self.assertEqual([{"name": "Juez pendiente"}], row["pending_judges"]["exposition"])
+        self.assertEqual(2, row["pending_judges"]["exposition_unassigned"])
+        self.assertEqual((1, 2), (row["pending_judges"]["english"][0]["completed"], row["pending_judges"]["english"][0]["expected"]))
+        project.evaluations.extend([Row(judge_id=4, evaluation_type="expo", project_member_id=None), Row(judge_id=4, evaluation_type=ENGLISH_EVAL_TYPE_CODE, project_member_id=11)])
+        row = project_progress(project, {"expo"}, include_pending_judges=True)
+        self.assertEqual([], row["pending_judges"]["exposition"])
+        self.assertEqual([], row["pending_judges"]["english"])
+
 if __name__ == "__main__":
     unittest.main()

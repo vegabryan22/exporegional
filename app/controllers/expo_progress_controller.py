@@ -1,6 +1,7 @@
 import json
 import uuid
 from flask import render_template, request, redirect, url_for, flash, jsonify, make_response
+from flask_login import current_user
 from app.extensions import db
 from app.models.project import Project
 from app.services.expo_progress_service import venue_config, public_progress, VENUE_SETTING
@@ -9,13 +10,17 @@ from app.services.audit_service import log_event
 from app.controllers.admin_controller import admin_module_required, _base_context
 
 def public_page():
-    response = make_response(render_template("public/expo_progress.html", progress=public_progress()))
+    authorized = current_user.is_authenticated and current_user.has_admin_access
+    response = make_response(render_template("public/expo_progress.html", progress=public_progress(include_pending_judges=authorized), show_pending_judges=authorized))
     response.headers["Cache-Control"] = "no-store"
+    response.vary.add("Cookie")
     return response
 
 def public_data():
-    response = jsonify(public_progress())
+    authorized = current_user.is_authenticated and current_user.has_admin_access
+    response = jsonify(public_progress(include_pending_judges=authorized))
     response.headers["Cache-Control"] = "no-store"
+    response.vary.add("Cookie")
     return response
 
 @admin_module_required("assignments")

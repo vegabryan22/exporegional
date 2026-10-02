@@ -19,7 +19,7 @@ def venue_config():
         pass
     return {"venues": [], "projects": {}}
 
-def project_progress(project, exposition_codes):
+def project_progress(project, exposition_codes, *, include_pending_judges=False):
     # Count distinct evaluators, never assignment rows or duplicate submissions.
     expo = {e.judge_id for e in project.evaluations if e.judge_id and e.evaluation_type in exposition_codes}
     members = {m.id for m in project.members if m.participates_in_english}
@@ -30,7 +30,7 @@ def project_progress(project, exposition_codes):
     status = "complete" if complete else "pending" if expo or english_pairs else "not_started"
     if len(expo) > 3:
         status = "review"
-    return {
+    row = {
         "id": project.id, "title": project.title,
         "school": project.institution.name if project.institution else (project.institution_name or "Sin colegio"),
         "category": project.category, "exposition": len(expo), "exposition_expected": 3,
@@ -38,8 +38,17 @@ def project_progress(project, exposition_codes):
         "english_participants": len(members), "english_unassigned": bool(members and not english_judges),
         "status": status,
     }
+    if include_pending_judges:
+        assignments = [a for a in project.assignments if a.status == Assignment.STATUS_CONFIRMED and a.judge]
+        expo_assigned = {a.judge_id for a in assignments if a.can_evaluate_exposition}
+        row["pending_judges"] = {
+            "exposition": [{"name": a.judge.full_name} for a in assignments if a.can_evaluate_exposition and a.judge_id not in expo],
+            "english": [{"name": a.judge.full_name, "completed": sum(j == a.judge_id for j, m in english_pairs), "expected": len(members)} for a in assignments if members and a.judge_id in english_judges and sum(j == a.judge_id for j, m in english_pairs) < len(members)],
+            "exposition_unassigned": max(0, 3 - len(expo_assigned)),
+        }
+    return row
 
-def public_progress():
+def public_progress(*, include_pending_judges=False):
     config = venue_config()
     categories = Category.query.all()
     exposition_codes = {t.code for c in categories for t in (c.rubric_1_evaluation_type, c.rubric_2_evaluation_type) if t and infer_evaluation_type_kind(t) == "exposicion"}
@@ -51,7 +60,7 @@ def public_progress():
     by_id = {v["id"]: v for v in groups}
     rows = []
     for project in projects:
-        row = project_progress(project, exposition_codes)
+        row = project_progress(project, exposition_codes, include_pending_judges=include_pending_judges)
         group = by_id.get(config["projects"].get(str(project.id)), by_id["unassigned"])
         group["projects"].append(row)
         rows.append(row)

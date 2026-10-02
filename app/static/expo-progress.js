@@ -26,6 +26,25 @@
       const body = element('tbody');
       rows.forEach(row => {
         const tr = element('tr'), title = element('td'); title.append(element('strong',row.title),element('br'),element('small',data.categories.find(c => c.code === row.category)?.name || row.category)); tr.append(title,element('td',row.school));
+        if(row.pending_judges) {
+          const judges = row.pending_judges, panel = element('details',undefined,'progress-judge-details');
+          panel.dataset.id = 'judges-' + row.id;
+          panel.open = open.get(panel.dataset.id) || false;
+          panel.append(element('summary',`Jueces pendientes (${judges.exposition.length + judges.english.length})`));
+          const exposition = element('div',undefined,'progress-judge-section'); exposition.append(element('strong','Exposición'));
+          judges.exposition.forEach(judge => exposition.append(element('p',judge.name + ' · Pendiente')));
+          if(!judges.exposition.length) exposition.append(element('p','Sin jueces asignados pendientes.'));
+          if(judges.exposition_unassigned) exposition.append(element('p',`Falta asignar ${judges.exposition_unassigned} juez(es) para completar la cobertura.`, 'progress-english-note'));
+          panel.append(exposition);
+          if(row.english_participants) {
+            const englishSection = element('div',undefined,'progress-judge-section'); englishSection.append(element('strong','Inglés'));
+            judges.english.forEach(judge => englishSection.append(element('p',`${judge.name} · ${judge.completed}/${judge.expected} estudiantes evaluados · faltan ${judge.expected - judge.completed}`)));
+            if(row.english_unassigned) englishSection.append(element('p','Sin juez de inglés asignado.','progress-english-note'));
+            else if(!judges.english.length) englishSection.append(element('p','Evaluaciones de inglés completas.'));
+            panel.append(englishSection);
+          }
+          title.append(panel);
+        }
         const expo = element('td'); expo.append(badge(`${row.exposition}/3`,row.exposition === 3 ? 'complete' : row.exposition > 3 ? 'review' : 'pending')); tr.append(expo);
         const english = element('td');
         if(!row.english_participants) english.textContent = 'No participa';

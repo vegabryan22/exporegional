@@ -1,5 +1,6 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
+<div class="actions-row"><a class="action-btn outline-btn" href="{{ url_for('admin.venues_page') }}">Gestionar recintos</a><a class="action-btn outline-btn" href="{{ url_for('public.expo_progress') }}" target="_blank">Ver avance público</a></div>
 {% set active_projects = projects|selectattr('is_active')|list %}
 {% set active_project_ids = active_projects|map(attribute='id')|list %}
 {% set confirmed_assignments = assignments|selectattr('status', 'equalto', 'confirmed')|selectattr('project_id', 'in', active_project_ids)|list %}

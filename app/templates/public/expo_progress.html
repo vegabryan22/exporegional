@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='expo-progress.css') }}?v={{ asset_version }}">
+<main class="expo-progress">
+  <header class="progress-header"><div><p class="maintenance-kicker">ExpoTécnica Regional · Día del evento</p><h1>Avance de evaluaciones por recinto</h1><p>Consulta las evaluaciones de exposición e inglés registradas por los jueces.</p></div><a class="outline-btn" href="{{ url_for('public.index') }}">Volver al inicio</a></header>
+  <section class="progress-metrics" aria-label="Resumen"><article><strong id="progress-total">{{ progress.total }}</strong><span>Proyectos para evaluar</span></article><article><strong id="progress-complete">{{ progress.complete }}</strong><span>Completos</span></article><article><strong id="progress-pending">{{ progress.total - progress.complete }}</strong><span>Pendientes</span></article></section>
+  <section class="progress-filters"><label>Buscar<input id="progress-search" type="search" placeholder="Proyecto o colegio"></label><label>Recinto<select id="progress-venue"><option value="">Todos</option>{% for venue in progress.venues %}<option value="{{ venue.id }}">{{ venue.name }}</option>{% endfor %}</select></label><label>Categoría<select id="progress-category"><option value="">Todas</option>{% for category in progress.categories %}<option value="{{ category.code }}">{{ category.name }}</option>{% endfor %}</select></label><label class="progress-check"><input id="progress-only-pending" type="checkbox"> Solo pendientes</label><button id="progress-refresh" type="button">Actualizar</button></section>
+  <p class="progress-update" id="progress-update" aria-live="polite">Actualización automática cada 30 segundos.</p>
+  <div id="progress-groups"></div>
+  <p class="progress-note">Exposición: 3 evaluaciones por proyecto. Inglés: evaluación individual de cada estudiante participante por los jueces de inglés asignados. Los conteos reflejan evaluaciones guardadas.</p>
+</main>
+<script id="progress-initial" type="application/json">{{ progress|tojson }}</script>
+<script src="{{ url_for('static', filename='expo-progress.js') }}?v={{ asset_version }}" data-url="{{ url_for('public.expo_progress_data') }}" defer></script>
+{% endblock %}

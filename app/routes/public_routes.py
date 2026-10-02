@@ -1,8 +1,11 @@
 from flask import Blueprint
 
 from app.controllers import project_controller
+from app.controllers import expo_progress_controller
 
 public_bp = Blueprint("public", __name__)
+public_bp.add_url_rule("/expo/avance", endpoint="expo_progress", view_func=expo_progress_controller.public_page)
+public_bp.add_url_rule("/expo/avance/datos", endpoint="expo_progress_data", view_func=expo_progress_controller.public_data)
 
 
 @public_bp.route("/")

@@ -726,16 +726,10 @@ def submit_project(project_id: int):
     if not project:
         flash("Proyecto no encontrado.", "error")
         return redirect(url_for("school.dashboard"))
-    project_management_closed, project_management_message, _active_campaign = _project_management_status()
-    if project_management_closed:
-        log_event("school.project.management_blocked", "project", project.id, project_management_message)
-        db.session.commit()
-        flash(project_management_message, "warning")
-        return redirect(url_for("school.dashboard", _anchor=f"project-{project.id}"))
     needs_logbook = (project.category or "").strip().lower() == "steam" and not project.project_logbook_path
     if not project.members or not project.project_document_path or needs_logbook or not project.has_real_logo or any(not member.photo_url for member in project.members):
         flash("Antes de enviar debes completar estudiantes, documento escrito, bitácora para STEAM, logo y fotografía de cada integrante.", "error")
-        return redirect(url_for("school.project_edit", project_id=project.id))
+        return redirect(url_for("school.dashboard", _anchor=f"project-{project.id}"))
     try:
         transition_project(project, Project.STATUS_SUBMITTED, current_user, request.form.get("notes", ""))
         log_event("school.project.submit", "project", project.id, "Proyecto enviado a coordinación regional")

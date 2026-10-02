@@ -302,13 +302,13 @@
                         <button type="button" class="project-action-btn action-edit" data-dialog-open="edit-project-{{ project.id }}" data-no-iconify>Editar</button>
                         <button type="button" class="project-action-btn action-logistics logistics-open-btn" data-dialog-open="logistics-project-{{ project.id }}" data-no-iconify>Expediente</button>
                         <button type="button" class="project-action-btn action-members" data-dialog-open="members-project-{{ project.id }}" data-no-iconify>Integrantes</button>
-                        {% if school_dashboard_mode and project.regional_status in ['draft', 'returned_for_correction'] %}
-                        <form method="post" action="{{ url_for('school.project_submit', project_id=project.id) }}" class="inline-form project-submit-inline">
-                            <button type="submit" class="school-submit-project"><svg aria-hidden="true"><use href="#ico-send"></use></svg><span>Enviar para aprobación</span></button>
-                        </form>
-                        {% endif %}
                         {% else %}
                         <span class="project-action-btn action-disabled">Solo consulta</span>
+                        {% endif %}
+                        {% if school_dashboard_mode and project.regional_status in ['draft', 'returned_for_correction'] %}
+                        <form method="post" action="{{ url_for('school.project_submit', project_id=project.id) }}" class="inline-form project-submit-inline">
+                            <button type="submit" class="school-submit-project"><svg aria-hidden="true"><use href="#ico-send"></use></svg><span>Enviar a revisión</span></button>
+                        </form>
                         {% endif %}
                     </div>
                     <div class="project-action-group project-action-group-docs">

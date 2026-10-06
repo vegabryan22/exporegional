@@ -5,6 +5,7 @@ from app.controllers import expo_progress_controller
 
 public_bp = Blueprint("public", __name__)
 public_bp.add_url_rule("/expo/avance", endpoint="expo_progress", view_func=expo_progress_controller.public_page)
+public_bp.add_url_rule("/expo/avance/pdf", endpoint="expo_progress_pdf", view_func=expo_progress_controller.progress_pdf)
 public_bp.add_url_rule("/expo/avance/datos", endpoint="expo_progress_data", view_func=expo_progress_controller.public_data)
 
 

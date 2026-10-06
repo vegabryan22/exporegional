@@ -1,6 +1,6 @@
 import json
 import uuid
-from flask import render_template, request, redirect, url_for, flash, jsonify, make_response
+from flask import render_template, request, redirect, url_for, flash, jsonify, make_response, send_file
 from flask_login import current_user
 from app.extensions import db
 from app.models.project import Project
@@ -8,6 +8,16 @@ from app.services.expo_progress_service import venue_config, public_progress, VE
 from app.models.system_setting import SystemSetting
 from app.services.audit_service import log_event
 from app.controllers.admin_controller import admin_module_required, _base_context
+
+def progress_pdf():
+    from app.services.expo_progress_pdf import build_progress_pdf
+    authorized = current_user.is_authenticated and current_user.has_admin_access
+    data = public_progress(include_pending_judges=authorized)
+    filters = {"q": request.args.get("q", "").strip(), "venue": request.args.get("venue", ""), "category": request.args.get("category", ""), "pending": request.args.get("pending") == "1"}
+    response = send_file(build_progress_pdf(data, filters), mimetype="application/pdf", as_attachment=True, download_name="avance_evaluaciones_por_recinto.pdf")
+    response.headers["Cache-Control"] = "no-store, private"
+    response.vary.add("Cookie")
+    return response
 
 def public_page():
     authorized = current_user.is_authenticated and current_user.has_admin_access

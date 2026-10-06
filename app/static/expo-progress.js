@@ -7,6 +7,9 @@
   function element(tag, text, className) {const el = document.createElement(tag); if(text !== undefined) el.textContent = text; if(className) el.className = className; return el;}
   function badge(text, state) {return element('span', text, 'progress-badge ' + state);}
   function render() {
+    const exportLink = document.getElementById('progress-export-pdf');
+    const params = new URLSearchParams({q:search.value,venue:venue.value,category:category.value,pending:pending.checked ? '1' : '0'});
+    exportLink.href = exportLink.href.split('?')[0] + '?' + params.toString();
     const root = document.getElementById('progress-groups');
     const open = new Map(Array.from(root.querySelectorAll('details')).map(el => [el.dataset.id,el.open]));
     root.replaceChildren();

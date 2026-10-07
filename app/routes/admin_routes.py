@@ -2,8 +2,11 @@ from flask import Blueprint
 
 from app.controllers import admin_controller
 from app.controllers import expo_progress_controller
+from app.controllers import expo_attendance_controller
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+admin_bp.add_url_rule('/expo/jueces',endpoint='expo_attendance',view_func=expo_attendance_controller.attendance_page,methods=['GET','POST'])
+admin_bp.add_url_rule('/expo/jueces/<int:judge_id>/invitacion',endpoint='expo_invitation_preview',view_func=expo_attendance_controller.preview)
 admin_bp.add_url_rule("/recintos", endpoint="venues_page", view_func=expo_progress_controller.venues_page, methods=["GET", "POST"])
 
 admin_bp.add_url_rule("/action", view_func=admin_controller.perform_action, methods=["POST"])

@@ -178,6 +178,7 @@ ADMIN_MENU_ITEMS = [
     ("regional_review", "admin.regional_review_page", "Revisión y aprobación regional"),
     ("assignments", "admin.assignments_page", "Asignación de jueces"),
     ("venues", "admin.venues_page", "Recintos y ubicación"),
+    ("expo_attendance", "admin.expo_attendance", "Invitaciones y llegada de jueces"),
     ("judge_pool", "admin.judge_pool_page", "Gestión de jueces"),
     ("judges", "admin.judges_page", "Usuarios y accesos"),
     ("permissions", "admin.permissions_page", "Permisos por equipo"),
@@ -204,7 +205,7 @@ ADMIN_MENU_GROUPS = [
     ("Inicio", ["overview"]),
     ("Preparación de la Expo Regional", ["institutions", "campaigns", "academic", "categories", "rubrics"]),
     ("Participantes", ["regional_review", "projects", "judge_pool", "students_stats"]),
-    ("Operación del evento", ["assignments", "venues", "requirements"]),
+    ("Operación del evento", ["assignments", "venues", "expo_attendance", "requirements"]),
     ("Resultados y cierre", ["evaluations", "documents", "reports"]),
     ("Administración", ["judges", "permissions", "institution", "smtp"]),
     ("Sistema avanzado", ["maintenance", "database", "gitops", "dependencies", "logs"]),
@@ -4712,6 +4713,7 @@ def _handle_action(action: str):
                 process_type,
                 deadline=deadline,
                 created_by_id=current_user.id,
+                present_only=request.form.get('present_only') == '1',
             )
             log_event(
                 "admin.assignment_process.generate",

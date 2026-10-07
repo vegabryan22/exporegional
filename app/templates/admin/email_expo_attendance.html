@@ -1,0 +1,13 @@
+<!doctype html><html lang="es"><body style="margin:0;background:#edf5fa;font-family:Arial,sans-serif;color:#173f55;padding:24px">
+<div style="max-width:640px;margin:auto;background:white;border-radius:16px;overflow:hidden;border:1px solid #d0e3ee">
+<div style="padding:24px;background:#173f55;color:white;font-size:24px;font-weight:bold">ExpoTécnica Regional 2026</div>
+<div style="padding:28px">
+{% if school_logo %}<img src="{{ school_logo }}" alt="Organización regional" style="height:64px;max-width:86px;object-fit:contain;margin-right:16px">{% endif %}
+{% if expo_logo %}<img src="{{ expo_logo }}" alt="ExpoTécnica" style="height:64px;max-width:150px;object-fit:contain">{% endif %}
+<h2>Invitación a evaluar exposición</h2><p>Hola <strong>{{ judge.full_name }}</strong>,</p>
+<p>Te invitamos el <strong>09 de octubre de 2026</strong>, de <strong>07:30 a. m. a 2:00 p. m.</strong>, en el <strong>CTP José Albertazzi Avendaño</strong>, Los Guidos de Desamparados.</p>
+<p>Adjuntamos la carta formal personalizada. Los proyectos se distribuirán el día de la Expo entre los jueces que se presenten.</p>
+{% if preview %}<p><span style="display:inline-block;padding:14px 22px;background:#f5a11a;color:#173f55;font-weight:bold;border-radius:10px">Confirmar asistencia y parqueo</span></p><p>Vista previa: el enlace personal se habilita al enviar la invitación.</p>
+{% else %}<p><a href="{{ confirmation }}" style="display:inline-block;padding:14px 22px;background:#f5a11a;color:#173f55;font-weight:bold;text-decoration:none;border-radius:10px">Confirmar asistencia y parqueo</a></p><p>Si el botón no funciona: <a href="{{ confirmation }}">{{ confirmation }}</a></p>{% endif %}
+<p>Consultas: <a href="mailto:expotecnicaregionaldesamparado@gmail.com">expotecnicaregionaldesamparado@gmail.com</a></p>
+</div></div></body></html>

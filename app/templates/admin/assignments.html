@@ -1,5 +1,6 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
+<section class="card admin-section"><h3>Distribución del día de la Expo</h3><p>Registra la llegada de los jueces y genera un borrador con quienes están presentes. Revisa y aprueba el borrador en el proceso correspondiente de abajo.</p><a class="outline-btn" href="{{ url_for('admin.expo_attendance') }}">Invitaciones y llegada de jueces</a><div class="actions-row">{% for code,label in [('exposition','Exposición'),('english','Inglés')] %}<form method="post" action="{{ action_url }}"><input type="hidden" name="action" value="generate_assignment_process"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="process_type" value="{{ code }}"><input type="hidden" name="present_only" value="1"><button type="submit">Generar {{ label }} con jueces presentes</button></form>{% endfor %}</div></section>
 <div class="actions-row"><a class="action-btn outline-btn" href="{{ url_for('admin.venues_page') }}">Gestionar recintos</a><a class="action-btn outline-btn" href="{{ url_for('public.expo_progress') }}" target="_blank">Ver avance público</a></div>
 {% set active_projects = projects|selectattr('is_active')|list %}
 {% set active_project_ids = active_projects|map(attribute='id')|list %}

@@ -9313,6 +9313,7 @@ def _project_report_rows(projects: list, category_map: dict) -> tuple[list[dict]
     requirements_map = dict(REQUIREMENTS_STATUSES)
 
     for project in projects:
+        school_name = project.institution.name if project.institution else (project.institution_name or 'Sin colegio vinculado')
         members = sorted(project.members, key=lambda member: (member.student_number, member.full_name.casefold()))
         sections = ", ".join(sorted({member.section_name for member in members if member.section_name}))
         specialties = ", ".join(sorted({member.specialty for member in members if member.specialty}))
@@ -9325,6 +9326,7 @@ def _project_report_rows(projects: list, category_map: dict) -> tuple[list[dict]
             {
                 "id": project.id,
                 "registration_date": project.registration_date,
+                "school": school_name,
                 "title": project.title,
                 "category": category_map.get(project.category, project.category),
                 "project_type": project.project_type.name if project.project_type else "",
@@ -9362,6 +9364,7 @@ def _project_report_rows(projects: list, category_map: dict) -> tuple[list[dict]
                 {
                     "project_id": project.id,
                     "project": project.title,
+                    "school": school_name,
                     "team": project.team_name,
                     "category": category_map.get(project.category, project.category),
                     "student_number": member.student_number,
@@ -9399,6 +9402,7 @@ def projects_report_excel():
             joinedload(Project.project_type),
             joinedload(Project.thematic_axis),
             joinedload(Project.campaign),
+            joinedload(Project.institution),
         )
         .order_by(Project.title.asc())
         .all()
@@ -9410,9 +9414,10 @@ def projects_report_excel():
     projects_sheet = workbook.active
     projects_sheet.title = "Proyectos"
     members_sheet = workbook.create_sheet("Integrantes")
+    english_sheet = workbook.create_sheet("Exponen en inglés")
 
     project_headers = [
-        "ID", "Fecha de inscripción", "Proyecto", "Categoría", "Tipo", "Eje temático", "Campaña",
+        "ID", "Fecha de inscripción", "Proyecto", "Colegio", "Categoría", "Tipo", "Eje temático", "Campaña",
         "Equipo", "Secciones", "Especialidades", "Integrantes", "Representante", "Correo representante",
         "Teléfono representante", "Tutor", "Cédula tutor", "Correo tutor", "Teléfono tutor", "Mentor",
         "Descripción", "Objetivo", "Impacto esperado", "Fecha inicio", "Fecha final", "Requerimientos",
@@ -9420,19 +9425,19 @@ def projects_report_excel():
         "Evaluación en inglés", "Registrado en sistema",
     ]
     project_keys = [
-        "id", "registration_date", "title", "category", "project_type", "thematic_axis", "campaign",
+        "id", "registration_date", "title", "school", "category", "project_type", "thematic_axis", "campaign",
         "team", "sections", "specialties", "members_count", "representative", "representative_email",
         "representative_phone", "advisor", "advisor_identity", "advisor_email", "advisor_phone", "mentor",
         "description", "objective", "impact", "start_date", "end_date", "requirements", "supplies",
         "logistics_status", "requirements_status", "active", "english", "created_at",
     ]
     member_headers = [
-        "ID proyecto", "Proyecto", "Equipo", "Categoría", "N.º integrante", "Nombre completo", "Identificación",
+        "ID proyecto", "Proyecto", "Colegio", "Equipo", "Categoría", "N.º integrante", "Nombre completo", "Identificación",
         "Sección", "Especialidad", "Teléfono", "Correo", "Género", "Participa en inglés",
         "Consentimiento", "Copias de identificación", "Fotografía",
     ]
     member_keys = [
-        "project_id", "project", "team", "category", "student_number", "name", "identity", "section",
+        "project_id", "project", "school", "team", "category", "student_number", "name", "identity", "section",
         "specialty", "phone", "email", "gender", "english", "consent",
         "identity_documents", "photo",
     ]
@@ -9497,8 +9502,8 @@ def projects_report_excel():
         project_keys,
         project_rows,
         "ProyectosInscritos",
-        [8, 16, 38, 18, 22, 24, 22, 24, 18, 28, 12, 28, 30, 18, 28, 18, 30, 18, 28, 42, 38, 38, 14, 14, 26, 38, 20, 22, 16, 18, 20],
-        {2, 23, 24, 31},
+        [8, 16, 38, 42, 18, 22, 24, 22, 24, 18, 28, 12, 28, 30, 18, 28, 18, 30, 18, 28, 42, 38, 38, 14, 14, 26, 38, 20, 22, 16, 18, 20],
+        {2, 24, 25, 32},
     )
     build_sheet(
         members_sheet,
@@ -9508,9 +9513,15 @@ def projects_report_excel():
         member_keys,
         member_rows,
         "IntegrantesProyectos",
-        [12, 38, 24, 18, 12, 30, 18, 14, 28, 18, 30, 14, 16, 18, 18, 22, 14],
+        [12, 38, 42, 24, 18, 12, 30, 18, 14, 28, 18, 30, 14, 16, 18, 18, 22],
         set(),
     )
+
+    english_rows = [row for row in member_rows if row['english'] == 'Sí']
+    build_sheet(english_sheet, 'ESTUDIANTES QUE EXPONEN EN INGLÉS',
+                f'{len(english_rows)} estudiantes · Generado el {generated}',
+                member_headers, member_keys, english_rows, 'EstudiantesIngles',
+                [12, 38, 42, 24, 18, 12, 30, 18, 14, 28, 18, 30, 14, 16, 18, 18, 22], set())
 
     buffer = BytesIO()
     workbook.save(buffer)

@@ -1,3 +1,37 @@
+.venue-workspace { padding: 24px; }
+.venue-page-head { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
+.venue-page-head h3 { margin: 4px 0 8px; font-size: 1.45rem; color: #173f54; }
+.venue-page-head p { margin: 0; font-size: .88rem; color: #6d8290; }
+.venue-page-head .maintenance-kicker { font-size: .7rem; }
+.venue-page-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.venue-page-actions button, .venue-page-actions .outline-btn, .venue-save-bar button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; margin: 0; padding: 10px 14px; min-height: 42px; border-radius: 9px; font-size: .82rem; box-shadow: none; background: #17657d; color: #fff; border: 1px solid #17657d; text-decoration: none; }
+.venue-page-actions .outline-btn { background: #fff; color: #22627a; border-color: #cbdfe8; }
+.venue-page-actions button span { background: #ffffff26; padding: 2px 7px; border-radius: 12px; font-size: .73rem; }
+.venue-location-form { margin: 0; }
+.venue-location-table { width: 100%; table-layout: fixed; }
+.venue-location-table th { text-align: left; padding: 12px 16px; font-size: .72rem; letter-spacing: .04em; color: #587587; background: #eff5f8; }
+.venue-location-table td { text-align: left; padding: 14px 16px; font-size: .85rem; vertical-align: middle; overflow-wrap: anywhere; }
+.venue-location-table th:first-child { width: 40%; }
+.venue-location-table th:last-child { width: 25%; }
+.venue-location-table td strong { display: block; color: #193f55; font-size: .92rem; }
+.venue-location-table td small { display: inline-block; margin-top: 5px; font-size: .72rem; color: #27748a; background: #edf6f9; padding: 3px 8px; border-radius: 5px; }
+.venue-location-table select { width: 100%; min-width: 0; margin: 0; min-height: 42px; padding: 9px 12px; font-size: .85rem; border-radius: 8px; }
+.venue-save-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 20px; }
+.venue-save-bar a { font-size: .82rem; color: #587587; text-decoration: none; }
+.venue-save-bar a:hover { text-decoration: underline; }
+@media (max-width: 900px) { .venue-page-head { flex-direction: column; align-items: flex-start; gap: 16px; } }
+@media (max-width: 600px) {
+  .venue-workspace { padding: 16px; }
+  .venue-page-actions { width: 100%; }
+  .venue-page-actions > * { flex: 1 1 100%; }
+  .venue-location-table, .venue-location-table tbody { display: block; }
+  .venue-location-table thead { display: none; }
+  .venue-location-table tr { display: block; padding: 12px 0; border-bottom: 1px solid #dce7ee; }
+  .venue-location-table td { display: block; padding: 5px 10px; border: 0; }
+  .venue-location-table td[data-label="Colegio"] { color: #6b8191; font-size: .8rem; }
+  .venue-location-table td[data-label="Recinto"]::before { content: 'Recinto asignado'; display: block; font-size: .7rem; color: #6b8191; margin: 5px 0; }
+  .venue-save-bar { flex-direction: column-reverse; align-items: stretch; text-align: center; }
+}
 .venue-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));

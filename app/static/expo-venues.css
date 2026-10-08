@@ -4,6 +4,9 @@
   gap: 16px;
   margin-top: 20px;
 }
+dialog.maintenance-dialog.venue-manager { width: min(1100px, calc(100vw - 32px)); max-width: calc(100vw - 32px); max-height: 88dvh; overflow-y: auto; }
+.venue-manager .dialog-card { width: 100%; box-sizing: border-box; }
+.venue-manager .dialog-head p { margin: 6px 0 14px; color: #6b8191; font-size: .85rem; }
 .venue-card {
   min-width: 0;
   padding: 18px;

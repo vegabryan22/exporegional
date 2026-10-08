@@ -1,0 +1,41 @@
+.attendance-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.attendance-toolbar h4 { margin: 0 0 5px; font-size: 1.1rem; }
+.attendance-toolbar span { color: #6b8191; font-size: .85rem; }
+.attendance-panel form { margin: 0; padding: 0; }
+.attendance-toolbar button { font-size: .85rem; padding: 11px 16px; border-radius: 9px; }
+.attendance-panel .attendance-table { width: 100%; font-size: .88rem; }
+.attendance-table th { padding: 12px; font-size: .72rem; letter-spacing: .04em; background: #f0f5f8; color: #526d7f; }
+.attendance-table td { padding: 16px 12px; vertical-align: middle; }
+.attendance-table th:first-child, .attendance-table td:first-child { width: 36px; text-align: center; }
+.attendance-table input[type=checkbox] { width: 18px; height: 18px; accent-color: #176783; cursor: pointer; }
+.attendance-table tbody tr:hover { background: #f8fbfd; }
+.attendance-identity strong, .attendance-identity span, .attendance-identity small { display: block; overflow-wrap: anywhere; }
+.attendance-identity strong { color: #173f54; font-size: .95rem; margin-bottom: 5px; }
+.attendance-identity span { color: #506979; font-size: .82rem; }
+.attendance-identity small { color: #7b8e9a; margin-top: 4px; font-size: .78rem; }
+.attendance-badge { display: inline-flex; padding: 4px 9px; border-radius: 20px; font-size: .73rem; font-weight: 700; white-space: nowrap; }
+.attendance-badge.is-sent { color: #246a89; background: #e7f2f9; }
+.attendance-badge.is-confirmed { color: #27724c; background: #e7f5ed; }
+.attendance-badge.is-pending { color: #906317; background: #fff3d9; }
+.attendance-badge.is-declined { color: #a23c4c; background: #fbecef; }
+.attendance-response { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.attendance-panel .attendance-table button { min-height: 36px; width: auto; padding: 7px 11px; margin: 0; border-radius: 7px; font-size: .78rem; white-space: nowrap; box-shadow: none; }
+.attendance-table .outline-btn { background: #fff; color: #205e7b; border: 1px solid #c9dce6; }
+.attendance-table button:disabled { opacity: .45; cursor: not-allowed; }
+.attendance-preview { color: #206c88; text-decoration: none; font-size: .8rem; font-weight: 600; white-space: nowrap; }
+.attendance-preview:hover { text-decoration: underline; }
+.attendance-error { max-width: 180px; color: #a23c4c; font-size: .75rem; }
+@media (max-width: 1000px) {
+  .attendance-toolbar { align-items: flex-start; flex-direction: column; }
+  .attendance-panel .table-wrap { overflow: visible; }
+  .attendance-table, .attendance-table tbody { display: block; }
+  .attendance-table thead { display: none; }
+  .attendance-table tbody { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+  .attendance-table tr { display: grid; grid-template-columns: 30px minmax(0, 1fr); padding: 14px; border: 1px solid #d8e4ec; border-radius: 12px; background: #fff; }
+  .attendance-table td { display: block; border: 0; padding: 5px 0; }
+  .attendance-table td:first-child { width: auto; }
+  .attendance-table td[data-label] { grid-column: 2; }
+  .attendance-table td[data-label]::before { content: attr(data-label); display: block; color: #718693; font-size: .7rem; margin: 5px 0; }
+  .attendance-response { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .attendance-toolbar button { white-space: normal; }
+}

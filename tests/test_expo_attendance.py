@@ -81,4 +81,29 @@ class ExpoAttendanceTest(unittest.TestCase):
         self.assertFalse(missing)
         with self.assertRaisesRegex(ValueError,'evaluaciones guardadas'): approve_process(process)
 
+    def test_venue_crud_preserves_assigned_projects(self):
+        from app.extensions import login_manager
+        from app.routes.admin_routes import admin_bp
+        from app.services.expo_progress_service import venue_config, VENUE_SETTING
+        login_manager.init_app(self.app)
+        self.app.secret_key = 'test'
+        self.app.register_blueprint(admin_bp)
+        admin = Judge(full_name='Administrador',email='admin@test',password_hash='test',role=Judge.ROLE_SUPERADMIN)
+        db.session.add(admin); db.session.commit()
+        client = self.app.test_client()
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin.id); session['_fresh'] = True
+        self.assertEqual(302,client.post('/admin/recintos',data={'action':'create','name':'Recinto de prueba','responsible':'Persona'}).status_code)
+        config = venue_config(); venue_id = config['venues'][0]['id']
+        client.post('/admin/recintos',data={'action':'update','venue_id':venue_id,'name':'Nombre corregido','responsible':'Otra persona'})
+        self.assertEqual('Nombre corregido',venue_config()['venues'][0]['name'])
+        config = venue_config(); config['projects'][str(self.project.id)] = venue_id
+        SystemSetting.set_value(VENUE_SETTING,json.dumps(config)); db.session.commit()
+        client.post('/admin/recintos',data={'action':'delete','venue_id':venue_id})
+        self.assertEqual(1,len(venue_config()['venues']))
+        self.assertEqual(venue_id,venue_config()['projects'][str(self.project.id)])
+        client.post('/admin/recintos',data={'action':'save','venue_'+str(self.project.id):''})
+        client.post('/admin/recintos',data={'action':'delete','venue_id':venue_id})
+        self.assertEqual([],venue_config()['venues'])
+
 if __name__ == '__main__': unittest.main()

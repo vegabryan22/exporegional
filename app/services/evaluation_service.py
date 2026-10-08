@@ -81,6 +81,9 @@ def get_project_available_evaluation_types(project):
 
 
 def assignment_allows_evaluation_type(assignment, evaluation_type) -> bool:
+    judge = getattr(assignment, "judge", None)
+    if judge and getattr(judge, "english_only", False) and evaluation_type.code != ENGLISH_EVAL_TYPE_CODE:
+        return False
     if evaluation_type.code == ENGLISH_EVAL_TYPE_CODE:
         judge = getattr(assignment, "judge", None)
         return bool(
@@ -90,8 +93,12 @@ def assignment_allows_evaluation_type(assignment, evaluation_type) -> bool:
         )
     rubric_kind = infer_evaluation_type_kind(evaluation_type)
     if rubric_kind == "documentacion":
+        if judge and not getattr(judge, "can_evaluate_documentation", True):
+            return False
         return bool(getattr(assignment, "can_evaluate_documentation", True))
     if rubric_kind == "exposicion":
+        if judge and not getattr(judge, "can_evaluate_exposition", True):
+            return False
         return bool(getattr(assignment, "can_evaluate_exposition", True))
     return bool(
         getattr(assignment, "can_evaluate_documentation", True)

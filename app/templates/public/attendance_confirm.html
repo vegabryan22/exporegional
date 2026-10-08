@@ -80,6 +80,10 @@
             <fieldset class="attendance-fieldset">
                 <legend>&iquest;Qu&eacute; puede evaluar?</legend>
                 <label class="attendance-option">
+                    <input type="radio" name="evaluation_scope" value="ingles" {% if judge.english_only %}checked{% endif %}>
+                    <span class="attendance-option-label">Solo inglés (sin documento ni exposición en español)</span>
+                </label>
+                <label class="attendance-option">
                     <input type="radio" name="evaluation_scope" value="ambas" required
                         {% if judge.can_evaluate_documentation and judge.can_evaluate_exposition %}checked{% endif %}>
                     <span class="attendance-option-label">Documento escrito y exposici&oacute;n oral</span>

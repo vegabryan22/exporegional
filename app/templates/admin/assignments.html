@@ -361,6 +361,8 @@
                                     </select>
                                     <input type="hidden" name="assignment_scope_present" value="1">
                                     <div class="assignment-scope-group" data-assignment-scope-group>
+                                        <input type="hidden" name="assignment_english_present" value="1">
+                                        <label><input type="checkbox" name="assignment_scope" value="ingles" {% if assignment.can_evaluate_english %}checked{% endif %}>Inglés</label>
                                         <label>
                                             <input type="checkbox" name="assignment_scope" value="documentacion" {% if assignment.can_evaluate_documentation %}checked{% endif %}>
                                             Documento escrito
@@ -410,6 +412,8 @@
                         </label>
                         <input type="hidden" name="assignment_scope_present" value="1">
                         <div class="assignment-scope-group" data-assignment-scope-group>
+                            <input type="hidden" name="assignment_english_present" value="1">
+                            <label><input type="checkbox" name="assignment_scope" value="ingles"> Inglés</label>
                             <label><input type="checkbox" name="assignment_scope" value="documentacion" checked> Documento escrito</label>
                             <label><input type="checkbox" name="assignment_scope" value="exposicion" checked> Exposici&oacute;n oral</label>
                         </div>
@@ -512,6 +516,8 @@
             </div>
             <input type="hidden" name="assignment_scope_present" value="1">
             <div class="assignment-scope-group assignment-scope-group-wide" data-assignment-scope-group>
+                <input type="hidden" name="assignment_english_present" value="1">
+                <label><input type="checkbox" name="assignment_scope" value="ingles"> Inglés</label>
                 <label><input type="checkbox" name="assignment_scope" value="documentacion" checked> Documento escrito</label>
                 <label><input type="checkbox" name="assignment_scope" value="exposicion" checked> Exposici&oacute;n oral</label>
             </div>
@@ -783,12 +789,19 @@
         var exposition = option.dataset.canExposition === '1';
         var docInput = group.querySelector('input[value="documentacion"]');
         var expoInput = group.querySelector('input[value="exposicion"]');
+        var englishInput = group.querySelector('input[value="ingles"]');
+        if (englishInput) {
+            englishInput.checked = option.dataset.canEnglish === '1' && !documentation && !exposition;
+            englishInput.disabled = option.dataset.canEnglish !== '1';
+        }
 
         if (docInput) {
             docInput.checked = documentation;
+            docInput.disabled = !documentation;
         }
         if (expoInput) {
             expoInput.checked = exposition;
+            expoInput.disabled = !exposition;
         }
     }
 

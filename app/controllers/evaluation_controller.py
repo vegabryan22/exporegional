@@ -32,6 +32,8 @@ def _str_to_bool(value) -> bool:
 
 def _scope_from_form(value: str) -> tuple[bool, bool]:
     normalized = (value or "ambas").strip().lower()
+    if normalized == "ingles":
+        return False, False
     if normalized == "documento":
         return True, False
     if normalized == "exposicion":
@@ -139,11 +141,15 @@ def profile():
         request.form.get("judge_evaluation_scope")
     )
     current_user.can_evaluate_english = _str_to_bool(request.form.get("judge_can_evaluate_english"))
+    if request.form.get("judge_evaluation_scope") == "ingles":
+        current_user.can_evaluate_english = True
     current_user.category_scope = _category_scope_from_form(request.form.get("judge_category_scope"))
     current_user.job_title = request.form.get("judge_job_title", "").strip()
     current_user.institution = request.form.get("judge_institution", "").strip()
     current_user.phone = request.form.get("judge_phone", "").strip()
     db.session.commit()
+    from app.services.judge_profile_service import warn_incompatible_assignments
+    warn_incompatible_assignments(current_user)
     log_event(
         "judge.profile.update",
         "judge",

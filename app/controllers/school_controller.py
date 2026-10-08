@@ -430,6 +430,8 @@ def judges():
             judge.can_evaluate_documentation = scope in {"documentacion", "ambas"}
             judge.can_evaluate_exposition = scope in {"exposicion", "ambas"}
             judge.can_evaluate_english = request.form.get("can_evaluate_english") == "1"
+            if scope == "ingles":
+                judge.can_evaluate_english = True
             judge.is_active_user = request.form.get("is_active_user", "1") == "1"
             judge.role = Judge.ROLE_JUDGE
             judge.is_admin = False
@@ -449,6 +451,8 @@ def judges():
                 _send_judge_credentials_email(judge, temporary_password)
                 db.session.commit()
             flash("Juez inscrito correctamente." if before is None else "Información del juez actualizada.", "success")
+            from app.services.judge_profile_service import warn_incompatible_assignments
+            warn_incompatible_assignments(judge)
         elif action == "delete":
             detail = json.dumps({"colegio": school.code, "juez": judge.full_name, "correo": judge.email}, ensure_ascii=False)
             log_event("school.judge.delete", "judge", judge.id, detail)

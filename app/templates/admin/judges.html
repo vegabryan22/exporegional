@@ -173,6 +173,7 @@
                 </label>
                 <label>Disponibilidad como juez
                     <select name="judge_evaluation_scope">
+                        <option value="ingles">Solo inglés (sin documento ni exposición en español)</option>
                         <option value="ambas">Documento y exposici&oacute;n</option>
                         <option value="documento">Solo documento</option>
                         <option value="exposicion">Solo exposici&oacute;n</option>
@@ -261,6 +262,7 @@
                 </label>
                 <label>Evaluaciones que puede realizar
                     <select name="judge_evaluation_scope">
+                        <option value="ingles" {% if judge.english_only %}selected{% endif %}>Solo inglés (sin documento ni exposición en español)</option>
                         <option value="ambas" {% if judge.can_evaluate_documentation and judge.can_evaluate_exposition %}selected{% endif %}>Documento y exposición</option>
                         <option value="documento" {% if judge.can_evaluate_documentation and not judge.can_evaluate_exposition %}selected{% endif %}>Solo documento escrito</option>
                         <option value="exposicion" {% if judge.can_evaluate_exposition and not judge.can_evaluate_documentation %}selected{% endif %}>Solo exposición oral</option>

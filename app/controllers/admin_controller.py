@@ -1,5 +1,6 @@
 import os
 import re
+import unicodedata
 import secrets
 import uuid
 import json
@@ -23,7 +24,7 @@ from zipfile import ZipFile
 
 from functools import wraps
 
-from flask import abort, current_app, flash, get_flashed_messages, jsonify, redirect, render_template, request, send_file, session, url_for
+from flask import abort, current_app, flash, get_flashed_messages, has_request_context, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required, login_user
 from sqlalchemy import or_, text
 from sqlalchemy.engine import make_url
@@ -371,8 +372,12 @@ def _assignment_scope_from_form(prefix: str = "assignment_scope"):
     return can_documentation, can_exposition
 
 
+def _requested_assignment_english() -> bool:
+    return has_request_context() and "ingles" in request.form.getlist("assignment_scope")
+
+
 def _assignment_scope_valid(can_documentation: bool, can_exposition: bool) -> bool:
-    return bool(can_documentation or can_exposition)
+    return bool(can_documentation or can_exposition or _requested_assignment_english())
 
 
 ASSIGNMENTS_PER_SCOPE = 3
@@ -396,6 +401,8 @@ def _assignment_capacity_error(
         exceeded.append("documento")
     if can_exposition and exposition_total >= ASSIGNMENTS_PER_SCOPE:
         exceeded.append("exposición")
+    if _requested_assignment_english() and any(item.can_evaluate_english for item in assignments):
+        return "El proyecto ya tiene un juez asignado para inglés. Revisa esa asignación antes de agregar otro."
     if not exceeded:
         return ""
     scope = " y ".join(exceeded)
@@ -432,7 +439,7 @@ def _trim_excess_draft_scopes(assignments: list[Assignment]) -> int:
             trimmed += 1
         assignment.can_evaluate_documentation = keep_documentation
         assignment.can_evaluate_exposition = keep_exposition
-        if not keep_documentation and not keep_exposition:
+        if not keep_documentation and not keep_exposition and not assignment.can_evaluate_english:
             db.session.delete(assignment)
     return trimmed
 
@@ -440,6 +447,8 @@ def _trim_excess_draft_scopes(assignments: list[Assignment]) -> int:
 def _apply_assignment_scope(assignment: Assignment, can_documentation: bool, can_exposition: bool):
     assignment.can_evaluate_documentation = bool(can_documentation)
     assignment.can_evaluate_exposition = bool(can_exposition)
+    if "ingles" in request.form.getlist("assignment_scope") or request.form.get("assignment_english_present") == "1":
+        assignment.can_evaluate_english = _requested_assignment_english()
 
 
 def _project_requires_english(project: Project) -> bool:
@@ -453,7 +462,10 @@ def _assignment_compatibility_error(
     project: Project,
     can_documentation: bool,
     can_exposition: bool,
+    can_english: bool | None = None,
 ) -> str:
+    if can_english is None:
+        can_english = _requested_assignment_english()
     if not judge:
         return "Debes seleccionar un juez válido."
     if not project:
@@ -467,6 +479,12 @@ def _assignment_compatibility_error(
         return f"{judge.full_name} pertenece a {institution_name} y no puede evaluar proyectos de su propio colegio."
     if not judge.is_active_user:
         return f"{judge.full_name} está inactivo y no puede recibir asignaciones."
+    if (can_exposition or can_english) and judge.attendance_confirmed is False:
+        return f"{judge.full_name} indicó que no asiste al evento."
+    if can_english and not judge.can_evaluate_english:
+        return f"{judge.full_name} no está habilitado para evaluar inglés."
+    if can_english and not project.requires_english_evaluation:
+        return "El proyecto no tiene estudiantes inscritos para evaluación en inglés."
     if can_documentation and not judge.can_evaluate_documentation:
         return f"{judge.full_name} no indicó disponibilidad para evaluar documento escrito."
     if can_exposition and not judge.can_evaluate_exposition:
@@ -584,9 +602,11 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
                 return False
             if required_scope == "exposicion" and not judge.can_evaluate_exposition:
                 return False
-            if required_scope == "ingles" and not (judge.can_evaluate_english and judge.can_evaluate_exposition):
+            if required_scope in {"ingles", "exposicion"} and judge.attendance_confirmed is False:
                 return False
-            return bool(judge.can_evaluate_documentation or judge.can_evaluate_exposition)
+            if required_scope == "ingles" and not judge.can_evaluate_english:
+                return False
+            return bool(judge.can_evaluate_english if required_scope == "ingles" else judge.can_evaluate_documentation or judge.can_evaluate_exposition)
 
         def pick(required_scope: str | None = None, preferred_scope: str | None = None):
             preferred = preferred_scope or required_scope or "general"
@@ -600,17 +620,16 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
             # Only assign a rubric while it still needs coverage. A judge may
             # cover both rubrics, but never become a fourth evaluator in either.
             can_documentation = bool(judge.can_evaluate_documentation and doc_count < target_evaluations)
-            can_exposition = bool(judge.can_evaluate_exposition and expo_count < target_evaluations)
-            if not can_documentation and not can_exposition:
+            can_exposition = bool(judge.can_evaluate_exposition and judge.attendance_confirmed is not False and expo_count < target_evaluations)
+            can_english = bool(needs_english and judge.can_evaluate_english and judge.attendance_confirmed is not False and english_count == 0)
+            if not can_documentation and not can_exposition and not can_english:
                 return False
             assignment = Assignment(
                 judge_id=judge.id,
                 project_id=project.id,
                 can_evaluate_documentation=can_documentation,
                 can_evaluate_exposition=can_exposition,
-                can_evaluate_english=bool(
-                    needs_english and can_exposition and judge.can_evaluate_english and english_count == 0
-                ),
+                can_evaluate_english=can_english,
                 status=Assignment.STATUS_DRAFT,
             )
             assignment.judge = judge
@@ -3774,7 +3793,10 @@ def _yes_no_value(value: str) -> str:
 
 
 def _judge_scope_from_value(value: str) -> tuple[bool, bool, str]:
-    normalized = re.sub(r"[^a-z0-9]", "", (value or "").strip().lower())
+    plain = unicodedata.normalize("NFKD", (value or "").strip().lower()).encode("ascii", "ignore").decode("ascii")
+    normalized = re.sub(r"[^a-z0-9]", "", plain)
+    if normalized in {"ingles", "soloingles"}:
+        return False, False, "Solo inglés"
     if normalized in {"documento", "documentacionescrita", "documentoescrito", "escrita", "virtual"}:
         return True, False, "Solo documento"
     if normalized in {"exposicion", "exposicionpresencial", "oral", "presencial"}:
@@ -3869,7 +3891,7 @@ def _extract_judge_form_payload(payload: dict):
     can_documentation, can_exposition, scope_label = _judge_scope_from_value(modality)
     evaluation_areas = _extract_json_value(payload, "areas", "areas de evaluacion", "categorias", "categorías")
     english_available = _yes_no_value(_extract_json_value(payload, "ingles", "inglés", "evalua ingles", "dominio ingles"))
-    can_evaluate_english = english_available == "Si"
+    can_evaluate_english = english_available == "Si" or scope_label == "Solo inglés"
     category_scope = _judge_category_scope_from_value(evaluation_areas)
     notes = _extract_json_value(payload, "notes", "observaciones", "comentarios")
     detail_parts = []
@@ -4807,6 +4829,13 @@ def _handle_action(action: str):
             flash("No hay asignaciones en borrador para confirmar.", "error")
         else:
             draft_project_ids = {assignment.project_id for assignment in drafts}
+            for assignment in drafts:
+                error = _assignment_compatibility_error(assignment.judge, assignment.project,
+                    assignment.can_evaluate_documentation, assignment.can_evaluate_exposition,
+                    assignment.can_evaluate_english)
+                if error:
+                    flash("No se pueden confirmar borradores: " + error + " Regenera o corrige las asignaciones.", "error")
+                    return
             institutional_conflicts = [
                 assignment
                 for assignment in drafts
@@ -5143,6 +5172,8 @@ def _handle_action(action: str):
         category_scope = _judge_category_scope_from_value(request.form.get("judge_category_scope", "ambas"))
         can_evaluate_english = _str_to_bool(request.form.get("judge_can_evaluate_english"))
         can_documentation, can_exposition, _scope_label = _judge_scope_from_value(request.form.get("judge_evaluation_scope", "ambas"))
+        if _scope_label == "Solo inglés":
+            can_evaluate_english = True
         manual_password = request.form.get("judge_password", "")
         if role != Judge.ROLE_JUDGE:
             identity = ""
@@ -5226,6 +5257,8 @@ def _handle_action(action: str):
             category_scope = _judge_category_scope_from_value(request.form.get("judge_category_scope", "ambas"))
             can_evaluate_english = _str_to_bool(request.form.get("judge_can_evaluate_english"))
             can_documentation, can_exposition, _scope_label = _judge_scope_from_value(request.form.get("judge_evaluation_scope", "ambas"))
+            if _scope_label == "Solo inglés":
+                can_evaluate_english = True
             is_active_user = _str_to_bool(request.form.get("judge_is_active_user", "1"))
             if role != Judge.ROLE_JUDGE:
                 identity = ""
@@ -5279,11 +5312,14 @@ def _handle_action(action: str):
                     entity_id=judge.id,
                     detail=(
                         f"Usuario actualizado: {judge.full_name} <{judge.email}> "
-                        f"role={judge.role} departamento={judge.department}"
+                        f"role={judge.role} departamento={judge.department}; "
+                        f"perfil={judge.evaluation_scope_label}; inglés={judge.can_evaluate_english}"
                     ),
                 )
                 db.session.commit()
                 flash("Usuario actualizado.", "success")
+                from app.services.judge_profile_service import warn_incompatible_assignments
+                warn_incompatible_assignments(judge)
 
     elif action == "reset_judge_password":
         judge_id = request.form.get("judge_id", type=int)
@@ -8192,7 +8228,7 @@ def _build_judge_pool_context(context: dict) -> dict:
     english_exposition_judges = [
         judge
         for judge in active_judge_users
-        if judge.can_evaluate_english and judge.can_evaluate_exposition
+        if judge.can_evaluate_english
     ]
 
     stats = {
@@ -8224,7 +8260,7 @@ def _build_judge_pool_context(context: dict) -> dict:
                 "expo_only": sum(1 for j in subset if j.can_evaluate_exposition and not j.can_evaluate_documentation),
                 "both": sum(1 for j in subset if j.can_evaluate_documentation and j.can_evaluate_exposition),
                 "total": len(subset),
-                "english": sum(1 for j in subset if j.can_evaluate_english and j.can_evaluate_exposition),
+                "english": sum(1 for j in subset if j.can_evaluate_english),
             }
         result["totals"] = {
             "doc_only": sum(result[c]["doc_only"] for c in cats),

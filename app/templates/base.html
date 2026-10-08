@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ExpoTécnica Regional</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ asset_version }}">
+    <script src="{{ url_for('static', filename='judge-profile.js') }}?v={{ asset_version }}" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
     {% if session.get('impersonator_admin_id') and current_user.is_authenticated and current_user.id == session.get('impersonated_user_id') %}

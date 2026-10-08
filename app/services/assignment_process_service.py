@@ -36,7 +36,7 @@ def _judge_can_cover(judge, process_type):
         return False
     if process_type == AssignmentProcess.TYPE_EXPOSITION:
         return bool(judge.can_evaluate_exposition)
-    return bool(judge.can_evaluate_english and judge.can_evaluate_exposition)
+    return bool(judge.can_evaluate_english)
 
 
 def generate_process_draft(process_type, *, deadline=None, created_by_id=None, present_only=False):
@@ -147,6 +147,13 @@ def approve_process(process, approved_by_id=None):
         raise ValueError("Solo se puede aprobar un borrador.")
     if not process.items:
         raise ValueError("El borrador no contiene nuevas asignaciones.")
+
+    # Revalidate every draft, including those generated before a profile edit.
+    for item in process.items:
+        if not item.judge.is_active_user or not _judge_can_cover(item.judge, process.process_type):
+            raise ValueError(f"{item.judge.full_name} ya no puede evaluar este proceso. Regenera el borrador.")
+        if not item.judge.can_evaluate_category(item.project.category):
+            raise ValueError(f"{item.judge.full_name} no puede evaluar la categoría del proyecto. Regenera el borrador.")
 
     present_only = SystemSetting.get_value(f'expo_present_draft_{process.id}', '0') == '1'
     if present_only:

@@ -137,7 +137,13 @@ class Judge(UserMixin, db.Model):
         return labels.get((self.department or "").strip().lower(), "Sin departamento")
 
     @property
+    def english_only(self) -> bool:
+        return bool(self.can_evaluate_english and not self.can_evaluate_exposition and not self.can_evaluate_documentation)
+
+    @property
     def evaluation_scope_label(self) -> str:
+        if self.english_only:
+            return "Solo inglés"
         if self.can_evaluate_documentation and self.can_evaluate_exposition:
             return "Documento y exposición"
         if self.can_evaluate_documentation:
@@ -164,6 +170,8 @@ class Judge(UserMixin, db.Model):
 
     @property
     def english_scope_label(self) -> str:
+        if self.english_only:
+            return "Solo inglés"
         return "Evalúa inglés" if self.can_evaluate_english else "No evalúa inglés"
 
     def can_evaluate_category(self, category: str) -> bool:

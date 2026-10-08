@@ -75,6 +75,7 @@
             </label>
             <label>Evaluaciones que puede realizar
                 <select name="judge_evaluation_scope">
+                    <option value="ingles" {% if current_user.english_only %}selected{% endif %}>Solo inglés (sin documento ni exposición en español)</option>
                     <option value="ambas" {% if current_user.can_evaluate_documentation and current_user.can_evaluate_exposition %}selected{% endif %}>Documento escrito y exposici&oacute;n oral</option>
                     <option value="documento" {% if current_user.can_evaluate_documentation and not current_user.can_evaluate_exposition %}selected{% endif %}>Solo documento escrito</option>
                     <option value="exposicion" {% if current_user.can_evaluate_exposition and not current_user.can_evaluate_documentation %}selected{% endif %}>Solo exposici&oacute;n oral</option>

@@ -122,6 +122,7 @@
         </label>
         <label>Alcance
             <select data-judge-filter-scope>
+                <option value="ingles">Solo inglés</option>
                 <option value="">Todos</option>
                 <option value="ambas">Documento y exposición</option>
                 <option value="documento">Solo documento</option>
@@ -142,6 +143,7 @@
     {% for row in judge_pool_rows %}
         {% set judge = row.judge %}
         {% set scope_key = 'ambas' if judge.can_evaluate_documentation and judge.can_evaluate_exposition else ('documento' if judge.can_evaluate_documentation else ('exposicion' if judge.can_evaluate_exposition else 'ninguno')) %}
+        {% if judge.english_only %}{% set scope_key = 'ingles' %}{% endif %}
         <article class="card judge-pool-card"
             data-judge-card
             data-search="{{ (judge.full_name ~ ' ' ~ judge.email ~ ' ' ~ (judge.job_title or '') ~ ' ' ~ (judge.institution or '') ~ ' ' ~ (judge.institution_ref.name if judge.institution_ref else '') ~ ' ' ~ (judge.identity or ''))|lower }}"
@@ -333,6 +335,7 @@
                         </label>
                         <label>Evaluaciones que puede realizar
                             <select name="judge_evaluation_scope">
+                                <option value="ingles" {% if judge.english_only %}selected{% endif %}>Solo inglés (sin documento ni exposición en español)</option>
                                 <option value="ambas" {% if judge.can_evaluate_documentation and judge.can_evaluate_exposition %}selected{% endif %}>Documento y exposición</option>
                                 <option value="documento" {% if judge.can_evaluate_documentation and not judge.can_evaluate_exposition %}selected{% endif %}>Solo documento escrito</option>
                                 <option value="exposicion" {% if judge.can_evaluate_exposition and not judge.can_evaluate_documentation %}selected{% endif %}>Solo exposición oral</option>
@@ -370,7 +373,7 @@
         <div class="grid-2"><label>Nombre completo<input type="text" name="judge_full_name" required></label><label>Correo electrónico<input type="email" name="judge_email" required></label></div>
         <div class="grid-2"><label>Cédula<input type="text" name="judge_identity"></label><label>Teléfono<input type="text" name="judge_phone"></label><label>Profesión o área técnica<input type="text" name="judge_job_title"></label><label>Institución o empresa<input type="text" name="judge_institution"></label></div>
         <label>Colegio que inscribe al juez<select name="judge_school_id" required><option value="">Seleccione un colegio...</option>{% for school in institutions %}<option value="{{ school.id }}">{{ school.name }}</option>{% endfor %}</select></label>
-        <div class="grid-2"><label>Categoría<select name="judge_category_scope"><option value="ambas">Ambas categorías</option><option value="steam">STEAM</option><option value="emprendimiento">Emprendimiento</option></select></label><label>Evaluaciones disponibles<select name="judge_evaluation_scope"><option value="ambas">Documento y exposición</option><option value="documento">Solo documento</option><option value="exposicion">Solo exposición</option></select></label></div>
+        <div class="grid-2"><label>Categoría<select name="judge_category_scope"><option value="ambas">Ambas categorías</option><option value="steam">STEAM</option><option value="emprendimiento">Emprendimiento</option></select></label><label>Evaluaciones disponibles<select name="judge_evaluation_scope"><option value="ambas">Documento y exposición</option><option value="documento">Solo documento</option><option value="exposicion">Solo exposición</option><option value="ingles">Solo inglés (sin documento ni exposición en español)</option></select></label></div>
         <label class="checkbox-card"><input type="checkbox" name="judge_can_evaluate_english" value="1"> Puede evaluar exposición en inglés</label>
         <label>Contraseña inicial <small>(opcional)</small><input type="password" name="judge_password" minlength="8"><small>Si queda vacía, el sistema genera y envía una clave temporal.</small></label>
         <div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear juez</button></div>

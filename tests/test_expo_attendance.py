@@ -106,4 +106,110 @@ class ExpoAttendanceTest(unittest.TestCase):
         client.post('/admin/recintos',data={'action':'delete','venue_id':venue_id})
         self.assertEqual([],venue_config()['venues'])
 
+    def english_only_judge(self):
+        judge = self.judges[0]
+        judge.can_evaluate_documentation = False
+        judge.can_evaluate_exposition = False
+        judge.can_evaluate_english = True
+        db.session.add(ProjectMember(project=self.project, full_name='Estudiante inglés', participates_in_english=True))
+        db.session.flush()
+        return judge
+
+    def test_english_only_automatic_process_and_presence(self):
+        judge = self.english_only_judge()
+        self.assertEqual('Solo inglés', judge.evaluation_scope_label)
+        self.assertIn(judge, exposition_judges())
+        self.present(self.judges)
+        spanish, missing = generate_process_draft(AssignmentProcess.TYPE_EXPOSITION, present_only=True)
+        self.assertFalse(missing)
+        self.assertNotIn(judge.id, {item.judge_id for item in spanish.items})
+        english, missing = generate_process_draft(AssignmentProcess.TYPE_ENGLISH, present_only=True)
+        self.assertFalse(missing)
+        self.assertEqual({judge.id}, {item.judge_id for item in english.items})
+        approve_process(english)
+        assignment = Assignment.query.filter_by(judge_id=judge.id, project_id=self.project.id).one()
+        self.assertTrue(assignment.can_evaluate_english)
+        self.assertFalse(assignment.can_evaluate_exposition)
+        self.assertFalse(assignment.can_evaluate_documentation)
+
+    def test_english_only_absence_school_and_missing_coverage(self):
+        judge = self.english_only_judge()
+        self.present(self.judges)
+        judge.attendance_confirmed = False
+        _, missing = generate_process_draft(AssignmentProcess.TYPE_ENGLISH, present_only=True)
+        self.assertTrue(missing)
+        judge.attendance_confirmed = True
+        judge.institution_id = self.project.institution_id
+        _, missing = generate_process_draft(AssignmentProcess.TYPE_ENGLISH, present_only=True)
+        self.assertTrue(missing)
+        judge.institution_id = self.judges[1].institution_id
+        self.present(self.judges[1:])
+        _, missing = generate_process_draft(AssignmentProcess.TYPE_ENGLISH, present_only=True)
+        self.assertTrue(missing)
+
+    def test_profile_change_blocks_old_draft_even_without_presence_filter(self):
+        process, _ = generate_process_draft(AssignmentProcess.TYPE_EXPOSITION)
+        judge = process.items[0].judge
+        judge.can_evaluate_documentation = False
+        judge.can_evaluate_exposition = False
+        judge.can_evaluate_english = True
+        with self.assertRaisesRegex(ValueError, 'ya no puede evaluar'):
+            approve_process(process)
+
+    def test_legacy_automatic_assignment_keeps_english_separate(self):
+        from app.controllers.admin_controller import _auto_assign_judges, _trim_excess_draft_scopes
+        judge = self.english_only_judge()
+        created, _ = _auto_assign_judges(3, False)
+        self.assertGreater(created, 0)
+        assignment = Assignment.query.filter_by(judge_id=judge.id, project_id=self.project.id).one()
+        self.assertTrue(assignment.can_evaluate_english)
+        self.assertFalse(assignment.can_evaluate_exposition)
+        self.assertFalse(assignment.can_evaluate_documentation)
+        _trim_excess_draft_scopes([assignment]); db.session.flush()
+        self.assertIsNotNone(db.session.get(Assignment, assignment.id))
+
+    def test_manual_assignment_enforces_profile_and_allows_english(self):
+        from app.controllers.admin_controller import _assignment_compatibility_error, _assignment_scope_valid, _apply_assignment_scope, _judge_scope_from_value
+        from app.services.evaluation_service import assignment_allows_evaluation_type, ENGLISH_EVAL_TYPE_CODE
+        from types import SimpleNamespace
+        judge = self.english_only_judge()
+        self.assertEqual((False, False, 'Solo inglés'), _judge_scope_from_value('Solo inglés'))
+        with self.app.test_request_context('/', method='POST', data={'assignment_scope': 'ingles'}):
+            self.assertTrue(_assignment_scope_valid(False, False))
+            self.assertFalse(_assignment_compatibility_error(judge, self.project, False, False))
+            self.assertTrue(_assignment_compatibility_error(judge, self.project, False, True))
+            self.assertTrue(_assignment_compatibility_error(judge, self.project, True, False))
+            assignment = Assignment(judge=judge, project=self.project)
+            _apply_assignment_scope(assignment, False, False)
+            self.assertTrue(assignment_allows_evaluation_type(assignment, SimpleNamespace(code=ENGLISH_EVAL_TYPE_CODE)))
+            # Even an old assignment with Spanish permissions must not bypass the new profile.
+            assignment.can_evaluate_exposition = True
+            assignment.can_evaluate_documentation = True
+            self.assertFalse(assignment_allows_evaluation_type(assignment, SimpleNamespace(code='exposicion')))
+            self.assertFalse(assignment_allows_evaluation_type(assignment, SimpleNamespace(code='documentacion')))
+            self.assertFalse(assignment_allows_evaluation_type(assignment, SimpleNamespace(code='rubrica_general')))
+
+    def test_admin_can_edit_existing_judge_to_english_only_without_losing_history(self):
+        from flask_login import login_user
+        from app.extensions import login_manager
+        from app.controllers.admin_controller import _handle_action
+        login_manager.init_app(self.app)
+        self.app.secret_key = 'test'
+        judge = self.judges[0]
+        admin = Judge(full_name='Administrador', email='admin@test', password_hash='test', role=Judge.ROLE_SUPERADMIN)
+        old = Assignment(judge=judge, project=self.project, can_evaluate_exposition=True, status=Assignment.STATUS_CONFIRMED)
+        evaluation = Evaluation(judge=judge, project=self.project, evaluation_type='expo', percentage=80)
+        db.session.add_all([admin, old, evaluation]); db.session.commit()
+        with self.app.test_request_context('/', method='POST', data={
+            'judge_id': judge.id, 'judge_full_name': judge.full_name, 'judge_email': judge.email,
+            'judge_role': Judge.ROLE_JUDGE, 'judge_school_id': judge.institution_id,
+            'judge_evaluation_scope': 'ingles', 'judge_is_active_user': '1',
+        }):
+            login_user(admin)
+            _handle_action('pool_update_judge')
+            self.assertTrue(judge.english_only)
+            self.assertEqual(1, Assignment.query.filter_by(judge_id=judge.id).count())
+            self.assertEqual(80, evaluation.percentage)
+            self.assertTrue(any('incompatible' in msg for _, msg in __import__('flask').get_flashed_messages(with_categories=True)))
+
 if __name__ == '__main__': unittest.main()

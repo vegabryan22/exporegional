@@ -2246,7 +2246,11 @@ def judge_attendance_confirm(token: str):
 
         if category_scope not in {"steam", "emprendimiento", "ambas"}:
             category_scope = "ambas"
-        if evaluation_scope == "documento":
+        if evaluation_scope == "ingles":
+            can_evaluate_documentation = False
+            can_evaluate_exposition = False
+            can_evaluate_english = True
+        elif evaluation_scope == "documento":
             can_evaluate_documentation = True
             can_evaluate_exposition = False
         elif evaluation_scope == "exposicion":

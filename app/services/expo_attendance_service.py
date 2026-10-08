@@ -4,6 +4,7 @@ from io import BytesIO
 from pathlib import Path
 from datetime import datetime, timezone
 from flask import current_app, render_template, url_for
+from sqlalchemy import or_ as db_or
 from app.models.judge import Judge
 from app.models.campaign import Campaign
 from app.models.system_setting import SystemSetting
@@ -19,7 +20,8 @@ def present_judge_ids():
     return {int(key) for key, value in presence_records().items() if value.get('present')}
 
 def exposition_judges():
-    return Judge.query.filter(Judge.role == Judge.ROLE_JUDGE, Judge.is_active_user.is_(True), Judge.can_evaluate_exposition.is_(True)).order_by(Judge.full_name).all()
+    return Judge.query.filter(Judge.role == Judge.ROLE_JUDGE, Judge.is_active_user.is_(True),
+                              db_or(Judge.can_evaluate_exposition.is_(True), Judge.can_evaluate_english.is_(True))).order_by(Judge.full_name).all()
 
 def invitation_pdf(judge):
     from pypdf import PdfReader, PdfWriter

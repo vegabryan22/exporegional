@@ -1,12 +1,15 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='expo-venues.css') }}?v={{ asset_version }}">
 <section class="card admin-section">
   <div class="page-head"><div><p class="maintenance-kicker">Operación del evento</p><h3>Recintos y responsables</h3><p>Administra recintos, responsables y ubicación de proyectos.</p></div><div class="actions-row"><button type="button" data-dialog-open="create-venue">Nuevo recinto</button><a class="outline-btn" href="{{ url_for('public.expo_progress') }}" target="_blank">Ver avance público</a></div></div>
-  <div class="grid-2">{% for venue in venues %}
-    <article class="card"><h4>{{ venue.name }}</h4><p><strong>Responsable:</strong> {{ venue.responsible or 'Pendiente de asignar' }}</p>
-      {% set count = locations.values()|select('equalto',venue.id)|list|length %}<p>{{ count }} proyecto(s) asignados</p>
-      <div class="actions-row"><button type="button" class="outline-btn" data-dialog-open="edit-venue-{{ venue.id }}">Editar recinto</button>
-      <form method="post" onsubmit="return confirm('¿Eliminar este recinto? Esta acción no se puede deshacer.')"><input type="hidden" name="action" value="delete"><input type="hidden" name="venue_id" value="{{ venue.id }}"><button type="submit" class="danger-btn" {% if count %}disabled title="Reubica los proyectos antes de eliminar el recinto"{% endif %}>Eliminar</button></form></div>
+  <div class="venue-grid">{% for venue in venues %}
+    {% set count = locations.values()|select('equalto',venue.id)|list|length %}
+    <article class="venue-card">
+      <div class="venue-card-heading"><h4>{{ venue.name }}</h4><span class="venue-count {% if not count %}venue-count-empty{% endif %}">{{ count }} {{ 'proyecto' if count == 1 else 'proyectos' }}</span></div>
+      <div class="venue-responsible"><span class="venue-label">Responsable del recinto</span><p class="{% if not venue.responsible %}venue-unassigned{% endif %}">{{ venue.responsible or 'Pendiente de asignar' }}</p></div>
+      <div class="venue-actions"><button type="button" class="outline-btn" data-no-iconify data-dialog-open="edit-venue-{{ venue.id }}">Editar</button>
+      <form method="post" onsubmit="return confirm('¿Eliminar este recinto? Esta acción no se puede deshacer.')"><input type="hidden" name="action" value="delete"><input type="hidden" name="venue_id" value="{{ venue.id }}"><button type="submit" class="danger-btn" data-no-iconify {% if count %}disabled title="Reubica los proyectos antes de eliminar el recinto"{% endif %}>Eliminar</button></form></div>
     </article>
   {% else %}<p>No hay recintos. Pulsa “Nuevo recinto” para registrar el primero.</p>{% endfor %}</div>
 </section>

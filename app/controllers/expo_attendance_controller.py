@@ -16,11 +16,31 @@ def attendance_page():
     judges = exposition_judges()
     if request.method == 'POST':
         action = request.form.get('action')
-        if action == 'presence':
+        if action == 'response':
+            judge = next((j for j in judges if j.id == request.form.get('judge_id',type=int)),None)
+            if not judge: abort(404)
+            answer = request.form.get('attendance')
+            notes = request.form.get('notes','').strip()
+            if answer not in {'yes','no','pending'} or len(notes)>500:
+                flash('Selecciona una respuesta válida y una observación de hasta 500 caracteres.','error')
+                return redirect(url_for('admin.expo_attendance'))
+            before = judge.attendance_status_label
+            judge.attendance_confirmed = True if answer == 'yes' else False if answer == 'no' else None
+            judge.attendance_responded_at = datetime.utcnow() if answer != 'pending' else None
+            if answer == 'no':
+                records = presence_records()
+                records[str(judge.id)] = {'present':False,'at':datetime.now(timezone.utc).isoformat(),'by':current_user.id}
+                SystemSetting.set_value(presence_key(),json.dumps(records))
+            log_event('admin.judge.attendance.response','judge',judge.id,f'{before} -> {judge.attendance_status_label}; registrado por {current_user.full_name}; observación: {notes or "Sin observación"}')
+            db.session.commit(); flash('Respuesta registrada. La cuenta y las evaluaciones anteriores se conservan.','success')
+        elif action == 'presence':
             judge = next((j for j in judges if j.id == request.form.get('judge_id',type=int)),None)
             if not judge: abort(404)
             records = presence_records()
             present = request.form.get('present') == '1'
+            if present and judge.attendance_confirmed is False:
+                flash('El juez está marcado como No asiste. Corrige su respuesta antes de registrar la llegada.','error')
+                return redirect(url_for('admin.expo_attendance'))
             records[str(judge.id)] = {'present':present,'at':datetime.now(timezone.utc).isoformat(),'by':current_user.id}
             SystemSetting.set_value(presence_key(),json.dumps(records))
             log_event('admin.judge.expo.checkin','judge',judge.id,f'Presencia en recinto: {present}')

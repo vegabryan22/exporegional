@@ -32,6 +32,8 @@ def _assignment_covers(assignment, process_type):
 def _judge_can_cover(judge, process_type):
     if process_type == AssignmentProcess.TYPE_DOCUMENTATION:
         return bool(judge.can_evaluate_documentation)
+    if judge.attendance_confirmed is False:
+        return False
     if process_type == AssignmentProcess.TYPE_EXPOSITION:
         return bool(judge.can_evaluate_exposition)
     return bool(judge.can_evaluate_english and judge.can_evaluate_exposition)
@@ -100,6 +102,7 @@ def generate_process_draft(process_type, *, deadline=None, created_by_id=None, p
             and project.institution_id
             and assignment.judge.institution_id != project.institution_id
             and _assignment_covers(assignment, process_type)
+            and _judge_can_cover(assignment.judge, process_type)
             and (not present_only or assignment.judge_id in present_ids)
             and (not present_only or assignment.judge.is_active_user and _judge_can_cover(assignment.judge,process_type) and assignment.judge.can_evaluate_category(project.category))
         ]
@@ -171,6 +174,8 @@ def approve_process(process, approved_by_id=None):
     for item in process.items:
         judge = item.judge
         project = item.project
+        if process.process_type != AssignmentProcess.TYPE_DOCUMENTATION and judge.attendance_confirmed is False:
+            raise ValueError(f'{judge.full_name} indicó que no asiste. Genera nuevamente el borrador.')
         if not judge.institution_id or not project.institution_id:
             raise ValueError(f"No se puede aprobar: {judge.full_name} o el proyecto no tiene colegio vinculado.")
         if judge.institution_id == project.institution_id:

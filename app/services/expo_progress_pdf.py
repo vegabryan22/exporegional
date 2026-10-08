@@ -53,7 +53,9 @@ def build_progress_pdf(data, filters):
     category_names.setdefault('emprendimiento','Emprendimiento')
     for group, rows in groups:
         done = sum(r['status']=='complete' for r in rows)
-        heading = Table([[p('RECINTO  ' + group['name'],'Venue'),p(f'{len(rows)} proyectos · {done} completos','Secondary')]],colWidths=[doc.width*.65,doc.width*.35])
+        venue_heading = [p('RECINTO  ' + group['name'],'Venue')]
+        if group['id'] != 'unassigned': venue_heading.append(p('Responsable: ' + (group.get('responsible') or 'Pendiente de asignar'),'Secondary'))
+        heading = Table([[venue_heading,p(f'{len(rows)} proyectos · {done} completos','Secondary')]],colWidths=[doc.width*.65,doc.width*.35])
         heading.keepWithNext=True
         heading.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,-1),colors.HexColor('#dff0f5')),('LINEBEFORE',(0,0),(0,0),4,colors.HexColor('#2188a7')),('TOPPADDING',(0,0),(-1,-1),10),('BOTTOMPADDING',(0,0),(-1,-1),10),('LEFTPADDING',(0,0),(-1,-1),12)]))
         table_rows = [[p(h,'TableHead') for h in ['Proyecto / colegio','Exposición','Inglés','Estado']]]

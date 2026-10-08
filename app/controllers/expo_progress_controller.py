@@ -4,7 +4,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, m
 from flask_login import current_user
 from app.extensions import db
 from app.models.project import Project
-from app.services.expo_progress_service import venue_config, public_progress, VENUE_SETTING
+from app.services.expo_progress_service import venue_config, public_progress, VENUE_SETTING, default_venue_responsible
 from app.models.system_setting import SystemSetting
 from app.services.audit_service import log_event
 from app.controllers.admin_controller import admin_module_required, _base_context
@@ -44,7 +44,11 @@ def venues_page():
             if not name or len(name) > 120 or any(v["name"].casefold() == name.casefold() for v in config["venues"]):
                 flash("Indica un nombre único de recinto, de hasta 120 caracteres.", "error")
                 return redirect(url_for("admin.venues_page"))
-            config["venues"].append({"id": uuid.uuid4().hex, "name": name})
+            responsible = request.form.get('responsible','').strip() or default_venue_responsible(name)
+            if len(responsible)>120:
+                flash('El nombre del responsable debe tener hasta 120 caracteres.','error')
+                return redirect(url_for('admin.venues_page'))
+            config["venues"].append({"id": uuid.uuid4().hex, "name": name, "responsible":responsible})
         elif action == "save":
             names = [request.form.get("name_" + v["id"], v["name"]).strip() for v in config["venues"]]
             if any(not n or len(n) > 120 for n in names) or len({n.casefold() for n in names}) != len(names):
@@ -52,6 +56,11 @@ def venues_page():
                 return redirect(url_for("admin.venues_page"))
             for venue, name in zip(config["venues"], names):
                 venue["name"] = name
+                responsible = request.form.get('responsible_' + venue['id'],venue.get('responsible','')).strip()
+                if len(responsible)>120:
+                    flash('El nombre del responsable debe tener hasta 120 caracteres.','error')
+                    return redirect(url_for('admin.venues_page'))
+                venue['responsible'] = responsible
             allowed = {v["id"] for v in config["venues"]}
             for project in projects:
                 venue_id = request.form.get("venue_" + str(project.id), "")

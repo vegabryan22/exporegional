@@ -24,6 +24,7 @@
       visible += rows.length;
       const details = element('details',undefined,'progress-recinto'); details.dataset.id = group.id; details.open = open.has(group.id) ? open.get(group.id) : true;
       const summary = element('summary',group.name); summary.append(element('small',`${group.complete}/${group.projects.length} proyectos completos · ${rows.length} visibles`)); details.append(summary);
+      if(group.id !== 'unassigned') summary.append(element('span','Responsable: ' + (group.responsible || 'Pendiente de asignar'),'progress-responsible'));
       const wrap = element('div',undefined,'table-wrap'), table = element('table'), head = element('thead'), heading = element('tr');
       ['Proyecto','Colegio','Exposición','Inglés','Estado'].forEach(text => heading.append(element('th',text))); head.append(heading); table.append(head);
       const body = element('tbody');

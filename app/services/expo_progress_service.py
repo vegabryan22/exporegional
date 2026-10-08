@@ -1,5 +1,6 @@
 """Public, score-free event progress and persistent venue configuration."""
 import json
+import re
 from datetime import datetime, timezone
 from sqlalchemy.orm import joinedload
 from app.models.project import Project
@@ -9,11 +10,18 @@ from app.models.system_setting import SystemSetting
 from app.services.evaluation_service import ENGLISH_EVAL_TYPE_CODE, infer_evaluation_type_kind
 
 VENUE_SETTING = "expo_venues"
+VENUE_RESPONSIBLES = {4:'Carlos Ticas',5:'Cinthia Díaz',6:'Yolenny Fonseca',7:'Anaís Cruz',8:'Maryuri Fernández',9:'Katherine Solano',10:'Manuel Rivera',11:'Yamileth Sánchez',13:'Gabriela Barquero',14:'Víctor Flores Vargas',15:'Luis Diego Arce'}
+
+def default_venue_responsible(name):
+    match = re.fullmatch(r'(?:P\d+\s*-\s*)?A\s*0*(\d+)',name.strip(),re.IGNORECASE)
+    return VENUE_RESPONSIBLES.get(int(match.group(1)), '') if match else ''
 
 def venue_config():
     try:
         value = json.loads(SystemSetting.get_value(VENUE_SETTING, "{}"))
         if isinstance(value, dict) and isinstance(value.get("venues", []), list) and isinstance(value.get("projects", {}), dict):
+            for venue in value.get('venues',[]):
+                venue.setdefault('responsible',default_venue_responsible(venue['name']))
             return {"venues": value.get("venues", []), "projects": value.get("projects", {})}
     except (ValueError, TypeError):
         pass
@@ -55,7 +63,7 @@ def public_progress(*, include_pending_judges=False):
     projects = Project.query.options(joinedload(Project.members), joinedload(Project.evaluations), joinedload(Project.institution), joinedload(Project.assignments).joinedload(Assignment.judge)).filter(
         Project.is_active.is_(True), Project.regional_status.in_([Project.STATUS_APPROVED, Project.STATUS_EVALUATED, Project.STATUS_REGIONAL_WINNER])
     ).order_by(Project.title).all()
-    groups = [{"id": v["id"], "name": v["name"], "projects": []} for v in config["venues"]]
+    groups = [{"id": v["id"], "name": v["name"], "responsible":v.get('responsible',''), "projects": []} for v in config["venues"]]
     groups.append({"id": "unassigned", "name": "Sin recinto asignado", "projects": []})
     by_id = {v["id"]: v for v in groups}
     rows = []

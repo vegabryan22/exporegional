@@ -1,6 +1,7 @@
 import json
 import uuid
-from flask import render_template, request, redirect, url_for, flash, jsonify, make_response, send_file
+from flask import render_template, request, redirect, url_for, flash, jsonify, make_response, send_file, abort, session
+import secrets
 from flask_login import current_user
 from app.extensions import db
 from app.models.project import Project
@@ -8,6 +9,37 @@ from app.services.expo_progress_service import venue_config, public_progress, VE
 from app.models.system_setting import SystemSetting
 from app.services.audit_service import log_event
 from app.controllers.admin_controller import admin_module_required, _base_context
+from app.services.venue_access_service import resolve_access, scoped_progress, access_url, change_access
+from urllib.parse import urlencode
+
+
+def venue_access(token, output='page'):
+    venue = resolve_access(token)
+    data = scoped_progress(venue)
+    if output == 'data':
+        response = jsonify(data)
+    elif output == 'pdf':
+        from app.services.expo_progress_pdf import build_progress_pdf
+        filters = {'q': request.args.get('q', '').strip(), 'category': request.args.get('category', ''), 'pending': request.args.get('pending') == '1'}
+        response = send_file(build_progress_pdf(data, filters), mimetype='application/pdf', as_attachment=True, download_name='avance_recinto.pdf')
+    else:
+        response = make_response(render_template('public/expo_progress.html', progress=data, show_pending_judges=True, venue_access=venue,
+            progress_data_url=url_for('public.venue_access_data', token=token), progress_pdf_url=url_for('public.venue_access_pdf', token=token)))
+    response.headers['Cache-Control'] = 'no-store, private'
+    response.headers['Referrer-Policy'] = 'no-referrer'
+    response.headers['X-Robots-Tag'] = 'noindex, nofollow, noarchive'
+    return response
+
+
+@admin_module_required('assignments')
+def venue_access_card(venue_id):
+    from app.services.venue_access_pdf import build_access_card
+    venue = next((v for v in venue_config()['venues'] if v['id'] == venue_id), None)
+    if not venue or not venue.get('access_nonce'):
+        abort(404)
+    response = send_file(build_access_card(venue, access_url(venue)), mimetype='application/pdf', as_attachment=True, download_name='acceso_recinto.pdf')
+    response.headers['Cache-Control'] = 'no-store, private'
+    return response
 
 def progress_pdf():
     from app.services.expo_progress_pdf import build_progress_pdf
@@ -39,6 +71,11 @@ def venues_page():
     projects = Project.query.filter(Project.is_active.is_(True)).order_by(Project.title).all()
     if request.method == "POST":
         action = request.form.get("action")
+        if action in {'access_enable', 'access_rotate', 'access_revoke'}:
+            supplied = request.form.get('access_csrf', '')
+            expected = session.get('venue_access_csrf', '')
+            if not expected or not secrets.compare_digest(supplied, expected):
+                abort(400)
         if action == "create":
             name = request.form.get("name", "").strip()
             if not name or len(name) > 120 or any(v["name"].casefold() == name.casefold() for v in config["venues"]):
@@ -49,13 +86,16 @@ def venues_page():
                 flash('El nombre del responsable debe tener hasta 120 caracteres.','error')
                 return redirect(url_for('admin.venues_page'))
             config["venues"].append({"id": uuid.uuid4().hex, "name": name, "responsible":responsible})
-        elif action in {'update','delete'}:
+        elif action in {'update','delete','access_enable','access_rotate','access_revoke'}:
             venue_id = request.form.get('venue_id','')
             venue = next((v for v in config['venues'] if v['id'] == venue_id),None)
             if not venue:
                 flash('Recinto no encontrado.','error')
                 return redirect(url_for('admin.venues_page'))
-            if action == 'delete':
+            if action.startswith('access_'):
+                change_access(venue, action)
+                log_event('admin.expo.venue.' + action, 'setting', detail=f"Acceso de consulta: {venue['name']}")
+            elif action == 'delete':
                 if venue_id in config['projects'].values():
                     flash('No se puede eliminar un recinto con proyectos asignados. Reubica sus proyectos y guarda las ubicaciones primero.','error')
                     return redirect(url_for('admin.venues_page'))
@@ -96,6 +136,16 @@ def venues_page():
         SystemSetting.set_value(VENUE_SETTING, json.dumps(config, ensure_ascii=False))
         log_event("admin.expo.venues.update", "setting", detail=f"Recintos y ubicaciones actualizados: {len(config['venues'])} recintos.")
         db.session.commit()
-        flash("Recintos guardados. La vista pública ya refleja las ubicaciones.", "success")
+        if action.startswith('access_'):
+            flash('Acceso revocado. El enlace y QR anteriores ya no funcionan.' if action == 'access_revoke' else 'Acceso de consulta listo. Puedes compartir el enlace o descargar la ficha QR.', 'success')
+        else:
+            flash("Recintos guardados. La vista pública ya refleja las ubicaciones.", "success")
         return redirect(url_for("admin.venues_page"))
-    return render_template("admin/expo_venues.html", **_base_context("venues"), venues=config["venues"], locations=config["projects"], venue_projects=projects, venue_school_groups=group_venue_projects(projects))
+    session.setdefault('venue_access_csrf', secrets.token_urlsafe(32))
+    links = {}
+    for venue in config['venues']:
+        link = access_url(venue)
+        if link:
+            message = f"Hola {venue.get('responsible') or 'compañero/a'}, este es el acceso de consulta del recinto {venue['name']} de ExpoTécnica Regional. Aquí puedes ver los proyectos y jueces pendientes. No necesitas usuario. No compartas este enlace fuera del equipo organizador.\n{link}"
+            links[venue['id']] = {'url': link, 'whatsapp': 'https://wa.me/?' + urlencode({'text': message})}
+    return render_template("admin/expo_venues.html", **_base_context("venues"), venues=config["venues"], venue_access_links=links, locations=config["projects"], venue_projects=projects, venue_school_groups=group_venue_projects(projects))

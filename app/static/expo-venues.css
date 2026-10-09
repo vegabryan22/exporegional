@@ -103,3 +103,9 @@ dialog.maintenance-dialog.venue-manager { width: min(1100px, calc(100vw - 32px))
   .venue-grid { grid-template-columns: 1fr; gap: 12px; }
   .venue-card { padding: 16px; }
 }
+.venue-access-panel{border-top:1px solid #dce7ed;margin-top:16px;padding-top:16px;min-width:0}
+.venue-access-panel p{font-size:.85rem;margin:8px 0;color:#526d7b}
+.venue-access-panel input{width:100%;min-width:0;box-sizing:border-box;font-size:.8rem}
+.venue-access-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.venue-access-actions form{margin:0}
+.venue-access-actions .outline-btn,.venue-access-actions button{font-size:.8rem;padding:9px 12px}

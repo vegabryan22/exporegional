@@ -8,6 +8,7 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 admin_bp.add_url_rule('/expo/jueces',endpoint='expo_attendance',view_func=expo_attendance_controller.attendance_page,methods=['GET','POST'])
 admin_bp.add_url_rule('/expo/jueces/<int:judge_id>/invitacion',endpoint='expo_invitation_preview',view_func=expo_attendance_controller.preview)
 admin_bp.add_url_rule("/recintos", endpoint="venues_page", view_func=expo_progress_controller.venues_page, methods=["GET", "POST"])
+admin_bp.add_url_rule('/recintos/<venue_id>/acceso.pdf', endpoint='venue_access_card', view_func=expo_progress_controller.venue_access_card)
 
 admin_bp.add_url_rule("/action", view_func=admin_controller.perform_action, methods=["POST"])
 admin_bp.add_url_rule("/panel", view_func=admin_controller.overview, methods=["GET"])

@@ -13,6 +13,28 @@
       <div class="venue-responsible"><span class="venue-label">Responsable del recinto</span><p class="{% if not venue.responsible %}venue-unassigned{% endif %}">{{ venue.responsible or 'Pendiente de asignar' }}</p></div>
       <div class="venue-actions"><button type="button" class="outline-btn" data-no-iconify data-dialog-open="edit-venue-{{ venue.id }}">Editar</button>
       <form method="post" onsubmit="return confirm('¿Eliminar este recinto? Esta acción no se puede deshacer.')"><input type="hidden" name="action" value="delete"><input type="hidden" name="venue_id" value="{{ venue.id }}"><button type="submit" class="danger-btn" data-no-iconify {% if count %}disabled title="Reubica los proyectos antes de eliminar el recinto"{% endif %}>Eliminar</button></form></div>
+      <div class="venue-access-panel">
+      {% set access = venue_access_links.get(venue.id) %}
+      <span class="venue-label">Acceso rápido del responsable</span>
+      {% if access %}
+        <p>Activo · Solo consulta de este recinto</p>
+        <input aria-label="Enlace privado de {{ venue.name }}" readonly value="{{ access.url }}" onclick="this.select()">
+        <div class="venue-access-actions">
+          <button type="button" class="outline-btn" data-copy-venue-link="{{ access.url }}" data-no-iconify>Copiar enlace</button>
+          <a class="outline-btn" href="{{ access.whatsapp }}" target="_blank" rel="noopener noreferrer" data-no-iconify>WhatsApp</a>
+          <a class="outline-btn" href="{{ url_for('admin.venue_access_card', venue_id=venue.id) }}" data-no-iconify>Ficha QR · PDF</a>
+          <a href="{{ access.url }}" target="_blank" rel="noopener noreferrer" data-no-iconify>Vista previa ↗</a>
+        </div>
+        <div class="venue-access-actions">
+          {% for action,label in [('access_rotate','Reemplazar enlace'),('access_revoke','Revocar acceso')] %}
+          <form method="post" onsubmit="return confirm('El enlace y el QR anteriores dejarán de funcionar. ¿Continuar?')"><input type="hidden" name="access_csrf" value="{{ session.venue_access_csrf }}"><input type="hidden" name="action" value="{{ action }}"><input type="hidden" name="venue_id" value="{{ venue.id }}"><button class="ghost-btn" type="submit" data-no-iconify>{{ label }}</button></form>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p>Sin enlace habilitado. No requiere usuario.</p>
+        <form method="post"><input type="hidden" name="access_csrf" value="{{ session.venue_access_csrf }}"><input type="hidden" name="action" value="access_enable"><input type="hidden" name="venue_id" value="{{ venue.id }}"><button type="submit" data-no-iconify>Habilitar acceso</button></form>
+      {% endif %}
+      </div>
     </article>
   {% else %}<p>No hay recintos. Pulsa “Nuevo recinto” para registrar el primero.</p>{% endfor %}</div>
 </div></dialog>
@@ -45,6 +67,12 @@
 </form></section>
 <script src="{{ url_for('static', filename='expo-venue-editor.js') }}?v={{ asset_version }}" defer></script>
 <script>
+  document.querySelectorAll('[data-copy-venue-link]').forEach(function (button) {
+    button.addEventListener('click', async function () {
+      try { await navigator.clipboard.writeText(button.dataset.copyVenueLink); button.textContent = 'Enlace copiado'; }
+      catch (_) { const input = button.closest('.venue-access-panel').querySelector('input[readonly]'); input.focus(); input.select(); button.textContent = 'Seleccionado: copia el enlace'; }
+    });
+  });
   document.querySelectorAll('#create-venue, dialog[id^="edit-venue-"]').forEach(function (dialog) {
     dialog.dataset.parentDialog = 'manage-venues';
   });

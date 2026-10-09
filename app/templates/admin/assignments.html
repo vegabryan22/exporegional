@@ -1,7 +1,6 @@
 {% extends "admin/layout.html" %}
 {% block admin_content %}
-<section class="card admin-section"><h3>Distribución del día de la Expo</h3><p>Registra la llegada de los jueces y genera un borrador con quienes están presentes. Revisa y aprueba el borrador en el proceso correspondiente de abajo.</p><a class="outline-btn" href="{{ url_for('admin.expo_attendance') }}">Invitaciones y llegada de jueces</a><div class="actions-row">{% for code,label in [('exposition','Exposición'),('english','Inglés')] %}<form method="post" action="{{ action_url }}"><input type="hidden" name="action" value="generate_assignment_process"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="process_type" value="{{ code }}"><input type="hidden" name="present_only" value="1"><button type="submit">Generar {{ label }} con jueces presentes</button></form>{% endfor %}</div></section>
-<div class="actions-row"><a class="action-btn outline-btn" href="{{ url_for('admin.venues_page') }}">Gestionar recintos</a><a class="action-btn outline-btn" href="{{ url_for('public.expo_progress') }}" target="_blank">Ver avance público</a></div>
+<link rel="stylesheet" href="{{ url_for('static', filename='assignments-event.css') }}?v={{ asset_version }}">
 {% set active_projects = projects|selectattr('is_active')|list %}
 {% set active_project_ids = active_projects|map(attribute='id')|list %}
 {% set confirmed_assignments = assignments|selectattr('status', 'equalto', 'confirmed')|selectattr('project_id', 'in', active_project_ids)|list %}
@@ -18,6 +17,24 @@
             {% if draft_assignments %}<span class="tag warning">{{ draft_assignments|length }} borrador</span>{% endif %}
             <span class="tag neutral">{{ active_projects|length }} proyectos activos</span>
         </div>
+        <section class="assignment-event-bar" aria-labelledby="assignment-event-title">
+            <div class="assignment-event-heading">
+                <div><h4 id="assignment-event-title">Distribución del día de la Expo</h4><p>Solo jueces presentes. Genera un borrador y revísalo antes de aprobar.</p></div>
+                <nav class="assignment-event-links" aria-label="Seguimiento del evento">
+                    <a data-no-iconify href="{{ url_for('admin.venues_page') }}">Recintos y responsables</a>
+                    <a data-no-iconify href="{{ url_for('public.expo_progress') }}" target="_blank" rel="noopener">Avance en vivo ↗</a>
+                </nav>
+            </div>
+            <div class="assignment-event-actions">
+                <a class="assignment-arrival-link" data-no-iconify href="{{ url_for('admin.expo_attendance') }}"><svg aria-hidden="true"><use href="#ico-users"></use></svg>Invitaciones y llegada de jueces</a>
+                {% for code,label in [('exposition','Exposición'),('english','Inglés')] %}
+                <form method="post" action="{{ action_url }}">
+                    <input type="hidden" name="action" value="generate_assignment_process"><input type="hidden" name="next" value="{{ next_url }}"><input type="hidden" name="process_type" value="{{ code }}"><input type="hidden" name="present_only" value="1">
+                    <button type="submit" data-no-iconify><svg aria-hidden="true"><use href="#ico-settings"></use></svg>Generar borrador de {{ label|lower }}</button>
+                </form>
+                {% endfor %}
+            </div>
+        </section>
         <div class="assignments-action-strip">
             <section class="assignments-tool-card">
                 <div class="assignments-tool-head">

@@ -1,0 +1,25 @@
+.assignment-event-bar { padding: 16px 18px; border: 1px solid #cde2ea; border-left: 4px solid #27849b; border-radius: 12px; background: #f5fafc; }
+.assignment-event-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 14px; }
+.assignment-event-heading h4 { margin: 0 0 4px; color: #173f55; font-size: 1rem; }
+.assignment-event-heading p { margin: 0; color: #6b8191; font-size: .8rem; line-height: 1.5; }
+.assignment-event-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.assignment-event-links a { color: #286b83; font-size: .78rem; font-weight: 650; text-decoration: none; }
+.assignment-event-links a:hover { text-decoration: underline; }
+.assignment-event-actions { display: flex; align-items: stretch; flex-wrap: wrap; gap: 10px; }
+.assignment-event-actions form { display: flex; margin: 0; padding: 0; width: auto; }
+.assignment-event-actions button, .assignment-event-actions a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; margin: 0; padding: 10px 14px; border: 1px solid #c2dbe5; border-radius: 8px; background: #fff; color: #245b73; font-size: .8rem; font-weight: 700; text-decoration: none; box-shadow: none; line-height: 1.3; }
+.assignment-event-actions .assignment-arrival-link { color: #fff; background: #17657d; border-color: #17657d; }
+.assignment-event-actions svg { width: 16px; height: 16px; flex-shrink: 0; fill: currentColor; }
+.assignment-event-actions button:hover { background: #eaf4f8; border-color: #7bafc2; }
+.assignment-event-actions .assignment-arrival-link:hover { background: #14566b; }
+.assignment-event-actions :is(button,a):focus-visible { outline: 3px solid #70bcd4; outline-offset: 3px; }
+@media (max-width: 900px) {
+  .assignment-event-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
+}
+@media (max-width: 600px) {
+  .assignment-event-bar { padding: 14px; }
+  .assignment-event-actions { display: grid; grid-template-columns: minmax(0,1fr); }
+  .assignment-event-actions form, .assignment-event-actions button { width: 100%; }
+  .assignment-event-actions button, .assignment-event-actions a { white-space: normal; text-align: center; min-height: 46px; }
+  .assignment-event-links { gap: 10px 16px; }
+}

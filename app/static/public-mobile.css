@@ -1,0 +1,75 @@
+/* Prevent intrinsic carousel/button widths from enlarging the public home. */
+.regional-public-home .regional-hero-copy,
+.regional-public-home .regional-hero-schools,
+.regional-public-home .regional-shields-viewport { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.regional-public-home .regional-hero-actions > a { box-sizing: border-box; min-width: 0; max-width: 100%; white-space: normal; }
+.public-project-picker { display: none; }
+@media(max-width:900px) {
+  .regional-public-home .regional-hero { grid-template-columns: minmax(0,1fr); }
+  .regional-public-home .regional-heading-row > div { min-width: 0; max-width: 100%; }
+  .regional-public-home .regional-progress-summary span { min-width: 0; max-width: 100%; white-space: normal; flex-wrap: wrap; }
+}
+@media(max-width:760px) {
+  .regional-public-home .regional-hero-copy { padding: 24px 20px; }
+  .regional-public-home .regional-hero-brand img { max-width: 100%; }
+  .regional-public-home .regional-hero-lead { font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+  .regional-public-home .regional-hero-actions { display: grid; grid-template-columns: minmax(0,1fr); }
+  .regional-public-home .regional-hero-actions > a { width: 100%; min-height: 48px; text-align: left; justify-content: start; }
+  .regional-public-home .regional-enrollment-action { justify-items: start; }
+  .regional-public-home .regional-enrollment-action strong { font-size: 15px; }
+  .regional-public-home .regional-hero-schools { padding: 0 20px 24px; }
+  .regional-public-home .regional-shields-viewport { overflow-x: auto; mask-image: none; scroll-snap-type: x proximity; scrollbar-width: thin; }
+  .regional-public-home .regional-shields-track { animation: none; }
+  .regional-public-home .regional-shields-group[aria-hidden="true"] { display: none; }
+  .regional-public-home .regional-shield-slide { flex-shrink: 0; scroll-snap-align: start; }
+  .regional-public-home .regional-stats { margin: 16px 0 0; width: 100%; grid-template-columns: repeat(3,minmax(0,1fr)); border-radius: 14px; }
+  .regional-public-home .regional-stats article { min-width: 0; padding: 14px 8px; }
+  .regional-public-home .regional-stats article + article { border-top: 0; border-left: 1px solid #dce8ee; }
+  .regional-public-home .regional-stats strong { font-size: 25px; }
+  .regional-public-home .regional-stats span { font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+  .regional-public-home .regional-section { padding-top: 32px; }
+  .regional-public-home .regional-section-heading h3 { font-size: 26px; line-height: 1.2; }
+  .regional-public-home .regional-section-heading > p:last-child { font-size: 14px; line-height: 1.6; }
+  .regional-public-home .regional-participation-table-wrap { margin: 16px 0 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; overflow: visible; }
+  .regional-public-home .regional-participation-table { display: block; min-width: 0; width: 100%; }
+  .regional-public-home .regional-participation-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .regional-public-home .regional-participation-table tbody { display: grid; gap: 12px; }
+  .regional-public-home .regional-participation-table tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; padding: 16px; border: 1px solid #d2e2eb; border-radius: 14px; background: #fff; }
+  .regional-public-home .regional-participation-table td { display: block; min-width: 0; padding: 0; border: 0; text-align: left; }
+  .regional-public-home .regional-participation-table td:first-child,
+  .regional-public-home .regional-participation-table td:last-child { grid-column: 1/-1; }
+  .regional-public-home .regional-participation-table td[data-label]:not(:first-child)::before { content: attr(data-label); display: block; margin-bottom: 6px; font-size: 11px; color: #6a8290; }
+  .regional-public-home .regional-table-school { min-width: 0; grid-template-columns: 36px minmax(0,1fr); gap: 10px; }
+  .regional-public-home .regional-table-school:not(:has(img)) { grid-template-columns: minmax(0,1fr); }
+  .regional-public-home .regional-table-school img { width: 36px; height: 40px; }
+  .regional-public-home .regional-table-school strong { overflow-wrap: anywhere; }
+  .regional-public-home .student-two-charts { grid-template-columns: minmax(0,1fr); }
+  .regional-public-home .student-chart-card { min-width: 0; padding: 20px 16px; }
+  .regional-public-home .student-chart-legend { min-width: 0; }
+  .regional-public-home .regional-private-copy { min-width: 0; }
+  .regional-public-home .regional-private-copy > div { min-width: 0; }
+  .projects-showcase-page .showcase-layout { grid-template-columns: minmax(0,1fr); }
+  .projects-showcase-page .project-sidebar, .projects-showcase-page .project-view { min-width: 0; max-width: 100%; }
+  .projects-showcase-page .project-sidebar { padding: 0; overflow: hidden !important; }
+  .projects-showcase-page .project-sidebar-head { display: none; }
+  .projects-showcase-page .public-project-picker { display: grid; gap: 5px; width: 100%; min-height: 60px; margin: 0; padding: 14px 16px; border: 0; border-radius: 12px; background: #edf6fa; color: #194d67; text-align: left; box-shadow: none; }
+  .public-project-picker > span { display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 700; }
+  .public-project-picker small { display: block; font-size: 12px; font-weight: 400; color: #6a8290; overflow-wrap: anywhere; }
+  .projects-showcase-page .project-sidebar.is-mobile-collapsed .project-sidebar-list { display: none !important; }
+  .projects-showcase-page .project-sidebar-list { padding: 10px; }
+  .projects-showcase-page .pd-hero-body, .projects-showcase-page .pd-meta div, .projects-showcase-page .pd-member-info { min-width: 0; overflow-wrap: anywhere; }
+  .projects-showcase-page .pd-hero { grid-template-columns: minmax(0,1fr); gap: 18px; padding: 20px; }
+  .projects-showcase-page .pd-logo-wrap { max-width: 100%; width: 120px; height: 120px; }
+  .projects-showcase-page .pd-meta { grid-template-columns: repeat(2,minmax(0,1fr)); padding: 14px 20px; }
+  .projects-showcase-page .pd-members { padding: 20px; }
+  .projects-showcase-page .pd-members-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,140px),1fr)); }
+  .projects-showcase-page .pd-title { font-size: clamp(23px,6vw,32px); overflow-wrap: anywhere; }
+  .expo-progress .progress-recinto td:first-child { max-width: none; }
+  .expo-progress .progress-header { min-width: 0; }
+  .expo-progress .progress-header p { overflow-wrap: anywhere; }
+}
+@media(max-width:500px) {
+  .expo-progress .progress-filters { display: grid; grid-template-columns: minmax(0,1fr); gap: 12px; }
+  .expo-progress .progress-filters label { min-width: 0; width: 100%; }
+  .expo-progress .progress-filters button { width: 100%; min-height: 44px; }
+}

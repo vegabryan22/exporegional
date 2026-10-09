@@ -3,6 +3,7 @@
 {% block content %}
 {% set featured_expo_logo = institution.expo_logo_path or institution.logo_path %}
 <link rel="stylesheet" href="{{ url_for('static', filename='regional-public.css') }}?v={{ asset_version }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='public-mobile.css') }}?v={{ asset_version }}">
 <style>.regional-public-home .container{width:calc(100% - 2rem)!important;max-width:none!important}@media(max-width:600px){.regional-public-home .container{width:calc(100% - 1rem)!important}}</style>
 <section class="regional-hero">
     <div class="regional-hero-copy">
@@ -12,8 +13,8 @@
         <h2><span>Regional</span></h2>
         <p class="regional-hero-lead">El punto de encuentro de los proyectos, el talento y la innovación de nuestros centros educativos.</p>
         <div class="regional-hero-actions">
-            <a class="regional-enrollment-action" href="{{ url_for('auth.login') }}"><span>Inscripción regional</span><strong>Inscriba los proyectos de su colegio aquí</strong></a>
-            <a class="regional-secondary-action" href="{{ url_for('public.projects') }}">Explorar proyectos</a>
+            <a class="regional-enrollment-action" data-no-iconify href="{{ url_for('auth.login') }}"><span>Inscripción regional</span><strong>Inscriba los proyectos de su colegio aquí</strong></a>
+            <a class="regional-secondary-action" data-no-iconify href="{{ url_for('public.projects') }}">Explorar proyectos</a>
         </div>
     </div>
     <div class="regional-hero-schools" aria-label="Colegios participantes">
@@ -52,12 +53,12 @@
             <tbody>
                 {% for row in participation_rows %}
                 <tr>
-                    <td><div class="regional-table-school">{% if row.school and row.school.shield_path %}<img src="{{ url_for('static', filename=row.school.shield_path) }}" alt="">{% endif %}<span><strong>{{ row.school.name if row.school else 'Colegio sin identificar' }}</strong></span></div></td>
-                    <td><span class="regional-count {{ 'complete' if row.projects >= row.project_target else 'pending' }}"><strong>{{ row.projects }}</strong>/{{ row.project_target }}</span></td>
-                    <td><span class="regional-count {{ 'complete' if row.ready_projects >= row.project_target else 'pending' }}"><strong>{{ row.ready_projects }}</strong>/{{ row.project_target }}</span></td>
-                    <td><span class="regional-count {{ 'complete' if row.documentation_judges >= 3 else 'pending' }}"><strong>{{ row.documentation_judges }}</strong>/3</span></td>
-                    <td><span class="regional-count {{ 'complete' if row.exposition_judges >= 3 else 'pending' }}"><strong>{{ row.exposition_judges }}</strong>/3</span></td>
-                    <td><span class="regional-status {{ 'complete' if row.judges_complete else 'pending' }}">{{ 'Completa' if row.judges_complete else 'Pendiente' }}</span></td>
+                    <td data-label="Colegio"><div class="regional-table-school">{% if row.school and row.school.shield_path %}<img src="{{ url_for('static', filename=row.school.shield_path) }}" alt="">{% endif %}<span><strong>{{ row.school.name if row.school else 'Colegio sin identificar' }}</strong></span></div></td>
+                    <td data-label="Proyectos inscritos"><span class="regional-count {{ 'complete' if row.projects >= row.project_target else 'pending' }}"><strong>{{ row.projects }}</strong>/{{ row.project_target }}</span></td>
+                    <td data-label="Listos para evaluar"><span class="regional-count {{ 'complete' if row.ready_projects >= row.project_target else 'pending' }}"><strong>{{ row.ready_projects }}</strong>/{{ row.project_target }}</span></td>
+                    <td data-label="Jueces de documento"><span class="regional-count {{ 'complete' if row.documentation_judges >= 3 else 'pending' }}"><strong>{{ row.documentation_judges }}</strong>/3</span></td>
+                    <td data-label="Jueces de exposición"><span class="regional-count {{ 'complete' if row.exposition_judges >= 3 else 'pending' }}"><strong>{{ row.exposition_judges }}</strong>/3</span></td>
+                    <td data-label="Cobertura de jueces"><span class="regional-status {{ 'complete' if row.judges_complete else 'pending' }}">{{ 'Completa' if row.judges_complete else 'Pendiente' }}</span></td>
                 </tr>
                 {% else %}<tr><td colspan="6" class="regional-table-empty">Todavía no hay colegios participantes.</td></tr>{% endfor %}
             </tbody>

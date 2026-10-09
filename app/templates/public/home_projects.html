@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block body_class %}projects-showcase-page{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='public-mobile.css') }}?v={{ asset_version }}">
 {% set female_member_placeholder = url_for('static', filename='placeholders/sfm.svg') %}
 {% set male_member_placeholder = url_for('static', filename='placeholders/sfh.svg') %}
 {% set project_logo_placeholder = url_for('static', filename='placeholders/project-logo-generic.svg') %}
@@ -14,7 +15,8 @@
 {% endfor %}
 
 <div class="showcase-layout">
-    <aside class="project-sidebar">
+    <aside class="project-sidebar is-mobile-collapsed">
+        <button type="button" class="public-project-picker" data-public-project-picker data-no-iconify aria-expanded="false" aria-controls="public-project-list"><span>Elegir proyecto <span aria-hidden="true">▾</span></span><small data-public-project-selected>Seleccionar colegio y proyecto</small></button>
         <div class="project-sidebar-head">
             <div class="project-sidebar-brand" aria-label="Identidad regional">
                 <div class="project-sidebar-logo expo">
@@ -29,7 +31,7 @@
             <p>Proyectos regionales</p>
         </div>
 
-        <div class="project-sidebar-list">
+        <div class="project-sidebar-list" id="public-project-list">
             {% for group in school_groups %}
                     <details class="project-category-menu">
                         <summary>
@@ -182,10 +184,21 @@
     var links = document.querySelectorAll('[data-project-target]');
     var panels = document.querySelectorAll('[data-project-panel]');
     var projectMenus = document.querySelectorAll('.project-category-menu');
+    var picker = document.querySelector('[data-public-project-picker]');
+    var selectedLabel = document.querySelector('[data-public-project-selected]');
+    var sidebar = document.querySelector('.project-sidebar');
+    var mobile = window.matchMedia('(max-width: 760px)');
+    if (picker) picker.addEventListener('click', function () {
+        var collapsed = sidebar.classList.toggle('is-mobile-collapsed');
+        picker.setAttribute('aria-expanded', String(!collapsed));
+    });
 
     function activate(projectId) {
         links.forEach(function (link) {
             link.classList.toggle('active', link.getAttribute('data-project-target') === projectId);
+            if (selectedLabel && link.getAttribute('data-project-target') === projectId) {
+                selectedLabel.textContent = link.querySelector('strong').textContent;
+            }
         });
         panels.forEach(function (panel) {
             panel.classList.toggle('active', panel.getAttribute('data-project-panel') === projectId);
@@ -195,9 +208,16 @@
     links.forEach(function (link) {
         link.addEventListener('click', function () {
             activate(link.getAttribute('data-project-target'));
+            if (mobile.matches && picker) {
+                sidebar.classList.add('is-mobile-collapsed');
+                picker.setAttribute('aria-expanded', 'false');
+                picker.focus({preventScroll:true});
+            }
         });
     });
 
+    var initialLink = document.querySelector('[data-project-target].active');
+    if (initialLink) activate(initialLink.getAttribute('data-project-target'));
     projectMenus.forEach(function (details) {
         details.addEventListener('toggle', function () {
             if (!details.open) {

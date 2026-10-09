@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <link rel="stylesheet" href="{{ url_for('static', filename='expo-progress.css') }}?v={{ asset_version }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='public-mobile.css') }}?v={{ asset_version }}">
 <main class="expo-progress">
   <header class="progress-header"><div><p class="maintenance-kicker">ExpoTécnica Regional · Día del evento</p><h1>Avance de evaluaciones por recinto</h1><p>Consulta las evaluaciones de exposición e inglés registradas por los jueces.</p></div><a class="outline-btn" href="{{ url_for('public.index') }}">Volver al inicio</a></header>
   <section class="progress-metrics" aria-label="Resumen"><article><strong id="progress-total">{{ progress.total }}</strong><span>Proyectos para evaluar</span></article><article><strong id="progress-complete">{{ progress.complete }}</strong><span>Completos</span></article><article><strong id="progress-pending">{{ progress.total - progress.complete }}</strong><span>Pendientes</span></article></section>

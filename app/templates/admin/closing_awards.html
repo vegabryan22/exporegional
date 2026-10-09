@@ -1,0 +1,11 @@
+{% extends 'admin/layout.html' %}
+{% block admin_content %}
+<section class="card admin-section maintenance-page">
+  <div class="maintenance-banner"><div><p class="maintenance-kicker">Resultados y cierre</p><h3>Lista de premiación para el cierre</h3><p>Solo premiados. Las menciones de honor de inglés se presentan al final.</p></div><div class="report-banner-actions"><a class="table-link-btn ghost" href="{{ url_for('admin.evaluations_page') }}" data-no-iconify>Volver</a><a class="table-link-btn" href="{{ url_for('admin.closing_awards_download') }}" data-no-iconify>Descargar PDF</a></div></div>
+  {% if not is_final %}<p role="status">Resultados provisionales: hay evaluaciones pendientes. Verifica los resultados antes de anunciar la premiación.</p>{% endif %}
+  <p>Generado: {{ generated_at.strftime('%d/%m/%Y %H:%M') }}</p>
+  <div class="table-wrap"><table><thead><tr><th>Categoría</th><th>Colegio</th><th>Puesto</th><th>Nombre del proyecto</th><th>Estudiantes</th></tr></thead><tbody>
+  {% for row in award_rows %}<tr><td data-label="Categoría">{{ row.category }}</td><td data-label="Colegio">{{ row.school }}</td><td data-label="Puesto">{{ row.place }}</td><td data-label="Proyecto"><strong>{{ row.project }}</strong></td><td data-label="Estudiantes">{% for name in row.students %}<div>{{ name }}</div>{% else %}Sin integrantes registrados{% endfor %}</td></tr>{% else %}<tr><td colspan="5">No hay premiados calculados.</td></tr>{% endfor %}
+  </tbody></table></div>
+</section>
+{% endblock %}

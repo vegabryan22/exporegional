@@ -18,6 +18,7 @@
       <p>Monitorea avance, puntajes acumulados, l&iacute;deres por categor&iacute;a y ganador de ingl&eacute;s.</p>
     </div>
     <div class="ov2-header-actions">
+      <a class="ov2-shortcut" data-no-iconify href="{{ url_for('admin.closing_awards_page') }}">Lista de cierre · Ganadores</a>
       <form method="get" action="{{ url_for('admin.winners_acta_download') }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <label style="font-size:.8rem">N.º acta <input name="numero" value="01" maxlength="20" required style="width:65px"></label>
         <label style="font-size:.8rem">Hora <input name="hora" type="time" style="width:115px"></label>

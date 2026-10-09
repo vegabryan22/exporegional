@@ -27,6 +27,19 @@ def venue_config():
         pass
     return {"venues": [], "projects": {}}
 
+def project_venue_map(project_ids):
+    """Resolve current venue metadata for only the requested projects."""
+    config = venue_config()
+    venues = {str(v['id']): v for v in config['venues']}
+    result = {}
+    for project_id in project_ids:
+        venue_id = config['projects'].get(str(project_id))
+        venue = venues.get(str(venue_id)) if venue_id is not None else None
+        if venue:
+            result[project_id] = {'name': venue['name'], 'responsible': venue.get('responsible', '')}
+    return result
+
+
 def project_progress(project, exposition_codes, *, include_pending_judges=False):
     # Count distinct evaluators, never assignment rows or duplicate submissions.
     expo = {e.judge_id for e in project.evaluations if e.judge_id and e.evaluation_type in exposition_codes}

@@ -24,6 +24,7 @@ from app.services.evaluation_service import (
 )
 from app.services.parameter_service import get_active_evaluation_types, get_active_rubrics_map
 from app.services.regional_outcome_service import sync_regional_outcomes
+from app.services.expo_progress_service import project_venue_map
 
 
 def _str_to_bool(value) -> bool:
@@ -121,6 +122,7 @@ def dashboard():
                 pending_document_entries.append({"assignment": assignment, "entry": eval_entry})
     return render_template(
         "judge/dashboard.html",
+        project_venues=project_venue_map(a.project_id for a in assignments),
         assignments=assignments,
         evaluation_map=evaluation_map,
         category_map=category_map,
@@ -280,6 +282,7 @@ def evaluate(project_id: int):
                 )
                 return render_template(
                     "judge/evaluate.html",
+                    project_venue=project_venue_map([project.id]).get(project.id),
                     project=project,
                     eval_type=eval_type,
                     eval_type_name=eval_type_map[eval_type].name,
@@ -342,6 +345,7 @@ def evaluate(project_id: int):
 
     return render_template(
         "judge/evaluate.html",
+        project_venue=project_venue_map([project.id]).get(project.id),
         project=project,
         eval_type=eval_type,
         eval_type_name=eval_type_map[eval_type].name,

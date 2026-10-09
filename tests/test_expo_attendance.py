@@ -232,4 +232,19 @@ class ExpoAttendanceTest(unittest.TestCase):
         self.assertIn('filter_response=yes', response.location)
         self.assertIn('filter_q=Juez', response.location)
 
+    def test_judge_venue_uses_current_assignment_and_handles_missing_venue(self):
+        from app.services.expo_progress_service import project_venue_map, VENUE_SETTING
+        config = {'venues':[{'id':'a4','name':'P1-A4','responsible':'Carlos Ticas'}],
+                  'projects':{str(self.project.id):'a4', '999':'a4'}}
+        SystemSetting.set_value(VENUE_SETTING,json.dumps(config)); db.session.flush()
+        location = project_venue_map([self.project.id])
+        self.assertEqual({self.project.id:{'name':'P1-A4','responsible':'Carlos Ticas'}},location)
+        self.assertNotIn(999,location)
+        config['venues'][0]['name'] = 'P2-A9'
+        SystemSetting.set_value(VENUE_SETTING,json.dumps(config)); db.session.flush()
+        self.assertEqual('P2-A9',project_venue_map([self.project.id])[self.project.id]['name'])
+        config['venues'] = []
+        SystemSetting.set_value(VENUE_SETTING,json.dumps(config)); db.session.flush()
+        self.assertEqual({},project_venue_map([self.project.id]))
+
 if __name__ == '__main__': unittest.main()

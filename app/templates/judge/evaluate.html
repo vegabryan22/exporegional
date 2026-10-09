@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='judge-location.css') }}?v={{ asset_version }}">
 <section class="card evaluation-page">
     <h2>Evaluar proyecto: {{ project.title }}</h2>
+    {% include 'judge/_project_location.html' %}
     <div class="evaluation-meta">
         <p>Tipo de evaluación: <strong>{{ eval_type_name }}</strong></p>
         {% if project_member %}

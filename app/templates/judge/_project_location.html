@@ -1,0 +1,5 @@
+<div class="judge-project-location {{ 'is-unassigned' if not project_venue else '' }}">
+    <span class="judge-location-label">Recinto</span>
+    <strong>{{ project_venue.name if project_venue else 'Pendiente de asignar' }}</strong>
+    {% if project_venue and project_venue.responsible %}<small>Responsable: {{ project_venue.responsible }}</small>{% endif %}
+</div>

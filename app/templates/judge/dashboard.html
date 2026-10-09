@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='judge-location.css') }}?v={{ asset_version }}">
 {% set metrics = namespace(projects=assignments|length, expected=0, completed=0, pending=0, docs=0) %}
 {% for assignment in assignments %}
     {% set project = assignment.project %}
@@ -109,6 +110,9 @@
                     <div class="judge-project-info">
                         <span class="judge-project-category">{{ category_map.get(project.category, project.category) }}</span>
                         <h3>{{ project.title }}</h3>
+                        {% set project_venue = project_venues.get(project.id) %}
+                        {% include 'judge/_project_location.html' %}
+                        <small class="judge-project-school">{{ project.institution.name if project.institution else project.institution_name or 'Colegio pendiente de vincular' }}</small>
                         <p>{{ project.team_name or 'Equipo ExpoTEC' }}</p>
                         {% if project.english_members_count %}
                             <small class="judge-project-english-note">{{ project.english_members_count }} estudiante(s) en exposición en inglés</small>

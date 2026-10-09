@@ -109,3 +109,16 @@ dialog.maintenance-dialog.venue-manager { width: min(1100px, calc(100vw - 32px))
 .venue-access-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
 .venue-access-actions form{margin:0}
 .venue-access-actions .outline-btn,.venue-access-actions button{font-size:.8rem;padding:9px 12px}
+.venue-whatsapp-form{display:grid;gap:8px;margin:16px 0;padding:14px;border-radius:12px;background:#f0f8f4;border:1px solid #d3e8dd}
+.venue-whatsapp-form label{font-size:.85rem;font-weight:700;color:#245c42}
+.venue-whatsapp-form small{font-size:.73rem;line-height:1.5;color:#5d7769}
+.venue-access-panel .venue-share-btn{width:100%;min-height:44px;border:1px solid #237a50;border-radius:9px;background:#237a50;color:white;font-size:.85rem;box-shadow:none;margin:2px 0 0;padding:11px 12px}
+.venue-access-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.venue-access-tools .outline-btn{display:flex;align-items:center;justify-content:center;min-height:42px;box-sizing:border-box;margin:0;border:1px solid #cbdfe8;border-radius:9px;background:#fff;color:#175b73;text-decoration:none;text-align:center;box-shadow:none}
+.venue-access-tools a:last-child{grid-column:1/-1}
+.venue-access-security{margin-top:16px;border-top:1px solid #e2e9ee;padding-top:12px}
+.venue-access-security summary{font-size:.78rem;color:#637c8a;cursor:pointer}
+.venue-access-security .ghost-btn{background:#fff;border:1px solid #dce5eb;border-radius:8px;color:#536c7b;margin:0;box-shadow:none;min-height:40px}
+.venue-access-security form:last-child .ghost-btn{color:#a93648;border-color:#efcbd0}
+.venue-access-panel button:focus-visible,.venue-access-panel a:focus-visible{outline:3px solid #70bcd4;outline-offset:3px}
+@media(max-width:380px){.venue-access-tools{grid-template-columns:1fr}.venue-access-tools a:last-child{grid-column:auto}}

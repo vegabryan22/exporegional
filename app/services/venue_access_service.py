@@ -1,5 +1,9 @@
 """Revocable, venue-scoped read-only capability links."""
 import secrets
+import base64
+import hashlib
+import hmac
+import re
 from flask import current_app, abort, url_for
 from itsdangerous import URLSafeSerializer, BadSignature
 from app.services.expo_progress_service import venue_config, public_progress
@@ -11,7 +15,11 @@ def serializer():
 
 def access_token(venue):
     nonce = venue.get('access_nonce')
-    return serializer().dumps({'venue': venue['id'], 'nonce': nonce}) if nonce else None
+    if not nonce:
+        return None
+    message = ('expo-venue-short-v1:' + venue['id'] + ':' + nonce).encode('utf-8')
+    digest = hmac.new(current_app.config['SECRET_KEY'].encode('utf-8'), message, hashlib.sha256).digest()[:16]
+    return base64.urlsafe_b64encode(digest).decode('ascii').rstrip('=')
 
 
 def change_access(venue, action):
@@ -22,6 +30,15 @@ def change_access(venue, action):
 
 
 def resolve_access(token):
+    # Existing signed links/printed QR codes remain valid until explicitly revoked.
+    if len(token) == 22:
+        if not re.fullmatch(r'[A-Za-z0-9_-]{22}', token):
+            abort(404)
+        for venue in venue_config()['venues']:
+            candidate = access_token(venue)
+            if candidate and secrets.compare_digest(token, candidate):
+                return venue
+        abort(404)
     try:
         payload = serializer().loads(token)
         if not isinstance(payload, dict):
@@ -45,4 +62,4 @@ def scoped_progress(venue):
 
 def access_url(venue):
     token = access_token(venue)
-    return url_for('public.venue_access', token=token, _external=True) if token else None
+    return url_for('public.venue_access_short', token=token, _external=True) if token else None

@@ -5,7 +5,7 @@ from io import BytesIO
 from pypdf import PdfReader
 from tests import test_expo_attendance as fixtures
 from app.models.system_setting import SystemSetting
-from app.services.venue_access_service import access_token, resolve_access, change_access, scoped_progress
+from app.services.venue_access_service import access_token, resolve_access, change_access, scoped_progress, serializer, access_url
 from app.services.venue_access_pdf import build_access_card
 from werkzeug.exceptions import NotFound
 
@@ -22,14 +22,20 @@ class VenueAccessTest(unittest.TestCase):
             SystemSetting.set_value('expo_venues', json.dumps({'venues':[venue, {'id':'two','name':'Other'}], 'projects':{}}))
         save()
         token = access_token(venue)
+        self.assertEqual(22,len(token))
+        self.assertEqual(token,access_token(venue))
+        legacy = serializer().dumps({'venue':venue['id'],'nonce':venue['access_nonce']})
+        self.assertEqual('one',resolve_access(legacy)['id'])
         self.assertEqual('one', resolve_access(token)['id'])
         with self.assertRaises(NotFound): resolve_access(token + 'invalid')
+        with self.assertRaises(NotFound): resolve_access('á'*22)
         with patch('app.services.venue_access_service.public_progress', return_value={'venues':[{'id':'one','projects':[{'status':'pending'}]}, {'id':'two','projects':[{'status':'complete','secret':'other judge'}]}], 'total':2,'complete':1}):
             data = scoped_progress(venue)
             self.assertEqual(1,data['total']); self.assertEqual(0,data['complete'])
             self.assertNotIn('other judge',json.dumps(data))
         change_access(venue,'access_rotate'); save()
         with self.assertRaises(NotFound): resolve_access(token)
+        with self.assertRaises(NotFound): resolve_access(legacy)
         replacement = access_token(venue)
         self.assertEqual('one',resolve_access(replacement)['id'])
         change_access(venue,'access_revoke'); save()
@@ -45,6 +51,8 @@ class VenueAccessTest(unittest.TestCase):
         SystemSetting.set_value('expo_venues',json.dumps({'venues':[venue,{'id':'two','name':'Private other venue'}],'projects':{str(self.project.id):'one'}}))
         token = access_token(venue)
         client = self.app.test_client()
+        with self.app.test_request_context():
+            self.assertTrue(access_url(venue).endswith('/r/' + token))
         response = client.get('/expo/recinto/' + token + '/datos')
         self.assertEqual(200,response.status_code)
         self.assertEqual(['one'],[v['id'] for v in response.json['venues']])

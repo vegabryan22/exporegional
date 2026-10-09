@@ -147,5 +147,5 @@ def venues_page():
         link = access_url(venue)
         if link:
             message = f"Hola {venue.get('responsible') or 'compañero/a'}, este es el acceso de consulta del recinto {venue['name']} de ExpoTécnica Regional. Aquí puedes ver los proyectos y jueces pendientes. No necesitas usuario. No compartas este enlace fuera del equipo organizador.\n{link}"
-            links[venue['id']] = {'url': link, 'whatsapp': 'https://wa.me/?' + urlencode({'text': message})}
+            links[venue['id']] = {'url': link, 'message': message, 'whatsapp': 'https://wa.me/?' + urlencode({'text': message})}
     return render_template("admin/expo_venues.html", **_base_context("venues"), venues=config["venues"], venue_access_links=links, locations=config["projects"], venue_projects=projects, venue_school_groups=group_venue_projects(projects))

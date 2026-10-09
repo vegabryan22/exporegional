@@ -19,17 +19,22 @@
       {% if access %}
         <p>Activo · Solo consulta de este recinto</p>
         <input aria-label="Enlace privado de {{ venue.name }}" readonly value="{{ access.url }}" onclick="this.select()">
-        <div class="venue-access-actions">
+        <form class="venue-whatsapp-form" data-venue-whatsapp data-message="{{ access.message }}">
+          <label for="venue-phone-{{ venue.id }}">Enviar acceso por WhatsApp</label>
+          <input id="venue-phone-{{ venue.id }}" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej.: 8888 8888 o +506 8888 8888" aria-describedby="venue-phone-help-{{ venue.id }}" maxlength="25" required>
+          <small id="venue-phone-help-{{ venue.id }}">8 dígitos: Costa Rica (+506). Para otro país, incluye el código internacional.</small>
+          <button type="submit" class="venue-share-btn" data-no-iconify>Enviar por WhatsApp ↗</button>
+        </form>
+        <div class="venue-access-actions venue-access-tools">
           <button type="button" class="outline-btn" data-copy-venue-link="{{ access.url }}" data-no-iconify>Copiar enlace</button>
-          <a class="outline-btn" href="{{ access.whatsapp }}" target="_blank" rel="noopener noreferrer" data-no-iconify>WhatsApp</a>
-          <a class="outline-btn" href="{{ url_for('admin.venue_access_card', venue_id=venue.id) }}" data-no-iconify>Ficha QR · PDF</a>
-          <a href="{{ access.url }}" target="_blank" rel="noopener noreferrer" data-no-iconify>Vista previa ↗</a>
+          <a class="outline-btn" href="{{ url_for('admin.venue_access_card', venue_id=venue.id) }}" data-no-iconify>Descargar QR · PDF</a>
+          <a class="outline-btn" href="{{ access.url }}" target="_blank" rel="noopener noreferrer" data-no-iconify>Vista previa ↗</a>
         </div>
-        <div class="venue-access-actions">
+        <details class="venue-access-security"><summary>Administrar acceso</summary><div class="venue-access-actions">
           {% for action,label in [('access_rotate','Reemplazar enlace'),('access_revoke','Revocar acceso')] %}
           <form method="post" onsubmit="return confirm('El enlace y el QR anteriores dejarán de funcionar. ¿Continuar?')"><input type="hidden" name="access_csrf" value="{{ session.venue_access_csrf }}"><input type="hidden" name="action" value="{{ action }}"><input type="hidden" name="venue_id" value="{{ venue.id }}"><button class="ghost-btn" type="submit" data-no-iconify>{{ label }}</button></form>
           {% endfor %}
-        </div>
+        </div></details>
       {% else %}
         <p>Sin enlace habilitado. No requiere usuario.</p>
         <form method="post"><input type="hidden" name="access_csrf" value="{{ session.venue_access_csrf }}"><input type="hidden" name="action" value="access_enable"><input type="hidden" name="venue_id" value="{{ venue.id }}"><button type="submit" data-no-iconify>Habilitar acceso</button></form>
@@ -66,6 +71,7 @@
   <div class="venue-save-bar"><div><a href="{{ url_for('admin.assignments_page') }}" data-no-iconify>← Volver a asignaciones</a><span id="venue-dirty-count" role="status" aria-live="polite">Sin cambios pendientes</span></div><button type="submit" data-no-iconify>Guardar ubicaciones</button></div>
 </form></section>
 <script src="{{ url_for('static', filename='expo-venue-editor.js') }}?v={{ asset_version }}" defer></script>
+<script src="{{ url_for('static', filename='expo-venue-sharing.js') }}?v={{ asset_version }}" defer></script>
 <script>
   document.querySelectorAll('[data-copy-venue-link]').forEach(function (button) {
     button.addEventListener('click', async function () {

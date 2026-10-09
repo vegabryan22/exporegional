@@ -8,6 +8,7 @@ public_bp.add_url_rule("/expo/avance", endpoint="expo_progress", view_func=expo_
 public_bp.add_url_rule("/expo/avance/pdf", endpoint="expo_progress_pdf", view_func=expo_progress_controller.progress_pdf)
 public_bp.add_url_rule("/expo/avance/datos", endpoint="expo_progress_data", view_func=expo_progress_controller.public_data)
 public_bp.add_url_rule('/expo/recinto/<token>', endpoint='venue_access', view_func=expo_progress_controller.venue_access)
+public_bp.add_url_rule('/r/<token>', endpoint='venue_access_short', view_func=expo_progress_controller.venue_access)
 public_bp.add_url_rule('/expo/recinto/<token>/datos', endpoint='venue_access_data', view_func=expo_progress_controller.venue_access, defaults={'output': 'data'})
 public_bp.add_url_rule('/expo/recinto/<token>/pdf', endpoint='venue_access_pdf', view_func=expo_progress_controller.venue_access, defaults={'output': 'pdf'})
 

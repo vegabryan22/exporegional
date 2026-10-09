@@ -24,7 +24,7 @@ from zipfile import ZipFile
 
 from functools import wraps
 
-from flask import abort, current_app, flash, get_flashed_messages, has_request_context, jsonify, redirect, render_template, request, send_file, session, url_for
+from flask import abort, current_app, flash, get_flashed_messages, has_app_context, has_request_context, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask_login import current_user, login_required, login_user
 from sqlalchemy import or_, text
 from sqlalchemy.engine import make_url
@@ -9890,11 +9890,21 @@ def _reports_catalog() -> list[dict]:
         {
             "group": "Edecanes",
             "module": "assignments",
-            "title": "Guía de exposición para edecanes",
+            "title": "Guía de jueces, proyectos y recintos",
             "description": "Reporte editable para que edecanes ubiquen jueces y proyectos en los recintos definidos por la organización.",
-            "contents": "Juez, proyecto, categoría, equipo, sección y columnas editables para recinto u observaciones.",
+            "contents": "Colegio del proyecto, proyecto, categoría, recinto, juez, tipo de evaluación y colegio que lo inscribió. Orden alfabético por colegio.",
             "format": "Excel",
             "endpoint": "admin.exposition_usher_report_excel",
+        },
+        {
+            "group": "Edecanes",
+            "module": "assignments",
+            "title": "Guía de jueces, proyectos y recintos en PDF",
+            "description": "Versión para imprimir de la guía operativa de exposición e inglés.",
+            "contents": "Colegio del proyecto, proyecto, recinto, juez, colegio que lo inscribió y tipo de evaluación. Orden alfabético por colegio.",
+            "format": "PDF",
+            "endpoint": "admin.exposition_usher_report_pdf",
+            "target": "_blank",
         },
         {
             "group": "Asistencia",
@@ -10139,11 +10149,15 @@ def _build_exposition_usher_report_rows(context: dict) -> list[dict]:
     }
     category_map = context.get("category_map", {})
     rows = []
+    locations = context.get("project_venues")
+    if locations is None:
+        from app.services.expo_progress_service import project_venue_map
+        locations = project_venue_map(project_map) if has_app_context() else {}
 
     for assignment in context.get("assignments", []):
         if assignment.status != Assignment.STATUS_CONFIRMED:
             continue
-        if not assignment.can_evaluate_exposition:
+        if not (assignment.can_evaluate_exposition or assignment.can_evaluate_english):
             continue
         project = project_map.get(assignment.project_id)
         judge = assignment.judge
@@ -10165,22 +10179,27 @@ def _build_exposition_usher_report_rows(context: dict) -> list[dict]:
         rows.append(
             {
                 "judge": judge.full_name,
-                "phone": judge.phone or "—",
+                "phone": judge.phone or "Sin teléfono",
                 "attendance": judge.attendance_status_label,
                 "project": project.title,
-                "team": project.team_name,
+                "team": project.team_name or "",
                 "section": section or "—",
                 "category": category_map.get(project.category, project.category),
-                "location": "",
+                "school": project.institution.name if project.institution else project.institution_name or "Sin colegio vinculado",
+                "judge_school": judge.institution_ref.name if judge.institution_ref else "Sin colegio vinculado",
+                "location": locations.get(project.id, {}).get("name") or "Pendiente de asignar",
+                "responsible": locations.get(project.id, {}).get("responsible") or "Pendiente de asignar",
+                "evaluation": "Exposición e inglés" if assignment.can_evaluate_exposition and assignment.can_evaluate_english else "Exposición" if assignment.can_evaluate_exposition else "Inglés",
             }
         )
 
     return sorted(
         rows,
         key=lambda row: (
-            row["judge"].casefold(),
-            row["category"].casefold(),
-            row["project"].casefold(),
+            row["school"] == "Sin colegio vinculado",
+            unicodedata.normalize("NFKD", row["school"].casefold()).encode("ascii", "ignore").decode(),
+            unicodedata.normalize("NFKD", row["project"].casefold()).encode("ascii", "ignore").decode(),
+            unicodedata.normalize("NFKD", row["judge"].casefold()).encode("ascii", "ignore").decode(),
         ),
     )
 
@@ -10316,6 +10335,8 @@ def assignments_report_excel():
 
 @admin_module_required("assignments")
 def exposition_usher_report_excel():
+    from datetime import timezone, timedelta
+    generated_at = datetime.now(timezone(timedelta(hours=-6)))
     try:
         from openpyxl import Workbook
         from openpyxl.formatting.rule import FormulaRule
@@ -10342,27 +10363,27 @@ def exposition_usher_report_excel():
     white = "FFFFFF"
     muted = "526B82"
 
-    ws.merge_cells("A1:H1")
-    ws["A1"] = "GUÍA DE JUECES DE EXPOSICIÓN PARA EDECANES"
+    ws.merge_cells("A1:L1")
+    ws["A1"] = "GUÍA DE JUECES, PROYECTOS Y RECINTOS PARA EDECANES"
     ws["A1"].font = Font(bold=True, color=white, size=16)
     ws["A1"].fill = PatternFill("solid", fgColor=navy)
     ws["A1"].alignment = Alignment(vertical="center")
     ws.row_dimensions[1].height = 34
 
-    ws.merge_cells("A2:H2")
+    ws.merge_cells("A2:L2")
     ws["A2"] = (
-        f"ExpoTEC · {len(rows)} asignaciones confirmadas de exposición · "
-        f"Generado el {datetime.now().strftime('%d/%m/%Y')}"
+        f"ExpoTEC · {len(rows)} asignaciones confirmadas de exposición e inglés · "
+        f"Generado el {generated_at.strftime('%d/%m/%Y %H:%M')}"
     )
     ws["A2"].font = Font(color=white, size=10)
     ws["A2"].fill = PatternFill("solid", fgColor=blue)
     ws["A2"].alignment = Alignment(vertical="center")
     ws.row_dimensions[2].height = 24
 
-    ws.merge_cells("A3:H3")
+    ws.merge_cells("A3:L3")
     ws["A3"] = (
-        "Uso operativo: complete el recinto o ubicación y el estado de atención. "
-        "Este archivo contiene únicamente evaluaciones de exposición; no incluye revisión documental."
+        "Orden: colegio del proyecto, proyecto y juez. Recintos tomados del sistema. "
+        "Incluye exposición e inglés; no incluye asignaciones solo documentales. Complete el estado de atención."
     )
     ws["A3"].font = Font(color=muted, italic=True, size=10)
     ws["A3"].fill = PatternFill("solid", fgColor=pale_blue)
@@ -10370,16 +10391,20 @@ def exposition_usher_report_excel():
     ws.row_dimensions[3].height = 34
 
     headers = [
-        "Juez",
-        "Teléfono",
-        "Asistencia",
+        "Colegio del proyecto",
         "Proyecto",
         "Categoría",
+        "Recinto",
+        "Juez",
+        "Tipo de evaluación",
+        "Colegio que inscribió al juez",
+        "Teléfono",
+        "Asistencia",
         "Equipo / sección",
-        "Recinto o ubicación (edecanes)",
+        "Responsable del recinto",
         "Estado de atención",
     ]
-    widths = [29, 18, 16, 46, 22, 24, 31, 22]
+    widths = [38, 42, 22, 20, 30, 24, 38, 18, 18, 26, 30, 22]
     header_row = 5
     ws.append([])
     ws.append(headers)
@@ -10397,24 +10422,28 @@ def exposition_usher_report_excel():
     for row in rows:
         ws.append(
             [
-                row["judge"],
-                row["phone"],
-                row["attendance"],
+                row["school"],
                 row["project"],
                 row["category"],
+                row["location"],
+                row["judge"],
+                row["evaluation"],
+                row["judge_school"],
+                row["phone"],
+                row["attendance"],
                 " · ".join(part for part in (row["team"], row["section"]) if part and part != "—"),
-                "",
+                row["responsible"],
                 "Pendiente",
             ]
         )
         current_row = ws.max_row
         for column in range(1, len(headers) + 1):
             cell = ws.cell(row=current_row, column=column)
+            cell.data_type = "s"
             cell.alignment = Alignment(vertical="top", wrap_text=True)
             cell.border = border
-        ws.cell(row=current_row, column=7).fill = PatternFill("solid", fgColor="FFF8D6")
-        ws.cell(row=current_row, column=8).fill = PatternFill("solid", fgColor="FFF8D6")
-        ws.row_dimensions[current_row].height = 34
+        ws.cell(row=current_row, column=12).fill = PatternFill("solid", fgColor="FFF8D6")
+        ws.row_dimensions[current_row].height = 48
 
     last_data_row = max(ws.max_row, header_row + 1)
     status_validation = DataValidation(
@@ -10427,10 +10456,10 @@ def exposition_usher_report_excel():
     status_validation.error = "Seleccione una opción disponible en la lista."
     status_validation.errorTitle = "Estado no válido"
     ws.add_data_validation(status_validation)
-    status_validation.add(f"H{header_row + 1}:H{last_data_row}")
+    status_validation.add(f"L{header_row + 1}:L{last_data_row}")
 
     if rows:
-        table = Table(displayName="GuiaEdecanes", ref=f"A{header_row}:H{ws.max_row}")
+        table = Table(displayName="GuiaEdecanes", ref=f"A{header_row}:L{ws.max_row}")
         table.tableStyleInfo = TableStyleInfo(
             name="TableStyleMedium2",
             showFirstColumn=False,
@@ -10441,21 +10470,21 @@ def exposition_usher_report_excel():
         ws.add_table(table)
 
         ws.conditional_formatting.add(
-            f"H{header_row + 1}:H{ws.max_row}",
+            f"L{header_row + 1}:L{ws.max_row}",
             FormulaRule(
-                formula=[f'$H{header_row + 1}="Finalizado"'],
+                formula=[f'$L{header_row + 1}="Finalizado"'],
                 fill=PatternFill("solid", fgColor="D9EED3"),
             ),
         )
         ws.conditional_formatting.add(
-            f"H{header_row + 1}:H{ws.max_row}",
+            f"L{header_row + 1}:L{ws.max_row}",
             FormulaRule(
-                formula=[f'$H{header_row + 1}="Pendiente"'],
+                formula=[f'$L{header_row + 1}="Pendiente"'],
                 fill=PatternFill("solid", fgColor="FFF3CD"),
             ),
         )
 
-    ws.freeze_panes = "A6"
+    ws.freeze_panes = "C6"
     ws.print_title_rows = f"1:{header_row}"
     ws.page_setup.orientation = "landscape"
     ws.page_setup.fitToWidth = 1
@@ -10739,6 +10768,8 @@ def assignments_report_pdf():
 
 @admin_module_required("assignments")
 def exposition_usher_report_pdf():
+    from datetime import timezone, timedelta
+    generated_at = datetime.now(timezone(timedelta(hours=-6)))
     if not REPORTLAB_AVAILABLE:
         flash("No se pudo generar PDF. Instala reportlab en el entorno.", "error")
         return redirect(url_for("admin.assignments_page"))
@@ -10759,7 +10790,7 @@ def exposition_usher_report_pdf():
         rightMargin=1.1 * cm,
         topMargin=1.1 * cm,
         bottomMargin=1.1 * cm,
-        title="Guía de jueces de exposición para edecanes",
+        title="Guía de jueces, proyectos y recintos para edecanes",
         author=_institution_name(),
     )
     styles = getSampleStyleSheet()
@@ -10795,17 +10826,17 @@ def exposition_usher_report_pdf():
     judge_count = len({row["judge"] for row in rows})
     project_count = len({row["project"] for row in rows})
     elements = [
-        Paragraph("Guía de jueces de exposición para edecanes", title_style),
+        Paragraph("Guía de jueces, proyectos y recintos para edecanes", title_style),
         Paragraph(
             _pdf_normalize_text(
                 f"{_institution_name()} · {judge_count} jueces · {project_count} proyectos · "
-                f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+                f"Generado el {generated_at.strftime('%d/%m/%Y %H:%M')}"
             ),
             subtitle_style,
         ),
         Paragraph(
-            "Incluye únicamente asignaciones confirmadas que evalúan exposición. "
-            "La columna de recinto queda en blanco para que el equipo de edecanes registre la ubicación.",
+            "Asignaciones confirmadas de exposición e inglés, ordenadas por colegio del proyecto, proyecto y juez. "
+            "La ubicación proviene de los recintos registrados en el sistema.",
             subtitle_style,
         ),
         Spacer(1, 0.15 * cm),
@@ -10813,38 +10844,36 @@ def exposition_usher_report_pdf():
 
     if rows:
         headers = [
-            "Juez",
-            "Teléfono",
-            "Asistencia",
+            "Colegio del proyecto",
             "Proyecto",
-            "Categoría",
-            "Equipo / sección",
-            "Recinto o ubicación\n(uso de edecanes)",
+            "Recinto",
+            "Juez / colegio que lo inscribió",
+            "Evaluación",
+            "Asistencia",
             "Atendido",
         ]
-        table_data = [headers]
+        header_style = ParagraphStyle("usher_header", parent=cell_style, fontName="Helvetica-Bold", textColor=colors.white)
+        table_data = [[Paragraph(text, header_style) for text in headers]]
         for row in rows:
             team_section = row["team"]
             if row["section"] != "—":
                 team_section += f" · {row['section']}"
             table_data.append(
                 [
-                    Paragraph(_pdf_normalize_text(row["judge"]), cell_bold_style),
-                    Paragraph(_pdf_normalize_text(row["phone"]), cell_style),
-                    Paragraph(_pdf_normalize_text(row["attendance"]), cell_style),
-                    Paragraph(_pdf_normalize_text(row["project"]), cell_style),
-                    Paragraph(_pdf_normalize_text(row["category"]), cell_style),
-                    Paragraph(_pdf_normalize_text(team_section), cell_style),
-                    "",
+                    Paragraph(escape(_pdf_normalize_text(row["school"])), cell_bold_style),
+                    Paragraph(escape(_pdf_normalize_text(row["project"])) + "<br/>" + escape(_pdf_normalize_text(row["category"])) + "<br/>" + escape(_pdf_normalize_text(team_section)), cell_style),
+                    Paragraph("<b>" + escape(_pdf_normalize_text(row["location"])) + "</b>" + ("<br/>Resp.: " + escape(_pdf_normalize_text(row["responsible"])) if row["responsible"] != "Pendiente de asignar" else ""), cell_style),
+                    Paragraph("<b>" + escape(_pdf_normalize_text(row["judge"])) + "</b><br/>Colegio: " + escape(_pdf_normalize_text(row["judge_school"])) + "<br/>Tel.: " + escape(_pdf_normalize_text(row["phone"])), cell_style),
+                    Paragraph(escape(_pdf_normalize_text(row["evaluation"])), cell_style),
+                    Paragraph(escape(_pdf_normalize_text(row["attendance"])), cell_style),
                     "[  ]",
                 ]
             )
 
         table = Table(
             table_data,
-            colWidths=[3.3 * cm, 2.1 * cm, 1.8 * cm, 5.2 * cm, 2.3 * cm, 3.5 * cm, 5.6 * cm, 1.4 * cm],
+            colWidths=[document.width * ratio for ratio in (.17, .21, .10, .25, .11, .10, .06)],
             repeatRows=1,
-            rowHeights=[None] + [1.05 * cm] * len(rows),
         )
         table.setStyle(
             TableStyle(
@@ -10870,12 +10899,19 @@ def exposition_usher_report_pdf():
     else:
         elements.append(
             Paragraph(
-                "No existen asignaciones confirmadas para evaluación de exposición.",
+                "No existen asignaciones confirmadas para exposición o inglés.",
                 subtitle_style,
             )
         )
 
-    document.build(elements)
+    def footer(canvas, doc):
+        canvas.saveState()
+        canvas.setFont("Helvetica", 7)
+        canvas.setFillColor(colors.HexColor("#58789B"))
+        canvas.drawRightString(doc.pagesize[0] - doc.rightMargin, .55 * cm, f"Página {doc.page}")
+        canvas.restoreState()
+
+    document.build(elements, onFirstPage=footer, onLaterPages=footer)
     buffer.seek(0)
     return send_file(
         buffer,

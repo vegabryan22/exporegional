@@ -768,7 +768,7 @@ class RequirementsSeparationTest(unittest.TestCase):
         self.assertEqual(1, len(rows))
         self.assertEqual("Juez ExposiciÃ³n", rows[0]["judge"])
         self.assertEqual("Proyecto para exposiciÃ³n", rows[0]["project"])
-        self.assertEqual("", rows[0]["location"])
+        self.assertEqual("Pendiente de asignar", rows[0]["location"])
 
     def test_assignments_page_links_reports_center(self):
         template = Path("app/templates/admin/assignments.html").read_text(encoding="utf-8")

@@ -8,6 +8,12 @@
   <p class="progress-update" id="progress-update" aria-live="polite">Actualización automática cada 30 segundos.</p>
   <div class="actions-row"><a class="action-btn outline-btn" id="progress-export-pdf" href="{{ url_for('public.expo_progress_pdf') }}" data-no-iconify>Exportar PDF</a></div>
   {% if show_pending_judges %}<p class="progress-note">Vista del equipo organizador: despliega “Jueces pendientes” en cada proyecto para identificar quién falta por evaluar.</p>{% endif %}
+  {% if not show_pending_judges %}
+  <aside class="progress-organizer-access">
+    <span>Los nombres de jueces pendientes están disponibles para el equipo organizador con sesión administrativa.</span>
+    {% if not current_user.is_authenticated %}<a data-no-iconify href="{{ url_for('auth.login', next=request.path) }}">Iniciar sesión para ver jueces pendientes</a>{% endif %}
+  </aside>
+  {% endif %}
   <div id="progress-groups"></div>
   <p class="progress-note">Exposición: 3 evaluaciones por proyecto. Inglés: evaluación individual de cada estudiante participante por los jueces de inglés asignados. Los conteos reflejan evaluaciones guardadas.</p>
 </main>

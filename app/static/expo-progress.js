@@ -3,6 +3,7 @@
   let data = JSON.parse(document.getElementById('progress-initial').textContent);
   const search = document.getElementById('progress-search'), venue = document.getElementById('progress-venue'), category = document.getElementById('progress-category'), pending = document.getElementById('progress-only-pending');
   const labels = {complete:'Completo',pending:'En proceso',not_started:'Sin evaluar',review:'Requiere revisión'};
+  const mobileLayout = window.matchMedia('(max-width: 760px)');
   const normalize = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   function element(tag, text, className) {const el = document.createElement(tag); if(text !== undefined) el.textContent = text; if(className) el.className = className; return el;}
   function badge(text, state) {return element('span', text, 'progress-badge ' + state);}
@@ -29,6 +30,7 @@
       ['Proyecto','Colegio','Exposición','Inglés','Estado'].forEach(text => heading.append(element('th',text))); head.append(heading); table.append(head);
       const body = element('tbody');
       rows.forEach(row => {
+        let pendingPanel = null;
         const tr = element('tr'), title = element('td'); title.append(element('strong',row.title),element('br'),element('small',data.categories.find(c => c.code === row.category)?.name || row.category)); tr.append(title,element('td',row.school));
         if(row.pending_judges) {
           const judges = row.pending_judges, panel = element('details',undefined,'progress-judge-details');
@@ -47,7 +49,8 @@
             else if(!judges.english.length) englishSection.append(element('p','Evaluaciones de inglés completas.'));
             panel.append(englishSection);
           }
-          title.append(panel);
+          if(mobileLayout.matches) pendingPanel = panel;
+          else title.append(panel);
         }
         const expo = element('td'); expo.append(badge(`${row.exposition}/3`,row.exposition === 3 ? 'complete' : row.exposition > 3 ? 'review' : 'pending')); tr.append(expo);
         const english = element('td');
@@ -55,6 +58,11 @@
         else {english.append(badge(`${row.english}/${row.english_expected}`, !row.english_unassigned && row.english === row.english_expected ? 'complete' : 'pending')); if(row.english_unassigned) english.append(element('small','Sin juez de inglés asignado','progress-english-note'));}
         const state = element('td'); state.append(badge(labels[row.status],row.status)); tr.append(english,state);
         Array.from(tr.children).forEach((cell,index) => {cell.dataset.label = ['Proyecto','Colegio','Exposición','Inglés','Estado'][index];});
+        if(pendingPanel) {
+          const pendingCell = element('td',undefined,'progress-pending-cell');
+          pendingCell.append(pendingPanel);
+          tr.append(pendingCell);
+        }
         body.append(tr);
       });
       table.append(body); wrap.append(table); details.append(wrap); root.append(details);
@@ -71,5 +79,6 @@
   }
   [search,venue,category,pending].forEach(el => el.addEventListener('input',render));
   document.getElementById('progress-refresh').addEventListener('click',refresh);
+  mobileLayout.addEventListener('change',render);
   render(); refresh(); window.setInterval(() => {if(!document.hidden) refresh();},30000);
 })();

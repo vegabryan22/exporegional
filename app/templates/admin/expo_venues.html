@@ -5,7 +5,12 @@
   <div class="venue-page-head"><div><p class="maintenance-kicker">Operación del evento</p><h3>Ubicación de proyectos</h3><p>Selecciona el recinto de cada proyecto y guarda los cambios.</p></div><div class="venue-page-actions"><button type="button" data-dialog-open="manage-venues" data-no-iconify>Administrar recintos <span>{{ venues|length }}</span></button><a class="outline-btn" data-no-iconify href="{{ url_for('public.expo_progress') }}" target="_blank" rel="noopener">Ver avance público ↗</a></div></div>
 <dialog id="manage-venues" class="maintenance-dialog venue-manager" aria-labelledby="venue-manager-title"><div class="dialog-card">
   <div class="dialog-head"><div><h3 id="venue-manager-title">Administrar recintos</h3><p>Nombres, responsables y proyectos asignados.</p></div><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div>
-  <button type="button" data-dialog-open="create-venue" data-no-iconify>Nuevo recinto</button>
+  <div class="venue-manager-toolbar">
+    <button type="button" data-dialog-open="create-venue" data-no-iconify>Nuevo recinto</button>
+    <form method="post"><input type="hidden" name="action" value="access_enable_all"><input type="hidden" name="access_csrf" value="{{ session.venue_access_csrf }}"><button type="submit" class="outline-btn" data-no-iconify {% if not venues %}disabled{% endif %}>Habilitar todos los accesos</button></form>
+    <a class="outline-btn" href="{{ url_for('admin.venue_access_cards') }}" data-no-iconify>Imprimir tarjetas · PDF</a>
+  </div>
+  <p class="venue-manager-hint">Habilitar todos conserva los enlaces activos. El PDF incluye solo accesos habilitados: tarjetas de 90 × 55 mm, con guías de corte.</p>
   <div class="venue-grid">{% for venue in venues %}
     {% set count = locations.values()|select('equalto',venue.id)|list|length %}
     <article class="venue-card">

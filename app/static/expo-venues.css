@@ -122,3 +122,9 @@ dialog.maintenance-dialog.venue-manager { width: min(1100px, calc(100vw - 32px))
 .venue-access-security form:last-child .ghost-btn{color:#a93648;border-color:#efcbd0}
 .venue-access-panel button:focus-visible,.venue-access-panel a:focus-visible{outline:3px solid #70bcd4;outline-offset:3px}
 @media(max-width:380px){.venue-access-tools{grid-template-columns:1fr}.venue-access-tools a:last-child{grid-column:auto}}
+.venue-manager-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0 8px}
+.venue-manager-toolbar form{margin:0}
+.venue-manager-toolbar button,.venue-manager-toolbar a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;box-sizing:border-box;margin:0;padding:10px 14px;border-radius:9px;box-shadow:none;font-size:.83rem;text-decoration:none}
+.venue-manager-toolbar .outline-btn{border:1px solid #cbdfe8;background:#fff;color:#175b73}
+.venue-manager-hint{font-size:.78rem;color:#637c8a;line-height:1.5;margin:0 0 18px}
+@media(max-width:600px){.venue-manager-toolbar{display:grid;grid-template-columns:1fr}.venue-manager-toolbar button,.venue-manager-toolbar a{width:100%}}

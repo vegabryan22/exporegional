@@ -6,7 +6,7 @@ from pypdf import PdfReader
 from tests import test_expo_attendance as fixtures
 from app.models.system_setting import SystemSetting
 from app.services.venue_access_service import access_token, resolve_access, change_access, scoped_progress, serializer, access_url
-from app.services.venue_access_pdf import build_access_card
+from app.services.venue_access_pdf import build_access_card, build_access_cards
 from werkzeug.exceptions import NotFound
 
 
@@ -86,6 +86,72 @@ class VenueAccessTest(unittest.TestCase):
         from app.services.venue_access_pdf import _brand_logo
         with patch('app.services.venue_access_pdf.SystemSetting.get_value',return_value='../../config.py'):
             self.assertIsNone(_brand_logo('school_logo_path'))
+
+    def test_bulk_enable_preserves_active_links_and_reopens_manager(self):
+        from app.extensions import db, login_manager
+        from app.models.judge import Judge
+        from app.routes.admin_routes import admin_bp
+        from app.routes.public_routes import public_bp
+        from app.services.expo_progress_service import venue_config
+        from app.routes.auth_routes import auth_bp
+        from flask import g
+        login_manager.init_app(self.app)
+        self.app.secret_key = 'test'
+        self.app.register_blueprint(admin_bp)
+        self.app.register_blueprint(public_bp)
+        self.app.register_blueprint(auth_bp)
+        admin = Judge(full_name='Administrador',email='admin@test',password_hash='test',role=Judge.ROLE_SUPERADMIN)
+        db.session.add(admin)
+        first = {'id':'one','name':'P1-A4','responsible':'Carlos Ticas'}
+        second = {'id':'two','name':'P1-A5','responsible':'Cinthia Díaz'}
+        change_access(first,'access_enable')
+        original = access_token(first)
+        SystemSetting.set_value('expo_venues',json.dumps({'venues':[first,second],'projects':{str(self.project.id):'one'}}))
+        db.session.commit()
+        client = self.app.test_client()
+        self.assertEqual(302,client.get('/admin/recintos/tarjetas.pdf').status_code)
+        g.pop('_login_user',None)
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin.id); session['_fresh'] = True
+            session['venue_access_csrf'] = 'csrf-test'
+        self.assertEqual(400,client.post('/admin/recintos',data={'action':'access_enable_all'}).status_code)
+        response = client.post('/admin/recintos',data={'action':'access_enable_all','access_csrf':'csrf-test'})
+        self.assertEqual(302,response.status_code)
+        self.assertTrue(response.location.endswith('#manage-venues'))
+        config = venue_config()
+        self.assertEqual(original,access_token(config['venues'][0]))
+        self.assertTrue(config['venues'][1].get('access_nonce'))
+        self.assertEqual({str(self.project.id):'one'},config['projects'])
+        tokens = [access_token(v) for v in config['venues']]
+        client.post('/admin/recintos',data={'action':'access_enable_all','access_csrf':'csrf-test'})
+        self.assertEqual(tokens,[access_token(v) for v in venue_config()['venues']])
+        response = client.get('/admin/recintos/tarjetas.pdf')
+        self.assertEqual(200,response.status_code)
+        self.assertEqual('application/pdf',response.mimetype)
+        self.assertIn('no-store',response.headers['Cache-Control'])
+        reader = PdfReader(BytesIO(response.data))
+        self.assertIn('Carlos Ticas',reader.pages[0].extract_text())
+        self.assertIn('Cinthia',reader.pages[0].extract_text())
+        response = client.post('/admin/recintos',data={'action':'access_revoke','venue_id':'two','access_csrf':'csrf-test'})
+        self.assertTrue(response.location.endswith('#manage-venues'))
+        response = client.get('/admin/recintos/tarjetas.pdf')
+        self.assertNotIn('Cinthia',PdfReader(BytesIO(response.data)).pages[0].extract_text())
+        client.post('/admin/recintos',data={'action':'access_revoke','venue_id':'one','access_csrf':'csrf-test'})
+        response = client.get('/admin/recintos/tarjetas.pdf')
+        self.assertEqual(302,response.status_code)
+        self.assertTrue(response.location.endswith('#manage-venues'))
+        self.assertTrue(all(not v.get('access_nonce') for v in venue_config()['venues']))
+
+    def test_card_sheets_pagination(self):
+        entries = [({'name':f'P1-A{i}','responsible':f'Responsable {i}'},f'https://event.test/r/{i:022d}') for i in range(11)]
+        reader = PdfReader(build_access_cards(entries))
+        self.assertEqual(2,len(reader.pages))
+        text = '\n'.join(page.extract_text() for page in reader.pages)
+        for i in range(11):
+            self.assertEqual(1,text.count(f'Responsable {i}\n'))
+        self.assertIn('tamaño real',text)
+        self.assertIn('90 × 55 mm',text)
+        with self.assertRaises(ValueError): build_access_cards([])
 
 
 if __name__ == '__main__':

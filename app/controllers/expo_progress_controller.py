@@ -41,6 +41,18 @@ def venue_access_card(venue_id):
     response.headers['Cache-Control'] = 'no-store, private'
     return response
 
+
+@admin_module_required('assignments')
+def venue_access_cards():
+    from app.services.venue_access_pdf import build_access_cards
+    entries = [(v, access_url(v)) for v in venue_config()['venues'] if v.get('access_nonce')]
+    if not entries:
+        flash('Habilita al menos un acceso antes de imprimir las tarjetas.', 'error')
+        return redirect(url_for('admin.venues_page', _anchor='manage-venues'))
+    response = send_file(build_access_cards(entries), mimetype='application/pdf', as_attachment=True, download_name='tarjetas_acceso_recintos.pdf')
+    response.headers['Cache-Control'] = 'no-store, private'
+    return response
+
 def progress_pdf():
     from app.services.expo_progress_pdf import build_progress_pdf
     authorized = current_user.is_authenticated and current_user.has_admin_access
@@ -71,12 +83,19 @@ def venues_page():
     projects = Project.query.filter(Project.is_active.is_(True)).order_by(Project.title).all()
     if request.method == "POST":
         action = request.form.get("action")
-        if action in {'access_enable', 'access_rotate', 'access_revoke'}:
+        if action in {'access_enable', 'access_rotate', 'access_revoke', 'access_enable_all'}:
             supplied = request.form.get('access_csrf', '')
             expected = session.get('venue_access_csrf', '')
             if not expected or not secrets.compare_digest(supplied, expected):
                 abort(400)
-        if action == "create":
+        if action == 'access_enable_all':
+            enabled = 0
+            for venue in config['venues']:
+                if not venue.get('access_nonce'):
+                    change_access(venue, 'access_enable')
+                    enabled += 1
+            log_event('admin.expo.venue.access_enable_all', 'setting', detail=f'Accesos habilitados: {enabled}. Se conservaron los enlaces activos.')
+        elif action == "create":
             name = request.form.get("name", "").strip()
             if not name or len(name) > 120 or any(v["name"].casefold() == name.casefold() for v in config["venues"]):
                 flash("Indica un nombre único de recinto, de hasta 120 caracteres.", "error")
@@ -137,10 +156,10 @@ def venues_page():
         log_event("admin.expo.venues.update", "setting", detail=f"Recintos y ubicaciones actualizados: {len(config['venues'])} recintos.")
         db.session.commit()
         if action.startswith('access_'):
-            flash('Acceso revocado. El enlace y QR anteriores ya no funcionan.' if action == 'access_revoke' else 'Acceso de consulta listo. Puedes compartir el enlace o descargar la ficha QR.', 'success')
+            flash(f'{enabled} accesos habilitados. Los enlaces activos no se modificaron.' if action == 'access_enable_all' else 'Acceso revocado. El enlace y QR anteriores ya no funcionan.' if action == 'access_revoke' else 'Acceso de consulta listo. Puedes compartir el enlace o descargar la ficha QR.', 'success')
         else:
             flash("Recintos guardados. La vista pública ya refleja las ubicaciones.", "success")
-        return redirect(url_for("admin.venues_page"))
+        return redirect(url_for("admin.venues_page", _anchor='manage-venues' if action.startswith('access_') else None))
     session.setdefault('venue_access_csrf', secrets.token_urlsafe(32))
     links = {}
     for venue in config['venues']:

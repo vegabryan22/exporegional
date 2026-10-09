@@ -8,6 +8,7 @@ from reportlab.graphics.barcode.qr import QrCodeWidget
 from reportlab.graphics.shapes import Drawing, Rect
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
@@ -85,4 +86,74 @@ def build_access_card(venue, link):
     paragraph('ENLACE PRIVADO · SOLO CONSULTA',60,100,width-120,9,True,teal)
     paragraph('Entrega esta ficha únicamente al responsable. Si el acceso se revoca o reemplaza, este QR deja de funcionar.',60,82,width-120,9,False,muted)
     pdf.showPage(); pdf.save(); output.seek(0)
+    return output
+
+
+def build_access_cards(entries):
+    """Eight 90 x 55 mm personal cards per A4 sheet, with external trim marks."""
+    if not entries:
+        raise ValueError('No hay accesos habilitados para imprimir.')
+    output = BytesIO()
+    pdf = canvas.Canvas(output, pagesize=A4)
+    pdf.setTitle('Tarjetas de acceso por recinto - ExpoTécnica Regional')
+    page_w, page_h = A4
+    card_w, card_h, gap = 90*mm, 55*mm, 6*mm
+    left = (page_w-2*card_w-gap)/2
+    ink = colors.HexColor('#173f55')
+    orange = colors.HexColor('#f5a11a')
+    logos = [_brand_logo('school_logo_path'), _brand_logo('expo_logo_path')]
+    pages = (len(entries)+7)//8
+
+    def text(value, x, top, width, max_height, size, bold=False, color=ink):
+        # Fit complete names rather than cutting off the recipient's identity.
+        while True:
+            item = Paragraph(escape(str(value)), ParagraphStyle('mini-card', fontName='Helvetica-Bold' if bold else 'Helvetica', fontSize=size, leading=size*1.12, textColor=color))
+            _, h = item.wrap(width, card_h)
+            if h <= max_height or size <= 5:
+                break
+            size -= .5
+        item.drawOn(pdf,x,top-h)
+        return h
+
+    for page in range(pages):
+        pdf.setFillColor(ink); pdf.setFont('Helvetica-Bold',14)
+        pdf.drawString(left,page_h-30,'Tarjetas de acceso por recinto')
+        pdf.setFont('Helvetica',9)
+        pdf.drawString(left,page_h-46,'Imprimir al 100% / tamaño real · A4 · Recortar por las marcas')
+        for index,(venue,link) in enumerate(entries[page*8:(page+1)*8]):
+            x = left+(index%2)*(card_w+gap)
+            y = page_h-68-card_h-(index//2)*(card_h+gap)
+            pdf.setFillColor(colors.white); pdf.rect(x,y,card_w,card_h,fill=1,stroke=0)
+            pdf.setFillColor(ink); pdf.rect(x,y+card_h-36,card_w,36,fill=1,stroke=0)
+            for image,lx,lw,label in [(logos[0],x+6,30,'CORVEC'),(logos[1],x+card_w-71,65,'ExpoTécnica')]:
+                pdf.setFillColor(colors.white); pdf.roundRect(lx,y+card_h-31,lw,26,3,fill=1,stroke=0)
+                if image:
+                    pdf.drawImage(image,lx+2,y+card_h-29,width=lw-4,height=22,preserveAspectRatio=True,anchor='c',mask='auto')
+                else:
+                    text(label,lx+2,y+card_h-13,lw-4,16,5.5,True)
+            text('ExpoTécnica Regional',x+43,y+card_h-11,card_w-122,20,8,True,colors.white)
+            pdf.setFillColor(orange); pdf.rect(x,y+card_h-38,card_w,2,fill=1,stroke=0)
+            content_w = card_w-112
+            text('RESPONSABLE DE RECINTO',x+9,y+card_h-47,content_w,12,6,True,colors.HexColor('#218aa0'))
+            title_h = text(venue['name'],x+9,y+card_h-61,content_w,31,16,True)
+            name_top = y+card_h-66-title_h
+            text(venue.get('responsible') or 'Pendiente de asignar',x+9,name_top,content_w,max(28,name_top-y-25),9,True)
+            text('Escanea para ver proyectos y jueces pendientes. Sin usuario.',x+9,y+29,content_w,22,6.5)
+            qr = QrCodeWidget(link,barLevel='M')
+            bounds = qr.getBounds(); w,h = bounds[2]-bounds[0],bounds[3]-bounds[1]
+            size = 96
+            drawing = Drawing(size,size,transform=[size/w,0,0,size/h,0,0])
+            drawing.add(Rect(0,0,w,h,fillColor=colors.white,strokeColor=None)); drawing.add(qr)
+            renderPDF.draw(drawing,pdf,x+card_w-size-5,y+17)
+            pdf.setFillColor(ink); pdf.setFont('Helvetica',5.5)
+            pdf.drawString(x+9,y+6,'ACCESO PERSONAL · SOLO CONSULTA · NO COMPARTIR')
+            # Corner marks stay outside the card and its QR quiet zone.
+            pdf.setStrokeColor(colors.HexColor('#8998a0')); pdf.setLineWidth(.4)
+            for cx,cy,sx,sy in [(x,y,-1,-1),(x+card_w,y,1,-1),(x,y+card_h,-1,1),(x+card_w,y+card_h,1,1)]:
+                pdf.line(cx+sx*2,cy,cx+sx*7,cy)
+                pdf.line(cx,cy+sy*2,cx,cy+sy*7)
+        pdf.setFillColor(ink); pdf.setFont('Helvetica',8)
+        pdf.drawString(left,24,f'{len(entries)} tarjetas · 90 × 55 mm · Página {page+1} de {pages}')
+        pdf.showPage()
+    pdf.save(); output.seek(0)
     return output

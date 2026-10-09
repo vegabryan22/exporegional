@@ -24,3 +24,18 @@ assert.ok(windows[0][0].startsWith('https://wa.me/50688888888?text='));
 assert.equal(new URL(windows[0][0]).searchParams.get('text'),form.dataset.message);
 assert.equal(windows[0][2],'noopener,noreferrer');
 console.log('OK: destination phone, country codes, validation and prepared WhatsApp message');
+const storage = new Map([['venue-manager-return',JSON.stringify({scroll:350,phones:{'venue-phone-one':'8888 8888'}})]]);
+let saveHandler;
+const modal = {scrollTop:0,querySelectorAll(selector){return selector.startsWith('form') ? [{querySelector(){return {value:'access_enable'};},addEventListener(type,handler){saveHandler=handler;}}] : [{id:'venue-phone-one',value:phone.value}];}};
+vm.runInNewContext(fs.readFileSync('app/static/expo-venue-sharing.js','utf8'),{
+  document:{getElementById(id){return id==='manage-venues' ? modal : phone;},querySelectorAll(){return [];}},
+  window:{location:{hash:'#manage-venues'}},
+  sessionStorage:{getItem(key){return storage.get(key);},removeItem(key){storage.delete(key);},setItem(key,value){storage.set(key,value);}},URL
+});
+assert.equal(modal.scrollTop,350);
+assert.equal(phone.value,'8888 8888');
+assert.equal(storage.has('venue-manager-return'),false);
+modal.scrollTop=450; saveHandler();
+assert.equal(JSON.parse(storage.get('venue-manager-return')).scroll,450);
+assert.equal(JSON.parse(storage.get('venue-manager-return')).phones['venue-phone-one'],'8888 8888');
+console.log('OK: venue manager restores scroll and phone inputs after enabling access');

@@ -1,6 +1,7 @@
 """Public, score-free event progress and persistent venue configuration."""
 import json
 import re
+import unicodedata
 from datetime import datetime, timezone
 from sqlalchemy.orm import joinedload
 from app.models.project import Project
@@ -38,6 +39,21 @@ def project_venue_map(project_ids):
         if venue:
             result[project_id] = {'name': venue['name'], 'responsible': venue.get('responsible', '')}
     return result
+
+
+def group_venue_projects(projects):
+    """Stable school groups for the venue assignment editor."""
+    groups = {}
+    def alphabetic(text):
+        return unicodedata.normalize('NFKD', text.casefold()).encode('ascii','ignore').decode()
+    for project in projects:
+        school = project.institution
+        name = school.name if school else project.institution_name or 'Sin colegio vinculado'
+        key = str(school.id) if school else 'unlinked-' + name
+        groups.setdefault(key, {'id':key,'name':name,'projects':[]})['projects'].append(project)
+    for group in groups.values():
+        group['projects'].sort(key=lambda project: (alphabetic(project.title),project.id))
+    return sorted(groups.values(),key=lambda group: (group['name'] == 'Sin colegio vinculado',alphabetic(group['name']),group['id']))
 
 
 def project_progress(project, exposition_codes, *, include_pending_judges=False):

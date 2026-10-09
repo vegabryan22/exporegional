@@ -4,7 +4,7 @@ from flask import render_template, request, redirect, url_for, flash, jsonify, m
 from flask_login import current_user
 from app.extensions import db
 from app.models.project import Project
-from app.services.expo_progress_service import venue_config, public_progress, VENUE_SETTING, default_venue_responsible
+from app.services.expo_progress_service import venue_config, public_progress, VENUE_SETTING, default_venue_responsible, group_venue_projects
 from app.models.system_setting import SystemSetting
 from app.services.audit_service import log_event
 from app.controllers.admin_controller import admin_module_required, _base_context
@@ -98,4 +98,4 @@ def venues_page():
         db.session.commit()
         flash("Recintos guardados. La vista pública ya refleja las ubicaciones.", "success")
         return redirect(url_for("admin.venues_page"))
-    return render_template("admin/expo_venues.html", **_base_context("venues"), venues=config["venues"], locations=config["projects"], venue_projects=projects)
+    return render_template("admin/expo_venues.html", **_base_context("venues"), venues=config["venues"], locations=config["projects"], venue_projects=projects, venue_school_groups=group_venue_projects(projects))

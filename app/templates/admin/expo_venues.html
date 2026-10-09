@@ -18,7 +18,32 @@
 </div></dialog>
 <dialog id="create-venue" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h3>Nuevo recinto</h3><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div><form method="post" class="compact-form"><input type="hidden" name="action" value="create"><label>Nombre del recinto<input name="name" maxlength="120" required placeholder="Ejemplo: P1-A4"></label><label>Responsable<input name="responsible" maxlength="120" placeholder="Nombre completo"></label><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Crear recinto</button></div></form></div></dialog>
 {% for venue in venues %}<dialog id="edit-venue-{{ venue.id }}" class="maintenance-dialog"><div class="dialog-card"><div class="dialog-head"><h3>Editar {{ venue.name }}</h3><button type="button" class="ghost-btn" data-dialog-close>Cerrar</button></div><form method="post" class="compact-form"><input type="hidden" name="action" value="update"><input type="hidden" name="venue_id" value="{{ venue.id }}"><label>Nombre del recinto<input name="name" value="{{ venue.name }}" maxlength="120" required></label><label>Responsable del recinto<input name="responsible" value="{{ venue.responsible or '' }}" maxlength="120"></label><small>El nombre del responsable se muestra en el tablero público y en el PDF.</small><div class="actions-row"><button type="button" class="ghost-btn" data-dialog-close>Cancelar</button><button type="submit">Guardar cambios</button></div></form></div></dialog>{% endfor %}
-<form method="post" class="venue-location-form"><input type="hidden" name="action" value="save"><div class="table-wrap"><table class="venue-location-table"><thead><tr><th>Proyecto</th><th>Colegio</th><th>Recinto asignado</th></tr></thead><tbody>{% for project in venue_projects %}<tr><td data-label="Proyecto"><strong>{{ project.title }}</strong><small>{{ project.category }}</small></td><td data-label="Colegio">{{ project.institution.name if project.institution else project.institution_name or 'Sin colegio' }}</td><td data-label="Recinto"><select aria-label="Recinto de {{ project.title }}" name="venue_{{ project.id }}"><option value="">Sin recinto asignado</option>{% for venue in venues %}<option value="{{ venue.id }}" {% if locations.get(project.id|string) == venue.id %}selected{% endif %}>{{ venue.name }}</option>{% endfor %}</select></td></tr>{% else %}<tr><td colspan="3">No hay proyectos para ubicar.</td></tr>{% endfor %}</tbody></table></div><div class="venue-save-bar"><a href="{{ url_for('admin.assignments_page') }}" data-no-iconify>← Volver a asignaciones</a><button type="submit" data-no-iconify>Guardar ubicaciones</button></div></form></section>
+<div class="venue-editor-filters">
+  <label>Buscar<input type="search" id="venue-search" placeholder="Proyecto o colegio"></label>
+  <label>Colegio<select id="venue-school-filter"><option value="">Todos los colegios</option>{% for group in venue_school_groups %}<option value="{{ group.id }}">{{ group.name }}</option>{% endfor %}</select></label>
+  <label>Recinto<select id="venue-location-filter"><option value="">Todos los recintos</option><option value="unassigned">Sin recinto asignado</option>{% for venue in venues %}<option value="{{ venue.id }}">{{ venue.name }}</option>{% endfor %}</select></label>
+  <label>Categoría<select id="venue-category-filter"><option value="">Todas</option>{% for code,name in category_map.items() %}<option value="{{ code }}">{{ name }}</option>{% endfor %}</select></label>
+  <button type="button" id="venue-clear-filters" data-no-iconify>Limpiar</button>
+</div>
+<p class="venue-editor-count" id="venue-visible-count" role="status" aria-live="polite">{{ venue_projects|length }} proyectos · {{ venue_school_groups|length }} colegios</p>
+<form method="post" class="venue-location-form"><input type="hidden" name="action" value="save">
+  {% for group in venue_school_groups %}
+  <details class="venue-school-group" data-venue-school="{{ group.id }}" open>
+    <summary><strong>{{ group.name }}</strong><small data-venue-group-count>{{ group.projects|length }} proyectos</small></summary>
+    <div class="table-wrap"><table class="venue-location-table"><thead><tr><th>Proyecto</th><th>Recinto asignado</th></tr></thead><tbody>
+      {% for project in group.projects %}
+      <tr data-venue-project data-search="{{ project.title ~ ' ' ~ group.name }}" data-school="{{ group.id }}" data-category="{{ project.category }}">
+        <td data-label="Proyecto"><strong>{{ project.title }}</strong><small>{{ category_map.get(project.category,project.category) }}</small></td>
+        <td data-label="Recinto"><select aria-label="Recinto de {{ project.title }}" name="venue_{{ project.id }}" data-venue-select><option value="">Sin recinto asignado</option>{% for venue in venues %}<option value="{{ venue.id }}" {% if locations.get(project.id|string) == venue.id %}selected{% endif %}>{{ venue.name }}</option>{% endfor %}</select></td>
+      </tr>
+      {% endfor %}
+    </tbody></table></div>
+  </details>
+  {% else %}<p>No hay proyectos para ubicar.</p>{% endfor %}
+  <p id="venue-empty-filter" hidden>No hay proyectos que coincidan con los filtros.</p>
+  <div class="venue-save-bar"><div><a href="{{ url_for('admin.assignments_page') }}" data-no-iconify>← Volver a asignaciones</a><span id="venue-dirty-count" role="status" aria-live="polite">Sin cambios pendientes</span></div><button type="submit" data-no-iconify>Guardar ubicaciones</button></div>
+</form></section>
+<script src="{{ url_for('static', filename='expo-venue-editor.js') }}?v={{ asset_version }}" defer></script>
 <script>
   document.querySelectorAll('#create-venue, dialog[id^="edit-venue-"]').forEach(function (dialog) {
     dialog.dataset.parentDialog = 'manage-venues';

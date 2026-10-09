@@ -5,6 +5,18 @@ from app.models.assignment import Assignment
 from app.services.evaluation_service import ENGLISH_EVAL_TYPE_CODE
 
 class ExpoProgressTest(unittest.TestCase):
+    def test_venue_editor_groups_by_linked_school_and_alphabetical_project(self):
+        from app.services.expo_progress_service import group_venue_projects
+        school = Row(id=2,name='CTP Águila')
+        projects = [Row(id=1,title='Zeta',institution=school,institution_name='Dato manual antiguo'),
+                    Row(id=2,title='Árbol',institution=school,institution_name='Otro dato'),
+                    Row(id=3,title='Proyecto',institution=Row(id=1,name='CTP Zeta'),institution_name=''),
+                    Row(id=4,title='Sin vínculo',institution=None,institution_name=None)]
+        groups = group_venue_projects(projects)
+        self.assertEqual(['CTP Águila','CTP Zeta','Sin colegio vinculado'],[g['name'] for g in groups])
+        self.assertEqual(['Árbol','Zeta'],[p.title for p in groups[0]['projects']])
+        self.assertEqual('2',groups[0]['id'])
+
     def project(self, english=False):
         return Row(id=1, title="Proyecto", institution=Row(name="Colegio"), category="steam", members=[Row(id=10, participates_in_english=english)], assignments=[], evaluations=[])
 

@@ -25,6 +25,19 @@
 .attendance-preview { color: #206c88; text-decoration: none; font-size: .8rem; font-weight: 600; white-space: nowrap; }
 .attendance-preview:hover { text-decoration: underline; }
 .attendance-error { max-width: 180px; color: #a23c4c; font-size: .75rem; }
+.attendance-filters { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; background: #f3f8fb; border: 1px solid #d7e6ee; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+.attendance-filters label { display: grid; gap: 5px; min-width: 0; font-size: .75rem; font-weight: 650; color: #506f82; }
+.attendance-filters input, .attendance-filters select { min-width: 0; width: 100%; min-height: 42px; margin: 0; padding: 9px 11px; border: 1px solid #c7dce7; border-radius: 8px; background: #fff; font-size: .82rem; }
+.attendance-filters button, .attendance-selection-bar button { width: auto; margin: 0; padding: 8px 12px; min-height: 38px; font-size: .78rem; border-radius: 8px; background: #fff; color: #28657d; border: 1px solid #c7dce7; box-shadow: none; }
+.attendance-filters button { justify-self: start; }
+.attendance-selection-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: .8rem; color: #547183; }
+.attendance-selection-bar > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.attendance-selection-note { font-size: .73rem; color: #7b8e9a; margin: 10px 0 16px; }
+.attendance-empty { padding: 20px; text-align: center; color: #6b8191; background: #f6f9fb; border-radius: 10px; }
+.attendance-panel [hidden] { display: none !important; }
+.attendance-toolbar button:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 700px) { .attendance-filters { grid-template-columns: repeat(2,minmax(0,1fr)); } .attendance-search { grid-column: 1/-1; } }
+@media (max-width: 420px) { .attendance-filters { grid-template-columns: minmax(0,1fr); } .attendance-selection-bar { align-items: flex-start; flex-direction: column; } }
 @media (max-width: 1000px) {
   .attendance-toolbar { align-items: flex-start; flex-direction: column; }
   .attendance-panel .table-wrap { overflow: visible; }

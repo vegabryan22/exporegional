@@ -212,4 +212,24 @@ class ExpoAttendanceTest(unittest.TestCase):
             self.assertEqual(80, evaluation.percentage)
             self.assertTrue(any('incompatible' in msg for _, msg in __import__('flask').get_flashed_messages(with_categories=True)))
 
+    def test_recording_arrival_preserves_operational_filters(self):
+        from app.extensions import login_manager
+        from app.routes.admin_routes import admin_bp
+        login_manager.init_app(self.app)
+        self.app.secret_key = 'test'
+        self.app.register_blueprint(admin_bp)
+        admin = Judge(full_name='Administrador', email='admin@test', password_hash='test', role=Judge.ROLE_SUPERADMIN)
+        db.session.add(admin); db.session.commit()
+        client = self.app.test_client()
+        with client.session_transaction() as session:
+            session['_user_id'] = str(admin.id); session['_fresh'] = True
+        response = client.post('/admin/expo/jueces', data={
+            'action':'presence', 'judge_id':self.judges[0].id, 'present':'1',
+            'filter_presence':'no', 'filter_response':'yes', 'filter_q':'Juez',
+        })
+        self.assertEqual(302, response.status_code)
+        self.assertIn('filter_presence=no', response.location)
+        self.assertIn('filter_response=yes', response.location)
+        self.assertIn('filter_q=Juez', response.location)
+
 if __name__ == '__main__': unittest.main()

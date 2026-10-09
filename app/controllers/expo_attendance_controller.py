@@ -11,6 +11,11 @@ from app.services.audit_service import log_event
 from app.services.expo_attendance_service import exposition_judges, presence_records, presence_key, invitation_pdf, invitation_message
 from app.services.mail_service import smtp_is_configured, send_email_batch
 
+def _attendance_return_url():
+    filters = {"filter_" + key: request.form.get("filter_" + key, "")[:200]
+               for key in ("q", "school", "invitation", "response", "presence", "profile")}
+    return url_for('admin.expo_attendance', **{key: value for key, value in filters.items() if value})
+
 @admin_module_required('judge_pool')
 def attendance_page():
     judges = exposition_judges()
@@ -23,7 +28,7 @@ def attendance_page():
             notes = request.form.get('notes','').strip()
             if answer not in {'yes','no','pending'} or len(notes)>500:
                 flash('Selecciona una respuesta válida y una observación de hasta 500 caracteres.','error')
-                return redirect(url_for('admin.expo_attendance'))
+                return redirect(_attendance_return_url())
             before = judge.attendance_status_label
             judge.attendance_confirmed = True if answer == 'yes' else False if answer == 'no' else None
             judge.attendance_responded_at = datetime.utcnow() if answer != 'pending' else None
@@ -40,7 +45,7 @@ def attendance_page():
             present = request.form.get('present') == '1'
             if present and judge.attendance_confirmed is False:
                 flash('El juez está marcado como No asiste. Corrige su respuesta antes de registrar la llegada.','error')
-                return redirect(url_for('admin.expo_attendance'))
+                return redirect(_attendance_return_url())
             records[str(judge.id)] = {'present':present,'at':datetime.now(timezone.utc).isoformat(),'by':current_user.id}
             SystemSetting.set_value(presence_key(),json.dumps(records))
             log_event('admin.judge.expo.checkin','judge',judge.id,f'Presencia en recinto: {present}')
@@ -50,10 +55,10 @@ def attendance_page():
             selected = [j for j in judges if j.id in ids]
             if not selected or not smtp_is_configured():
                 flash('Selecciona jueces y verifica la configuración de correo.','error')
-                return redirect(url_for('admin.expo_attendance'))
+                return redirect(_attendance_return_url())
             try: messages = [invitation_message(j) for j in selected]
             except ValueError as error:
-                db.session.rollback(); flash(str(error),'error'); return redirect(url_for('admin.expo_attendance'))
+                db.session.rollback(); flash(str(error),'error'); return redirect(_attendance_return_url())
             db.session.commit()
             results = send_email_batch(messages)
             for judge, (ok,error) in zip(selected,results):
@@ -61,7 +66,7 @@ def attendance_page():
                 judge.attendance_invitation_error = error
                 log_event('admin.judge.expo.invitation','judge',judge.id,'Enviada' if ok else f'Error: {error}')
             db.session.commit(); flash(f'Invitaciones enviadas: {sum(ok for ok,_ in results)} de {len(selected)}.','success')
-        return redirect(url_for('admin.expo_attendance'))
+        return redirect(_attendance_return_url())
     return render_template('admin/expo_attendance.html',**_base_context('expo_attendance'),expo_judges=judges,presence=presence_records())
 
 @admin_module_required('judge_pool')

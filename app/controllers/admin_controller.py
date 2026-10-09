@@ -9815,13 +9815,14 @@ def _winner_acta_lines(winner):
             "project": "_____________________________________________________________",
             "axis": "_______________________________________",
             "school": "No indicado",
-            "students": ["___________________________________________________"] * 3,
+            "students": [],
             "score": "_______",
         }
     project = winner["project"]
-    members = sorted(project.members, key=lambda member: (member.student_number, member.id))[:3]
+    members = sorted(project.members, key=lambda member: (member.student_number, member.id))
+    if not 1 <= len(members) <= 3:
+        raise ValueError(f"El proyecto '{project.title}' debe tener entre 1 y 3 integrantes para generar el acta.")
     student_names = [_person_name_title(member.full_name) for member in members]
-    student_names.extend(["___________________________________________________"] * (3 - len(student_names)))
     return {
         "project": project.title,
         "school": project.institution.name if project.institution else (project.institution_name or "Sin colegio vinculado"),
@@ -9885,14 +9886,23 @@ def _build_winners_acta_docx() -> BytesIO:
 
         _set_word_paragraph_text(paragraphs[4], f"Nombre del proyecto {steam['project']} · Colegio: {steam['school']}")
         _set_word_paragraph_text(paragraphs[5], f"Eje temático {steam['axis']}")
-        for offset, student in enumerate(steam["students"]):
-            _set_word_paragraph_text(paragraphs[6 + offset], f"Nombre y apellidos estudiante {offset + 1} {student}")
+        body = document_root.find(f'{{{WORD_NS}}}body')
+        for offset in range(3):
+            paragraph = paragraphs[6 + offset]
+            if offset < len(steam['students']):
+                _set_word_paragraph_text(paragraph, steam['students'][offset])
+            else:
+                body.remove(paragraph)
         _set_word_paragraph_text(paragraphs[9], f"Puntaje obtenido {steam['score']}")
 
         _set_word_paragraph_text(paragraphs[11], f"Nombre del proyecto {entrepreneurship['project']} · Colegio: {entrepreneurship['school']}")
         _set_word_paragraph_text(paragraphs[12], f"Eje temático {entrepreneurship['axis']}")
-        for offset, student in enumerate(entrepreneurship["students"]):
-            _set_word_paragraph_text(paragraphs[13 + offset], f"Nombre y apellidos estudiante {offset + 1} {student}")
+        for offset in range(3):
+            paragraph = paragraphs[13 + offset]
+            if offset < len(entrepreneurship['students']):
+                _set_word_paragraph_text(paragraph, entrepreneurship['students'][offset])
+            else:
+                body.remove(paragraph)
         _set_word_paragraph_text(paragraphs[16], f"Puntaje obtenido {entrepreneurship['score']}")
 
         for node in document_root.iter(f'{{{WORD_NS}}}t'):

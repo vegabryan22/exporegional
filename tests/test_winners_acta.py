@@ -48,12 +48,37 @@ class WinnersActaTest(unittest.TestCase):
             data = fixture(); data['summary_cards'][key] = 0
             with self.assertRaises(ValueError): generate(data)
 
+    def test_student_lines_match_actual_member_count_without_example_labels(self):
+        for count in (1,2,3):
+            data = fixture()
+            for category in data['category_winners']:
+                category['winner']['project'].members = [Row(id=i,student_number=i,full_name=f'Estudiante Real Apellido {i}') for i in range(1,count+1)]
+            with ZipFile(generate(data)) as document:
+                root = ET.fromstring(document.read('word/document.xml'))
+            texts = [''.join(n.text or '' for n in p.iter('{'+controller.WORD_NS+'}t')) for p in controller._word_paragraphs(root)]
+            self.assertFalse(any('Nombre y apellidos estudiante' in text for text in texts))
+            self.assertEqual(2*count,sum(text.startswith('Estudiante Real Apellido') for text in texts))
+            self.assertFalse(any(text.startswith('___') for text in texts if 'Director' not in text and 'Coordinación' not in text and 'Presidente' not in text))
+            for i in range(1,count+1):
+                self.assertEqual(2,texts.count(f'Estudiante Real Apellido {i}'))
+
+    def test_acta_rejects_invalid_member_counts(self):
+        for count in (0,4):
+            data = fixture()
+            data['category_winners'][0]['winner']['project'].members = [Row(id=i,student_number=i,full_name='Persona') for i in range(count)]
+            with self.assertRaises(ValueError): generate(data)
+
 
 if __name__ == '__main__':
     import sys
     if '--preview' in sys.argv:
         directory = Path('tmp/pdfs'); directory.mkdir(parents=True,exist_ok=True)
         (directory/'acta-regional.docx').write_bytes(generate().getvalue())
+        for count in (1,3):
+            data = fixture()
+            for category in data['category_winners']:
+                category['winner']['project'].members = [Row(id=i,student_number=i,full_name=f'Estudiante Real Apellido {i}') for i in range(1,count+1)]
+            (directory/f'acta-regional-{count}-integrantes.docx').write_bytes(generate(data).getvalue())
         print('Synthetic regional acta generated for visual review')
     else:
         unittest.main()

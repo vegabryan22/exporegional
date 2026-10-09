@@ -27,13 +27,14 @@
                     <p>STEAM &middot; Emprendimiento</p>
                 </div>
             </div>
-            <a href="{{ url_for('public.expo_progress') }}" class="expo-live-link expo-live-mobile" data-no-iconify {% if request.endpoint == 'public.expo_progress' %}aria-current="page"{% endif %}><span class="expo-live-dot" aria-hidden="true"></span>Evaluaciones en vivo</a>
             <button
                 type="button"
                 class="nav-toggle"
                 data-nav-toggle
                 aria-expanded="false"
                 aria-controls="site-nav"
+                aria-label="Abrir menú de navegación"
+                data-no-iconify
             >
                 <span aria-hidden="true">☰</span>
                 <span>Menú</span>
@@ -41,7 +42,6 @@
             <nav id="site-nav" class="site-nav">
                 <div class="site-nav-public" aria-label="Navegación pública">
                     <a href="{{ url_for('public.index') }}" data-no-iconify {% if request.endpoint == 'public.index' %}aria-current="page"{% endif %}>Inicio</a>
-                    <a href="{{ url_for('public.expo_progress') }}" class="expo-live-link expo-live-desktop" data-no-iconify {% if request.endpoint == 'public.expo_progress' %}aria-current="page"{% endif %}><span class="expo-live-dot" aria-hidden="true"></span>Evaluaciones en vivo</a>
                     <details class="nav-dropdown" data-no-iconify>
                         <summary>Proyectos</summary>
                         <div class="nav-dropdown-card">
@@ -85,6 +85,7 @@
                     <a href="{{ url_for('auth.login') }}" class="nav-login-link">Ingreso</a>
                 {% endif %}
             </nav>
+            <a href="{{ url_for('public.expo_progress') }}" class="expo-live-link header-live-access" data-no-iconify aria-label="Evaluaciones en vivo" {% if request.endpoint == 'public.expo_progress' %}aria-current="page"{% endif %}><span class="expo-live-dot" aria-hidden="true"></span><span class="header-live-full">Evaluaciones en vivo</span><span class="header-live-short" aria-hidden="true">En vivo</span></a>
         </div>
     </header>
 

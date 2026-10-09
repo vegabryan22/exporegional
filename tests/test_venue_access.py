@@ -67,6 +67,18 @@ class VenueAccessTest(unittest.TestCase):
         long_card = build_access_card({'name':'Recinto de proyectos innovadores '*3,'responsible':'Nombre completo del responsable '*3},'https://example.test/test')
         self.assertEqual(1,len(PdfReader(long_card).pages))
 
+    def test_card_embeds_both_configured_logos(self):
+        values = {'school_logo_path':'judge_invitation/school_crest.jpg','expo_logo_path':'judge_invitation/mep_logo.png'}
+        with patch('app.services.venue_access_pdf.SystemSetting.get_value',side_effect=lambda key,default='':values.get(key,default)):
+            reader = PdfReader(build_access_card({'name':'P1-A4','responsible':'Carlos Ticas'},'https://example.test/venue'))
+        self.assertEqual(2,len(reader.pages[0].images))
+        self.assertEqual(1,len(reader.pages))
+
+    def test_logo_path_cannot_escape_static_root(self):
+        from app.services.venue_access_pdf import _brand_logo
+        with patch('app.services.venue_access_pdf.SystemSetting.get_value',return_value='../../config.py'):
+            self.assertIsNone(_brand_logo('school_logo_path'))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -36,6 +36,7 @@
                 <summary class="project-tracking-summary project-tracking-summary-compact">
                     <div class="project-tracking-main">
                         <strong>{{ item.project.title }}</strong>
+                        <span>Colegio: {{ item.project.institution.name if item.project.institution else (item.project.institution_name or 'Sin colegio vinculado') }}</span>
                         <span>{{ item.project.team_name }}</span>
                     </div>
                     <div class="project-tracking-metrics project-tracking-metrics-compact">

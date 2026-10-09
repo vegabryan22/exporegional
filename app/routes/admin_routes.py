@@ -47,6 +47,7 @@ admin_bp.add_url_rule("/actas/proyecto/<int:project_id>", view_func=admin_contro
 admin_bp.add_url_rule("/actas/proyecto/<int:project_id>/pdf", view_func=admin_controller.evaluation_report_project_pdf, methods=["GET"])
 admin_bp.add_url_rule("/actas/proyecto/<int:project_id>/descargar", view_func=admin_controller.evaluation_report_project_download, methods=["GET"])
 admin_bp.add_url_rule("/actas/general", view_func=admin_controller.evaluation_report_all_preview, methods=["GET"])
+admin_bp.add_url_rule('/evaluaciones/acta-ganadores.docx', view_func=admin_controller.winners_acta_download, methods=['GET'])
 admin_bp.add_url_rule("/actas/general/pdf", view_func=admin_controller.evaluation_report_all_pdf, methods=["GET"])
 admin_bp.add_url_rule("/actas/general/descargar", view_func=admin_controller.evaluation_report_all_download, methods=["GET"])
 admin_bp.add_url_rule("/actas/juez/<int:judge_id>", view_func=admin_controller.evaluation_report_judge_preview, methods=["GET"])

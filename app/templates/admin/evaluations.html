@@ -18,6 +18,11 @@
       <p>Monitorea avance, puntajes acumulados, l&iacute;deres por categor&iacute;a y ganador de ingl&eacute;s.</p>
     </div>
     <div class="ov2-header-actions">
+      <form method="get" action="{{ url_for('admin.winners_acta_download') }}" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:.8rem">N.º acta <input name="numero" value="01" maxlength="20" required style="width:65px"></label>
+        <label style="font-size:.8rem">Hora <input name="hora" type="time" style="width:115px"></label>
+        <button type="submit" class="ov2-shortcut" data-no-iconify>Acta final de ganadores · Word</button>
+      </form>
       <a data-no-iconify href="{{ url_for('admin.overview') }}" class="ov2-shortcut outline">Panel</a>
       <a data-no-iconify href="{{ url_for('admin.documents_page') }}" class="ov2-shortcut outline">Actas</a>
       <a data-no-iconify href="{{ url_for('admin.evaluation_report_all_preview') }}" class="ov2-shortcut">Ver acta general</a>
@@ -154,6 +159,7 @@
             <div class="ev2-winner-detail">
               <strong title="{{ item.winner.project.title }}">{{ item.winner.project.title }}</strong>
               <span>{{ item.winner.project.team_name }}</span>
+              <span>Colegio: {{ item.winner.project.institution.name if item.winner.project.institution else (item.winner.project.institution_name or 'Sin colegio vinculado') }}</span>
             </div>
             <span class="ev2-score">{{ "%.2f"|format(item.winner.final_grade) }}</span>
           </div>
@@ -162,6 +168,7 @@
             <span class="ev2-rank-badge ev2-rank-2">2&deg;</span>
             <div class="ev2-winner-detail">
               <small title="{{ item.runner_up.project.title }}">{{ item.runner_up.project.title }}</small>
+              <span>Colegio: {{ item.runner_up.project.institution.name if item.runner_up.project.institution else (item.runner_up.project.institution_name or 'Sin colegio vinculado') }}</span>
             </div>
             <span class="ev2-score-sm">{{ "%.2f"|format(item.runner_up.final_grade) }}</span>
           </div>
@@ -187,6 +194,7 @@
                 {{ english_winner.member.full_name if english_winner.member else 'N/D' }}
               </strong>
               <span title="{{ english_winner.project.title }}">{{ english_winner.project.title }}</span>
+              <span>Colegio: {{ english_winner.project.institution.name if english_winner.project.institution else (english_winner.project.institution_name or 'Sin colegio vinculado') }}</span>
             </div>
             <span class="ev2-score">{{ "%.2f"|format(english_winner.english_score) }}</span>
           </div>
@@ -198,6 +206,7 @@
                 {{ english_runner_up.member.full_name if english_runner_up.member else 'N/D' }}
               </small>
               <span title="{{ english_runner_up.project.title }}">{{ english_runner_up.project.title }}</span>
+              <span>Colegio: {{ english_runner_up.project.institution.name if english_runner_up.project.institution else (english_runner_up.project.institution_name or 'Sin colegio vinculado') }}</span>
             </div>
             <span class="ev2-score-sm">{{ "%.2f"|format(english_runner_up.english_score) }}</span>
           </div>

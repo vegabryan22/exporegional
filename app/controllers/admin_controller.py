@@ -9762,6 +9762,183 @@ def evaluations_page():
     return render_template("admin/evaluations.html", **context)
 
 
+WINNERS_ACTA_TEMPLATE = (
+    Path(__file__).resolve().parents[1]
+    / "assets"
+    / "document_templates"
+    / "acta_ganadores_institucional.docx"
+)
+WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+
+
+def _parse_word_xml(xml_bytes: bytes):
+    for prefix, uri in ET.iterparse(BytesIO(xml_bytes), events=("start-ns",)):
+        if prefix and not prefix.startswith("ns"):
+            ET.register_namespace(prefix, uri)
+        elif not prefix:
+            ET.register_namespace("", uri)
+    root = ET.fromstring(xml_bytes)
+    root.attrib.pop(
+        "{http://schemas.openxmlformats.org/markup-compatibility/2006}Ignorable",
+        None,
+    )
+    return root
+
+
+def _word_paragraphs(root):
+    return root.findall(f".//{{{WORD_NS}}}body/{{{WORD_NS}}}p")
+
+
+def _set_word_paragraph_text(paragraph, value: str):
+    text_nodes = paragraph.findall(f".//{{{WORD_NS}}}t")
+    if not text_nodes:
+        return
+    text_nodes[0].text = value
+    text_nodes[0].set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+    for node in text_nodes[1:]:
+        node.text = ""
+
+
+def _winner_for_acta(category_winners: list[dict], category_key: str):
+    category_key = category_key.lower()
+    for item in category_winners:
+        category = item.get("category")
+        label = f"{getattr(category, 'code', '')} {getattr(category, 'name', '')}".lower()
+        if category_key in label:
+            return item.get("winner")
+    return None
+
+
+def _winner_acta_lines(winner):
+    if not winner:
+        return {
+            "project": "_____________________________________________________________",
+            "axis": "_______________________________________",
+            "school": "No indicado",
+            "students": ["___________________________________________________"] * 3,
+            "score": "_______",
+        }
+    project = winner["project"]
+    members = sorted(project.members, key=lambda member: (member.student_number, member.id))[:3]
+    student_names = [_person_name_title(member.full_name) for member in members]
+    student_names.extend(["___________________________________________________"] * (3 - len(student_names)))
+    return {
+        "project": project.title,
+        "school": project.institution.name if project.institution else (project.institution_name or "Sin colegio vinculado"),
+        "axis": project.thematic_axis.name if project.thematic_axis else "No indicado",
+        "students": student_names,
+        "score": f"{winner['final_grade']:.2f}",
+    }
+
+
+def _build_winners_acta_docx() -> BytesIO:
+    if not WINNERS_ACTA_TEMPLATE.exists():
+        raise FileNotFoundError("No se encontró la plantilla oficial del acta de ganadores.")
+
+    overview = build_admin_evaluation_overview()
+    summary = overview.get("summary_cards", {})
+    if not summary.get("projects") or summary.get("completed_projects", 0) != summary.get("projects") or summary.get("completed_english_evaluations", 0) != summary.get("expected_english_evaluations", 0):
+        raise ValueError("El acta final requiere completar las evaluaciones de los proyectos activos, incluido inglés.")
+    steam = _winner_acta_lines(_winner_for_acta(overview["category_winners"], "steam"))
+    entrepreneurship = _winner_acta_lines(
+        _winner_for_acta(overview["category_winners"], "emprendimiento")
+    )
+    if not _winner_for_acta(overview['category_winners'], 'steam') or not _winner_for_acta(overview['category_winners'], 'emprendimiento'):
+        raise ValueError('No hay un ganador calculado para ambas categorías. Revisa los resultados antes de generar el acta final.')
+    event_date = _parse_date(SystemSetting.get_value("expotec_event_date", "")) or datetime.now().date()
+    school_name = SystemSetting.get_value("school_name", "ExpoTécnica Regional")
+    school_year = SystemSetting.get_value("expotec_school_year", str(event_date.year)) or str(event_date.year)
+    acta_number = (request.args.get("numero") or "01").strip()[:20] or "01"
+    months = (
+        "enero", "febrero", "marzo", "abril", "mayo", "junio",
+        "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+    )
+
+    output = BytesIO()
+    with ZipFile(WINNERS_ACTA_TEMPLATE, "r") as source, ZipFile(output, "w") as target:
+        document_root = _parse_word_xml(source.read("word/document.xml"))
+        paragraphs = _word_paragraphs(document_root)
+
+        _set_word_paragraph_text(paragraphs[0], f"Acta N° {acta_number} -{school_year}")
+
+        narrative_runs = paragraphs[2].findall(f"./{{{WORD_NS}}}r")
+        narrative_texts = [run.find(f".//{{{WORD_NS}}}t") for run in narrative_runs]
+        replacements = {
+            1: (request.args.get("hora") or "____").strip()[:10],
+            3: "horas,",
+            6: str(event_date.day),
+            8: f"{months[event_date.month - 1]} ",
+            10: str(event_date.year),
+            16: "",
+            17: school_name,
+            18: "",
+            26: "regional",
+            27: "",
+            28: "",
+            37: str(event_date.day),
+            39: f"{months[event_date.month - 1]} ",
+            41: str(event_date.year),
+        }
+        for index, value in replacements.items():
+            if index < len(narrative_texts) and narrative_texts[index] is not None:
+                narrative_texts[index].text = value
+
+        _set_word_paragraph_text(paragraphs[4], f"Nombre del proyecto {steam['project']} · Colegio: {steam['school']}")
+        _set_word_paragraph_text(paragraphs[5], f"Eje temático {steam['axis']}")
+        for offset, student in enumerate(steam["students"]):
+            _set_word_paragraph_text(paragraphs[6 + offset], f"Nombre y apellidos estudiante {offset + 1} {student}")
+        _set_word_paragraph_text(paragraphs[9], f"Puntaje obtenido {steam['score']}")
+
+        _set_word_paragraph_text(paragraphs[11], f"Nombre del proyecto {entrepreneurship['project']} · Colegio: {entrepreneurship['school']}")
+        _set_word_paragraph_text(paragraphs[12], f"Eje temático {entrepreneurship['axis']}")
+        for offset, student in enumerate(entrepreneurship["students"]):
+            _set_word_paragraph_text(paragraphs[13 + offset], f"Nombre y apellidos estudiante {offset + 1} {student}")
+        _set_word_paragraph_text(paragraphs[16], f"Puntaje obtenido {entrepreneurship['score']}")
+
+        for node in document_root.iter(f'{{{WORD_NS}}}t'):
+            if node.text:
+                node.text = node.text.replace('Director (a) del centro educativo', 'Coordinación Regional')
+                node.text = node.text.replace('centro educativo', 'organización regional')
+                node.text = node.text.replace('Sello institucional', 'Sello de la organización regional')
+
+        document_xml = ET.tostring(document_root, encoding="utf-8", xml_declaration=True)
+
+        header_root = _parse_word_xml(source.read("word/header1.xml"))
+        header_paragraphs = header_root.findall(f".//{{{WORD_NS}}}p")
+        if len(header_paragraphs) > 1:
+            _set_word_paragraph_text(header_paragraphs[1], school_name)
+        header_xml = ET.tostring(header_root, encoding="utf-8", xml_declaration=True)
+
+        for item in source.infolist():
+            data = source.read(item.filename)
+            if item.filename == "word/document.xml":
+                data = document_xml
+            elif item.filename == "word/header1.xml":
+                data = header_xml
+            target.writestr(item, data)
+
+    output.seek(0)
+    return output
+
+
+@admin_module_required("evaluations")
+def winners_acta_download():
+    try:
+        output = _build_winners_acta_docx()
+    except (FileNotFoundError, ValueError) as error:
+        flash(str(error), "error")
+        return redirect(url_for("admin.evaluations_page"))
+    log_event("admin.evaluations.winners_acta", "evaluation", detail="Acta oficial de ganadores generada en Word")
+    db.session.commit()
+    return send_file(
+        output,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        as_attachment=True,
+        download_name="acta_ganadores_etapa_regional.docx",
+    )
+
+
+
 @admin_module_required("documents")
 def documents_page():
     context = _base_context("documents")

@@ -1,0 +1,32 @@
+/* Header-only overrides; dropdown contents and menu behavior remain unchanged. */
+.header .site-nav-public { align-items: center; gap: 6px; }
+.header .site-nav-public > a:not(.expo-live-link), .header .site-nav-public > .nav-dropdown > summary {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+  padding: 10px 14px; border: 1px solid transparent; border-radius: 10px;
+  font-size: .85rem; font-weight: 650; color: #dfebef; line-height: 1.2; text-decoration: none;
+}
+.header .site-nav-public > a:not(.expo-live-link):hover,
+.header .site-nav-public > .nav-dropdown > summary:hover,
+.header .site-nav-public > a[aria-current="page"]:not(.expo-live-link) { background: #ffffff0d; border-color: #ffffff16; color: #fff; }
+.header .expo-live-link { min-height: 44px; padding: 10px 14px; border-radius: 10px; border-color: #60c99166; background: #39ad7220; color: #b9f2ce !important; font-size: .85rem; font-weight: 700; box-shadow: none; }
+.header .expo-live-link:hover, .header .expo-live-link[aria-current="page"] { background: #39ad7238; border-color: #70dba0; }
+.header .expo-live-dot { background: #73dfa0; box-shadow: 0 0 0 3px #73dfa01c; }
+.header .nav-profile > summary { min-height: 46px; gap: 10px; padding: 6px 11px 6px 7px; border-radius: 12px; border-color: #ffffff24; background: #ffffff08; }
+.header .nav-profile > summary:hover, .header .nav-profile[open] > summary { background: #ffffff12; border-color: #ffffff42; }
+.header .nav-profile-avatar { width: 32px; height: 32px; flex: 0 0 32px; background: #e8f2f7; color: #254d65; font-size: .85rem; }
+.header .nav-profile-copy { gap: 3px; line-height: 1.15; }
+.header .nav-profile-copy strong { font-size: .8rem; font-weight: 650; }
+.header .nav-profile-copy small { font-size: .68rem; color: #a5bbc5; }
+.header .site-nav-public > a:focus-visible, .header .site-nav-public > .nav-dropdown > summary:focus-visible,
+.header .nav-profile > summary:focus-visible { outline: 3px solid #8bcbdc; outline-offset: 3px; }
+@media(min-width:901px) {
+  .header .site-nav { gap: 18px; }
+  .header .nav-profile { padding-left: 18px; border-left: 1px solid #ffffff20; }
+}
+@media(max-width:900px) {
+  .header .expo-live-mobile { min-height: 42px; max-width: 150px; padding: 9px 11px; font-size: .75rem; }
+  .header .site-nav-public > a:not(.expo-live-link), .header .site-nav-public > .nav-dropdown > summary { justify-content: flex-start; width: 100%; }
+  .header .nav-profile { border: 0; padding-left: 0; }
+  .header .nav-profile > summary { width: 100%; }
+}
+@media(max-width:420px) { .header .expo-live-mobile { max-width: 120px; padding: 8px; font-size: .69rem; } }

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ExpoTécnica Regional</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v={{ asset_version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='navigation.css') }}?v={{ asset_version }}">
     <script src="{{ url_for('static', filename='judge-profile.js') }}?v={{ asset_version }}" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -26,7 +27,7 @@
                     <p>STEAM &middot; Emprendimiento</p>
                 </div>
             </div>
-            <a href="{{ url_for('public.expo_progress') }}" class="expo-live-link expo-live-mobile" data-no-iconify><span class="expo-live-dot" aria-hidden="true"></span>Evaluaciones en vivo</a>
+            <a href="{{ url_for('public.expo_progress') }}" class="expo-live-link expo-live-mobile" data-no-iconify {% if request.endpoint == 'public.expo_progress' %}aria-current="page"{% endif %}><span class="expo-live-dot" aria-hidden="true"></span>Evaluaciones en vivo</a>
             <button
                 type="button"
                 class="nav-toggle"
@@ -39,7 +40,7 @@
             </button>
             <nav id="site-nav" class="site-nav">
                 <div class="site-nav-public" aria-label="Navegación pública">
-                    <a href="{{ url_for('public.index') }}">Inicio</a>
+                    <a href="{{ url_for('public.index') }}" data-no-iconify {% if request.endpoint == 'public.index' %}aria-current="page"{% endif %}>Inicio</a>
                     <a href="{{ url_for('public.expo_progress') }}" class="expo-live-link expo-live-desktop" data-no-iconify {% if request.endpoint == 'public.expo_progress' %}aria-current="page"{% endif %}><span class="expo-live-dot" aria-hidden="true"></span>Evaluaciones en vivo</a>
                     <details class="nav-dropdown" data-no-iconify>
                         <summary>Proyectos</summary>

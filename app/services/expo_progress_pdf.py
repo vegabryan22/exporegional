@@ -70,10 +70,10 @@ def build_progress_pdf(data, filters):
                 if row['english_participants']:
                     detail.append(p('Inglés: ' + ('; '.join(f"{j['name']} ({j['completed']}/{j['expected']} estudiantes)" for j in pending['english']) or ('Sin juez asignado' if row['english_unassigned'] else 'Completo')),'Secondary'))
             english = f"{row['english']}/{row['english_expected']}" if row['english_participants'] else 'No participa'
-            if row['english_unassigned']: english += '\nSin juez asignado'
+            if row['english_unassigned']: english += '\nCobertura de inglés incompleta'
             expo_cell=[p(f"{row['exposition']}/3",'Count'),p('evaluaciones','CenterSmall')]
             english_cell=[p(f"{row['english']}/{row['english_expected']}",'Count'),p('individuales','CenterSmall')] if row['english_participants'] else [p('No participa','CenterSmall')]
-            if row['english_unassigned']: english_cell.append(p('Sin juez asignado','CenterSmall'))
+            if row['english_unassigned']: english_cell.append(p('Cobertura de inglés incompleta','CenterSmall'))
             table_rows.append([detail,expo_cell,english_cell,p(labels[row['status']])])
         table = Table(table_rows,colWidths=[doc.width-285,90,95,100],repeatRows=1,hAlign='LEFT')
         table.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),colors.HexColor('#173f55')),('VALIGN',(0,0),(-1,-1),'MIDDLE'),('TOPPADDING',(0,0),(-1,-1),12),('BOTTOMPADDING',(0,0),(-1,-1),12),('LEFTPADDING',(0,0),(-1,-1),12),('RIGHTPADDING',(0,0),(-1,-1),12),('ROWBACKGROUNDS',(0,1),(-1,-1),[colors.white,colors.HexColor('#f5f9fc')]),('LINEBELOW',(0,0),(-1,-1),0.4,colors.HexColor('#d3e2eb'))]))

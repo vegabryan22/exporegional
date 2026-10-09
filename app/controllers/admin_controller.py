@@ -401,8 +401,8 @@ def _assignment_capacity_error(
         exceeded.append("documento")
     if can_exposition and exposition_total >= ASSIGNMENTS_PER_SCOPE:
         exceeded.append("exposición")
-    if _requested_assignment_english() and any(item.can_evaluate_english for item in assignments):
-        return "El proyecto ya tiene un juez asignado para inglés. Revisa esa asignación antes de agregar otro."
+    if _requested_assignment_english() and sum(bool(item.can_evaluate_english) for item in assignments) >= ASSIGNMENTS_PER_SCOPE:
+        return "El proyecto ya tiene 3 jueces asignados para inglés. Revisa esas asignaciones antes de agregar otro."
     if not exceeded:
         return ""
     scope = " y ".join(exceeded)
@@ -588,7 +588,7 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
         new_assignments: list[Assignment] = []
 
         def target_met() -> bool:
-            english_ok = not needs_english or english_count > 0
+            english_ok = not needs_english or english_count >= ASSIGNMENTS_PER_SCOPE
             return english_ok and doc_count >= target_evaluations and expo_count >= target_evaluations
 
         def compatible(judge: Judge, required_scope: str | None = None) -> bool:
@@ -621,7 +621,7 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
             # cover both rubrics, but never become a fourth evaluator in either.
             can_documentation = bool(judge.can_evaluate_documentation and doc_count < target_evaluations)
             can_exposition = bool(judge.can_evaluate_exposition and judge.attendance_confirmed is not False and expo_count < target_evaluations)
-            can_english = bool(needs_english and judge.can_evaluate_english and judge.attendance_confirmed is not False and english_count == 0)
+            can_english = bool(needs_english and judge.can_evaluate_english and judge.attendance_confirmed is not False and english_count < ASSIGNMENTS_PER_SCOPE)
             if not can_documentation and not can_exposition and not can_english:
                 return False
             assignment = Assignment(
@@ -645,13 +645,13 @@ def _auto_assign_judges(target_evaluations: int, replace_drafts: bool) -> tuple[
                 english_count += 1
             return True
 
-        if needs_english and english_count == 0:
+        if needs_english and english_count < ASSIGNMENTS_PER_SCOPE:
             english_judge = pick("ingles", "ingles")
             if english_judge:
                 assign(english_judge)
 
         while not target_met():
-            if needs_english and english_count == 0:
+            if needs_english and english_count < ASSIGNMENTS_PER_SCOPE:
                 next_judge = pick("ingles", "ingles")
             elif doc_count < target_evaluations and doc_count <= expo_count:
                 next_judge = pick("documentacion", "documentacion")
@@ -4887,17 +4887,17 @@ def _handle_action(action: str):
                 if (
                     project
                     and _project_requires_english(project)
-                    and not any(
-                        assignment.can_evaluate_english
+                    and sum(
+                        1 for assignment in project_assignments
+                        if assignment.can_evaluate_english
                         and assignment.judge
                         and assignment.judge.can_evaluate_english
-                        for assignment in project_assignments
-                    )
+                    ) != ASSIGNMENTS_PER_SCOPE
                 ):
                     english_projects_without_judge.append(project.title)
             if english_projects_without_judge:
                 flash(
-                    "No se pueden confirmar borradores: estos proyectos requieren al menos un juez de exposición en inglés: "
+                    "No se pueden confirmar borradores: estos proyectos requieren 3 jueces de inglés: "
                     + ", ".join(english_projects_without_judge[:5]),
                     "error",
                 )

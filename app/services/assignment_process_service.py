@@ -17,7 +17,7 @@ from app.services.evaluation_service import ENGLISH_EVAL_TYPE_CODE, infer_evalua
 TARGETS = {
     AssignmentProcess.TYPE_DOCUMENTATION: 3,
     AssignmentProcess.TYPE_EXPOSITION: 3,
-    AssignmentProcess.TYPE_ENGLISH: 1,
+    AssignmentProcess.TYPE_ENGLISH: 3,
 }
 
 
@@ -147,6 +147,12 @@ def approve_process(process, approved_by_id=None):
         raise ValueError("Solo se puede aprobar un borrador.")
     if not process.items:
         raise ValueError("El borrador no contiene nuevas asignaciones.")
+    if process.process_type == AssignmentProcess.TYPE_ENGLISH:
+        planned_english = defaultdict(set)
+        for item in process.items:
+            planned_english[item.project_id].add(item.judge_id)
+        if any(len(ids) != 3 for ids in planned_english.values()):
+            raise ValueError('Cada proyecto con participantes de inglés requiere 3 jueces distintos. Regenera el borrador para completar la cobertura.')
 
     # Revalidate every draft, including those generated before a profile edit.
     for item in process.items:

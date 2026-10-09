@@ -45,7 +45,7 @@
           if(row.english_participants) {
             const englishSection = element('div',undefined,'progress-judge-section'); englishSection.append(element('strong','Inglés'));
             judges.english.forEach(judge => englishSection.append(element('p',`${judge.name} · ${judge.completed}/${judge.expected} estudiantes evaluados · faltan ${judge.expected - judge.completed}`)));
-            if(row.english_unassigned) englishSection.append(element('p','Sin juez de inglés asignado.','progress-english-note'));
+            if(row.english_unassigned) englishSection.append(element('p',`Faltan ${row.english_judges_missing ?? 3} jueces de inglés por asignar.`,'progress-english-note'));
             else if(!judges.english.length) englishSection.append(element('p','Evaluaciones de inglés completas.'));
             panel.append(englishSection);
           }
@@ -55,7 +55,7 @@
         const expo = element('td'); expo.append(badge(`${row.exposition}/3`,row.exposition === 3 ? 'complete' : row.exposition > 3 ? 'review' : 'pending')); tr.append(expo);
         const english = element('td');
         if(!row.english_participants) english.textContent = 'No participa';
-        else {english.append(badge(`${row.english}/${row.english_expected}`, !row.english_unassigned && row.english === row.english_expected ? 'complete' : 'pending')); if(row.english_unassigned) english.append(element('small','Sin juez de inglés asignado','progress-english-note'));}
+        else {english.append(badge(`${row.english}/${row.english_expected}`, !row.english_unassigned && row.english === row.english_expected ? 'complete' : 'pending')); if(row.english_unassigned) english.append(element('small',`Faltan ${row.english_judges_missing ?? 3} jueces de inglés`,'progress-english-note'));}
         const state = element('td'); state.append(badge(labels[row.status],row.status)); tr.append(english,state);
         Array.from(tr.children).forEach((cell,index) => {cell.dataset.label = ['Proyecto','Colegio','Exposición','Inglés','Estado'][index];});
         if(pendingPanel) {

@@ -186,6 +186,7 @@ def project_evaluation_count_summary(project):
         rubric_kind = infer_evaluation_type_kind(eval_type) or "other"
         completed[rubric_kind] += 1
 
+    expected['english'] = 3 * len(get_project_english_members(project))
     expected_base = expected["documentacion"] + expected["exposicion"] + expected["other"]
     completed_base = completed["documentacion"] + completed["exposicion"] + completed["other"]
 

@@ -62,17 +62,18 @@ def project_progress(project, exposition_codes, *, include_pending_judges=False)
     members = {m.id for m in project.members if m.participates_in_english}
     english_judges = {a.judge_id for a in project.assignments if a.status == Assignment.STATUS_CONFIRMED and a.can_evaluate_english and a.judge and a.judge.can_evaluate_english}
     english_pairs = {(e.judge_id, e.project_member_id) for e in project.evaluations if e.evaluation_type == ENGLISH_EVAL_TYPE_CODE and e.project_member_id in members and e.judge_id in english_judges}
-    expected = len(members) * max(1, len(english_judges)) if members else 0
-    complete = len(expo) == 3 and (not members or bool(english_judges) and len(english_pairs) == expected)
+    expected = len(members) * 3
+    complete = len(expo) == 3 and (not members or len(english_judges) == 3 and len(english_pairs) == expected)
     status = "complete" if complete else "pending" if expo or english_pairs else "not_started"
-    if len(expo) > 3:
+    if len(expo) > 3 or members and len(english_judges) > 3:
         status = "review"
     row = {
         "id": project.id, "title": project.title,
         "school": project.institution.name if project.institution else (project.institution_name or "Sin colegio"),
         "category": project.category, "exposition": len(expo), "exposition_expected": 3,
         "english": len(english_pairs), "english_expected": expected,
-        "english_participants": len(members), "english_unassigned": bool(members and not english_judges),
+        "english_participants": len(members), "english_unassigned": bool(members and len(english_judges) < 3),
+        "english_judges_missing": max(0, 3-len(english_judges)) if members else 0,
         "status": status,
     }
     if include_pending_judges:

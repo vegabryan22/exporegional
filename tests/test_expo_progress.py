@@ -36,7 +36,7 @@ class ExpoProgressTest(unittest.TestCase):
         project = self.project(True)
         self.exposition(project)
         row = project_progress(project, {"expo"})
-        self.assertEqual(1, row["english_expected"])
+        self.assertEqual(3, row["english_expected"])
         self.assertTrue(row["english_unassigned"])
         self.assertNotEqual("complete", row["status"])
 
@@ -47,11 +47,23 @@ class ExpoProgressTest(unittest.TestCase):
         project.evaluations.append(Row(judge_id=4, evaluation_type=ENGLISH_EVAL_TYPE_CODE, project_member_id=10))
         self.assertEqual(0, project_progress(project, {"expo"})["english"])
         project.assignments[0].status = Assignment.STATUS_CONFIRMED
-        self.assertEqual("complete", project_progress(project, {"expo"})["status"])
+        self.assertEqual("pending", project_progress(project, {"expo"})["status"])
         project.members.append(Row(id=11, participates_in_english=True))
         row = project_progress(project, {"expo"})
-        self.assertEqual((1, 2), (row["english"], row["english_expected"]))
+        self.assertEqual((1, 6), (row["english"], row["english_expected"]))
         self.assertEqual("pending", row["status"])
+
+    def test_each_student_requires_three_distinct_english_judges(self):
+        project = self.project(True)
+        self.exposition(project)
+        project.members.append(Row(id=11,participates_in_english=True))
+        project.assignments = [Row(judge_id=j,status=Assignment.STATUS_CONFIRMED,can_evaluate_english=True,judge=Row(can_evaluate_english=True)) for j in (4,5,6)]
+        project.evaluations.extend(Row(judge_id=j,evaluation_type=ENGLISH_EVAL_TYPE_CODE,project_member_id=m) for j in (4,5,6) for m in (10,11))
+        row = project_progress(project,{'expo'})
+        self.assertEqual((6,6),(row['english'],row['english_expected']))
+        self.assertEqual('complete',row['status'])
+        project.evaluations.pop()
+        self.assertEqual('pending',project_progress(project,{'expo'})['status'])
 
     def test_fourth_exposition_evaluation_requires_review(self):
         project = self.project()

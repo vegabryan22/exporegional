@@ -76,7 +76,7 @@ class ExpoAttendanceTest(unittest.TestCase):
         db.session.add(member); db.session.flush()
         absent = self.judges[-1]
         db.session.add(Evaluation(project_id=self.project.id,project_member_id=member.id,judge_id=absent.id,evaluation_type='english_project_performance'))
-        self.present(self.judges[:1])
+        self.present(self.judges[:3])
         process,missing = generate_process_draft(AssignmentProcess.TYPE_ENGLISH,present_only=True)
         self.assertFalse(missing)
         with self.assertRaisesRegex(ValueError,'evaluaciones guardadas'): approve_process(process)
@@ -117,6 +117,8 @@ class ExpoAttendanceTest(unittest.TestCase):
 
     def test_english_only_automatic_process_and_presence(self):
         judge = self.english_only_judge()
+        for other in self.judges[1:3]:
+            other.can_evaluate_english = True
         self.assertEqual('Solo inglés', judge.evaluation_scope_label)
         self.assertIn(judge, exposition_judges())
         self.present(self.judges)
@@ -125,7 +127,7 @@ class ExpoAttendanceTest(unittest.TestCase):
         self.assertNotIn(judge.id, {item.judge_id for item in spanish.items})
         english, missing = generate_process_draft(AssignmentProcess.TYPE_ENGLISH, present_only=True)
         self.assertFalse(missing)
-        self.assertEqual({judge.id}, {item.judge_id for item in english.items})
+        self.assertEqual({j.id for j in self.judges[:3]}, {item.judge_id for item in english.items})
         approve_process(english)
         assignment = Assignment.query.filter_by(judge_id=judge.id, project_id=self.project.id).one()
         self.assertTrue(assignment.can_evaluate_english)
